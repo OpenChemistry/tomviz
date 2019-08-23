@@ -27,17 +27,10 @@
 
 namespace tomviz {
 
-template <typename T>
-void ReorderArrayC(T* in, T* out, int dim[3])
-{
-  for (int i = 0; i < dim[0]; ++i) {
-    for (int j = 0; j < dim[1]; ++j) {
-      for (int k = 0; k < dim[2]; ++k) {
-        out[(i * dim[1] + j) * dim[2] + k] = in[(k * dim[1] + j) * dim[0] + i];
-      }
-    }
-  }
-}
+// Forward declarations
+static bool writeExtraScalars(h5::H5ReadWrite& writer, vtkImageData* image);
+static void readExtraScalars(h5::H5ReadWrite& reader,
+                             const std::string& emdNode, vtkImageData* image);
 
 std::string firstEmdNode(h5::H5ReadWrite& reader)
 {
@@ -93,9 +86,19 @@ bool EmdFormat::read(const std::string& fileName, vtkImageData* image)
     return false;
 
   GenericHDF5Format f;
+  f.setAskForSubsample(m_askForSubsample);
   if (!f.readVolume(reader, emdDataNode, image)) {
     std::cerr << "Failed to read the volume at " << emdDataNode << "\n";
     return false;
+  }
+
+  // If it has a "name" attribute, let's name the scalar that
+  if (reader.hasAttribute(emdDataNode, "name")) {
+    auto name = reader.attribute<std::string>(emdDataNode, "name", &ok);
+    if (ok) {
+      auto scalars = image->GetPointData()->GetScalars();
+      scalars->SetName(name.c_str());
+    }
   }
 
   // Now to read back in the units, note the reordering for C vs Fortran...
@@ -149,6 +152,9 @@ bool EmdFormat::read(const std::string& fileName, vtkImageData* image)
     fd->AddArray(typeArray);
   }
 
+  // Now read in any extra scalars
+  readExtraScalars(reader, emdNode, image);
+
   return true;
 }
 
@@ -190,9 +196,14 @@ bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
     permutedImage = permute->GetOutput();
   }
 
-  int xIndex = 0;
-  int yIndex = 1;
-  int zIndex = 2;
+  GenericHDF5Format::writeVolume(writer, "/data/tomography", "data",
+                                 permutedImage);
+
+  // Set a "name" attribute on the data so we can remember the
+  // scalar name that the user gave it.
+  std::string activeName =
+    permutedImage->GetPointData()->GetScalars()->GetName();
+  writer.setAttribute("/data/tomography/data", "name", activeName.c_str());
 
   // Use constant spacing, with zero offset, so just populate the first two.
   double spacing[3];
@@ -212,41 +223,15 @@ bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
     }
   } else {
     for (int i = 0; i < dimensions[0]; ++i) {
-      imageDimDataX[i] = i * spacing[xIndex];
+      imageDimDataX[i] = i * spacing[0];
     }
   }
   for (int i = 0; i < dimensions[1]; ++i) {
-    imageDimDataY[i] = i * spacing[yIndex];
+    imageDimDataY[i] = i * spacing[1];
   }
   for (int i = 0; i < dimensions[2]; ++i) {
-    imageDimDataZ[i] = i * spacing[zIndex];
+    imageDimDataZ[i] = i * spacing[2];
   }
-
-  int dim[3] = { 0, 0, 0 };
-  permutedImage->GetDimensions(dim);
-  std::vector<int> dims({ dim[0], dim[1], dim[2] });
-
-  // We must allocate a new array, and copy the reordered array into it.
-  auto arrayPtr = permutedImage->GetPointData()->GetScalars();
-  auto dataPtr = arrayPtr->GetVoidPointer(0);
-  vtkNew<vtkImageData> reorderedImageData;
-  reorderedImageData->SetDimensions(dim);
-  reorderedImageData->AllocateScalars(arrayPtr->GetDataType(), 1);
-  auto outPtr =
-    reorderedImageData->GetPointData()->GetScalars()->GetVoidPointer(0);
-
-  switch (arrayPtr->GetDataType()) {
-  vtkTemplateMacro(tomviz::ReorderArrayC(
-    reinterpret_cast<VTK_TT*>(dataPtr), reinterpret_cast<VTK_TT*>(outPtr),
-    dim));
-  default:
-    cout << "EMD: Unknown data type" << endl;
-  }
-
-  H5ReadWrite::DataType type =
-    h5::H5VtkTypeMaps::VtkToDataType(arrayPtr->GetDataType());
-
-  writer.writeData("/data/tomography", "data", dims, type, outPtr);
 
   // Create the 3 dim sets too...
   std::vector<int> side(1);
@@ -275,6 +260,54 @@ bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
     writer.setAttribute("/data/tomography/dim3", "units", "[n_m]");
   }
 
+  // Write any extra scalars we might have
+  writeExtraScalars(writer, permutedImage);
+
   return true;
 }
+
+static void readExtraScalars(h5::H5ReadWrite& reader,
+                             const std::string& emdNode, vtkImageData* image)
+{
+  std::string scalarsPath = emdNode + "/tomviz_scalars";
+  if (!reader.isGroup(scalarsPath)) {
+    // No extra scalars
+    return;
+  }
+
+  auto datasets = reader.allDataSets(scalarsPath);
+  for (const auto& name : datasets) {
+    auto path = scalarsPath + "/" + name;
+    GenericHDF5Format::addScalarArray(reader, path, image, name);
+  }
+}
+
+static bool writeExtraScalars(h5::H5ReadWrite& writer, vtkImageData* image)
+{
+  std::string path = "/data/tomography/tomviz_scalars";
+  writer.createGroup(path);
+
+  vtkPointData* pointData = image->GetPointData();
+
+  // Skip over the one we have already written
+  std::string activeName(pointData->GetScalars()->GetName());
+
+  // Write out all other scalars
+  int numArrays = pointData->GetNumberOfArrays();
+  for (int i = 0; i < numArrays; i++) {
+    auto arrayName = pointData->GetArrayName(i);
+    // Skip over the one we have already written
+    if (arrayName == activeName)
+      continue;
+
+    // Make it active and write it
+    pointData->SetActiveScalars(arrayName);
+    GenericHDF5Format::writeVolume(writer, path, arrayName, image);
+  }
+
+  // Make the original one active again
+  pointData->SetActiveScalars(activeName.c_str());
+  return true;
+}
+
 } // namespace tomviz

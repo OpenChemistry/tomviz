@@ -114,11 +114,20 @@ public:
   bool isDataSet(const std::string& path);
 
   /**
-   * Get the paths to all of the data sets in the file.
-   * This could potentially be an expensive operation for large files.
+   * Check if the given path is a group.
+   * @return True if the path is a group, false if it is not, or if
+   *              an error occurred.
+   */
+  bool isGroup(const std::string& path);
+
+  /**
+   * Get the paths to all of the data sets in the file, or under a
+   * specified path.
+   * @param path The path for which to get the data sets. Defaults
+   *             to getting the paths for the whole file.
    * @return A vector of strings of the paths to the data sets.
    */
-  std::vector<std::string> allDataSets();
+  std::vector<std::string> allDataSets(const std::string& path = "");
 
   /**
    * Get a data set's type. An error will occur if @p path is not a dataset.

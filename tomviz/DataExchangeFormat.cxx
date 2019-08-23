@@ -22,18 +22,6 @@
 
 namespace tomviz {
 
-template <typename T>
-void ReorderArrayC(T* in, T* out, int dim[3])
-{
-  for (int i = 0; i < dim[0]; ++i) {
-    for (int j = 0; j < dim[1]; ++j) {
-      for (int k = 0; k < dim[2]; ++k) {
-        out[(i * dim[1] + j) * dim[2] + k] = in[(k * dim[1] + j) * dim[0] + i];
-      }
-    }
-  }
-}
-
 bool DataExchangeFormat::read(const std::string& fileName, vtkImageData* image,
                               bool askForSubsample)
 {
@@ -67,31 +55,7 @@ bool DataExchangeFormat::write(const std::string& fileName, vtkImageData* image)
   // Now create an "/exchange" group
   writer.createGroup("/exchange");
 
-  int dim[3] = { 0, 0, 0 };
-  image->GetDimensions(dim);
-  std::vector<int> dims({ dim[0], dim[1], dim[2] });
-
-  // We must allocate a new array, and copy the reordered array into it.
-  auto arrayPtr = image->GetPointData()->GetScalars();
-  auto dataPtr = arrayPtr->GetVoidPointer(0);
-  vtkNew<vtkImageData> reorderedImageData;
-  reorderedImageData->SetDimensions(dim);
-  reorderedImageData->AllocateScalars(arrayPtr->GetDataType(), 1);
-  auto outPtr =
-    reorderedImageData->GetPointData()->GetScalars()->GetVoidPointer(0);
-
-  switch (arrayPtr->GetDataType()) {
-    vtkTemplateMacro(tomviz::ReorderArrayC(reinterpret_cast<VTK_TT*>(dataPtr),
-                                           reinterpret_cast<VTK_TT*>(outPtr),
-                                           dim));
-    default:
-      cout << "Data Exchange Format: Unknown data type" << endl;
-  }
-
-  H5ReadWrite::DataType type =
-    h5::H5VtkTypeMaps::VtkToDataType(arrayPtr->GetDataType());
-
-  return writer.writeData("/exchange", "data", dims, type, outPtr);
+  return GenericHDF5Format::writeVolume(writer, "/exchange", "data", image);
 }
 
 } // namespace tomviz

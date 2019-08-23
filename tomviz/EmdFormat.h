@@ -18,6 +18,12 @@ public:
   bool read(const std::string& fileName, vtkImageData* data);
   bool write(const std::string& fileName, DataSource* source);
   bool write(const std::string& fileName, vtkImageData* image);
+
+  // This will force the generic HDF5 format to ask for subsample
+  void setAskForSubsample(bool b) { m_askForSubsample = b; }
+
+private:
+  bool m_askForSubsample = false;
 };
 } // namespace tomviz
 

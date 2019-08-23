@@ -55,6 +55,75 @@ void ReorderArrayF(T* in, T* out, int dim[3])
   }
 }
 
+bool GenericHDF5Format::addScalarArray(h5::H5ReadWrite& reader,
+                                       const std::string& path,
+                                       vtkImageData* image,
+                                       const std::string& name)
+{
+  // Get the type of the data
+  h5::H5ReadWrite::DataType type = reader.dataType(path);
+  int vtkDataType = h5::H5VtkTypeMaps::dataTypeToVtk(type);
+
+  // Get the dimensions
+  std::vector<int> dims = reader.getDimensions(path);
+
+  // Set up the stride and counts
+  int stride = 1;
+  size_t start[3], counts[3];
+  if (DataSource::wasSubsampled(image)) {
+    // If the main image was subsampled, we need to use the same
+    // subsampling for the scalars
+    stride = DataSource::subsampleStride(image);
+    int bs[6];
+    DataSource::subsampleVolumeBounds(image, bs);
+
+    for (int i = 0; i < 3; ++i) {
+      start[i] = static_cast<size_t>(bs[i * 2]);
+      counts[i] = (bs[i * 2 + 1] - start[i]) / stride;
+    }
+  } else {
+    for (int i = 0; i < 3; ++i) {
+      start[i] = 0;
+      counts[i] = dims[i];
+    }
+  }
+
+  // vtk requires the counts to be an int array
+  int vtkCounts[3];
+  for (int i = 0; i < 3; ++i)
+    vtkCounts[i] = counts[i];
+
+  vtkNew<vtkImageData> tmp;
+  tmp->SetDimensions(&vtkCounts[0]);
+  tmp->AllocateScalars(vtkDataType, 1);
+
+  if (!reader.readData(path, type, tmp->GetScalarPointer(), stride, start,
+                       counts)) {
+    std::cerr << "Failed to read the data\n";
+    return false;
+  }
+
+  auto* array = vtkAbstractArray::CreateArray(vtkDataType);
+  array->SetNumberOfTuples(counts[0] * counts[1] * counts[2]);
+  array->SetName(name.c_str());
+  image->GetPointData()->AddArray(array);
+
+  // HDF5 typically stores data as row major order.
+  // VTK expects column major order.
+  auto inPtr = tmp->GetPointData()->GetScalars()->GetVoidPointer(0);
+  auto outPtr = array->GetVoidPointer(0);
+  switch (vtkDataType) {
+    vtkTemplateMacro(tomviz::ReorderArrayF(reinterpret_cast<VTK_TT*>(inPtr),
+                                           reinterpret_cast<VTK_TT*>(outPtr),
+                                           &vtkCounts[0]));
+    default:
+      cout << "Generic HDF5 Format: Unknown data type" << endl;
+  }
+  image->Modified();
+
+  return true;
+}
+
 bool GenericHDF5Format::readVolume(h5::H5ReadWrite& reader,
                                    const std::string& path, vtkImageData* image)
 {
@@ -206,6 +275,38 @@ bool GenericHDF5Format::read(const std::string& fileName, vtkImageData* image)
   }
 
   return readVolume(reader, dataNode, image);
+}
+
+bool GenericHDF5Format::writeVolume(h5::H5ReadWrite& writer,
+                                    const std::string& path,
+                                    const std::string& name,
+                                    vtkImageData* image)
+{
+  int dim[3];
+  image->GetDimensions(dim);
+  std::vector<int> dims({ dim[0], dim[1], dim[2] });
+
+  // We must allocate a new array, and copy the reordered array into it.
+  auto arrayPtr = image->GetPointData()->GetScalars();
+  auto dataPtr = arrayPtr->GetVoidPointer(0);
+  vtkNew<vtkImageData> reorderedImageData;
+  reorderedImageData->SetDimensions(dim);
+  reorderedImageData->AllocateScalars(arrayPtr->GetDataType(), 1);
+  auto outPtr =
+    reorderedImageData->GetPointData()->GetScalars()->GetVoidPointer(0);
+
+  switch (arrayPtr->GetDataType()) {
+    vtkTemplateMacro(tomviz::ReorderArrayC(reinterpret_cast<VTK_TT*>(dataPtr),
+                                           reinterpret_cast<VTK_TT*>(outPtr),
+                                           dim));
+    default:
+      cout << "Generic HDF5 Format: Unknown data type" << endl;
+  }
+
+  h5::H5ReadWrite::DataType type =
+    h5::H5VtkTypeMaps::VtkToDataType(arrayPtr->GetDataType());
+
+  return writer.writeData(path, name, dims, type, outPtr);
 }
 
 } // namespace tomviz

@@ -5,6 +5,7 @@
 
 #include "ActiveObjects.h"
 #include "ColorMap.h"
+#include "EmdFormat.h"
 #include "GenericHDF5Format.h"
 #include "ModuleFactory.h"
 #include "ModuleManager.h"
@@ -330,9 +331,16 @@ bool DataSource::reloadAndResample()
   auto data = algo->GetOutputDataObject(0);
   auto image = vtkImageData::SafeDownCast(data);
 
-  GenericHDF5Format format;
-  format.setAskForSubsample(true);
-  bool success = format.read(file.toLatin1().data(), image);
+  bool success;
+  if (file.endsWith("emd", Qt::CaseInsensitive)) {
+    EmdFormat format;
+    format.setAskForSubsample(true);
+    success = format.read(file.toLatin1().data(), image);
+  } else {
+    GenericHDF5Format format;
+    format.setAskForSubsample(true);
+    success = format.read(file.toLatin1().data(), image);
+  }
 
   // If there are operators, re-run the pipeline
   if (!operators().empty())

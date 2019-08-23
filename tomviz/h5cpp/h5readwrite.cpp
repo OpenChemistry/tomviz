@@ -355,6 +355,30 @@ public:
     return info.type == H5O_TYPE_GROUP;
   }
 
+  vector<string> allDataSets(const string& path)
+  {
+    if (!fileIsValid())
+      return vector<string>();
+
+    hid_t objectId;
+    HIDCloser groupCloser(-1, H5Gclose);
+    if (path.empty() || path == "/") {
+      objectId = fileId();
+    } else {
+      objectId = H5Gopen(fileId(), path.c_str(), H5P_DEFAULT);
+      groupCloser.reset(objectId);
+    }
+
+    ListAllDataSetsVisitor visitor;
+    herr_t code = H5Ovisit(objectId, H5_INDEX_NAME, H5_ITER_INC,
+                           &visitor.operation, &visitor);
+
+    if (code < 0)
+      return vector<string>();
+
+    return visitor.dataSets;
+  }
+
   DataType getH5ToDataType(hid_t h5type)
   {
     // Find the type
@@ -574,19 +598,14 @@ bool H5ReadWrite::isDataSet(const string& path)
   return m_impl->isDataSet(path);
 }
 
-vector<string> H5ReadWrite::allDataSets()
+bool H5ReadWrite::isGroup(const string& path)
 {
-  if (!m_impl->fileIsValid())
-    return vector<string>();
+  return m_impl->isGroup(path);
+}
 
-  ListAllDataSetsVisitor visitor;
-  herr_t code = H5Ovisit(m_impl->fileId(), H5_INDEX_NAME, H5_ITER_INC,
-                         &visitor.operation, &visitor);
-
-  if (code < 0)
-    return vector<string>();
-
-  return visitor.dataSets;
+vector<string> H5ReadWrite::allDataSets(const string& path)
+{
+  return m_impl->allDataSets(path);
 }
 
 DataType H5ReadWrite::dataType(const string& path)
