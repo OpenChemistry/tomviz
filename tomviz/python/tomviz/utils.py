@@ -13,10 +13,17 @@ if in_application():
     import vtk.util.numpy_support as np_s
 
 
-def get_scalars(dataobject):
+def get_scalars(dataobject, index=None, name=None):
     do = dsa.WrapDataObject(dataobject)
     # get the first
-    rawarray = do.PointData.GetScalars()
+    if index is not None and name is not None:
+        raise ValueError('Only index or name may be provided, not both.')
+    elif index is not None:
+        rawarray = do.PointData.GetAbstractArray(index)
+    elif name is not None:
+        rawarray = do.PointData.GetAbstractArray(name)
+    else:
+        rawarray = do.PointData.GetScalars()
     vtkarray = dsa.vtkDataArrayToVTKArray(rawarray, do)
     vtkarray.Association = dsa.ArrayAssociation.POINT
     return vtkarray
@@ -48,8 +55,8 @@ def set_scalars(dataobject, newscalars):
     do.PointData.SetActiveScalars(name)
 
 
-def get_array(dataobject, order='F'):
-    scalars_array = get_scalars(dataobject)
+def get_array(dataobject, index=None, name=None, order='F'):
+    scalars_array = get_scalars(dataobject, index=index, name=name)
     if order == 'F':
         scalars_array3d = np.reshape(scalars_array,
                                      (dataobject.GetDimensions()),
@@ -485,3 +492,13 @@ def rotate_shape(input, angle, axes):
     output_shape[axes[1]] = ox
 
     return output_shape
+
+
+def get_number_of_channels(dataobject):
+    """
+    Returns the number of channels associated with this dataset.
+
+    :param dataobject The incoming dataset
+    :type: vtkDataObject
+    """
+    return dsa.WrapDataObject(dataobject).PointData.GetNumberOfArrays()
