@@ -40,6 +40,37 @@ public:
    */
   bool readVolume(h5::H5ReadWrite& reader, const std::string& path,
                   vtkImageData* data);
+
+  /**
+   * Add a dataset as a scalar array to pre-existing image data. The
+   * dataset must have the same dimensions as the pre-existing image
+   * data.
+   *
+   * If the original image was read using subsampling, the dataset to
+   * be added will be read using the same subsampling.
+   *
+   * @param reader A reader that has already opened the file of interest.
+   * @param path The path to the dataset to add as a scalar array.
+   * @param image The vtkImageData where the scalar array will be added.
+   * @param name The name to give to the scalar array.
+   * @return True on success, false on failure.
+   */
+  static bool addScalarArray(h5::H5ReadWrite& reader, const std::string& path,
+                             vtkImageData* image, const std::string& name);
+
+  /**
+   * Write a volume from a vtkImageData object to a path. This converts
+   * the vtkImageData to row-major order before writing.
+   *
+   * @param writer The writer that has already opened the file of interest.
+   * @param path The path to the group where the data will be written.
+   * @param name The name that the dataset will be given.
+   * @param image The vtkImageData from which the volume will be written.
+   * @return True on success, false on failure.
+   */
+  static bool writeVolume(h5::H5ReadWrite& writer, const std::string& path,
+                          const std::string& name, vtkImageData* image);
+
 private:
   // Should we ask the user to pick a subsample?
   bool m_askForSubsample = false;
