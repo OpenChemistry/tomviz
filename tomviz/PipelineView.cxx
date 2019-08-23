@@ -33,7 +33,6 @@
 #include <QApplication>
 #include <QDebug>
 #include <QHeaderView>
-#include <QInputDialog>
 #include <QItemDelegate>
 #include <QItemSelection>
 #include <QKeyEvent>
@@ -404,14 +403,7 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   } else if (selectedItem == exportTableResultAction) {
     exportTableAsJson(vtkTable::SafeDownCast(result->dataObject()));
   } else if (selectedItem == reloadAndResampleAction) {
-    // Have the user pick a stride
-    bool ok;
-    int stride = QInputDialog::getInt(nullptr, "Reload and Resample",
-                                      "Choose Stride", 1, 1, 1e5, 1, &ok);
-    if (!ok)
-      return;
-
-    dataSource->reloadAndResample(stride);
+    dataSource->reloadAndResample();
   }
 }
 

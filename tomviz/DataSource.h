@@ -117,14 +117,32 @@ public:
   /// Get the PV reader properties.
   QVariantMap readerProperties() const;
 
-  /// Set the label for the data source.
-  void setLabel(const QString& label);
+  /// Check to see if the data was subsampled while reading
+  bool wasSubsampled() const;
+
+  /// Set whether the data was subsampled while reading
+  void setWasSubsampled(bool b);
+
+  /// Get the stride used to generate the subsample
+  int subsampleStride() const;
+
+  /// Set the stride used to generate the subsample
+  void setSubsampleStride(int i);
+
+  /// Get the volume bounds used to generate the subsample
+  void subsampleVolumeBounds(int bs[6]) const;
+
+  /// Set the volume bounds used to generate the subsample
+  void setSubsampleVolumeBounds(int bs[6]);
 
   /// Can we reload and resample the original dataset?
   bool canReloadAndResample() const;
 
   // Reload and resample the original dataset
-  bool reloadAndResample(int stride);
+  bool reloadAndResample();
+
+  /// Set the label for the data source.
+  void setLabel(const QString& label);
 
   /// Returns the name of the filename used from the originalDataSource.
   QString label() const;
@@ -237,6 +255,24 @@ public:
   static void setTiltAngles(vtkDataObject* image,
                             const QVector<double>& angles);
 
+  /// Check to see if the data was subsampled while reading
+  static bool wasSubsampled(vtkDataObject* image);
+
+  /// Set whether the data was subsampled while reading
+  static void setWasSubsampled(vtkDataObject* image, bool b);
+
+  /// Get the stride used to generate the subsample
+  static int subsampleStride(vtkDataObject* image);
+
+  /// Set the stride used to generate the subsample
+  static void setSubsampleStride(vtkDataObject* image, int i);
+
+  /// Get the volume bounds used to generate the subsample
+  static void subsampleVolumeBounds(vtkDataObject* image, int bs[6]);
+
+  /// Set the volume bounds used to generate the subsample
+  static void setSubsampleVolumeBounds(vtkDataObject* image, int bs[6]);
+
 signals:
   /// This signal is fired to notify the world that the DataSource may have
   /// new/updated data.
@@ -283,6 +319,36 @@ private:
 
   QJsonObject m_json;
 };
+
+inline bool DataSource::wasSubsampled() const
+{
+  return wasSubsampled(dataObject());
+}
+
+inline void DataSource::setWasSubsampled(bool b)
+{
+  setWasSubsampled(dataObject(), b);
+}
+
+inline int DataSource::subsampleStride() const
+{
+  return subsampleStride(dataObject());
+}
+
+inline void DataSource::setSubsampleStride(int i)
+{
+  setSubsampleStride(dataObject(), i);
+}
+
+inline void DataSource::subsampleVolumeBounds(int bs[6]) const
+{
+  subsampleVolumeBounds(dataObject(), bs);
+}
+
+inline void DataSource::setSubsampleVolumeBounds(int bs[6])
+{
+  setSubsampleVolumeBounds(dataObject(), bs);
+}
 
 } // namespace tomviz
 

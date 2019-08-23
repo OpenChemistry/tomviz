@@ -189,10 +189,17 @@ public:
    *               reading the data. If used, ensure that the dimensions
    *               of @p data are all divided by the stride with integer
    *               division (i. e., dims[i] /= stride).
+   * @param start The start of the block of data to be read. If used,
+   *              must have a length of ndims. If unspecified, the
+   *              origin will be used.
+   * @param counts The number of data elements to be read. If used,
+   *               must have a length of ndims. If unspecified,
+   *               as much data will be read as possible.
    * @return True on success, false on failure.
    */
   bool readData(const std::string& path, const DataType& type, void* data,
-                int stride = 1);
+                int stride = 1, size_t* start = nullptr,
+                size_t* counts = nullptr);
 
   /**
    * Write data to a specified path.

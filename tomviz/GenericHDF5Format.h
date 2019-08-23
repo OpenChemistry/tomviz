@@ -18,12 +18,13 @@ class GenericHDF5Format
 {
 public:
   // Some options to set before reading
+  // Should we ask the user to pick a subsample? False by default.
+  void setAskForSubsample(bool b) { m_askForSubsample = b; }
 
-  // Should we check the size and ask the user to stride?
-  void setCheckSize(bool b) { m_checkSize = b; }
-
-  // What should the stride be?
-  void setStride(int i) { m_stride = i; }
+  // If any dimensions are greater than this number, the user will
+  // be asked to pick a subsample, even if m_askForSubsample is false.
+  // 1200 by default.
+  void setSubsampleDimOverride(int i) { m_subsampleDimOverride = i; }
 
   bool read(const std::string& fileName, vtkImageData* data);
 
@@ -40,12 +41,12 @@ public:
   bool readVolume(h5::H5ReadWrite& reader, const std::string& path,
                   vtkImageData* data);
 private:
-  // Check to see if the size is very big, and if it is, allow the user
-  // to choose a stride.
-  bool m_checkSize = true;
+  // Should we ask the user to pick a subsample?
+  bool m_askForSubsample = false;
 
-  // Stride to use, unless the user chooses one.
-  int m_stride = 1;
+  // If any dimensions are greater than this number, ask the user to
+  // pick a subsample, even if m_askForSubsample is false.
+  int m_subsampleDimOverride = 1200;
 };
 } // namespace tomviz
 

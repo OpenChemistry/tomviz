@@ -242,9 +242,12 @@ public:
     return result;
   }
 
-  // void* data needs to be of the appropiate type and size
+  // void* data needs to be of the appropiate type and size.
+  // start and counts, if set, get forwarded directly to
+  // H5Sselect_hyperslab().
   bool readData(const string& path, hid_t dataTypeId, hid_t memTypeId,
-                void* data, int stride = 1)
+                void* data, int stride = 1, size_t* start = nullptr,
+                size_t* counts = nullptr)
   {
     hid_t dataSetId = H5Dopen(m_fileId, path.c_str(), H5P_DEFAULT);
     if (dataSetId < 0) {
@@ -266,23 +269,38 @@ public:
     hid_t memSpace = H5S_ALL;
     HIDCloser memSpaceCloser(-1, H5Sclose);
     // If our stride isn't 1, select a hyperslab with the right stride
-    if (stride > 1) {
+    if (stride > 1 || start || counts) {
+
       // First, get the dimensions
       vector<int> dims = getDimensions(path);
       size_t ndims = dims.size();
 
-      // Next, select the hyperslab
-      vector<hsize_t> start(ndims, 0);
+      // Set defaults if needed
+      if (stride == 0)
+        stride = 1;
       vector<hsize_t> strides(ndims, stride);
-      vector<hsize_t> counts(ndims, 0);
-      for (size_t i = 0; i < dims.size(); ++i)
-        counts[i] = dims[i] / strides[i];
 
-      H5Sselect_hyperslab(dataSpaceId, H5S_SELECT_SET, start.data(),
-                          strides.data(), counts.data(), nullptr);
+      vector<hsize_t> startVector;
+      if (start)
+        startVector = vector<hsize_t>(start, start + ndims);
+      else
+        startVector = vector<hsize_t>(ndims, 0);
+
+      vector<hsize_t> countsVector;
+      if (counts) {
+        countsVector = vector<hsize_t>(counts, counts + ndims);
+      } else {
+        countsVector.resize(ndims);
+        for (size_t i = 0; i < countsVector.size(); ++i)
+          countsVector[i] = (dims[i] - startVector[i]) / strides[i];
+      }
+
+      // Next, select the hyperslab
+      H5Sselect_hyperslab(dataSpaceId, H5S_SELECT_SET, startVector.data(),
+                          strides.data(), countsVector.data(), nullptr);
 
       // Finally, create the mem space
-      memSpace = H5Screate_simple(ndims, counts.data(), nullptr);
+      memSpace = H5Screate_simple(ndims, countsVector.data(), nullptr);
       memSpaceCloser.reset(memSpace);
     }
 
@@ -668,8 +686,8 @@ bool H5ReadWrite::readData(const string& path, T* data)
   return true;
 }
 
-bool H5ReadWrite::readData(const string& path, const DataType& type,
-                           void* data, int stride)
+bool H5ReadWrite::readData(const string& path, const DataType& type, void* data,
+                           int stride, size_t* start, size_t* counts)
 {
   auto it = DataTypeToH5DataType.find(type);
   if (it == DataTypeToH5DataType.end()) {
@@ -687,7 +705,8 @@ bool H5ReadWrite::readData(const string& path, const DataType& type,
 
   hid_t memTypeId = memIt->second;
 
-  if (!m_impl->readData(path, dataTypeId, memTypeId, data, stride)) {
+  if (!m_impl->readData(path, dataTypeId, memTypeId, data, stride, start,
+                        counts)) {
     cerr << "Failed to read the data\n";
     return false;
   }

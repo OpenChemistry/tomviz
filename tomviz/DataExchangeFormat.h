@@ -16,7 +16,7 @@ class DataExchangeFormat
 {
 public:
   bool read(const std::string& fileName, vtkImageData* data,
-            bool checkSize = true, int stride = 1);
+            bool askForSubsample = false);
   bool write(const std::string& fileName, DataSource* source);
   bool write(const std::string& fileName, vtkImageData* image);
 };
