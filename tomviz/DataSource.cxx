@@ -23,8 +23,8 @@
 #include <vtkSmartPointer.h>
 #include <vtkStringArray.h>
 #include <vtkTrivialProducer.h>
-#include <vtkTypeInt8Array.h>
 #include <vtkTypeInt32Array.h>
+#include <vtkTypeInt8Array.h>
 #include <vtkVector.h>
 
 #include <vtkPVArrayInformation.h>

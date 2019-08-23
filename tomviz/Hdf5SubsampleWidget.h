@@ -15,8 +15,7 @@ class Hdf5SubsampleWidget : public QWidget
   typedef QWidget Superclass;
 
 public:
-  Hdf5SubsampleWidget(int dims[3], int dataTypeSize,
-                      QWidget* parent = nullptr);
+  Hdf5SubsampleWidget(int dims[3], int dataTypeSize, QWidget* parent = nullptr);
   virtual ~Hdf5SubsampleWidget();
 
   // For setting defaults

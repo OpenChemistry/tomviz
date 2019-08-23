@@ -36,7 +36,8 @@ public:
   Internals(int dimensions[3], int dataTypeSize)
     : dims({ dimensions[0], dimensions[1], dimensions[2] }),
       dataSize(dataTypeSize)
-  {}
+  {
+  }
 
   std::array<int, 3> dims;
   int dataSize;

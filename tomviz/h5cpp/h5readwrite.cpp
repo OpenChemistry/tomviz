@@ -289,8 +289,7 @@ public:
       vector<hsize_t> countsVector;
       if (counts) {
         countsVector = vector<hsize_t>(counts, counts + ndims);
-      }
-      else {
+      } else {
         countsVector.resize(ndims);
         for (size_t i = 0; i < countsVector.size(); ++i)
           countsVector[i] = (dims[i] - startVector[i]) / strides[i];
@@ -687,8 +686,8 @@ bool H5ReadWrite::readData(const string& path, T* data)
   return true;
 }
 
-bool H5ReadWrite::readData(const string& path, const DataType& type,
-                           void* data, int stride, size_t* start, size_t* counts)
+bool H5ReadWrite::readData(const string& path, const DataType& type, void* data,
+                           int stride, size_t* start, size_t* counts)
 {
   auto it = DataTypeToH5DataType.find(type);
   if (it == DataTypeToH5DataType.end()) {
