@@ -197,8 +197,16 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     // Load the file using our simple EMD class.
     loadWithParaview = false;
     EmdFormat emdFile;
+    QJsonObject emdOptions;
     vtkNew<vtkImageData> imageData;
-    if (emdFile.read(fileName.toLatin1().data(), imageData)) {
+    if (options.contains("subsampleSettings")) {
+      // Before we read into the image data, set subsample settings
+      emdOptions["subsampleStride"] = options["subsampleSettings"]["stride"];
+      emdOptions["subsampleVolumeBounds"] =
+        options["subsampleSettings"]["volumeBounds"];
+      emdOptions["askForSubsample"] = false;
+    }
+    if (emdFile.read(fileName.toLatin1().data(), imageData, emdOptions)) {
       DataSource::DataSourceType type = DataSource::hasTiltAngles(imageData)
                                           ? DataSource::TiltSeries
                                           : DataSource::Volume;
@@ -209,9 +217,17 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     loadWithParaview = false;
     // The generic HDF5 format will figure out if it is a special
     // HDF5 format such as DataExchange.
-    GenericHDF5Format file;
+    GenericHDF5Format hdf5Format;
+    QJsonObject hdf5Options;
     vtkNew<vtkImageData> imageData;
-    if (file.read(fileName.toLatin1().data(), imageData)) {
+    if (options.contains("subsampleSettings")) {
+      // Before we read into the image data, set subsample settings
+      hdf5Options["subsampleStride"] = options["subsampleSettings"]["stride"];
+      hdf5Options["subsampleVolumeBounds"] =
+        options["subsampleSettings"]["volumeBounds"];
+      hdf5Options["askForSubsample"] = false;
+    }
+    if (hdf5Format.read(fileName.toLatin1().data(), imageData, hdf5Options)) {
       DataSource::DataSourceType type = DataSource::hasTiltAngles(imageData)
                                           ? DataSource::TiltSeries
                                           : DataSource::Volume;

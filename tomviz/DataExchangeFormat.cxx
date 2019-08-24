@@ -23,7 +23,7 @@
 namespace tomviz {
 
 bool DataExchangeFormat::read(const std::string& fileName, vtkImageData* image,
-                              bool askForSubsample)
+                              const QJsonObject& options)
 {
   using h5::H5ReadWrite;
   H5ReadWrite::OpenMode mode = H5ReadWrite::OpenMode::ReadOnly;
@@ -34,9 +34,7 @@ bool DataExchangeFormat::read(const std::string& fileName, vtkImageData* image,
   if (!reader.isDataSet(deDataNode))
     return false;
 
-  GenericHDF5Format f;
-  f.setAskForSubsample(askForSubsample);
-  return f.readVolume(reader, deDataNode, image);
+  return GenericHDF5Format::readVolume(reader, deDataNode, image, options);
 }
 
 bool DataExchangeFormat::write(const std::string& fileName, DataSource* source)

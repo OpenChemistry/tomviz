@@ -974,6 +974,11 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
         options["reader"] = reader;
       }
 
+      if (dsObject.contains("subsampleSettings")) {
+        // Make sure subsample settings get communicated to the readers
+        options["subsampleSettings"] = dsObject["subsampleSettings"];
+      }
+
       DataSource* dataSource = nullptr;
       if (dsObject.find("sourceInformation") != dsObject.end()) {
         dataSource = PythonGeneratedDatasetReaction::createDataSource(

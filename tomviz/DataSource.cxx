@@ -332,14 +332,12 @@ bool DataSource::reloadAndResample()
   auto image = vtkImageData::SafeDownCast(data);
 
   bool success;
+  QJsonObject options{ { "askForSubsample", true }};
   if (file.endsWith("emd", Qt::CaseInsensitive)) {
     EmdFormat format;
-    format.setAskForSubsample(true);
-    success = format.read(file.toLatin1().data(), image);
+    success = format.read(file.toLatin1().data(), image, options);
   } else {
-    GenericHDF5Format format;
-    format.setAskForSubsample(true);
-    success = format.read(file.toLatin1().data(), image);
+    GenericHDF5Format::read(file.toLatin1().data(), image, options);
   }
 
   // If there are operators, re-run the pipeline
@@ -392,6 +390,19 @@ QString DataSource::label() const
 QJsonObject DataSource::serialize() const
 {
   QJsonObject json = m_json;
+
+  // If the data was subsampled, save the subsampling settings
+  if (wasSubsampled()) {
+    QJsonObject settings;
+    settings["stride"] = subsampleStride();
+
+    int bs[6];
+    subsampleVolumeBounds(bs);
+    QJsonArray bndsArray = { bs[0], bs[1], bs[2], bs[3], bs[4], bs[5] };
+
+    settings["volumeBounds"] = bndsArray;
+    json["subsampleSettings"] = settings;
+  }
 
   if (Internals->UnitsModified) {
     double spacing[3];
