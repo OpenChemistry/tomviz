@@ -715,7 +715,7 @@ QStringList DataSource::listScalars() const
       vtkImageData::SafeDownCast(alg->GetOutputDataObject(0));
     if (data) {
       vtkPointData* pointData = data->GetPointData();
-      auto n = pointData->GetNumberOfComponents();
+      auto n = pointData->GetNumberOfArrays();
       for (int i = 0; i < n; ++i) {
         scalars << pointData->GetArrayName(i);
       }
