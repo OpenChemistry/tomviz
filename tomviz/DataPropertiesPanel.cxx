@@ -6,6 +6,7 @@
 #include "ui_DataPropertiesPanel.h"
 
 #include <algorithm>
+#include <iterator>
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
@@ -113,6 +114,7 @@ void DataPropertiesPanel::setDataSource(DataSource* dsource)
     connect(&m_scalarsTableModel, &DataPropertiesModel::scalarsRenamed, dsource,
             &DataSource::renameScalarsArray);
   }
+  m_scalarIndexes.clear();
   scheduleUpdate();
 }
 
@@ -176,53 +178,57 @@ QString getMemSizeString(vtkSMSourceProxy* proxy)
 } // namespace
 
 QList<ArrayInfo> DataPropertiesPanel::getArraysInfo(
-  vtkPVDataInformation* dataInfo) const
+  DataSource* dataSource)
 {
   QList<ArrayInfo> arraysInfo;
-  vtkPVDataSetAttributesInformation* pointDataInfo =
-    dataInfo->GetPointDataInformation();
-  if (pointDataInfo) {
-    QList<ArrayInfo> arraysInfo_;
-    int numArrays = pointDataInfo->GetNumberOfArrays();
-    QList<QPair<vtkDataArray*, int>> sortMap;
-    for (int i = 0; i < numArrays; i++) {
-      vtkPVArrayInformation* arrayInfo;
-      arrayInfo = pointDataInfo->GetArrayInformation(i);
 
-      // name, type, data range, data type, active
-      auto arrayName = arrayInfo->GetName();
-      sortMap.push_back(QPair<vtkDataArray*, int>(
-        m_currentDataSource->getScalarsArray(arrayName), i));
-      QString dataType = vtkImageScalarTypeNameMacro(arrayInfo->GetDataType());
-      int numComponents = arrayInfo->GetNumberOfComponents();
-      QString dataRange;
-      double range[2];
-      bool active = m_currentDataSource->activeScalars() == arrayName;
+  // If we don't have the scalar indexes, we sort the names and then save the
+  // indexes, these will be used to preserve the displayed order even after
+  // a rename.
+  if (m_scalarIndexes.isEmpty()) {
+    auto scalars = dataSource->listScalars();
+    auto sortedScalars = scalars;
 
-      for (int j = 0; j < numComponents; j++) {
-        if (j != 0) {
-          dataRange.append(", ");
-        }
-        arrayInfo->GetComponentRange(j, range);
-        QString componentRange =
-          QString("[%1, %2]").arg(range[0]).arg(range[1]);
-        dataRange.append(componentRange);
-      }
-
-      arraysInfo_.push_back(
-        ArrayInfo(arrayName, dataType == "string" ? tr("NA") : dataRange,
-                  dataType, active));
-    }
-
-    // Ensure scalars are displayed in the same order even after renaming
-    std::sort(sortMap.begin(), sortMap.end(),
-              [](QPair<vtkDataArray*, int> a, QPair<vtkDataArray*, int> b) {
-                return a.first < b.first;
+    // sort the scalars names
+    std::sort(sortedScalars.begin(), sortedScalars.end(),
+              [](const QString& a, const QString& b) {
+                return a < b;
               });
-    foreach (auto pair, sortMap) {
-      arraysInfo.push_back(arraysInfo_[pair.second]);
+
+    // Now save the indexes of the sorted scalars
+    for(auto scalar: sortedScalars) {
+       auto index = std::distance(scalars.begin(),
+        std::find(scalars.begin(), scalars.end(), scalar));
+
+      m_scalarIndexes.push_back(index);
     }
   }
+
+  for (auto i: m_scalarIndexes) {
+    // name, type, data range, data type, active
+    auto arrayName = dataSource->scalarsName(i);
+    auto array = dataSource->getScalarsArray(arrayName);
+    QString dataType = vtkImageScalarTypeNameMacro(array->GetDataType());
+    int numComponents = array->GetNumberOfComponents();
+    QString dataRange;
+    double range[2];
+    bool active = m_currentDataSource->activeScalars() == arrayName;
+
+    for (int j = 0; j < numComponents; j++) {
+      if (j != 0) {
+        dataRange.append(", ");
+      }
+      array->GetRange(range, j);
+      QString componentRange =
+        QString("[%1, %2]").arg(range[0]).arg(range[1]);
+      dataRange.append(componentRange);
+    }
+
+    arraysInfo.push_back(
+      ArrayInfo(arrayName, dataType == "string" ? tr("NA") : dataRange,
+                dataType, active));
+  }
+
   return arraysInfo;
 }
 
@@ -287,7 +293,7 @@ void DataPropertiesPanel::updateData()
 
   auto sourceProxy = vtkSMSourceProxy::SafeDownCast(dsource->proxy());
   if (sourceProxy) {
-    auto arraysInfo = getArraysInfo(sourceProxy->GetDataInformation());
+    auto arraysInfo = getArraysInfo(dsource);
     updateInformationWidget(m_ui->ScalarsTable, arraysInfo);
     updateActiveScalarsCombo(m_ui->ActiveScalars, arraysInfo);
   }
