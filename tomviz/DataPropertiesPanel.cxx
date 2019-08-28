@@ -177,8 +177,7 @@ QString getMemSizeString(vtkSMSourceProxy* proxy)
 
 } // namespace
 
-QList<ArrayInfo> DataPropertiesPanel::getArraysInfo(
-  DataSource* dataSource)
+QList<ArrayInfo> DataPropertiesPanel::getArraysInfo(DataSource* dataSource)
 {
   QList<ArrayInfo> arraysInfo;
 
@@ -191,20 +190,18 @@ QList<ArrayInfo> DataPropertiesPanel::getArraysInfo(
 
     // sort the scalars names
     std::sort(sortedScalars.begin(), sortedScalars.end(),
-              [](const QString& a, const QString& b) {
-                return a < b;
-              });
+              [](const QString& a, const QString& b) { return a < b; });
 
     // Now save the indexes of the sorted scalars
-    for(auto scalar: sortedScalars) {
-       auto index = std::distance(scalars.begin(),
-        std::find(scalars.begin(), scalars.end(), scalar));
+    for (auto scalar : sortedScalars) {
+      auto index = std::distance(
+        scalars.begin(), std::find(scalars.begin(), scalars.end(), scalar));
 
       m_scalarIndexes.push_back(index);
     }
   }
 
-  for (auto i: m_scalarIndexes) {
+  for (auto i : m_scalarIndexes) {
     // name, type, data range, data type, active
     auto arrayName = dataSource->scalarsName(i);
     auto array = dataSource->getScalarsArray(arrayName);
@@ -219,14 +216,13 @@ QList<ArrayInfo> DataPropertiesPanel::getArraysInfo(
         dataRange.append(", ");
       }
       array->GetRange(range, j);
-      QString componentRange =
-        QString("[%1, %2]").arg(range[0]).arg(range[1]);
+      QString componentRange = QString("[%1, %2]").arg(range[0]).arg(range[1]);
       dataRange.append(componentRange);
     }
 
-    arraysInfo.push_back(
-      ArrayInfo(arrayName, dataType == "string" ? tr("NA") : dataRange,
-                dataType, active));
+    arraysInfo.push_back(ArrayInfo(arrayName,
+                                   dataType == "string" ? tr("NA") : dataRange,
+                                   dataType, active));
   }
 
   return arraysInfo;
