@@ -250,7 +250,7 @@ class WriteToFileMixin(object):
     def write_to_file(self, dataobject):
         filename = '%d.emd' % self._sequence_number
         path = os.path.join(os.path.dirname(self._path), filename)
-        _write_emd(path, dataobject.array, dataobject.tilt_angles)
+        _write_emd(path, dataobject)
         self._sequence_number += 1
 
         return filename
@@ -370,10 +370,26 @@ def _read_emd(path):
                          tomography[dim].attrs['name'][0],
                          tomography[dim].attrs['units'][0]))
 
-        data = tomography['data'][:]
+        data = tomography['data']
+        # We default the name to ImageScalars
+        name = data.attrs.get('name', 'ImageScalars')
+        if not isinstance(name, str):
+            name = name[0].decode()
+
+        arrays = [(name, data[:])]
+
+        # See if we have any additional channels
+        tomviz_scalars = tomography.get('tomviz_scalars')
+        if isinstance(tomviz_scalars, h5py.Group):
+            # Get the datasets
+            channel_datasets = [(name, dataset[:]) for (name, dataset)
+                                in tomviz_scalars.items()]
+            arrays += channel_datasets
+
         # If this is a tilt series, swap the X and Z axes
         if dims[0][2] == b'angles' or dims[0][3] in ANGLE_UNITS:
-            data = np.transpose(data, [2, 1, 0])
+            arrays = [(name, np.transpose(data, [2, 1, 0])) for (name, data)
+                      in arrays]
 
             # Swap the dims order as well
             angle_dim = dims[0]
@@ -382,18 +398,29 @@ def _read_emd(path):
             dims[-1] = angle_dim
 
         # EMD stores data as row major order.  VTK expects column major order.
-        data = np.asfortranarray(data)
+        arrays = [(name, np.asfortranarray(data)) for (name, data) in arrays]
 
-        return (data, dims)
+        return (arrays, dims)
 
 
-def _write_emd(path, data, tilt_angles=None, dims=None):
+def _write_emd(path, dataobject, dims=None):
+    tilt_angles = dataobject.tilt_angles
+    active_array = dataobject.active
+    # Separate out the extra channels/arrays as we store them separately
+    extra_arrays = {name: array for name, array
+                    in dataobject.arrays.items()
+                    if id(array) != id(active_array)}
+
     # If this is a tilt series, swap the X and Z axes
     if tilt_angles is not None:
-        data = np.transpose(data, [2, 1, 0])
+        active_array = np.transpose(active_array, [2, 1, 0])
+        extra_arrays = {name: np.transpose(array, [2, 1, 0]) for (name, array)
+                        in extra_arrays.items()}
 
     # Switch back to row major order for EMD stores
-    data = np.ascontiguousarray(data)
+    active_array = np.ascontiguousarray(active_array)
+    extra_arrays = {name: np.ascontiguousarray(array) for (name, array)
+                    in extra_arrays.items()}
 
     with h5py.File(path, 'w') as f:
         f.attrs.create('version_major', 0, dtype='uint32')
@@ -401,7 +428,8 @@ def _write_emd(path, data, tilt_angles=None, dims=None):
         data_group = f.create_group('data')
         tomography_group = data_group.create_group('tomography')
         tomography_group.attrs.create('emd_group_type', 1, dtype='uint32')
-        tomography_group.create_dataset('data', data=data)
+        data = tomography_group.create_dataset('data', data=active_array)
+        data.attrs['name'] = np.string_(dataobject.active_name)
 
         if dims is None:
             dims = []
@@ -441,38 +469,70 @@ def _write_emd(path, data, tilt_angles=None, dims=None):
                 d.attrs['units'] = np.string_('[deg]')
             d[:] = tilt_angles
 
+        # If we have extra scalars add them under tomviz_scalars
+        if extra_arrays:
+            tomviz_scalars = tomography_group.create_group('tomviz_scalars')
+            for (name, array) in extra_arrays.items():
+                tomviz_scalars.create_dataset(name, data=array)
+
 
 class DataObject(object):
-    def __init__(self, array):
-        self.array = array
+    def __init__(self, arrays, active=None):
+        # Holds the map of scalars name => array
+        self.arrays = arrays
         self.is_volume = False
         self.tilt_angles = None
+        # The currently active scalar
+        self.active_name = active
+        # If we weren't given the active array and we only have one array, set
+        # it as the active array.
+        if active is None and len(arrays.keys()):
+            (self.active_name,) = arrays.keys()
 
     def set_scalars(self, new_scalars):
         order = 'C'
-        if np.isfortran(self.array):
+        if np.isfortran(self.active):
             order = 'F'
-        new_scalars = np.reshape(new_scalars, self.array.shape, order=order)
-        self.array = np.asfortranarray(new_scalars)
+        new_scalars = np.reshape(new_scalars, self.active.shape, order=order)
+        self.active = np.asfortranarray(new_scalars)
+
+    def get_scalars(self, name=None):
+        if name is None:
+            name = self.active_name
+        return self.arrays[name].ravel(order='A')
 
     def set_array(self, new_array):
         if not np.isfortran(new_array):
             new_array = np.asfortranarray(new_array)
 
-        self.array = new_array
+        self.active = new_array
+
+    def get_array(self, name=None):
+        if name is None:
+            name = self.active_name
+
+        return self.arrays[name]
+
+    @property
+    def active(self):
+        return self.arrays[self.active_name]
+
+    @active.setter
+    def active(self, array):
+        self.arrays[self.active_name] = array
 
 
 def _patch_utils():
     # Monkey patch tomviz.utils to support API outside Tomviz app.
     # I know this is a little yucky!
-    def _get_scalars(dataobject):
-        return dataobject.array.ravel(order='A')
+    def _get_scalars(dataobject, name=None):
+        return dataobject.get_scalars(name)
 
     def _set_scalars(dataobject, new_scalars):
         dataobject.set_scalars(new_scalars)
 
-    def _get_array(dataobject):
-        return dataobject.array
+    def _get_array(dataobject, name=None):
+        return dataobject.get_array(name)
 
     def _set_array(dataobject, new_array):
         dataobject.set_array(new_array)
@@ -484,12 +544,18 @@ def _patch_utils():
         return dataobject.tilt_angles
 
     def _make_child_dataset(reference_dataset):
-        child = np.empty_like(reference_dataset)
+        child = np.empty_like(reference_dataset.active)
+        arrays = {
+            "ImageScalars": child
+        }
 
-        return DataObject(child)
+        return DataObject(arrays)
 
     def _mark_as_volume(dataobject):
         dataobject.is_volume = True
+
+    def _arrays(dataobject):
+        return dataobject.arrays.items()
 
     utils.get_scalars = _get_scalars
     utils.set_scalars = _set_scalars
@@ -499,6 +565,7 @@ def _patch_utils():
     utils.get_tilt_angles = _get_tilt_angles
     utils.make_child_dataset = _make_child_dataset
     utils.mark_as_volume = _mark_as_volume
+    utils.arrays = _arrays
 
 
 def _execute_transform(operator_label, transform, arguments, input, progress):
@@ -587,17 +654,21 @@ def _write_child_data(result, operator_index, output_file_path, dims):
 
         # Now write out the data
         child_data_path = os.path.join(operator_path, '%s.emd' % label)
-        _write_emd(child_data_path, dataobject.array, dataobject.tilt_angles,
-                   dims)
+        _write_emd(child_data_path, dataobject, dims)
 
 
 def execute(operators, start_at, data_file_path, output_file_path,
             progress_method, progress_path):
-    data, dims = _read_emd(data_file_path)
+    arrays, dims = _read_emd(data_file_path)
 
     _patch_utils()
 
-    data = DataObject(data)
+    # The first is the active array
+    (active_array, _) = arrays[0]
+    # Create dict of arrays
+    arrays = {name: array for (name, array) in arrays}
+
+    data = DataObject(arrays, active_array)
     # If we have angles set them
     if dims[-1][2] == b'angles':
         data.tilt_angles = dims[-1][1][:].astype(np.float64)
@@ -629,11 +700,10 @@ def execute(operators, start_at, data_file_path, output_file_path,
                 os.path.splitext(os.path.basename(data_file_path))[0]
 
         if result is None:
-            _write_emd(output_file_path, data.array, data.tilt_angles, dims)
+            _write_emd(output_file_path, data, dims)
         else:
             [(_, child_data)] = result.items()
-            _write_emd(output_file_path, child_data.array,
-                       child_data.tilt_angles, dims)
+            _write_emd(output_file_path, child_data, dims)
         logger.info('Write complete.')
         progress.finished()
 
