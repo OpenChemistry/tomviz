@@ -346,12 +346,16 @@ public:
 
   bool isGroup(const string& path)
   {
+    // It's okay if some of these functions fail, turn off errors
+    turnOffErrors();
+
     H5O_info_t info;
     if (!getInfoByName(path, info)) {
-      cerr << "Failed to get H5O info by name\n";
+      turnOnErrors();
       return false;
     }
 
+    turnOnErrors();
     return info.type == H5O_TYPE_GROUP;
   }
 
