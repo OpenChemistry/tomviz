@@ -50,6 +50,7 @@ public slots:
 private slots:
   void openTilt();
   void openDataLink();
+  void openReadTheDocs();
   void openUserGuide();
   void openVisIntro();
 

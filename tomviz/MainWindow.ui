@@ -83,6 +83,7 @@
      <string>&amp;Help</string>
     </property>
     <addaction name="actionAbout"/>
+    <addaction name="actionReadTheDocs"/>
    </widget>
    <widget class="QMenu" name="menuTomography">
     <property name="title">
@@ -433,7 +434,7 @@
   <action name="actionStack">
    <property name="text">
     <string>O&amp;pen Stack</string>
-    </property>
+   </property>
   </action>
   <action name="actionPipelineSettings">
    <property name="text">
@@ -443,6 +444,11 @@
   <action name="actionAcquisition">
    <property name="text">
     <string>Acquisition</string>
+   </property>
+  </action>
+  <action name="actionReadTheDocs">
+   <property name="text">
+    <string>Documentation</string>
    </property>
   </action>
  </widget>
