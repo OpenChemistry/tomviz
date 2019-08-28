@@ -448,7 +448,7 @@
   </action>
   <action name="actionReadTheDocs">
    <property name="text">
-    <string>Read the Docs</string>
+    <string>Documentation</string>
    </property>
   </action>
  </widget>
