@@ -382,12 +382,14 @@ def _read_emd(path):
         tomviz_scalars = tomography.get('tomviz_scalars')
         if isinstance(tomviz_scalars, h5py.Group):
             # Get the datasets
-            channel_datasets = [(name, dataset[:]) for (name, dataset) in tomviz_scalars.items()]
+            channel_datasets = [(name, dataset[:]) for (name, dataset)
+                                in tomviz_scalars.items()]
             arrays += channel_datasets
 
         # If this is a tilt series, swap the X and Z axes
         if dims[0][2] == b'angles' or dims[0][3] in ANGLE_UNITS:
-            arrays = [(name, np.transpose(data, [2, 1, 0])) for (name, data) in arrays]
+            arrays = [(name, np.transpose(data, [2, 1, 0])) for (name, data)
+                      in arrays]
 
             # Swap the dims order as well
             angle_dim = dims[0]
@@ -405,16 +407,20 @@ def _write_emd(path, dataobject, dims=None):
     tilt_angles = dataobject.tilt_angles
     active_array = dataobject.active
     # Separate out the extra channels/arrays as we store them separately
-    extra_arrays = {name:array for name, array in dataobject.arrays.items() if id(array) != id(active_array)}
+    extra_arrays = {name: array for name, array
+                    in dataobject.arrays.items()
+                    if id(array) != id(active_array)}
 
     # If this is a tilt series, swap the X and Z axes
     if tilt_angles is not None:
         active_array = np.transpose(active_array, [2, 1, 0])
-        extra_arrays =  {name: np.transpose(array, [2, 1, 0]) for (name, array) in extra_arrays.items()}
+        extra_arrays = {name: np.transpose(array, [2, 1, 0]) for (name, array)
+                        in extra_arrays.items()}
 
     # Switch back to row major order for EMD stores
     active_array = np.ascontiguousarray(active_array)
-    extra_arrays =  {name: np.ascontiguousarray(array) for (name, array) in extra_arrays.items()}
+    extra_arrays = {name: np.ascontiguousarray(array) for (name, array)
+                    in extra_arrays.items()}
 
     with h5py.File(path, 'w') as f:
         f.attrs.create('version_major', 0, dtype='uint32')
