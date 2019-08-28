@@ -13,14 +13,9 @@ if in_application():
     import vtk.util.numpy_support as np_s
 
 
-def get_scalars(dataobject, index=None, name=None):
+def get_scalars(dataobject, name=None):
     do = dsa.WrapDataObject(dataobject)
-    # get the first
-    if index is not None and name is not None:
-        raise ValueError('Only index or name may be provided, not both.')
-    elif index is not None:
-        rawarray = do.PointData.GetAbstractArray(index)
-    elif name is not None:
+    if name is not None:
         rawarray = do.PointData.GetAbstractArray(name)
     else:
         rawarray = do.PointData.GetScalars()
@@ -55,8 +50,8 @@ def set_scalars(dataobject, newscalars):
     do.PointData.SetActiveScalars(name)
 
 
-def get_array(dataobject, index=None, name=None, order='F'):
-    scalars_array = get_scalars(dataobject, index=index, name=name)
+def get_array(dataobject, name=None, order='F'):
+    scalars_array = get_scalars(dataobject, name=name)
     if order == 'F':
         scalars_array3d = np.reshape(scalars_array,
                                      (dataobject.GetDimensions()),
@@ -66,6 +61,19 @@ def get_array(dataobject, index=None, name=None, order='F'):
                                      (dataobject.GetDimensions()[::-1]),
                                      order=order)
     return scalars_array3d
+
+
+def arrays(dataobject):
+    """
+    Iterate over (name, array) for the arrays in this datset.
+
+    :param dataobject The incoming dataset
+    :type: vtkDataObject
+    """
+    do = dsa.WrapDataObject(dataobject)
+    for i in range(0, do.PointData.GetNumberOfArrays()):
+        name = do.PointData.GetArrayName(i)
+        yield (name, get_array(dataobject, name))
 
 
 def set_array(dataobject, newarray, minextent=None, isFortran=True):
@@ -492,13 +500,3 @@ def rotate_shape(input, angle, axes):
     output_shape[axes[1]] = ox
 
     return output_shape
-
-
-def get_number_of_channels(dataobject):
-    """
-    Returns the number of channels associated with this dataset.
-
-    :param dataobject The incoming dataset
-    :type: vtkDataObject
-    """
-    return dsa.WrapDataObject(dataobject).PointData.GetNumberOfArrays()
