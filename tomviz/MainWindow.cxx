@@ -209,6 +209,10 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   connect(m_ui->actionAbout, &QAction::triggered, this,
           [this]() { openDialog<AboutDialog>(&m_aboutDialog); });
 
+  // And connect the read the docs page
+  connect(m_ui->actionReadTheDocs, &QAction::triggered, this,
+          &MainWindow::openReadTheDocs);
+
   // Instantiate tomviz application behavior.
   new Behaviors(this);
 
@@ -586,6 +590,12 @@ void MainWindow::openRecon()
 void MainWindow::openDataLink()
 {
   QString link = "http://www.nature.com/articles/sdata201641";
+  QDesktopServices::openUrl(QUrl(link));
+}
+
+void MainWindow::openReadTheDocs()
+{
+  QString link = "https://tomviz.readthedocs.io/en/latest";
   QDesktopServices::openUrl(QUrl(link));
 }
 
