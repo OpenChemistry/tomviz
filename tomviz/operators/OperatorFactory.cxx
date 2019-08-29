@@ -54,21 +54,21 @@ Operator* OperatorFactory::createOperator(const QString& type, DataSource* ds)
   if (type == "Python") {
     op = new OperatorPython(ds);
   } else if (type == "ArrayWrangler") {
-    op = new ArrayWranglerOperator();
+    op = new ArrayWranglerOperator(ds);
   } else if (type == "ConvertToFloat") {
-    op = new ConvertToFloatOperator();
+    op = new ConvertToFloatOperator(ds);
   } else if (type == "ConvertToVolume") {
-    op = new ConvertToVolumeOperator();
+    op = new ConvertToVolumeOperator(ds);
   } else if (type == "Crop") {
-    op = new CropOperator();
+    op = new CropOperator(ds);
   } else if (type == "CxxReconstruction") {
     op = new ReconstructionOperator(ds);
   } else if (type == "SetTiltAngles") {
-    op = new SetTiltAnglesOperator();
+    op = new SetTiltAnglesOperator(ds);
   } else if (type == "TranslateAlign") {
     op = new TranslateAlignOperator(ds);
   } else if (type == "TransposeData") {
-    op = new TransposeDataOperator();
+    op = new TransposeDataOperator(ds);
   } else if (type == "Snapshot") {
     op = new SnapshotOperator(ds);
   }
