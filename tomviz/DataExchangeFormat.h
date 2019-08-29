@@ -6,6 +6,8 @@
 
 #include <string>
 
+#include <QVariantMap>
+
 class vtkImageData;
 
 namespace tomviz {
@@ -16,7 +18,7 @@ class DataExchangeFormat
 {
 public:
   bool read(const std::string& fileName, vtkImageData* data,
-            bool askForSubsample = false);
+            const QVariantMap& options = QVariantMap());
   bool write(const std::string& fileName, DataSource* source);
   bool write(const std::string& fileName, vtkImageData* image);
 };

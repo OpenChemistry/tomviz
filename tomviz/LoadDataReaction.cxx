@@ -197,8 +197,17 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     // Load the file using our simple EMD class.
     loadWithParaview = false;
     EmdFormat emdFile;
+    QVariantMap emdOptions;
     vtkNew<vtkImageData> imageData;
-    if (emdFile.read(fileName.toLatin1().data(), imageData)) {
+    if (options.contains("subsampleSettings")) {
+      // Before we read into the image data, set subsample settings
+      emdOptions["subsampleStride"] =
+        options["subsampleSettings"].toObject()["stride"].toVariant();
+      emdOptions["subsampleVolumeBounds"] =
+        options["subsampleSettings"].toObject()["volumeBounds"].toVariant();
+      emdOptions["askForSubsample"] = false;
+    }
+    if (emdFile.read(fileName.toLatin1().data(), imageData, emdOptions)) {
       DataSource::DataSourceType type = DataSource::hasTiltAngles(imageData)
                                           ? DataSource::TiltSeries
                                           : DataSource::Volume;
@@ -209,9 +218,18 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     loadWithParaview = false;
     // The generic HDF5 format will figure out if it is a special
     // HDF5 format such as DataExchange.
-    GenericHDF5Format file;
+    GenericHDF5Format hdf5Format;
+    QVariantMap hdf5Options;
     vtkNew<vtkImageData> imageData;
-    if (file.read(fileName.toLatin1().data(), imageData)) {
+    if (options.contains("subsampleSettings")) {
+      // Before we read into the image data, set subsample settings
+      hdf5Options["subsampleStride"] =
+        options["subsampleSettings"].toObject()["stride"].toVariant();
+      hdf5Options["subsampleVolumeBounds"] =
+        options["subsampleSettings"].toObject()["volumeBounds"].toVariant();
+      hdf5Options["askForSubsample"] = false;
+    }
+    if (hdf5Format.read(fileName.toLatin1().data(), imageData, hdf5Options)) {
       DataSource::DataSourceType type = DataSource::hasTiltAngles(imageData)
                                           ? DataSource::TiltSeries
                                           : DataSource::Volume;

@@ -55,7 +55,8 @@ std::string firstEmdNode(h5::H5ReadWrite& reader)
   return "";
 }
 
-bool EmdFormat::read(const std::string& fileName, vtkImageData* image)
+bool EmdFormat::read(const std::string& fileName, vtkImageData* image,
+                     const QVariantMap& options)
 {
   using h5::H5ReadWrite;
   H5ReadWrite::OpenMode mode = H5ReadWrite::OpenMode::ReadOnly;
@@ -85,9 +86,7 @@ bool EmdFormat::read(const std::string& fileName, vtkImageData* image)
   if (!reader.isDataSet(emdDataNode))
     return false;
 
-  GenericHDF5Format f;
-  f.setAskForSubsample(m_askForSubsample);
-  if (!f.readVolume(reader, emdDataNode, image)) {
+  if (!GenericHDF5Format::readVolume(reader, emdDataNode, image, options)) {
     std::cerr << "Failed to read the volume at " << emdDataNode << "\n";
     return false;
   }
