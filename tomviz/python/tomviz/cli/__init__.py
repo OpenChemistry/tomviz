@@ -63,6 +63,12 @@ def main(data_path, state_file_path, output_file_path, progress_method,
 
     (datasource, operators) = _extract_pipeline(state)
 
+    read_options = None
+    if 'subsampleSettings' in datasource:
+        read_options = {}
+        key = 'subsampleSettings'
+        read_options[key] = datasource[key].copy()
+
     # if we have been provided a data file path we are going to use the one
     # from the state file, so check it exists.
     if data_path is None:
@@ -107,4 +113,5 @@ def main(data_path, state_file_path, output_file_path, progress_method,
                                                   output_file_paths):
         logger.info('Executing pipeline on %s' % data_file_path)
         executor.execute(operators, operator_index, data_file_path,
-                         output_file_path, progress_method, socket_path)
+                         output_file_path, progress_method, socket_path,
+                         read_options)
