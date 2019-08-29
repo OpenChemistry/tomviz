@@ -91,6 +91,7 @@ private:
   Q_DISABLE_COPY(OperatorPython)
 
   void setNumberOfParameters(int n) { m_numberOfParameters = n; }
+  void setHelpFromJson(const QJsonObject& json);
   class OPInternals;
   const QScopedPointer<OPInternals> d;
   QString m_label;

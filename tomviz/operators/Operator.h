@@ -182,6 +182,9 @@ public:
   /// Set the operator state, this is needed for external execution.
   void setState(OperatorState state) { m_state = state; }
 
+  /// Get the operator's help url
+  QString helpUrl() const { return m_helpUrl; }
+
 signals:
   /// Emit this signal with the operation is updated/modified
   /// implying that the data needs to be reprocessed.
@@ -270,6 +273,8 @@ protected:
   /// the cancelTransform slot to listen for the cancel signal and handle it.
   void setSupportsCancel(bool b) { m_supportsCancel = b; }
 
+  void setHelpUrl(const QString& s) { m_helpUrl = s; }
+
 private:
   Q_DISABLE_COPY(Operator)
 
@@ -282,6 +287,7 @@ private:
   int m_totalProgressSteps = 0;
   int m_progressStep = 0;
   QString m_progressMessage;
+  QString m_helpUrl;
   std::atomic<OperatorState> m_state{ OperatorState::Queued };
   QPointer<EditOperatorDialog> m_customDialog;
 };

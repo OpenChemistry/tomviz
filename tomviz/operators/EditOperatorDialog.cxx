@@ -16,10 +16,12 @@
 #include <pqSettings.h>
 
 #include <QDebug>
+#include <QDesktopServices>
 #include <QDialogButtonBox>
 #include <QMessageBox>
 #include <QPointer>
 #include <QPushButton>
+#include <QUrl>
 #include <QVBoxLayout>
 #include <QVariant>
 
@@ -228,6 +230,14 @@ void EditOperatorDialog::onCancel()
   closeDialog();
 }
 
+void EditOperatorDialog::onHelpRequested()
+{
+  if (!this->Internals->Op)
+    return;
+
+  QDesktopServices::openUrl(QUrl(this->Internals->Op->helpUrl()));
+}
+
 void EditOperatorDialog::setupUI(EditOperatorWidget* opWidget)
 {
   if (this->Internals->Op.isNull()) {
@@ -251,6 +261,12 @@ void EditOperatorDialog::setupUI(EditOperatorWidget* opWidget)
   QDialogButtonBox* dialogButtons = new QDialogButtonBox(
     QDialogButtonBox::Apply | QDialogButtonBox::Cancel | QDialogButtonBox::Ok,
     Qt::Horizontal, this);
+
+  if (!this->Internals->Op->helpUrl().isEmpty()) {
+    // Add a help button
+    dialogButtons->addButton(QDialogButtonBox::Help);
+  }
+
   vLayout->addWidget(dialogButtons);
   dialogButtons->button(QDialogButtonBox::Ok)->setDefault(false);
 
@@ -260,6 +276,8 @@ void EditOperatorDialog::setupUI(EditOperatorWidget* opWidget)
           &EditOperatorDialog::accept);
   connect(dialogButtons, &QDialogButtonBox::rejected, this,
           &EditOperatorDialog::reject);
+  connect(dialogButtons, &QDialogButtonBox::helpRequested, this,
+          &EditOperatorDialog::onHelpRequested);
   connect(dialogButtons->button(QDialogButtonBox::Apply), &QPushButton::clicked,
           this, &EditOperatorDialog::onApply);
 

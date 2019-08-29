@@ -283,6 +283,8 @@ void OperatorPython::setJSONDescription(const QString& str)
       }
     }
   }
+
+  setHelpFromJson(root);
 }
 
 const QString& OperatorPython::JSONDescription() const
@@ -525,6 +527,12 @@ QJsonObject OperatorPython::serialize() const
       json["argumentTypeInformation"] = typeObj;
     }
   }
+
+  if (!helpUrl().isEmpty()) {
+    json["help"] = QJsonObject();
+    json["help"].toObject()["url"] = helpUrl();
+  }
+
   return json;
 }
 
@@ -605,6 +613,8 @@ bool OperatorPython::deserialize(const QJsonObject& json)
       }
     }
   }
+
+  setHelpFromJson(json);
   return true;
 }
 
@@ -679,5 +689,19 @@ const QMap<QString, QString>& OperatorPython::typeInfo() const
 {
   return m_typeInfo;
 }
+
+void OperatorPython::setHelpFromJson(const QJsonObject& json)
+{
+  // Clear before trying to read
+  setHelpUrl("");
+  auto helpNode = json["help"];
+  if (!helpNode.isUndefined() && !helpNode.isNull()) {
+    auto helpNodeUrl = helpNode.toObject()["url"];
+    if (!helpNodeUrl.isUndefined() && !helpNodeUrl.isNull()) {
+      setHelpUrl(helpNodeUrl.toString());
+    }
+  }
+}
+
 } // namespace tomviz
 #include "OperatorPython.moc"
