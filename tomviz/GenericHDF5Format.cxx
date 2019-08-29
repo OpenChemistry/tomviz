@@ -13,7 +13,6 @@
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QInputDialog>
-#include <QJsonArray>
 #include <QStringList>
 #include <QVBoxLayout>
 
@@ -127,7 +126,7 @@ bool GenericHDF5Format::addScalarArray(h5::H5ReadWrite& reader,
 
 bool GenericHDF5Format::readVolume(h5::H5ReadWrite& reader,
                                    const std::string& path, vtkImageData* image,
-                                   const QJsonObject& options)
+                                   const QVariantMap& options)
 {
   // Get the type of the data
   h5::H5ReadWrite::DataType type = reader.dataType(path);
@@ -143,9 +142,9 @@ bool GenericHDF5Format::readVolume(h5::H5ReadWrite& reader,
   int stride = 1;
   if (options.contains("subsampleVolumeBounds")) {
     // Get the subsample volume bounds if the caller specified them
-    QJsonArray array = options["subsampleVolumeBounds"].toArray();
-    for (int i = 0; i < array.size() && i < 6; ++i)
-      bs[i] = array[i].toInt(-1);
+    QVariantList list = options["subsampleVolumeBounds"].toList();
+    for (int i = 0; i < list.size() && i < 6; ++i)
+      bs[i] = list[i].toInt();
     DataSource::setWasSubsampled(image, true);
     DataSource::setSubsampleVolumeBounds(image, bs);
   } else {
@@ -158,7 +157,10 @@ bool GenericHDF5Format::readVolume(h5::H5ReadWrite& reader,
 
   if (options.contains("subsampleStride")) {
     // Get the stride if the caller specified it
-    stride = options["subsampleStride"].toInt(1);
+    stride = options["subsampleStride"].toInt();
+    if (stride == 0)
+      stride = 1;
+
     DataSource::setWasSubsampled(image, true);
     DataSource::setSubsampleStride(image, stride);
   }
@@ -169,7 +171,10 @@ bool GenericHDF5Format::readVolume(h5::H5ReadWrite& reader,
     askForSubsample = options["askForSubsample"].toBool();
   } else {
     // Otherwise, only ask for a subsample if the data looks large
-    int subsampleDimOverride = options["subsampleDimOverride"].toInt(1200);
+    int subsampleDimOverride = 1200;
+    if (options.contains("subsampleDimOverride"))
+      subsampleDimOverride = options["subsampleDimOverride"].toInt();
+
     askForSubsample =
       std::any_of(dims.cbegin(), dims.cend(), [subsampleDimOverride](int i) {
         return i >= subsampleDimOverride;
@@ -263,7 +268,7 @@ bool GenericHDF5Format::readVolume(h5::H5ReadWrite& reader,
 }
 
 bool GenericHDF5Format::read(const std::string& fileName, vtkImageData* image,
-                             const QJsonObject& options)
+                             const QVariantMap& options)
 {
   using h5::H5ReadWrite;
   H5ReadWrite::OpenMode mode = H5ReadWrite::OpenMode::ReadOnly;

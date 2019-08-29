@@ -6,7 +6,7 @@
 
 #include <string>
 
-#include <QJsonObject>
+#include <QVariantMap>
 
 class vtkImageData;
 
@@ -18,7 +18,7 @@ class DataExchangeFormat
 {
 public:
   bool read(const std::string& fileName, vtkImageData* data,
-            const QJsonObject& options = QJsonObject());
+            const QVariantMap& options = QVariantMap());
   bool write(const std::string& fileName, DataSource* source);
   bool write(const std::string& fileName, vtkImageData* image);
 };

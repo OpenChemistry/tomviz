@@ -56,7 +56,7 @@ std::string firstEmdNode(h5::H5ReadWrite& reader)
 }
 
 bool EmdFormat::read(const std::string& fileName, vtkImageData* image,
-                     const QJsonObject& options)
+                     const QVariantMap& options)
 {
   using h5::H5ReadWrite;
   H5ReadWrite::OpenMode mode = H5ReadWrite::OpenMode::ReadOnly;

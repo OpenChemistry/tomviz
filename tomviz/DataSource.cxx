@@ -332,12 +332,12 @@ bool DataSource::reloadAndResample()
   auto image = vtkImageData::SafeDownCast(data);
 
   bool success;
-  QJsonObject options{ { "askForSubsample", true }};
+  QVariantMap options{ { "askForSubsample", true } };
   if (file.endsWith("emd", Qt::CaseInsensitive)) {
     EmdFormat format;
     success = format.read(file.toLatin1().data(), image, options);
   } else {
-    GenericHDF5Format::read(file.toLatin1().data(), image, options);
+    success = GenericHDF5Format::read(file.toLatin1().data(), image, options);
   }
 
   // If there are operators, re-run the pipeline

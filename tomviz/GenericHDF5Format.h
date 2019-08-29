@@ -6,7 +6,7 @@
 
 #include <string>
 
-#include <QJsonObject>
+#include <QVariantMap>
 
 class vtkImageData;
 
@@ -20,7 +20,7 @@ class GenericHDF5Format
 {
 public:
   static bool read(const std::string& fileName, vtkImageData* data,
-                   const QJsonObject& options = QJsonObject());
+                   const QVariantMap& options = QVariantMap());
 
   /**
    * Read a volume and write it to a vtkImageData object. This assumes
@@ -30,11 +30,12 @@ public:
    * @param reader A reader that has already opened the file of interest.
    * @param path The path to the volume in the HDF5 file.
    * @param data The vtkImageData where the volume will be written.
+   * @param options The options for reading the image data.
    * @return True on success, false on failure.
    */
   static bool readVolume(h5::H5ReadWrite& reader, const std::string& path,
                          vtkImageData* data,
-                         const QJsonObject& options = QJsonObject());
+                         const QVariantMap& options = QVariantMap());
 
   /**
    * Add a dataset as a scalar array to pre-existing image data. The
