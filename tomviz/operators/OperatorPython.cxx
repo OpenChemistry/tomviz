@@ -3,12 +3,14 @@
 
 #include "OperatorPython.h"
 
+#include <QDesktopServices>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QPointer>
 #include <QtDebug>
+#include <QUrl>
 
 #include "ActiveObjects.h"
 #include "CustomPythonOperatorWidget.h"
@@ -283,6 +285,8 @@ void OperatorPython::setJSONDescription(const QString& str)
       }
     }
   }
+
+  setHelpFromJson(root);
 }
 
 const QString& OperatorPython::JSONDescription() const
@@ -525,6 +529,12 @@ QJsonObject OperatorPython::serialize() const
       json["argumentTypeInformation"] = typeObj;
     }
   }
+
+  if (m_hasHelp) {
+    json["help"] = QJsonObject();
+    json["help"].toObject()["url"] = m_helpUrl;
+  }
+
   return json;
 }
 
@@ -605,6 +615,8 @@ bool OperatorPython::deserialize(const QJsonObject& json)
       }
     }
   }
+
+  setHelpFromJson(json);
   return true;
 }
 
@@ -679,5 +691,26 @@ const QMap<QString, QString>& OperatorPython::typeInfo() const
 {
   return m_typeInfo;
 }
+
+void OperatorPython::setHelpFromJson(const QJsonObject& json)
+{
+  // Clear these before trying to read them
+  m_hasHelp = false;
+  m_helpUrl = "";
+  auto helpNode = json["help"];
+  if (!helpNode.isUndefined() && !helpNode.isNull()) {
+    auto helpNodeUrl = helpNode.toObject()["url"];
+    if (!helpNodeUrl.isUndefined() && !helpNodeUrl.isNull()) {
+      m_hasHelp = true;
+      m_helpUrl = helpNodeUrl.toString();
+    }
+  }
+}
+
+void OperatorPython::helpRequested() const
+{
+  QDesktopServices::openUrl(QUrl(m_helpUrl));
+}
+
 } // namespace tomviz
 #include "OperatorPython.moc"

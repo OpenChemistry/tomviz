@@ -29,7 +29,10 @@
       "minimum" : 0,
       "maximum" : 1
     }
-  ]
+  ],
+  "help" : {
+    "url" : "https://tomviz.readthedocs.io/en/latest/alignment/#tilt-axis-alignment"
+  }
 }
 
 

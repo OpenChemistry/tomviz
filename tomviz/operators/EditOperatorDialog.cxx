@@ -228,6 +228,14 @@ void EditOperatorDialog::onCancel()
   closeDialog();
 }
 
+void EditOperatorDialog::onHelpRequested()
+{
+  if (!this->Internals->Op)
+    return;
+
+  this->Internals->Op->helpRequested();
+}
+
 void EditOperatorDialog::setupUI(EditOperatorWidget* opWidget)
 {
   if (this->Internals->Op.isNull()) {
@@ -251,6 +259,12 @@ void EditOperatorDialog::setupUI(EditOperatorWidget* opWidget)
   QDialogButtonBox* dialogButtons = new QDialogButtonBox(
     QDialogButtonBox::Apply | QDialogButtonBox::Cancel | QDialogButtonBox::Ok,
     Qt::Horizontal, this);
+
+  if (this->Internals->Op->hasHelp()) {
+    // Add a help button
+    dialogButtons->addButton(QDialogButtonBox::Help);
+  }
+
   vLayout->addWidget(dialogButtons);
   dialogButtons->button(QDialogButtonBox::Ok)->setDefault(false);
 
@@ -260,6 +274,8 @@ void EditOperatorDialog::setupUI(EditOperatorWidget* opWidget)
           &EditOperatorDialog::accept);
   connect(dialogButtons, &QDialogButtonBox::rejected, this,
           &EditOperatorDialog::reject);
+  connect(dialogButtons, &QDialogButtonBox::helpRequested, this,
+          &EditOperatorDialog::onHelpRequested);
   connect(dialogButtons->button(QDialogButtonBox::Apply), &QPushButton::clicked,
           this, &EditOperatorDialog::onApply);
 

@@ -182,6 +182,12 @@ public:
   /// Set the operator state, this is needed for external execution.
   void setState(OperatorState state) { m_state = state; }
 
+  /// Whether the operator has a help function defined
+  virtual bool hasHelp() const { return false; }
+
+  /// This will be called when help is requested
+  virtual void helpRequested() const {}
+
 signals:
   /// Emit this signal with the operation is updated/modified
   /// implying that the data needs to be reprocessed.

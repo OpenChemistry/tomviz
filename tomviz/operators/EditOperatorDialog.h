@@ -44,6 +44,7 @@ private slots:
   void onApply();
   void onCancel();
   void onOkay();
+  void onHelpRequested();
   void getCopyOfImagePriorToFinished();
 
 signals:
