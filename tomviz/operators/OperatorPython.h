@@ -73,10 +73,6 @@ public:
 
   int numberOfParameters() const { return m_numberOfParameters; }
 
-  bool hasHelp() const override { return m_hasHelp; }
-
-  void helpRequested() const override;
-
 signals:
   void newOperatorResult(const QString&, vtkSmartPointer<vtkDataObject>);
   /// Signal uses to request that the child data source be updated with
@@ -101,8 +97,6 @@ private:
   QString m_label;
   QString m_jsonDescription;
   QString m_script;
-  bool m_hasHelp = false;
-  QString m_helpUrl;
 
   // This is for operators without a JSON description but with arguments.
   // Serialization needs to know the type of the arguments.

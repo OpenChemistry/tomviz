@@ -3,14 +3,12 @@
 
 #include "OperatorPython.h"
 
-#include <QDesktopServices>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QPointer>
 #include <QtDebug>
-#include <QUrl>
 
 #include "ActiveObjects.h"
 #include "CustomPythonOperatorWidget.h"
@@ -530,9 +528,9 @@ QJsonObject OperatorPython::serialize() const
     }
   }
 
-  if (m_hasHelp) {
+  if (!helpUrl().isEmpty()) {
     json["help"] = QJsonObject();
-    json["help"].toObject()["url"] = m_helpUrl;
+    json["help"].toObject()["url"] = helpUrl();
   }
 
   return json;
@@ -694,22 +692,15 @@ const QMap<QString, QString>& OperatorPython::typeInfo() const
 
 void OperatorPython::setHelpFromJson(const QJsonObject& json)
 {
-  // Clear these before trying to read them
-  m_hasHelp = false;
-  m_helpUrl = "";
+  // Clear before trying to read
+  setHelpUrl("");
   auto helpNode = json["help"];
   if (!helpNode.isUndefined() && !helpNode.isNull()) {
     auto helpNodeUrl = helpNode.toObject()["url"];
     if (!helpNodeUrl.isUndefined() && !helpNodeUrl.isNull()) {
-      m_hasHelp = true;
-      m_helpUrl = helpNodeUrl.toString();
+      setHelpUrl(helpNodeUrl.toString());
     }
   }
-}
-
-void OperatorPython::helpRequested() const
-{
-  QDesktopServices::openUrl(QUrl(m_helpUrl));
 }
 
 } // namespace tomviz

@@ -16,10 +16,12 @@
 #include <pqSettings.h>
 
 #include <QDebug>
+#include <QDesktopServices>
 #include <QDialogButtonBox>
 #include <QMessageBox>
 #include <QPointer>
 #include <QPushButton>
+#include <QUrl>
 #include <QVBoxLayout>
 #include <QVariant>
 
@@ -233,7 +235,7 @@ void EditOperatorDialog::onHelpRequested()
   if (!this->Internals->Op)
     return;
 
-  this->Internals->Op->helpRequested();
+  QDesktopServices::openUrl(QUrl(this->Internals->Op->helpUrl()));
 }
 
 void EditOperatorDialog::setupUI(EditOperatorWidget* opWidget)
@@ -260,7 +262,7 @@ void EditOperatorDialog::setupUI(EditOperatorWidget* opWidget)
     QDialogButtonBox::Apply | QDialogButtonBox::Cancel | QDialogButtonBox::Ok,
     Qt::Horizontal, this);
 
-  if (this->Internals->Op->hasHelp()) {
+  if (!this->Internals->Op->helpUrl().isEmpty()) {
     // Add a help button
     dialogButtons->addButton(QDialogButtonBox::Help);
   }
