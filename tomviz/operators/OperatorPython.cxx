@@ -121,7 +121,7 @@ public:
   Python::Function DeleteModuleFunction;
 };
 
-OperatorPython::OperatorPython(QObject* parentObject)
+OperatorPython::OperatorPython(DataSource* parentObject)
   : Operator(parentObject), d(new OperatorPython::OPInternals()),
     m_label("Python Operator")
 {
@@ -502,7 +502,8 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
 
 Operator* OperatorPython::clone() const
 {
-  OperatorPython* newClone = new OperatorPython();
+  OperatorPython* newClone =
+    new OperatorPython(qobject_cast<DataSource*>(parent()));
   newClone->setLabel(label());
   newClone->setScript(script());
   newClone->setJSONDescription(JSONDescription());

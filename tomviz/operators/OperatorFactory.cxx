@@ -52,7 +52,7 @@ Operator* OperatorFactory::createOperator(const QString& type, DataSource* ds)
 
   Operator* op = nullptr;
   if (type == "Python") {
-    op = new OperatorPython();
+    op = new OperatorPython(ds);
   } else if (type == "ArrayWrangler") {
     op = new ArrayWranglerOperator();
   } else if (type == "ConvertToFloat") {
