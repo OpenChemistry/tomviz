@@ -184,6 +184,7 @@ public:
 
   /// Get the operator's help url
   QString helpUrl() const { return m_helpUrl; }
+  void setHelpUrl(const QString& s) { m_helpUrl = s; }
 
 signals:
   /// Emit this signal with the operation is updated/modified
@@ -272,8 +273,6 @@ protected:
   /// transform method call.  If you set this to true, you should also override
   /// the cancelTransform slot to listen for the cancel signal and handle it.
   void setSupportsCancel(bool b) { m_supportsCancel = b; }
-
-  void setHelpUrl(const QString& s) { m_helpUrl = s; }
 
 private:
   Q_DISABLE_COPY(Operator)
