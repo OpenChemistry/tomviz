@@ -43,7 +43,7 @@
         {"Spline" : 2},
         {"Cubic" : 3}
       ]
-    }, 
+    },
     {
       "name" : "Nupdates",
       "label" : "Number Of Updates During Live Reconstruction",
@@ -51,5 +51,8 @@
       "default" : 0,
       "minimum" : 0
     }
-  ]
+  ],
+  "help" : {
+    "url": "https://tomviz.readthedocs.io/en/latest/reconstruction/#weighted-back-projection"
+  }
 }
