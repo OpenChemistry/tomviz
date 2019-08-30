@@ -7,6 +7,7 @@
 
 #include "AcquisitionClient.h"
 #include "ActiveObjects.h"
+#include "Utilities.h"
 
 #include <pqApplicationCore.h>
 #include <pqSettings.h>
@@ -43,6 +44,10 @@ AcquisitionWidget::AcquisitionWidget(QWidget* parent)
   connect(m_ui->disconnectButton, SIGNAL(clicked(bool)),
           SLOT(disconnectFromServer()));
   connect(m_ui->previewButton, SIGNAL(clicked(bool)), SLOT(setTiltAngle()));
+  connect(m_ui->buttonBox, &QDialogButtonBox::helpRequested, []() {
+    QString link = "https://tomviz.readthedocs.io/en/latest/acquisition/";
+    openUrl(link);
+  });
 
   m_ui->imageWidget->renderWindow()->AddRenderer(m_renderer);
   m_ui->imageWidget->interactor()->SetInteractorStyle(
