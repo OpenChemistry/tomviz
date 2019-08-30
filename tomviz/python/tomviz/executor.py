@@ -359,7 +359,27 @@ def _load_operator_module(label, script):
     return operator_module
 
 
-def _read_emd(path):
+def _read_dataset(dataset, options=None):
+    if options is None:
+        return dataset[:]
+
+    stride = options.get('subsampleSettings', {}).get('stride', 1)
+    bnds = options.get('subsampleSettings', {}).get('volumeBounds', [-1] * 6)
+
+    if len(bnds) != 6 or any(x < 0 for x in bnds):
+        # Set the default bounds
+        for i in range(3):
+            bnds[i * 2] = 0
+            bnds[i * 2 + 1] = dataset.shape[i]
+
+    # These slice specifications are forwarded directly to the HDF5
+    # "hyperslab" selections, and it loads only the data requested.
+    return dataset[bnds[0]:bnds[1]:stride,
+                   bnds[2]:bnds[3]:stride,
+                   bnds[4]:bnds[5]:stride]
+
+
+def _read_emd(path, options=None):
     with h5py.File(path, 'r') as f:
         tomography = f['data/tomography']
 
@@ -376,14 +396,14 @@ def _read_emd(path):
         if not isinstance(name, str):
             name = name[0].decode()
 
-        arrays = [(name, data[:])]
+        arrays = [(name, _read_dataset(data, options))]
 
         # See if we have any additional channels
         tomviz_scalars = tomography.get('tomviz_scalars')
         if isinstance(tomviz_scalars, h5py.Group):
             # Get the datasets
-            channel_datasets = [(name, dataset[:]) for (name, dataset)
-                                in tomviz_scalars.items()]
+            channel_datasets = [(name, _read_dataset(dataset, options))
+                                for (name, dataset) in tomviz_scalars.items()]
             arrays += channel_datasets
 
         # If this is a tilt series, swap the X and Z axes
@@ -658,8 +678,8 @@ def _write_child_data(result, operator_index, output_file_path, dims):
 
 
 def execute(operators, start_at, data_file_path, output_file_path,
-            progress_method, progress_path):
-    arrays, dims = _read_emd(data_file_path)
+            progress_method, progress_path, read_options=None):
+    arrays, dims = _read_emd(data_file_path, read_options)
 
     _patch_utils()
 
