@@ -26,7 +26,6 @@ public:
   void readSettings();
 
 private slots:
-  void onHelpRequested();
   void writeSettings();
 
 private:

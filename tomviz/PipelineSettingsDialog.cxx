@@ -66,8 +66,11 @@ PipelineSettingsDialog::PipelineSettingsDialog(QWidget* parent)
     writeSettings();
   });
 
-  connect(m_ui->buttonBox, &QDialogButtonBox::helpRequested, this,
-          &PipelineSettingsDialog::onHelpRequested);
+  connect(m_ui->buttonBox, &QDialogButtonBox::helpRequested, []() {
+    QString link =
+      "https://tomviz.readthedocs.io/en/latest/pipelines/#configuration";
+    openUrl(link);
+  });
 
   checkEnableOk();
 }
@@ -122,13 +125,6 @@ void PipelineSettingsDialog::checkEnableOk()
   }
 
   m_ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(enabled);
-}
-
-void PipelineSettingsDialog::onHelpRequested()
-{
-  QString link =
-    "https://tomviz.readthedocs.io/en/latest/pipelines/#configuration";
-  openUrl(link);
 }
 
 } // namespace tomviz
