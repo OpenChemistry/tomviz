@@ -120,7 +120,7 @@
           <item>
            <widget class="QDialogButtonBox" name="buttonBox_2">
             <property name="standardButtons">
-             <set>QDialogButtonBox::Cancel</set>
+             <set>QDialogButtonBox::Cancel|QDialogButtonBox::Help</set>
             </property>
            </widget>
           </item>
@@ -184,7 +184,7 @@
              <enum>Qt::Horizontal</enum>
             </property>
             <property name="standardButtons">
-             <set>QDialogButtonBox::Cancel|QDialogButtonBox::Open</set>
+             <set>QDialogButtonBox::Cancel|QDialogButtonBox::Help|QDialogButtonBox::Open</set>
             </property>
            </widget>
           </item>
