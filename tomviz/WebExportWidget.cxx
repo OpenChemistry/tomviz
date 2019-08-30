@@ -181,11 +181,8 @@ WebExportWidget::WebExportWidget(QWidget* p) : QDialog(p)
   v->addWidget(m_buttonBox);
 
   // UI binding
-  connect(m_buttonBox, &QDialogButtonBox::helpRequested, []() {
-    QString link =
-      "https://tomviz.readthedocs.io/en/latest/visualization/#export-to-web";
-    openUrl(link);
-  });
+  connect(m_buttonBox, &QDialogButtonBox::helpRequested,
+          []() { openHelpUrl("visualization/#export-to-web"); });
   connect(m_exportButton, SIGNAL(pressed()), this, SLOT(onExport()));
   connect(m_cancelButton, SIGNAL(pressed()), this, SLOT(onCancel()));
   connect(m_exportType, SIGNAL(currentIndexChanged(int)), this,

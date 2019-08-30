@@ -594,8 +594,7 @@ void MainWindow::openDataLink()
 
 void MainWindow::openReadTheDocs()
 {
-  QString link = "https://tomviz.readthedocs.io/en/latest";
-  openUrl(link);
+  openHelpUrl();
 }
 
 void MainWindow::openUserGuide()
