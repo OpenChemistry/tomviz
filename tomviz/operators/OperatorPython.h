@@ -21,7 +21,8 @@ class OperatorPython : public Operator
   Q_OBJECT
 
 public:
-  OperatorPython(QObject* parent = nullptr);
+  // The parent must be a DataSource
+  OperatorPython(DataSource* parent);
   ~OperatorPython() override;
 
   QString label() const override { return m_label; }

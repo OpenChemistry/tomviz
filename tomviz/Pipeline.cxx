@@ -253,8 +253,11 @@ Pipeline::Future* Pipeline::execute(DataSource* ds, Operator* start,
     m_executor->execute(ds->dataObject(), operators, startIndex, endIndex);
   connect(branchFuture, &Pipeline::Future::finished, this,
           &Pipeline::branchFinished);
+
   auto pipelineFuture = new PipelineFutureInternal(
     this, branchFuture->operators(), branchFuture, operators.last() == end);
+  connect(pipelineFuture, &Pipeline::Future::finished, this,
+          &Pipeline::finished);
 
   return pipelineFuture;
 }
