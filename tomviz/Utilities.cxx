@@ -50,12 +50,14 @@
 
 #include <QApplication>
 #include <QDebug>
+#include <QDesktopServices>
 #include <QDir>
 #include <QFileDialog>
 #include <QJsonArray>
 #include <QLayout>
 #include <QMessageBox>
 #include <QString>
+#include <QUrl>
 
 namespace tomviz {
 
@@ -1034,6 +1036,16 @@ bool moleculeToFile(vtkMolecule* molecule)
   }
   file.close();
   return true;
+}
+
+void openUrl(const QString& link)
+{
+  openUrl(QUrl(link));
+}
+
+void openUrl(const QUrl& url)
+{
+  QDesktopServices::openUrl(url);
 }
 
 double offWhite[3] = { 204.0 / 255, 204.0 / 255, 204.0 / 255 };

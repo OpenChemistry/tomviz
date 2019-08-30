@@ -10,12 +10,11 @@
 #include <QCheckBox>
 #include <QCloseEvent>
 #include <QDebug>
-#include <QDesktopServices>
 #include <QMetaEnum>
 #include <QPushButton>
-#include <QUrl>
 
 #include "PipelineManager.h"
+#include "Utilities.h"
 
 namespace tomviz {
 
@@ -129,7 +128,7 @@ void PipelineSettingsDialog::onHelpRequested()
 {
   QString link =
     "https://tomviz.readthedocs.io/en/latest/pipelines/#configuration";
-  QDesktopServices::openUrl(QUrl(link));
+  openUrl(link);
 }
 
 } // namespace tomviz

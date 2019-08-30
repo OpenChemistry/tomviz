@@ -37,6 +37,7 @@ class vtkTable;
 
 class QDir;
 class QLayout;
+class QUrl;
 
 namespace tomviz {
 
@@ -212,6 +213,11 @@ QJsonDocument vectorToJson(const QVector<vtkVector2i> vector);
 /// Write a vtkMolecule to json file
 bool moleculeToFile(vtkMolecule* molecule);
 extern double offWhite[3];
+
+/// Open a url in the user's default browser
+void openUrl(const QString& link);
+void openUrl(const QUrl& url);
+
 } // namespace tomviz
 
 #endif
