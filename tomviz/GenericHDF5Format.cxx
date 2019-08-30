@@ -6,6 +6,7 @@
 #include <DataExchangeFormat.h>
 #include <DataSource.h>
 #include <Hdf5SubsampleWidget.h>
+#include <Utilities.h>
 
 #include <h5cpp/h5readwrite.h>
 #include <h5cpp/h5vtktypemaps.h>
@@ -199,12 +200,18 @@ bool GenericHDF5Format::readVolume(h5::H5ReadWrite& reader,
       widget.setBounds(bs);
     }
 
-    QDialogButtonBox buttons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    QDialogButtonBox buttons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel |
+                             QDialogButtonBox::Help);
     layout.addWidget(&buttons);
     QObject::connect(&buttons, &QDialogButtonBox::accepted, &dialog,
                      &QDialog::accept);
     QObject::connect(&buttons, &QDialogButtonBox::rejected, &dialog,
                      &QDialog::reject);
+    QObject::connect(&buttons, &QDialogButtonBox::helpRequested, []() {
+      QString link =
+        "https://tomviz.readthedocs.io/en/latest/data/#hdf5-subsampling";
+      openUrl(link);
+    });
 
     // Check if the user cancels
     if (!dialog.exec())

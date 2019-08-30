@@ -14,6 +14,7 @@
 #include <QPushButton>
 
 #include "PipelineManager.h"
+#include "Utilities.h"
 
 namespace tomviz {
 
@@ -63,6 +64,12 @@ PipelineSettingsDialog::PipelineSettingsDialog(QWidget* parent)
     }
 
     writeSettings();
+  });
+
+  connect(m_ui->buttonBox, &QDialogButtonBox::helpRequested, []() {
+    QString link =
+      "https://tomviz.readthedocs.io/en/latest/pipelines/#configuration";
+    openUrl(link);
   });
 
   checkEnableOk();

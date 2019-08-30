@@ -38,6 +38,7 @@ public slots:
   void onImageToggled(int row, bool value);
   void onStackTypeChanged(int stackType);
   void onCheckSizesClick();
+  void onHelpRequested();
 
 signals:
   void summaryChanged(const QList<ImageInfo>&);

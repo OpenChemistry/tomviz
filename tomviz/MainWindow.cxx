@@ -62,7 +62,6 @@
 #include <QAction>
 #include <QCloseEvent>
 #include <QDebug>
-#include <QDesktopServices>
 #include <QDir>
 #include <QFileDialog>
 #include <QFileInfo>
@@ -590,13 +589,13 @@ void MainWindow::openRecon()
 void MainWindow::openDataLink()
 {
   QString link = "http://www.nature.com/articles/sdata201641";
-  QDesktopServices::openUrl(QUrl(link));
+  openUrl(link);
 }
 
 void MainWindow::openReadTheDocs()
 {
   QString link = "https://tomviz.readthedocs.io/en/latest";
-  QDesktopServices::openUrl(QUrl(link));
+  openUrl(link);
 }
 
 void MainWindow::openUserGuide()
@@ -606,7 +605,7 @@ void MainWindow::openUserGuide()
   QFileInfo info(path);
   if (info.exists()) {
     QUrl userGuideUrl = QUrl::fromLocalFile(path);
-    QDesktopServices::openUrl(userGuideUrl);
+    openUrl(userGuideUrl);
   } else {
     QMessageBox::warning(
       this, "User Guide not found",
@@ -620,7 +619,7 @@ void MainWindow::openVisIntro()
                  "article/"
                  "tutorial-on-the-visualization-of-volumetric-data-using-"
                  "tomviz/55B58F40A16E96CDEB644202D9FD08BB";
-  QDesktopServices::openUrl(QUrl(link));
+  openUrl(link);
 }
 
 void MainWindow::dataSourceChanged(DataSource* dataSource)

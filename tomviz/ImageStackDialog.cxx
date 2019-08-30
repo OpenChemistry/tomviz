@@ -6,6 +6,7 @@
 #include "ui_ImageStackDialog.h"
 
 #include "LoadStackReaction.h"
+#include "Utilities.h"
 
 #include <QDropEvent>
 #include <QFileDialog>
@@ -42,6 +43,12 @@ ImageStackDialog::ImageStackDialog(QWidget* parent)
 
   QObject::connect(m_ui->openFolder, &QPushButton::clicked, this,
                    &ImageStackDialog::onOpenFolderClick);
+
+  QObject::connect(m_ui->buttonBox_2, &QDialogButtonBox::helpRequested, this,
+                   &ImageStackDialog::onHelpRequested);
+
+  QObject::connect(m_ui->buttonBox, &QDialogButtonBox::helpRequested, this,
+                   &ImageStackDialog::onHelpRequested);
 
   QObject::connect(m_ui->checkSizes, &QPushButton::clicked, this,
                    &ImageStackDialog::onCheckSizesClick);
@@ -399,6 +406,12 @@ void ImageStackDialog::onStackTypeChanged(int stackType)
   } else if (stackType == DataSource::DataSourceType::TiltSeries) {
     setStackType(DataSource::DataSourceType::TiltSeries);
   }
+}
+
+void ImageStackDialog::onHelpRequested()
+{
+  QString link = "https://tomviz.readthedocs.io/en/latest/data/#image-stacks";
+  openUrl(link);
 }
 
 } // namespace tomviz
