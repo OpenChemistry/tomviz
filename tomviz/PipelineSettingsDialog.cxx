@@ -10,8 +10,10 @@
 #include <QCheckBox>
 #include <QCloseEvent>
 #include <QDebug>
+#include <QDesktopServices>
 #include <QMetaEnum>
 #include <QPushButton>
+#include <QUrl>
 
 #include "PipelineManager.h"
 
@@ -64,6 +66,9 @@ PipelineSettingsDialog::PipelineSettingsDialog(QWidget* parent)
 
     writeSettings();
   });
+
+  connect(m_ui->buttonBox, &QDialogButtonBox::helpRequested, this,
+          &PipelineSettingsDialog::onHelpRequested);
 
   checkEnableOk();
 }
@@ -118,6 +123,13 @@ void PipelineSettingsDialog::checkEnableOk()
   }
 
   m_ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(enabled);
+}
+
+void PipelineSettingsDialog::onHelpRequested()
+{
+  QString link =
+    "https://tomviz.readthedocs.io/en/latest/pipelines/#configuration";
+  QDesktopServices::openUrl(QUrl(link));
 }
 
 } // namespace tomviz
