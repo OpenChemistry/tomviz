@@ -10,6 +10,7 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QCoreApplication>
+#include <QDialogButtonBox>
 #include <QFileDialog>
 #include <QGridLayout>
 #include <QHBoxLayout>
@@ -165,19 +166,26 @@ WebExportWidget::WebExportWidget(QWidget* p) : QDialog(p)
 
   v->addStretch();
 
-  // Action buttons
-  QHBoxLayout* actionGroup = new QHBoxLayout;
+  QHBoxLayout* cbGroup = new QHBoxLayout;
   m_keepData = new QCheckBox("Generate data for viewer");
-  m_exportButton = new QPushButton("Export");
-  m_cancelButton = new QPushButton("Cancel");
-  actionGroup->addWidget(m_keepData);
-  actionGroup->addStretch();
-  actionGroup->addWidget(m_exportButton);
-  actionGroup->addSpacing(20);
-  actionGroup->addWidget(m_cancelButton);
-  v->addLayout(actionGroup);
+  cbGroup->addWidget(m_keepData);
+  cbGroup->addStretch();
+  v->addLayout(cbGroup);
+
+  // Action buttons
+  m_buttonBox = new QDialogButtonBox;
+  m_helpButton = m_buttonBox->addButton(QDialogButtonBox::Help);
+  m_exportButton =
+    m_buttonBox->addButton("Export", QDialogButtonBox::AcceptRole);
+  m_cancelButton = m_buttonBox->addButton(QDialogButtonBox::Cancel);
+  v->addWidget(m_buttonBox);
 
   // UI binding
+  connect(m_buttonBox, &QDialogButtonBox::helpRequested, []() {
+    QString link =
+      "https://tomviz.readthedocs.io/en/latest/visualization/#export-to-web";
+    openUrl(link);
+  });
   connect(m_exportButton, SIGNAL(pressed()), this, SLOT(onExport()));
   connect(m_cancelButton, SIGNAL(pressed()), this, SLOT(onCancel()));
   connect(m_exportType, SIGNAL(currentIndexChanged(int)), this,

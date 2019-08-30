@@ -13,6 +13,7 @@
 class QButtonGroup;
 class QCheckBox;
 class QComboBox;
+class QDialogButtonBox;
 class QLabel;
 class QLineEdit;
 class QPushButton;
@@ -48,6 +49,8 @@ private:
   QCheckBox* m_keepData;
   QComboBox* m_exportType;
   QLineEdit* m_multiValue;
+  QDialogButtonBox* m_buttonBox;
+  QPushButton* m_helpButton;
   QPushButton* m_cancelButton;
   QPushButton* m_exportButton;
   QSpinBox* m_imageHeight;
