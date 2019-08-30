@@ -218,6 +218,11 @@ extern double offWhite[3];
 void openUrl(const QString& link);
 void openUrl(const QUrl& url);
 
+/// Prepends the path with a local path if available.
+/// Otherwise, prepends it with the remote help path.
+/// If empty, just opens up the doc home page.
+void openHelpUrl(const QString& path = "");
+
 } // namespace tomviz
 
 #endif

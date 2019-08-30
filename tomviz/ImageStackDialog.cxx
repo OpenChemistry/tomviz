@@ -410,8 +410,7 @@ void ImageStackDialog::onStackTypeChanged(int stackType)
 
 void ImageStackDialog::onHelpRequested()
 {
-  QString link = "https://tomviz.readthedocs.io/en/latest/data/#image-stacks";
-  openUrl(link);
+  openHelpUrl("data/#image-stacks");
 }
 
 } // namespace tomviz

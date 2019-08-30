@@ -53,6 +53,6 @@
     }
   ],
   "help" : {
-    "url": "https://tomviz.readthedocs.io/en/latest/reconstruction/#weighted-back-projection"
+    "url": "reconstruction/#weighted-back-projection"
   }
 }

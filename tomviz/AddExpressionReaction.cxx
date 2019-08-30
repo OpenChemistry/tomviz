@@ -29,8 +29,7 @@ OperatorPython* AddExpressionReaction::addExpression(DataSource* source)
   OperatorPython* opPython = new OperatorPython(source);
   opPython->setScript(script);
   opPython->setLabel("Transform Data");
-  QString link = "https://tomviz.readthedocs.io/en/latest/operator/";
-  opPython->setHelpUrl(link);
+  opPython->setHelpUrl("operator");
 
   // Create a non-modal dialog, delete it once it has been closed.
   auto dialog =

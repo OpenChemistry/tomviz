@@ -207,11 +207,8 @@ bool GenericHDF5Format::readVolume(h5::H5ReadWrite& reader,
                      &QDialog::accept);
     QObject::connect(&buttons, &QDialogButtonBox::rejected, &dialog,
                      &QDialog::reject);
-    QObject::connect(&buttons, &QDialogButtonBox::helpRequested, []() {
-      QString link =
-        "https://tomviz.readthedocs.io/en/latest/data/#hdf5-subsampling";
-      openUrl(link);
-    });
+    QObject::connect(&buttons, &QDialogButtonBox::helpRequested,
+                     []() { openHelpUrl("data/#hdf5-subsampling"); });
 
     // Check if the user cancels
     if (!dialog.exec())

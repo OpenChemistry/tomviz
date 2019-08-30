@@ -233,7 +233,7 @@ void EditOperatorDialog::onHelpRequested()
   if (!this->Internals->Op)
     return;
 
-  openUrl(this->Internals->Op->helpUrl());
+  openHelpUrl(this->Internals->Op->helpUrl());
 }
 
 void EditOperatorDialog::setupUI(EditOperatorWidget* opWidget)

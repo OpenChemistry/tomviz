@@ -1048,5 +1048,13 @@ void openUrl(const QUrl& url)
   QDesktopServices::openUrl(url);
 }
 
+void openHelpUrl(const QString& path)
+{
+  QString webPath = "https://tomviz.readthedocs.io/en/latest/";
+
+  // For now, no local paths have been added. Just use the web path.
+  openUrl(webPath + path);
+}
+
 double offWhite[3] = { 204.0 / 255, 204.0 / 255, 204.0 / 255 };
 } // namespace tomviz
