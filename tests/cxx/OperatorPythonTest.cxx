@@ -27,7 +27,7 @@ protected:
   void SetUp() override
   {
     dataObject = vtkDataObject::New();
-    pythonOperator = new OperatorPython();
+    pythonOperator = new OperatorPython(nullptr);
   }
 
   void TearDown() override
