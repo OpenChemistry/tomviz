@@ -157,8 +157,9 @@ OperatorPython::OperatorPython(DataSource* parentObject)
   }
 
   auto connectionType = Qt::BlockingQueuedConnection;
-  if (dataSource()->pipeline()->executionMode() ==
-      Pipeline::ExecutionMode::Docker) {
+  if (dataSource() != nullptr &&
+      dataSource()->pipeline()->executionMode() ==
+        Pipeline::ExecutionMode::Docker) {
     connectionType = Qt::DirectConnection;
   }
   // Needed so the worker thread can update data in the UI thread.
