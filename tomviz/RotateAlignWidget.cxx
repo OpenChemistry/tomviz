@@ -15,6 +15,9 @@
 
 #include <cmath>
 
+#include <pqApplicationCore.h>
+#include <pqSettings.h>
+
 #include <vtkSMTransferFunctionManager.h>
 #include <vtkSMTransferFunctionProxy.h>
 
@@ -291,6 +294,19 @@ public:
       }
     }
   }
+
+  void readSettings()
+  {
+    auto settings = pqApplicationCore::instance()->settings();
+    m_orientation = settings->value("RotateAlignWidget.orientation",
+                                    0).toInt();
+  }
+
+  void writeSettings()
+  {
+    auto settings = pqApplicationCore::instance()->settings();
+    settings->setValue("RotateAlignWidget.orientation", m_orientation);
+  }
 };
 
 RotateAlignWidget::RotateAlignWidget(Operator* op,
@@ -300,6 +316,8 @@ RotateAlignWidget::RotateAlignWidget(Operator* op,
 {
   this->Internals->m_image = image;
   this->Internals->Ui.setupUi(this);
+
+  this->Internals->readSettings();
 
   this->Internals->setupColorMaps();
   QIcon setColorMapIcon(":/pqWidgets/Icons/pqFavorites16.png");
@@ -450,7 +468,6 @@ RotateAlignWidget::RotateAlignWidget(Operator* op,
   this->Internals->m_slice0 = vtkMath::Round(0.25 * dims[0]);
   this->Internals->m_slice1 = vtkMath::Round(0.50 * dims[0]);
   this->Internals->m_slice2 = vtkMath::Round(0.75 * dims[0]);
-  this->Internals->m_orientation = 0;
 
   int projectionNum = dims[2] / 2;
   this->Internals->m_projectionNum = projectionNum;
@@ -459,6 +476,9 @@ RotateAlignWidget::RotateAlignWidget(Operator* op,
 
   this->Internals->m_shiftRotation = 0;
   this->Internals->m_tiltRotation = 0;
+
+  // Make sure the line matches the orientation
+  this->Internals->moveRotationAxisLine();
 
   updateControls();
 
@@ -757,6 +777,11 @@ void RotateAlignWidget::updateControls()
 
   this->Internals->axesActor->SetXAxisRange(xAxisRange);
   this->Internals->axesActor->SetYAxisRange(yAxisRange);
+
+  // It would be nice if we could only write the settings when the
+  // widget is accepted, but I don't immediately see an easy way
+  // to do that.
+  this->Internals->writeSettings();
 }
 
 void RotateAlignWidget::onFinalReconButtonPressed() {}
