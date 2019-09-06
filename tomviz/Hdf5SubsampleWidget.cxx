@@ -4,6 +4,8 @@
 #include "Hdf5SubsampleWidget.h"
 #include "ui_Hdf5SubsampleWidget.h"
 
+#include <array>
+
 namespace tomviz {
 
 template <typename T>
