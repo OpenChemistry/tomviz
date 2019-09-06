@@ -498,7 +498,6 @@ set(tomviz_python_modules
   operators.py
   itkutils.py
   utils.py
-  py2to3.py
   web.py
 )
 
