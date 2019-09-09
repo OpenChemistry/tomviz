@@ -3,13 +3,13 @@ MAINTAINER Chris Harris <chris.harris@kitware.com>
 ENV LC_ALL=C.UTF-8
 ENV LANG=C.UTF-8
 
+# Install tomopy
+RUN conda install -c conda-forge tomopy
+
 COPY tomviz/python/ /tmp/python/
 
 RUN pip install /tmp/python/ && \
   rm -rf /tmp/python/
-
-# Install tomopy
-RUN conda install -c conda-forge tomopy
 
 ENTRYPOINT ["tomviz-pipeline"]
 
