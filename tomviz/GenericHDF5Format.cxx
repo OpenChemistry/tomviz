@@ -14,6 +14,7 @@
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QInputDialog>
+#include <QMessageBox>
 #include <QStringList>
 #include <QVBoxLayout>
 
@@ -243,16 +244,28 @@ bool GenericHDF5Format::readVolume(h5::H5ReadWrite& reader,
   for (int i = 0; i < 3; ++i)
     vtkCounts[i] = counts[i];
 
-  vtkNew<vtkImageData> tmp;
-  tmp->SetDimensions(&vtkCounts[0]);
-  tmp->AllocateScalars(vtkDataType, 1);
   image->SetDimensions(&vtkCounts[0]);
   image->AllocateScalars(vtkDataType, 1);
 
-  if (!reader.readData(path, type, tmp->GetScalarPointer(), stride, start,
+  vtkNew<vtkImageData> tmp;
+  vtkImageData* readPtr = image;
+  bool transpose = !options["noTranspose"].toBool();
+  if (transpose) {
+    tmp->SetDimensions(&vtkCounts[0]);
+    tmp->AllocateScalars(vtkDataType, 1);
+    readPtr = tmp;
+  }
+
+  if (!reader.readData(path, type, readPtr->GetScalarPointer(), stride, start,
                        counts)) {
     std::cerr << "Failed to read the data\n";
     return false;
+  }
+
+  if (!transpose) {
+    // We are done
+    image->Modified();
+    return true;
   }
 
   // HDF5 typically stores data as row major order.
@@ -272,7 +285,7 @@ bool GenericHDF5Format::readVolume(h5::H5ReadWrite& reader,
 }
 
 bool GenericHDF5Format::read(const std::string& fileName, vtkImageData* image,
-                             const QVariantMap& options)
+                             QVariantMap options)
 {
   using h5::H5ReadWrite;
   H5ReadWrite::OpenMode mode = H5ReadWrite::OpenMode::ReadOnly;
@@ -320,7 +333,13 @@ bool GenericHDF5Format::read(const std::string& fileName, vtkImageData* image,
     dataNode = datasets[items.indexOf(res)];
   }
 
-  return readVolume(reader, dataNode, image);
+  auto response = QMessageBox::question(nullptr, "Tilt Series?",
+                                        "Is this data set a tilt series?");
+
+  if (response == QMessageBox::Yes)
+    options["noTranspose"] = true;
+
+  return readVolume(reader, dataNode, image, options);
 }
 
 bool GenericHDF5Format::writeVolume(h5::H5ReadWrite& writer,

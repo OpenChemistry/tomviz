@@ -20,7 +20,7 @@ class GenericHDF5Format
 {
 public:
   static bool read(const std::string& fileName, vtkImageData* data,
-                   const QVariantMap& options = QVariantMap());
+                   QVariantMap options = QVariantMap());
 
   /**
    * Read a volume and write it to a vtkImageData object. This assumes
