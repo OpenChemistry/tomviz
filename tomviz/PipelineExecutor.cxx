@@ -387,8 +387,9 @@ Pipeline::Future* DockerPipelineExecutor::execute(vtkDataObject* data,
   args << mount.filePath(PROGRESS_PATH);
   QMap<QString, QString> bindMounts;
   bindMounts[m_temporaryDir->path()] = CONTAINER_MOUNT;
-  QString image = "tomviz/pipeline";
 
+  PipelineSettings settings;
+  QString image = settings.dockerImage();
   auto startContainer = [this, image, args, bindMounts]() {
     auto msg = QString("Starting docker container.");
     auto progress = new ProgressDialog("Docker run", msg, tomviz::mainWidget());
@@ -404,7 +405,6 @@ Pipeline::Future* DockerPipelineExecutor::execute(vtkDataObject* data,
             });
   };
 
-  PipelineSettings settings;
   // Pull the latest version of the image, if haven't already
   if (settings.dockerPull() && m_pullImage) {
     auto msg = QString("Pulling docker image: %1").arg(image);
