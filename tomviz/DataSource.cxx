@@ -1035,22 +1035,8 @@ DataSource::DataSourceType DataSource::type() const
 void DataSource::setType(DataSourceType t)
 {
   this->Internals->Type = t;
-  auto tp = producer();
-  auto data = tp->GetOutputDataObject(0);
-  auto fd = data->GetFieldData();
-  auto typeArray =
-    vtkTypeInt8Array::SafeDownCast(fd->GetArray("tomviz_data_source_type"));
-
-  // Create the type array if it doesn't exist
-  if (typeArray == nullptr) {
-    typeArray = vtkTypeInt8Array::New();
-    typeArray->SetNumberOfComponents(1);
-    typeArray->SetNumberOfTuples(1);
-    typeArray->SetName("tomviz_data_source_type");
-    fd->AddArray(typeArray);
-  }
-
-  typeArray->SetTuple1(0, t);
+  auto data = this->dataObject();
+  setType(data, t);
   if (t == TiltSeries) {
     this->Internals->ensureTiltAnglesArrayExists();
   }
@@ -1288,6 +1274,21 @@ void getFieldDataArray(vtkFieldData* fd, const char* arrayName, int numTuples,
   ArrayType* typeArray = ArrayType::SafeDownCast(fd->GetArray(arrayName));
   for (int i = 0; i < numTuples; ++i)
     data[i] = typeArray->GetTuple1(i);
+}
+
+void DataSource::setType(vtkDataObject* image, DataSourceType t)
+{
+  if (!image)
+    return;
+
+  // Cast to int before setting
+  int i = static_cast<int>(t);
+
+  const char* arrayName = "tomviz_data_source_type";
+  using ArrayType = vtkTypeInt8Array;
+
+  vtkFieldData* fd = image->GetFieldData();
+  setFieldDataArray<ArrayType>(fd, arrayName, 1, &i);
 }
 
 bool DataSource::wasSubsampled(vtkDataObject* image)

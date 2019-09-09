@@ -250,6 +250,8 @@ public:
   bool forkable();
   void setForkable(bool forkable);
 
+  static void setType(vtkDataObject* image, DataSourceType t);
+
   static bool hasTiltAngles(vtkDataObject* image);
   static QVector<double> getTiltAngles(vtkDataObject* image);
   static void setTiltAngles(vtkDataObject* image,
