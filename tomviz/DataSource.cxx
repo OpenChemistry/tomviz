@@ -79,6 +79,8 @@ public:
   vtkNew<vtkImageData> m_transfer2D;
   vtkNew<vtkPiecewiseFunction> GradientOpacityMap;
   //  vtkSmartPointer<vtkSMSourceProxy> DataSourceProxy;
+  vtkSmartPointer<vtkImageData> m_darkData;
+  vtkSmartPointer<vtkImageData> m_whiteData;
   vtkSmartPointer<vtkSMSourceProxy> ProducerProxy;
   QList<Operator*> Operators;
   vtkSmartPointer<vtkSMProxy> ColorMap;
@@ -287,6 +289,26 @@ QStringList DataSource::fileNames() const
     }
   }
   return files;
+}
+
+void DataSource::setDarkData(vtkSmartPointer<vtkImageData> image)
+{
+  this->Internals->m_darkData = image;
+}
+
+vtkImageData* DataSource::darkData()
+{
+  return this->Internals->m_darkData;
+}
+
+void DataSource::setWhiteData(vtkSmartPointer<vtkImageData> image)
+{
+  this->Internals->m_whiteData = image;
+}
+
+vtkImageData* DataSource::whiteData()
+{
+  return this->Internals->m_whiteData;
 }
 
 bool DataSource::canReloadAndResample() const

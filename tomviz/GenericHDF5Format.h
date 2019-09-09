@@ -19,6 +19,9 @@ namespace tomviz {
 class GenericHDF5Format
 {
 public:
+  // Check to see if the file looks like a data exchange file
+  static bool isDataExchange(const std::string& fileName);
+
   static bool read(const std::string& fileName, vtkImageData* data,
                    const QVariantMap& options = QVariantMap());
 
