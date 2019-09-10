@@ -1,0 +1,23 @@
+{
+  "name" : "Tomopy",
+  "label" : "Tomopy",
+  "description" : "Tomopy a dataset",
+  "parameters" : [
+    {
+      "name" : "rot_center",
+      "label" : "Rotation Center",
+      "description" : "The center of rotation of the dataset",
+      "type" : "double",
+      "default" : 0.0,
+      "precision" : 3
+    },
+    {
+      "name" : "tune_rot_center",
+      "label" : "Tune Rotation Center",
+      "description" : "Allow tomopy to tune the center of rotation",
+      "type" : "bool",
+      "default" : true
+    }
+  ]
+}
+
