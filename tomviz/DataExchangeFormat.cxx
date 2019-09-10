@@ -61,9 +61,7 @@ bool DataExchangeFormat::readWhite(const std::string& fileName,
 
 static bool writeData(h5::H5ReadWrite& writer, vtkImageData* image)
 {
-  // Create an "/exchange" group
-  writer.createGroup("/exchange");
-
+  // Assume /exchange already exists
   return GenericHDF5Format::writeVolume(writer, "/exchange", "data", image);
 }
 
@@ -86,6 +84,10 @@ bool DataExchangeFormat::write(const std::string& fileName, DataSource* source)
   using h5::H5ReadWrite;
   H5ReadWrite::OpenMode mode = H5ReadWrite::OpenMode::WriteOnly;
   H5ReadWrite writer(fileName, mode);
+
+  // Create a "/exchange" group
+  writer.createGroup("/exchange");
+
   auto t = source->producer();
   auto image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
   if (!writeData(writer, image))
@@ -102,11 +104,4 @@ bool DataExchangeFormat::write(const std::string& fileName, DataSource* source)
   return true;
 }
 
-bool DataExchangeFormat::write(const std::string& fileName, vtkImageData* image)
-{
-  using h5::H5ReadWrite;
-  H5ReadWrite::OpenMode mode = H5ReadWrite::OpenMode::WriteOnly;
-  H5ReadWrite writer(fileName, mode);
-  return writeData(writer, image);
-}
 } // namespace tomviz
