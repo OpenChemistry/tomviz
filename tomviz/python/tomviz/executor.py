@@ -420,7 +420,12 @@ def _read_emd(path, options=None):
         # EMD stores data as row major order.  VTK expects column major order.
         arrays = [(name, np.asfortranarray(data)) for (name, data) in arrays]
 
-        return (arrays, dims)
+        output = {
+            'arrays': arrays,
+            'dims': dims
+        }
+
+        return output
 
 
 def _write_emd(path, dataobject, dims=None):
@@ -496,6 +501,40 @@ def _write_emd(path, dataobject, dims=None):
                 tomviz_scalars.create_dataset(name, data=array)
 
 
+def _read_data_exchange(path, options=None):
+    with h5py.File(path, 'r') as f:
+        g = f['/exchange']
+
+        datasets = ['data', 'data_dark', 'data_white']
+        arrays = []
+        for name in datasets:
+            data = g[name]
+            arrays += [(name, _read_dataset(data, options))]
+
+        # Data Exchange stores data as row major order.
+        # VTK expects column major order.
+        arrays = [(name, np.asfortranarray(data)) for (name, data) in arrays]
+
+        output = {
+            'arrays': [arrays[0]],
+            'data_dark': arrays[1][1],
+            'data_white': arrays[2][1]
+        }
+
+        return output
+
+
+def _is_data_exchange(path):
+    # It must have an HDF5 extension
+    exts = ['.h5', '.hdf5']
+    if not any([path.suffix.lower() == x for x in exts]):
+        return False
+
+    # Open it up and make sure /exchange/data exists
+    with h5py.File(path, 'r') as f:
+        return '/exchange/data' in f
+
+
 class DataObject(object):
     def __init__(self, arrays, active=None):
         # Holds the map of scalars name => array
@@ -508,6 +547,10 @@ class DataObject(object):
         # it as the active array.
         if active is None and len(arrays.keys()):
             (self.active_name,) = arrays.keys()
+
+        # Dark and white backgrounds
+        self.dark = None
+        self.white = None
 
     def set_scalars(self, new_scalars):
         order = 'C'
@@ -679,7 +722,15 @@ def _write_child_data(result, operator_index, output_file_path, dims):
 
 def execute(operators, start_at, data_file_path, output_file_path,
             progress_method, progress_path, read_options=None):
-    arrays, dims = _read_emd(data_file_path, read_options)
+
+    if _is_data_exchange(data_file_path):
+        output = _read_data_exchange(data_file_path, read_options)
+    else:
+        # Assume it is emd
+        output = _read_emd(data_file_path, read_options)
+
+    arrays = output['arrays']
+    dims = output.get('dims')
 
     _patch_utils()
 
@@ -689,8 +740,13 @@ def execute(operators, start_at, data_file_path, output_file_path,
     arrays = {name: array for (name, array) in arrays}
 
     data = DataObject(arrays, active_array)
+    if 'data_dark' in output:
+        data.dark = output['data_dark']
+    if 'data_white' in output:
+        data.white = output['data_white']
+
     # If we have angles set them
-    if dims[-1][2] == b'angles':
+    if dims is not None and dims[-1][2] == b'angles':
         data.tilt_angles = dims[-1][1][:].astype(np.float64)
 
     operators = operators[start_at:]
