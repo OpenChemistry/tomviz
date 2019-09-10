@@ -22,51 +22,41 @@
 
 namespace tomviz {
 
-bool DataExchangeFormat::read(const std::string& fileName, vtkImageData* image,
-                              const QVariantMap& options)
+static bool readDataSet(const std::string& fileName, const std::string& path,
+                        vtkImageData* image, const QVariantMap& options)
 {
   using h5::H5ReadWrite;
   H5ReadWrite::OpenMode mode = H5ReadWrite::OpenMode::ReadOnly;
   H5ReadWrite reader(fileName.c_str(), mode);
 
-  std::string deDataNode = "/exchange/data";
   // If it isn't a data set, we are done
-  if (!reader.isDataSet(deDataNode))
+  if (!reader.isDataSet(path))
     return false;
 
-  return GenericHDF5Format::readVolume(reader, deDataNode, image, options);
+  return GenericHDF5Format::readVolume(reader, path, image, options);
+}
+
+bool DataExchangeFormat::read(const std::string& fileName, vtkImageData* image,
+                              const QVariantMap& options)
+{
+  std::string path = "/exchange/data";
+  return readDataSet(fileName, path, image, options);
 }
 
 bool DataExchangeFormat::readDark(const std::string& fileName,
                                   vtkImageData* image,
                                   const QVariantMap& options)
 {
-  using h5::H5ReadWrite;
-  H5ReadWrite::OpenMode mode = H5ReadWrite::OpenMode::ReadOnly;
-  H5ReadWrite reader(fileName.c_str(), mode);
-
-  std::string node = "/exchange/data_dark";
-  // If it isn't a data set, we are done
-  if (!reader.isDataSet(node))
-    return false;
-
-  return GenericHDF5Format::readVolume(reader, node, image, options);
+  std::string path = "/exchange/data_dark";
+  return readDataSet(fileName, path, image, options);
 }
 
 bool DataExchangeFormat::readWhite(const std::string& fileName,
                                    vtkImageData* image,
                                    const QVariantMap& options)
 {
-  using h5::H5ReadWrite;
-  H5ReadWrite::OpenMode mode = H5ReadWrite::OpenMode::ReadOnly;
-  H5ReadWrite reader(fileName.c_str(), mode);
-
-  std::string node = "/exchange/data_white";
-  // If it isn't a data set, we are done
-  if (!reader.isDataSet(node))
-    return false;
-
-  return GenericHDF5Format::readVolume(reader, node, image, options);
+  std::string path = "/exchange/data_white";
+  return readDataSet(fileName, path, image, options);
 }
 
 static bool writeData(h5::H5ReadWrite& writer, vtkImageData* image)
