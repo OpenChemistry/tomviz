@@ -4,6 +4,7 @@
 #include "Pipeline.h"
 
 #include "ActiveObjects.h"
+#include "DataExchangeFormat.h"
 #include "DataSource.h"
 #include "DockerUtilities.h"
 #include "EmdFormat.h"
@@ -147,7 +148,7 @@ bool ThreadPipelineExecutor::isRunning()
   return !m_future.isNull() && m_future->isRunning();
 }
 
-const char* ORIGINAL_FILENAME = "original.emd";
+const char* ORIGINAL_FILENAME = "original";
 const char* TRANSFORM_FILENAME = "transformed.emd";
 const char* STATE_FILENAME = "state.tvsm";
 const char* CONTAINER_MOUNT = "/tomviz";
@@ -175,6 +176,19 @@ DockerPipelineExecutor::DockerPipelineExecutor(Pipeline* pipeline)
 }
 
 DockerPipelineExecutor::~DockerPipelineExecutor() = default;
+
+QString DockerPipelineExecutor::originalFileName()
+{
+  QString ext = ".emd";
+  auto* dataSource = pipeline()->dataSource();
+  if (dataSource->darkData() && dataSource->whiteData())
+  {
+    // Let's write out to data exchange
+    ext = ".h5";
+  }
+
+  return ORIGINAL_FILENAME + ext;
+}
 
 docker::DockerRunInvocation* DockerPipelineExecutor::run(
   const QString& image, const QStringList& args,
@@ -268,12 +282,14 @@ Pipeline::Future* DockerPipelineExecutor::execute(vtkDataObject* data,
     ;
   }
 
+  QString origFileName = originalFileName();
+
   // First generate a state file for this pipeline
   QJsonObject state;
   QJsonObject dataSource;
   QJsonObject reader;
   QJsonArray fileNames;
-  fileNames.append(QDir(CONTAINER_MOUNT).filePath(ORIGINAL_FILENAME));
+  fileNames.append(QDir(CONTAINER_MOUNT).filePath(origFileName));
   reader["fileNames"] = fileNames;
   dataSource["reader"] = reader;
   QJsonArray pipelineOps;
@@ -294,13 +310,29 @@ Pipeline::Future* DockerPipelineExecutor::execute(vtkDataObject* data,
   stateFile.write(QJsonDocument(state).toJson());
   stateFile.close();
 
-  // Write data to EMD
-  auto dataFilePath = QDir(m_temporaryDir->path()).filePath(ORIGINAL_FILENAME);
-  EmdFormat emdFile;
-  auto imageData = vtkImageData::SafeDownCast(data);
-  if (!emdFile.write(dataFilePath.toLatin1().data(), imageData)) {
+  // Determine the format from the extension and write out the data
+  auto dataFilePath = QDir(m_temporaryDir->path()).filePath(origFileName);
+  if (origFileName.endsWith("h5")) {
+    DataExchangeFormat format;
+    if (!format.write(dataFilePath.toLatin1().data(),
+        pipeline()->dataSource())) {
+      displayError("Write Error",
+                   QString("Unable to write data at: %1").arg(dataFilePath));
+      return Pipeline::emptyFuture();
+    }
+  }
+  else if (origFileName.endsWith("emd")) {
+    EmdFormat emdFile;
+    auto imageData = vtkImageData::SafeDownCast(data);
+    if (!emdFile.write(dataFilePath.toLatin1().data(), imageData)) {
+      displayError("Write Error",
+                   QString("Unable to write data at: %1").arg(dataFilePath));
+      return Pipeline::emptyFuture();
+    }
+  }
+  else {
     displayError("Write Error",
-                 QString("Unable to write data at: %1").arg(dataFilePath));
+                 QString("Format not supported for file: %1").arg(origFileName));
     return Pipeline::emptyFuture();
   }
 
