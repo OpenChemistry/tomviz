@@ -75,6 +75,8 @@ public:
 
   int numberOfParameters() const { return m_numberOfParameters; }
 
+  void setChildDataSource(DataSource* source) override;
+
 signals:
   void newOperatorResult(const QString&, vtkSmartPointer<vtkDataObject>);
   /// Signal uses to request that the child data source be updated with

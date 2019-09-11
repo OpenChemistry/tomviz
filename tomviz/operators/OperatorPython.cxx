@@ -692,5 +692,13 @@ void OperatorPython::setHelpFromJson(const QJsonObject& json)
   }
 }
 
+void OperatorPython::setChildDataSource(DataSource* source)
+{
+  if (source != nullptr) {
+    source->setLabel(m_childDataSourceLabel);
+  }
+  Operator::setChildDataSource(source);
+}
+
 } // namespace tomviz
 #include "OperatorPython.moc"
