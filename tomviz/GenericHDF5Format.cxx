@@ -38,7 +38,8 @@ void ReorderArrayC(T* in, T* out, int dim[3])
   for (int i = 0; i < dim[0]; ++i) {
     for (int j = 0; j < dim[1]; ++j) {
       for (int k = 0; k < dim[2]; ++k) {
-        out[(i * dim[1] + j) * dim[2] + k] = in[(k * dim[1] + j) * dim[0] + i];
+        out[static_cast<size_t>(i * dim[1] + j) * dim[2] + k] =
+          in[static_cast<size_t>(k * dim[1] + j) * dim[0] + i];
       }
     }
   }
@@ -50,7 +51,8 @@ void ReorderArrayF(T* in, T* out, int dim[3])
   for (int i = 0; i < dim[0]; ++i) {
     for (int j = 0; j < dim[1]; ++j) {
       for (int k = 0; k < dim[2]; ++k) {
-        out[(k * dim[1] + j) * dim[0] + i] = in[(i * dim[1] + j) * dim[2] + k];
+        out[static_cast<size_t>(k * dim[1] + j) * dim[0] + i] =
+          in[static_cast<size_t>(i * dim[1] + j) * dim[2] + k];
       }
     }
   }
