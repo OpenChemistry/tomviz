@@ -354,9 +354,9 @@ void OperatorPython::createChildDataSource()
     // Create uninitialized data set as a placeholder for the data
     vtkSmartPointer<vtkImageData> childData =
       vtkSmartPointer<vtkImageData>::New();
-      childData->ShallowCopy(
-        vtkImageData::SafeDownCast(dataSource()->dataObject()));
-      emit newChildDataSource(m_childDataSourceLabel, childData);
+    childData->ShallowCopy(
+      vtkImageData::SafeDownCast(dataSource()->dataObject()));
+    emit newChildDataSource(m_childDataSourceLabel, childData);
     }
 }
 
