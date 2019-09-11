@@ -118,7 +118,7 @@ void Calculate2DHistogram(T* values, const int* dim, const int numComp,
 
   int bins[3];
   histogram->GetDimensions(bins);
-  const size_t sizeBins = static_cast<size_t>(bins[0] * bins[1]);
+  const size_t sizeBins = static_cast<size_t>(bins[0]) * bins[1];
 
   // Adjust histogram's spacing so that the axis show the actual range in the
   // chart
@@ -128,7 +128,7 @@ void Calculate2DHistogram(T* values, const int* dim, const int numComp,
 
   memset(histogramArr->GetVoidPointer(0), 0x0, sizeBins * sizeof(double));
 
-  const size_t sizeSlice = static_cast<size_t>(dim[0] * dim[1] * numComp);
+  const size_t sizeSlice = static_cast<size_t>(dim[0]) * dim[1] * numComp;
   std::vector<T> sliceLast(sizeSlice, 0);
   std::vector<T> sliceCurrent(sizeSlice, 0);
   std::vector<T> sliceNext(sizeSlice, 0);
@@ -146,14 +146,15 @@ void Calculate2DHistogram(T* values, const int* dim, const int numComp,
     // Index assumes alignment order in  x -> y -> z.
     // ( z0 * Dx * Dy + y0 * Dx + x0 ) * numComp
     const size_t strideSlice =
-      static_cast<size_t>(dim[0] * dim[1] * kIndex * numComp);
+      static_cast<size_t>(dim[0]) * dim[1] * kIndex * numComp;
     memcpy(&(sliceNext[0]), values + strideSlice, sizeSlice * sizeof(T));
 
     // Fill up temporary slices during the first two iterations
     if (kIndex >= 2) {
       for (int jIndex = 1; jIndex < dim[1] - 1; jIndex++) {
         for (int iIndex = 1; iIndex < dim[0] - 1; iIndex++) {
-          const size_t centerIndex = dim[0] * jIndex + iIndex;
+          const size_t centerIndex =
+            static_cast<size_t>(dim[0]) * jIndex + iIndex;
           const size_t deltaXFront = centerIndex + 1;
           const size_t deltaXBack = centerIndex - 1;
 
@@ -161,8 +162,10 @@ void Calculate2DHistogram(T* values, const int* dim, const int numComp,
                                                 sliceCurrent[deltaXBack]) /
                             delta[0];
 
-          const size_t deltaYFront = dim[0] * (jIndex + 1) + iIndex;
-          const size_t deltaYBack = dim[0] * (jIndex - 1) + iIndex;
+          const size_t deltaYFront =
+            static_cast<size_t>(dim[0]) * (jIndex + 1) + iIndex;
+          const size_t deltaYBack =
+            static_cast<size_t>(dim[0]) * (jIndex - 1) + iIndex;
           const double Dy = static_cast<double>(sliceCurrent[deltaYFront] -
                                                 sliceCurrent[deltaYBack]) /
                             delta[1];
