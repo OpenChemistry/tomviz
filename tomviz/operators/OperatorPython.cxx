@@ -223,7 +223,6 @@ void OperatorPython::setJSONDescription(const QString& str)
   }
 
   m_resultNames.clear();
-  m_childDataSourceNamesAndLabels.clear();
 
   // Get the number of results
   QJsonValueRef resultsNode = root["results"];
@@ -274,9 +273,8 @@ void OperatorPython::setJSONDescription(const QString& str)
       QJsonValueRef labelValue = dataSourceNode["label"];
       if (!nameValue.isUndefined() && !nameValue.isNull() &&
           !labelValue.isUndefined() && !labelValue.isNull()) {
-        QPair<QString, QString> nameLabelPair(QString(nameValue.toString()),
-                                              QString(labelValue.toString()));
-        m_childDataSourceNamesAndLabels.append(nameLabelPair);
+        m_childDataSourceName = nameValue.toString();
+        m_childDataSourceLabel = labelValue.toString();
       } else if (nameValue.isNull()) {
         qCritical() << "No name given for child DataSet";
       } else if (labelValue.isNull()) {
@@ -347,38 +345,28 @@ void OperatorPython::setScript(const QString& str)
   }
 }
 
-void OperatorPython::createChildDataSources()
+void OperatorPython::createChildDataSource()
 {
   // Create child datasets in advance. Keep a map from DataSource to name
   // so that we can match Python script return dictionary values containing
   // child data after the script finishes.
-  m_dataSourceByName.clear();
-  for (int i = 0; i < m_childDataSourceNamesAndLabels.size(); ++i) {
-    QPair<QString, QString> nameLabelPair = m_childDataSourceNamesAndLabels[i];
-    QString name(nameLabelPair.first);
-    QString label(nameLabelPair.second);
-
-    if (!childDataSource()) {
-      // Create uninitialized data set as a placeholder for the data
-      vtkSmartPointer<vtkImageData> childData =
-        vtkSmartPointer<vtkImageData>::New();
+  if (!childDataSource()) {
+    // Create uninitialized data set as a placeholder for the data
+    vtkSmartPointer<vtkImageData> childData =
+      vtkSmartPointer<vtkImageData>::New();
       childData->ShallowCopy(
         vtkImageData::SafeDownCast(dataSource()->dataObject()));
-      emit newChildDataSource(label, childData);
-
-      m_dataSourceByName.insert(childDataSource(), nameLabelPair.first);
+      emit newChildDataSource(m_childDataSourceLabel, childData);
     }
-  }
 }
 
-bool OperatorPython::updateChildDataSources(Python::Dict outputDict)
+bool OperatorPython::updateChildDataSource(Python::Dict outputDict)
 {
   if (hasChildDataSource()) {
     Python::Object pyDataObject;
-    QString childKey = m_dataSourceByName[childDataSource()];
-    pyDataObject = outputDict[childKey];
+    pyDataObject = outputDict[m_childDataSourceName];
     if (!pyDataObject.isValid()) {
-      qCritical() << "No child dataset named " << childKey
+      qCritical() << "No child dataset named " << m_childDataSourceName
                   << "defined in dictionary returned from Python script.\n";
       return false;
     } else {
@@ -395,17 +383,16 @@ bool OperatorPython::updateChildDataSources(Python::Dict outputDict)
   return true;
 }
 
-bool OperatorPython::updateChildDataSources(
+bool OperatorPython::updateChildDataSource(
   QMap<QString, vtkSmartPointer<vtkDataObject>> output)
 {
   if (hasChildDataSource()) {
-    QString childKey = m_dataSourceByName[childDataSource()];
     for (QMap<QString, vtkSmartPointer<vtkDataObject>>::const_iterator iter =
            output.begin();
          iter != output.end(); ++iter) {
 
-      if (iter.key() != childKey) {
-        qCritical() << "No child dataset named " << childKey
+      if (iter.key() != m_childDataSourceName) {
+        qCritical() << "No child dataset named " << m_childDataSourceName
                     << "defined in dictionary returned from Python script.\n";
         return false;
       }
@@ -428,7 +415,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
 
   Q_ASSERT(data);
 
-  createChildDataSources();
+  createChildDataSource();
 
   Python::Object pydata = Python::VTK::GetObjectFromPointer(data);
 
@@ -465,7 +452,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
     Python::Dict outputDict = result.toDict();
 
     // Support setting child data from the output dictionary
-    errorEncountered = !updateChildDataSources(outputDict);
+    errorEncountered = !updateChildDataSource(outputDict);
 
     // Results (tables, etc.)
     for (int i = 0; i < m_resultNames.size(); ++i) {

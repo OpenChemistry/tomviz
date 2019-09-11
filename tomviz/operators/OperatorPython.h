@@ -56,11 +56,12 @@ public:
   QMap<QString, QVariant> arguments() const;
 
   /// Not really "public" but needs to called when running pipeline externally.
-  void createChildDataSources();
+  /// Needed to create the data source upfront for live updates.
+  void createChildDataSource();
 
   /// Not really "public" but needs to called when running pipeline externally.
-  bool updateChildDataSources(Python::Dict output);
-  bool updateChildDataSources(
+  bool updateChildDataSource(Python::Dict output);
+  bool updateChildDataSource(
     QMap<QString, vtkSmartPointer<vtkDataObject>> output);
 
   typedef CustomPythonOperatorWidget* (*CustomWidgetFunction)(
@@ -106,8 +107,9 @@ private:
   QString m_customWidgetID;
 
   QList<QString> m_resultNames;
-  QList<QPair<QString, QString>> m_childDataSourceNamesAndLabels;
-  QMap<DataSource*, QString> m_dataSourceByName;
+  QString m_childDataSourceName = "output";
+  QString m_childDataSourceLabel = "Output";
+
   QMap<QString, QVariant> m_arguments;
   int m_numberOfParameters = 0;
 };
