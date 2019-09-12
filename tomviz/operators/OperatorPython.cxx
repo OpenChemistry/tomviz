@@ -350,7 +350,7 @@ void OperatorPython::createChildDataSource()
   // Create child datasets in advance. Keep a map from DataSource to name
   // so that we can match Python script return dictionary values containing
   // child data after the script finishes.
-  if (!childDataSource()) {
+  if (hasChildDataSource() && !childDataSource()) {
     // Create uninitialized data set as a placeholder for the data
     vtkSmartPointer<vtkImageData> childData =
       vtkSmartPointer<vtkImageData>::New();
