@@ -218,7 +218,6 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
   } else if (info.suffix().toLower() == "h5") {
     loadWithParaview = false;
     QVariantMap hdf5Options;
-    vtkNew<vtkImageData> imageData;
     if (options.contains("subsampleSettings")) {
       // Before we read into the image data, set subsample settings
       hdf5Options["subsampleStride"] =
@@ -229,24 +228,14 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     }
     // Check if it looks like data exchange
     if (GenericHDF5Format::isDataExchange(fileName.toStdString())) {
+      dataSource = new DataSource(info.completeBaseName());
       DataExchangeFormat format;
-      if (!format.read(fileName.toLatin1().data(), imageData, hdf5Options))
+      if (!format.read(fileName.toLatin1().data(), dataSource, hdf5Options)) {
+        delete dataSource;
         return nullptr;
-
-      // Read in the dark and white image data as well
-      vtkNew<vtkImageData> darkImage, whiteImage;
-      if (!format.readDark(fileName.toStdString(), darkImage, hdf5Options))
-        return nullptr;
-      if (!format.readWhite(fileName.toStdString(), whiteImage, hdf5Options))
-        return nullptr;
-
-      DataSource::DataSourceType type = DataSource::hasTiltAngles(imageData)
-                                          ? DataSource::TiltSeries
-                                          : DataSource::Volume;
-      dataSource = new DataSource(imageData, type);
-      dataSource->setDarkData(std::move(darkImage));
-      dataSource->setWhiteData(std::move(whiteImage));
+      }
     } else {
+      vtkNew<vtkImageData> imageData;
       GenericHDF5Format hdf5Format;
       if (!hdf5Format.read(fileName.toLatin1().data(), imageData, hdf5Options))
         return nullptr;

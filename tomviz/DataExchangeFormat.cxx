@@ -11,6 +11,7 @@
 
 #include <vtkDataArray.h>
 #include <vtkImageData.h>
+#include <vtkImagePermute.h>
 #include <vtkNew.h>
 #include <vtkPointData.h>
 #include <vtkTrivialProducer.h>
@@ -43,6 +44,46 @@ bool DataExchangeFormat::read(const std::string& fileName, vtkImageData* image,
   return readDataSet(fileName, path, image, options);
 }
 
+bool DataExchangeFormat::read(const std::string& fileName,
+                              DataSource* dataSource,
+                              const QVariantMap& options)
+{
+  vtkNew<vtkImageData> image;
+  if (!read(fileName, image, options)) {
+    std::cerr << "Failed to read data in: " + fileName + "\n";
+    return false;
+  }
+
+  dataSource->setData(image);
+
+  // Read in the dark and white image data as well
+  vtkNew<vtkImageData> darkImage, whiteImage;
+  readDark(fileName, darkImage, options);
+  dataSource->setDarkData(std::move(darkImage));
+
+  readWhite(fileName, whiteImage, options);
+  dataSource->setWhiteData(std::move(whiteImage));
+
+  QVector<double> angles = readTheta(fileName, options);
+
+  if (angles.size() != 0) {
+    // This is a tilt series, swap x and z
+    vtkNew<vtkImagePermute> permute;
+    permute->SetFilteredAxes(2, 1, 0);
+    permute->SetInputData(image);
+    permute->Update();
+    image->ShallowCopy(permute->GetOutput());
+
+    dataSource->setTiltAngles(angles);
+    dataSource->setType(DataSource::TiltSeries);
+
+    // Need to emit dataModified() so the data source updates its dims
+    dataSource->dataModified();
+  }
+
+  return true;
+}
+
 bool DataExchangeFormat::readDark(const std::string& fileName,
                                   vtkImageData* image,
                                   const QVariantMap& options)
@@ -59,10 +100,67 @@ bool DataExchangeFormat::readWhite(const std::string& fileName,
   return readDataSet(fileName, path, image, options);
 }
 
+template <typename T>
+void readAngleArray(vtkDataArray* array, QVector<double>& angles)
+{
+  auto* data = static_cast<T*>(array->GetVoidPointer(0));
+  for (int i = 0; i < array->GetNumberOfTuples(); ++i)
+    angles.append(data[i]);
+}
+
+QVector<double> DataExchangeFormat::readTheta(const std::string& fileName,
+                                              const QVariantMap& options)
+{
+  Q_UNUSED(options)
+
+  using h5::H5ReadWrite;
+  H5ReadWrite::OpenMode mode = H5ReadWrite::OpenMode::ReadOnly;
+  H5ReadWrite reader(fileName.c_str(), mode);
+
+  QVector<double> angles;
+  std::string thetaNode = "/exchange/theta";
+  if (!reader.isDataSet(thetaNode)) {
+    std::cerr << "No dataset at: " + thetaNode + "\n";
+    return angles;
+  }
+
+  // Get the type of the data
+  h5::H5ReadWrite::DataType type = reader.dataType(thetaNode);
+  int vtkDataType = h5::H5VtkTypeMaps::dataTypeToVtk(type);
+
+  // This should really only be one dimension
+  std::vector<int> dims = reader.getDimensions(thetaNode);
+
+  auto* array = vtkDataArray::CreateDataArray(vtkDataType);
+  array->SetNumberOfTuples(dims[0]);
+  if (!reader.readData(thetaNode, type, array->GetVoidPointer(0))) {
+    std::cerr << "Failed to read the angles\n";
+    return angles;
+  }
+
+  switch (array->GetDataType()) {
+    // This is done so we can ensure we read the type correctly...
+    vtkTemplateMacro(readAngleArray<VTK_TT>(array, angles));
+  }
+
+  return angles;
+}
+
 static bool writeData(h5::H5ReadWrite& writer, vtkImageData* image)
 {
+  // If this is a tilt series, swap the X and Z axes
+  vtkImageData* permutedImage = image;
+  vtkNew<vtkImagePermute> permute;
+  if (DataSource::hasTiltAngles(image)) {
+    permute->SetFilteredAxes(2, 1, 0);
+    permute->SetInputData(image);
+    permute->Update();
+    permutedImage = permute->GetOutput();
+  }
+
   // Assume /exchange already exists
-  return GenericHDF5Format::writeVolume(writer, "/exchange", "data", image);
+  return GenericHDF5Format::writeVolume(writer, "/exchange", "data",
+                                        permutedImage);
 }
 
 static bool writeDark(h5::H5ReadWrite& writer, vtkImageData* image)
@@ -77,6 +175,18 @@ static bool writeWhite(h5::H5ReadWrite& writer, vtkImageData* image)
   // Assume /exchange already exists
   return GenericHDF5Format::writeVolume(writer, "/exchange", "data_white",
                                         image);
+}
+
+static bool writeTheta(h5::H5ReadWrite& writer, vtkImageData* image)
+{
+  QVector<double> angles = DataSource::getTiltAngles(image);
+
+  if (angles.isEmpty())
+    return false;
+
+  // Assume /exchange already exists
+  return writer.writeData("/exchange", "theta", { angles.size() },
+                          angles.data());
 }
 
 bool DataExchangeFormat::write(const std::string& fileName, DataSource* source)
@@ -98,8 +208,14 @@ bool DataExchangeFormat::write(const std::string& fileName, DataSource* source)
       return false;
   }
 
-  if (source->whiteData())
-    return writeWhite(writer, source->whiteData());
+  if (source->whiteData()) {
+    if (!writeWhite(writer, source->whiteData()))
+      return false;
+  }
+
+  if (source->hasTiltAngles()) {
+    return writeTheta(writer, image);
+  }
 
   return true;
 }
