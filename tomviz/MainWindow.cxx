@@ -386,7 +386,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     readInJSONDescription("Recon_TV_minimization"));
   new AddPythonTransformReaction(
     reconTomopyGridRecAction, "Reconstruct (Tomopy Gridrec)",
-    readInPythonScript("Recon_tomopy_gridrec"), false, false, false,
+    readInPythonScript("Recon_tomopy_gridrec"), true, false, false,
     readInJSONDescription("Recon_tomopy_gridrec"));
 
   new ReconstructionReaction(reconWBP_CAction);
