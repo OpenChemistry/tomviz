@@ -19,11 +19,12 @@ def transform_scalars(dataset, rot_center=0, tune_rot_center=True):
 
     dark = dataset.dark
     white = dataset.white
+    angles = utils.get_tilt_angles(dataset)
 
-    # No current way to get theta
-    theta = None
-
-    if theta is None:
+    if angles is not None:
+        # tomopy wants radians
+        theta = np.radians(angles)
+    else:
         # Assume it is equally spaced between 0 and 180 degrees
         theta = tomopy.angles(array.shape[0])
 
@@ -51,4 +52,10 @@ def transform_scalars(dataset, rot_center=0, tune_rot_center=True):
     array = tomopy.circ_mask(array, axis=0, ratio=0.95)
 
     # Set the transformed array
-    utils.set_array(dataset, array)
+    child = utils.make_child_dataset(dataset)
+    utils.mark_as_volume(child)
+    utils.set_array(child, array)
+
+    return_values = {}
+    return_values['reconstruction'] = child
+    return return_values

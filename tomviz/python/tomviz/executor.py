@@ -425,6 +425,9 @@ def _read_emd(path, options=None):
             'dims': dims
         }
 
+        if dims is not None and dims[-1][2] == b'angles':
+            output['tilt_angles'] = dims[-1][1][:].astype(np.float64)
+
         return output
 
 
@@ -505,20 +508,34 @@ def _read_data_exchange(path, options=None):
     with h5py.File(path, 'r') as f:
         g = f['/exchange']
 
-        datasets = ['data', 'data_dark', 'data_white']
-        arrays = []
-        for name in datasets:
-            data = g[name]
-            arrays += [(name, _read_dataset(data, options))]
+        dataset_names = ['data', 'data_dark', 'data_white', 'theta']
+        datasets = {}
+        for name in dataset_names:
+            if name in g:
+                # Don't read theta with subsample options
+                if name == 'theta':
+                    datasets[name] = g[name][:]
+                    continue
+
+                datasets[name] = _read_dataset(g[name], options)
 
         # Data Exchange stores data as row major order.
         # VTK expects column major order.
-        arrays = [(name, np.asfortranarray(data)) for (name, data) in arrays]
+        datasets = { name: np.asfortranarray(data)
+                     for (name, data) in datasets.items() }
+
+        # Swap the axes - tomopy doesn't want this, we will add it later
+        #if 'theta' in datasets:
+        #    # Swap x and z axes
+        #    swap_keys = ['data', 'data_dark', 'data_white']
+        #    datasets = { name: np.transpose(datasets[name], [2, 1, 0])
+        #                 for name in swap_keys }
 
         output = {
-            'arrays': [arrays[0]],
-            'data_dark': arrays[1][1],
-            'data_white': arrays[2][1]
+            'arrays': [('data', datasets.get('data'))],
+            'data_dark': datasets.get('data_dark'),
+            'data_white': datasets.get('data_white'),
+            'tilt_angles': datasets.get('theta')
         }
 
         return output
@@ -744,6 +761,8 @@ def execute(operators, start_at, data_file_path, output_file_path,
         data.dark = output['data_dark']
     if 'data_white' in output:
         data.white = output['data_white']
+    if 'tilt_angles' in output:
+        data.tilt_angles = output['tilt_angles']
 
     # If we have angles set them
     if dims is not None and dims[-1][2] == b'angles':
