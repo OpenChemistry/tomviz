@@ -44,6 +44,18 @@ bool DataExchangeFormat::read(const std::string& fileName, vtkImageData* image,
   return readDataSet(fileName, path, image, options);
 }
 
+static void swapXAndZ(vtkImageData* image)
+{
+  if (!image)
+    return;
+
+  vtkNew<vtkImagePermute> permute;
+  permute->SetFilteredAxes(2, 1, 0);
+  permute->SetInputData(image);
+  permute->Update();
+  image->ShallowCopy(permute->GetOutput());
+}
+
 bool DataExchangeFormat::read(const std::string& fileName,
                               DataSource* dataSource,
                               const QVariantMap& options)
@@ -68,11 +80,9 @@ bool DataExchangeFormat::read(const std::string& fileName,
 
   if (angles.size() != 0) {
     // This is a tilt series, swap x and z
-    vtkNew<vtkImagePermute> permute;
-    permute->SetFilteredAxes(2, 1, 0);
-    permute->SetInputData(image);
-    permute->Update();
-    image->ShallowCopy(permute->GetOutput());
+    swapXAndZ(image);
+    swapXAndZ(dataSource->darkData());
+    swapXAndZ(dataSource->whiteData());
 
     dataSource->setTiltAngles(angles);
     dataSource->setType(DataSource::TiltSeries);
@@ -163,18 +173,40 @@ static bool writeData(h5::H5ReadWrite& writer, vtkImageData* image)
                                         permutedImage);
 }
 
-static bool writeDark(h5::H5ReadWrite& writer, vtkImageData* image)
+static bool writeDark(h5::H5ReadWrite& writer, vtkImageData* image,
+                      bool swapAxes = false)
 {
+  // If this is a tilt series, swap the X and Z axes
+  vtkImageData* permutedImage = image;
+  vtkNew<vtkImagePermute> permute;
+  if (swapAxes) {
+    permute->SetFilteredAxes(2, 1, 0);
+    permute->SetInputData(image);
+    permute->Update();
+    permutedImage = permute->GetOutput();
+  }
+
   // Assume /exchange already exists
   return GenericHDF5Format::writeVolume(writer, "/exchange", "data_dark",
-                                        image);
+                                        permutedImage);
 }
 
-static bool writeWhite(h5::H5ReadWrite& writer, vtkImageData* image)
+static bool writeWhite(h5::H5ReadWrite& writer, vtkImageData* image,
+                       bool swapAxes = false)
 {
+  // If this is a tilt series, swap the X and Z axes
+  vtkImageData* permutedImage = image;
+  vtkNew<vtkImagePermute> permute;
+  if (swapAxes) {
+    permute->SetFilteredAxes(2, 1, 0);
+    permute->SetInputData(image);
+    permute->Update();
+    permutedImage = permute->GetOutput();
+  }
+
   // Assume /exchange already exists
   return GenericHDF5Format::writeVolume(writer, "/exchange", "data_white",
-                                        image);
+                                        permutedImage);
 }
 
 static bool writeTheta(h5::H5ReadWrite& writer, vtkImageData* image)
@@ -203,13 +235,15 @@ bool DataExchangeFormat::write(const std::string& fileName, DataSource* source)
   if (!writeData(writer, image))
     return false;
 
+  bool swapAxes = source->hasTiltAngles();
+
   if (source->darkData()) {
-    if (!writeDark(writer, source->darkData()))
+    if (!writeDark(writer, source->darkData(), swapAxes))
       return false;
   }
 
   if (source->whiteData()) {
-    if (!writeWhite(writer, source->whiteData()))
+    if (!writeWhite(writer, source->whiteData(), swapAxes))
       return false;
   }
 
