@@ -1028,6 +1028,9 @@ void DataSource::setData(vtkDataObject* newData)
     fd->AddArray(typeArray);
   }
   typeArray->SetTuple1(0, this->Internals->Type);
+
+  // Make sure everything gets updated with the new data
+  dataModified();
 }
 
 void DataSource::copyData(vtkDataObject* newData)
