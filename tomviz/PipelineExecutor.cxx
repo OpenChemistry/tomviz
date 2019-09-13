@@ -595,7 +595,7 @@ void DockerPipelineExecutor::operatorStarted(Operator* op)
 
   auto pythonOp = qobject_cast<OperatorPython*>(op);
   if (pythonOp != nullptr) {
-    pythonOp->createChildDataSources();
+    pythonOp->createChildDataSource();
   }
 }
 
@@ -626,7 +626,7 @@ void DockerPipelineExecutor::operatorFinished(Operator* op)
 
     auto pythonOp = qobject_cast<OperatorPython*>(op);
     Q_ASSERT(pythonOp != nullptr);
-    pythonOp->updateChildDataSources(childOutput);
+    pythonOp->updateChildDataSource(childOutput);
   }
 
   op->setState(OperatorState::Complete);
