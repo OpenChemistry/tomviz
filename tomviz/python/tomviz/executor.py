@@ -360,7 +360,7 @@ def _load_operator_module(label, script):
 
 
 def _read_dataset(dataset, options=None):
-    if options is None:
+    if options is None or 'subsampleSettings' not in options:
         return dataset[:]
 
     stride = options.get('subsampleSettings', {}).get('stride', 1)
@@ -407,6 +407,7 @@ def _read_emd(path, options=None):
             arrays += channel_datasets
 
         # If this is a tilt series, swap the X and Z axes
+        tilt_axis = None
         if dims[0][2] == b'angles' or dims[0][3] in ANGLE_UNITS:
             arrays = [(name, np.transpose(data, [2, 1, 0])) for (name, data)
                       in arrays]
@@ -416,13 +417,15 @@ def _read_emd(path, options=None):
             x_dim = dims[-1]
             dims[0] = x_dim
             dims[-1] = angle_dim
+            tilt_axis = 2
 
         # EMD stores data as row major order.  VTK expects column major order.
         arrays = [(name, np.asfortranarray(data)) for (name, data) in arrays]
 
         output = {
             'arrays': arrays,
-            'dims': dims
+            'dims': dims,
+            'tilt_axis': tilt_axis
         }
 
         if dims is not None and dims[-1][2] == b'angles':
@@ -433,6 +436,7 @@ def _read_emd(path, options=None):
 
 def _write_emd(path, dataobject, dims=None):
     tilt_angles = dataobject.tilt_angles
+    tilt_axis = dataobject.tilt_axis
     active_array = dataobject.active
     # Separate out the extra channels/arrays as we store them separately
     extra_arrays = {name: array for name, array
@@ -440,7 +444,7 @@ def _write_emd(path, dataobject, dims=None):
                     if id(array) != id(active_array)}
 
     # If this is a tilt series, swap the X and Z axes
-    if tilt_angles is not None:
+    if tilt_angles is not None and tilt_axis == 2:
         active_array = np.transpose(active_array, [2, 1, 0])
         extra_arrays = {name: np.transpose(array, [2, 1, 0]) for (name, array)
                         in extra_arrays.items()}
@@ -471,7 +475,7 @@ def _write_emd(path, dataobject, dims=None):
                              values, name, '[n_m]'))
 
         # Swap the dims as well
-        if tilt_angles is not None:
+        if tilt_angles is not None and tilt_axis == 2:
             (first_dataset_name, first_values, first_name, first_units) = \
                 dims[0]
             (last_dataset_name, last_values, last_name, last_units) = dims[-1]
@@ -521,21 +525,31 @@ def _read_data_exchange(path, options=None):
 
         # Data Exchange stores data as row major order.
         # VTK expects column major order.
-        datasets = { name: np.asfortranarray(data)
-                     for (name, data) in datasets.items() }
+        if options is None:
+            to_fortran = True
+        else:
+            to_fortran = not options.get('keep_c_ordering', False)
 
-        # Swap the axes - tomopy doesn't want this, we will add it later
-        #if 'theta' in datasets:
-        #    # Swap x and z axes
-        #    swap_keys = ['data', 'data_dark', 'data_white']
-        #    datasets = { name: np.transpose(datasets[name], [2, 1, 0])
-        #                 for name in swap_keys }
+        if to_fortran:
+            datasets = { name: np.asfortranarray(data)
+                         for (name, data) in datasets.items() }
+
+            if 'theta' in datasets:
+                # Swap x and z axes
+                swap_keys = ['data', 'data_dark', 'data_white']
+                for key in swap_keys:
+                    datasets[key] = np.transpose(datasets[key], [2, 1, 0])
+
+        tilt_axis = None
+        if 'theta' in datasets:
+            tilt_axis = 2 if to_fortran else 0
 
         output = {
             'arrays': [('data', datasets.get('data'))],
             'data_dark': datasets.get('data_dark'),
             'data_white': datasets.get('data_white'),
-            'tilt_angles': datasets.get('theta')
+            'tilt_angles': datasets.get('theta'),
+            'tilt_axis': tilt_axis
         }
 
         return output
@@ -558,6 +572,7 @@ class DataObject(object):
         self.arrays = arrays
         self.is_volume = False
         self.tilt_angles = None
+        self.tilt_axis = None
         # The currently active scalar
         self.active_name = active
         # If we weren't given the active array and we only have one array, set
@@ -763,10 +778,8 @@ def execute(operators, start_at, data_file_path, output_file_path,
         data.white = output['data_white']
     if 'tilt_angles' in output:
         data.tilt_angles = output['tilt_angles']
-
-    # If we have angles set them
-    if dims is not None and dims[-1][2] == b'angles':
-        data.tilt_angles = dims[-1][1][:].astype(np.float64)
+    if 'tilt_axis' in output:
+        data.tilt_axis = output['tilt_axis']
 
     operators = operators[start_at:]
     transforms = _load_transform_functions(operators)

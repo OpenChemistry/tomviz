@@ -63,11 +63,12 @@ def main(data_path, state_file_path, output_file_path, progress_method,
 
     (datasource, operators) = _extract_pipeline(state)
 
-    read_options = None
+    read_options = {}
     if 'subsampleSettings' in datasource:
-        read_options = {}
         key = 'subsampleSettings'
         read_options[key] = datasource[key].copy()
+    if 'keepCOrdering' in datasource:
+        read_options['keep_c_ordering'] = datasource['keepCOrdering']
 
     # if we have been provided a data file path we are going to use the one
     # from the state file, so check it exists.
