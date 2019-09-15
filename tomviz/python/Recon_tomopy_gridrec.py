@@ -54,6 +54,11 @@ def transform_scalars(dataset, rot_center=0, tune_rot_center=True):
     # Calculate -log(array)
     array = tomopy.minus_log(array)
 
+    # Remove nan, neg, and inf values
+    array = tomopy.remove_nan(array, val=0.0)
+    array = tomopy.remove_neg(array, val=0.00)
+    array[np.where(array == np.inf)] = 0.00
+
     # Perform the reconstruction
     array = tomopy.recon(array, theta, center=rot_center, algorithm='gridrec')
 
