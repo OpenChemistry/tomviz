@@ -22,19 +22,20 @@ def transform_scalars(dataset, rot_center=0, tune_rot_center=True):
     angles = utils.get_tilt_angles(dataset)
     tilt_axis = dataset.tilt_axis
 
+    # Tomopy wants the tilt axis to be zero, so ensure that is true
+    if tilt_axis == 2:
+        order = [2, 1, 0]
+        array = np.transpose(array, order)
+        if dark is not None and white is not None:
+            dark = np.transpose(dark, order)
+            white = np.transpose(white, order)
+
     if angles is not None:
         # tomopy wants radians
         theta = np.radians(angles)
     else:
         # Assume it is equally spaced between 0 and 180 degrees
         theta = tomopy.angles(array.shape[0])
-
-    # Tomopy wants the tilt axis to be zero, so ensure that is true
-    if tilt_axis == 2:
-        array = np.transpose(array, [2, 1, 0])
-        if dark is not None and white is not None:
-            dark = np.transpose(dark, [2, 1, 0])
-            white = np.transpose(white, [2, 1, 0])
 
     # Perform flat-field correction of raw data
     if white is not None and dark is not None:
