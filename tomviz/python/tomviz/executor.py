@@ -475,6 +475,8 @@ def _write_emd(path, dataobject, dims=None):
             # Swap the dims as well
             if tilt_angles is not None and tilt_axis == 2:
                 dims[0], dims[-1] = dims[-1], dims[0]
+                # Set the tilt angles as the value for dims[0]
+                dims[0] = (dims[0][0], tilt_angles, dims[0][2], dims[0][3])
 
         # add dimension vectors
         for (dataset_name, values, name, units) in dims:
@@ -491,7 +493,6 @@ def _write_emd(path, dataobject, dims=None):
             # Only override we don't already have a valid angle units.
             if units not in ANGLE_UNITS:
                 d.attrs['units'] = np.string_('[deg]')
-            d[:] = tilt_angles
 
         # If we have extra scalars add them under tomviz_scalars
         if extra_arrays:
