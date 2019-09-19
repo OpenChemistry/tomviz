@@ -6,5 +6,4 @@ build context. Therefore the build must be performed from the root of the
 repository.
 
     cd <tomviz-repo-root>
-    docker build -f docker/tomviz-tomopy-pipeline/Dockerfile .
-
+    docker build -f docker/tomviz-tomopy-pipeline/Dockerfile -t tomviz/tomopy-pipeline .
