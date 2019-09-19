@@ -412,10 +412,7 @@ def _read_emd(path, options=None):
                       in arrays]
 
             # Swap the dims order as well
-            angle_dim = dims[0]
-            x_dim = dims[-1]
-            dims[0] = x_dim
-            dims[-1] = angle_dim
+            dims[0], dims[-1] = dims[-1], dims[0]
 
         # EMD stores data as row major order.  VTK expects column major order.
         arrays = [(name, np.asfortranarray(data)) for (name, data) in arrays]
@@ -459,18 +456,13 @@ def _write_emd(path, dataobject, dims=None):
 
             for i, name in zip(range(0, 3), names):
                 values = np.array(range(data.shape[i]))
+                units = '[n_m]' if name != 'angles' else '[deg]'
                 dims.append(('/data/tomography/dim%d' % (i+1),
-                             values, name, '[n_m]'))
-
-        # Swap the dims as well
-        if tilt_angles is not None:
-            (first_dataset_name, first_values, first_name, first_units) = \
-                dims[0]
-            (last_dataset_name, last_values, last_name, last_units) = dims[-1]
-
-            dims[0] = (first_dataset_name, last_values, 'angles', last_units)
-            dims[-1] = (last_dataset_name, first_values, first_name,
-                        first_units)
+                             values, name, units))
+        else:
+            # Swap the dims as well
+            if tilt_angles is not None:
+                dims[0], dims[-1] = dims[-1], dims[0]
 
         # add dimension vectors
         for (dataset_name, values, name, units) in dims:
