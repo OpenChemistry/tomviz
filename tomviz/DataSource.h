@@ -12,6 +12,7 @@
 #include <QVector>
 
 #include <vtkRect.h>
+#include <vtkSmartPointer.h>
 
 class vtkSMProxy;
 class vtkSMSourceProxy;
@@ -116,6 +117,18 @@ public:
 
   /// Get the PV reader properties.
   QVariantMap readerProperties() const;
+
+  /// Set/get the dark/white data, used in Data Exchange currently
+  void setDarkData(vtkSmartPointer<vtkImageData> image);
+
+  /// Set/get the dark/white data, used in Data Exchange currently
+  vtkImageData* darkData();
+
+  /// Set/get the dark/white data, used in Data Exchange currently
+  void setWhiteData(vtkSmartPointer<vtkImageData> image);
+
+  /// Set/get the dark/white data, used in Data Exchange currently
+  vtkImageData* whiteData();
 
   /// Check to see if the data was subsampled while reading
   bool wasSubsampled() const;
@@ -249,6 +262,8 @@ public:
   // otherwise.
   bool forkable();
   void setForkable(bool forkable);
+
+  static void setType(vtkDataObject* image, DataSourceType t);
 
   static bool hasTiltAngles(vtkDataObject* image);
   static QVector<double> getTiltAngles(vtkDataObject* image);

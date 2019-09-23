@@ -360,7 +360,7 @@ def _load_operator_module(label, script):
 
 
 def _read_dataset(dataset, options=None):
-    if options is None:
+    if options is None or 'subsampleSettings' not in options:
         return dataset[:]
 
     stride = options.get('subsampleSettings', {}).get('stride', 1)
@@ -407,21 +407,33 @@ def _read_emd(path, options=None):
             arrays += channel_datasets
 
         # If this is a tilt series, swap the X and Z axes
+        tilt_axis = None
         if dims[0][2] == b'angles' or dims[0][3] in ANGLE_UNITS:
             arrays = [(name, np.transpose(data, [2, 1, 0])) for (name, data)
                       in arrays]
 
             # Swap the dims order as well
             dims[0], dims[-1] = dims[-1], dims[0]
+            tilt_axis = 2
 
         # EMD stores data as row major order.  VTK expects column major order.
         arrays = [(name, np.asfortranarray(data)) for (name, data) in arrays]
 
-        return (arrays, dims)
+        output = {
+            'arrays': arrays,
+            'dims': dims,
+            'tilt_axis': tilt_axis
+        }
+
+        if dims is not None and dims[-1][2] == b'angles':
+            output['tilt_angles'] = dims[-1][1][:].astype(np.float64)
+
+        return output
 
 
 def _write_emd(path, dataobject, dims=None):
     tilt_angles = dataobject.tilt_angles
+    tilt_axis = dataobject.tilt_axis
     active_array = dataobject.active
     # Separate out the extra channels/arrays as we store them separately
     extra_arrays = {name: array for name, array
@@ -429,7 +441,7 @@ def _write_emd(path, dataobject, dims=None):
                     if id(array) != id(active_array)}
 
     # If this is a tilt series, swap the X and Z axes
-    if tilt_angles is not None:
+    if tilt_angles is not None and tilt_axis == 2:
         active_array = np.transpose(active_array, [2, 1, 0])
         extra_arrays = {name: np.transpose(array, [2, 1, 0]) for (name, array)
                         in extra_arrays.items()}
@@ -461,7 +473,7 @@ def _write_emd(path, dataobject, dims=None):
                              values, name, units))
         else:
             # Swap the dims as well
-            if tilt_angles is not None:
+            if tilt_angles is not None and tilt_axis == 2:
                 dims[0], dims[-1] = dims[-1], dims[0]
 
         # add dimension vectors
@@ -488,18 +500,81 @@ def _write_emd(path, dataobject, dims=None):
                 tomviz_scalars.create_dataset(name, data=array)
 
 
+def _read_data_exchange(path, options=None):
+    with h5py.File(path, 'r') as f:
+        g = f['/exchange']
+
+        dataset_names = ['data', 'data_dark', 'data_white', 'theta']
+        datasets = {}
+        for name in dataset_names:
+            if name in g:
+                # Don't read theta with subsample options
+                if name == 'theta':
+                    datasets[name] = g[name][:]
+                    continue
+
+                datasets[name] = _read_dataset(g[name], options)
+
+        # Data Exchange stores data as row major order.
+        # VTK expects column major order.
+        if options is None:
+            to_fortran = True
+        else:
+            to_fortran = not options.get('keep_c_ordering', False)
+
+        if to_fortran:
+            datasets = { name: np.asfortranarray(data)
+                         for (name, data) in datasets.items() }
+
+            if 'theta' in datasets:
+                # Swap x and z axes
+                swap_keys = ['data', 'data_dark', 'data_white']
+                for key in swap_keys:
+                    datasets[key] = np.transpose(datasets[key], [2, 1, 0])
+
+        tilt_axis = None
+        if 'theta' in datasets:
+            tilt_axis = 2 if to_fortran else 0
+
+        output = {
+            'arrays': [('data', datasets.get('data'))],
+            'data_dark': datasets.get('data_dark'),
+            'data_white': datasets.get('data_white'),
+            'tilt_angles': datasets.get('theta'),
+            'tilt_axis': tilt_axis
+        }
+
+        return output
+
+
+def _is_data_exchange(path):
+    # It must have an HDF5 extension
+    exts = ['.h5', '.hdf5']
+    if not any([path.suffix.lower() == x for x in exts]):
+        return False
+
+    # Open it up and make sure /exchange/data exists
+    with h5py.File(path, 'r') as f:
+        return '/exchange/data' in f
+
+
 class DataObject(object):
     def __init__(self, arrays, active=None):
         # Holds the map of scalars name => array
         self.arrays = arrays
         self.is_volume = False
         self.tilt_angles = None
+        self.tilt_axis = None
         # The currently active scalar
         self.active_name = active
         # If we weren't given the active array and we only have one array, set
         # it as the active array.
         if active is None and len(arrays.keys()):
             (self.active_name,) = arrays.keys()
+
+        # Dark and white backgrounds
+        self.dark = None
+        self.white = None
 
     def set_scalars(self, new_scalars):
         order = 'C'
@@ -671,7 +746,15 @@ def _write_child_data(result, operator_index, output_file_path, dims):
 
 def execute(operators, start_at, data_file_path, output_file_path,
             progress_method, progress_path, read_options=None):
-    arrays, dims = _read_emd(data_file_path, read_options)
+
+    if _is_data_exchange(data_file_path):
+        output = _read_data_exchange(data_file_path, read_options)
+    else:
+        # Assume it is emd
+        output = _read_emd(data_file_path, read_options)
+
+    arrays = output['arrays']
+    dims = output.get('dims')
 
     _patch_utils()
 
@@ -681,9 +764,14 @@ def execute(operators, start_at, data_file_path, output_file_path,
     arrays = {name: array for (name, array) in arrays}
 
     data = DataObject(arrays, active_array)
-    # If we have angles set them
-    if dims[-1][2] == b'angles':
-        data.tilt_angles = dims[-1][1][:].astype(np.float64)
+    if 'data_dark' in output:
+        data.dark = output['data_dark']
+    if 'data_white' in output:
+        data.white = output['data_white']
+    if 'tilt_angles' in output:
+        data.tilt_angles = output['tilt_angles']
+    if 'tilt_axis' in output:
+        data.tilt_axis = output['tilt_axis']
 
     operators = operators[start_at:]
     transforms = _load_transform_functions(operators)

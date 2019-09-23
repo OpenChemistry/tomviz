@@ -36,8 +36,8 @@ def _extract_pipeline(state):
 
 
 @click.command(name="tomviz")
-@click.option('-d', '--data-path', help='Path to an EMD file or directory'
-              ' containing EMD files, can be used'
+@click.option('-d', '--data-path', help='Path to an EMD/Data Exchange file or'
+              ' directory containing EMD/Data Exchange files, can be used'
               ' to override data source in state file. If multiple files are'
               ' provided the pipeline with be run for each file.',
               type=click.Path(exists=True))
@@ -63,11 +63,12 @@ def main(data_path, state_file_path, output_file_path, progress_method,
 
     (datasource, operators) = _extract_pipeline(state)
 
-    read_options = None
+    read_options = {}
     if 'subsampleSettings' in datasource:
-        read_options = {}
         key = 'subsampleSettings'
         read_options[key] = datasource[key].copy()
+    if 'keepCOrdering' in datasource:
+        read_options['keep_c_ordering'] = datasource['keepCOrdering']
 
     # if we have been provided a data file path we are going to use the one
     # from the state file, so check it exists.
@@ -86,10 +87,14 @@ def main(data_path, state_file_path, output_file_path, progress_method,
             raise Exception('Data source path does not exist: %s'
                             % data_path)
 
+    exts = ['.emd', '.h5', '.hdf5']
     data_path = Path(data_path)
     # Do we have multiple files to operate on
     if data_path.is_dir():
-        data_file_paths = list(data_path.glob('*.emd'))
+        data_file_paths = []
+        for ext in exts:
+            data_file_paths += list(data_path.glob('*' + ext))
+
         output_file_paths \
             = ['%s_transformed.emd' % x.stem for x in data_file_paths]
         # If we have been give an output directory write the output there
@@ -97,9 +102,9 @@ def main(data_path, state_file_path, output_file_path, progress_method,
             output_file_paths \
                 = [Path(output_file_path) / x for x in output_file_paths]
     else:
-        if data_path.suffix.lower() != '.emd':
+        if data_path.suffix.lower() not in exts:
             raise Exception(
-                'Unsupported data source format, only EMD is supported.')
+                'Unsupported data source format, only HDF5 formats supported.')
         data_file_paths = [data_path]
         output_file_paths = [output_file_path]
 

@@ -127,6 +127,16 @@ bool GenericHDF5Format::addScalarArray(h5::H5ReadWrite& reader,
   return true;
 }
 
+bool GenericHDF5Format::isDataExchange(const std::string& fileName)
+{
+  using h5::H5ReadWrite;
+  H5ReadWrite::OpenMode mode = H5ReadWrite::OpenMode::ReadOnly;
+  H5ReadWrite reader(fileName.c_str(), mode);
+
+  // If /exchange/data is a dataset, assume this is a DataExchangeFormat
+  return reader.isDataSet("/exchange/data");
+}
+
 bool GenericHDF5Format::readVolume(h5::H5ReadWrite& reader,
                                    const std::string& path, vtkImageData* image,
                                    const QVariantMap& options)
@@ -276,16 +286,11 @@ bool GenericHDF5Format::readVolume(h5::H5ReadWrite& reader,
 bool GenericHDF5Format::read(const std::string& fileName, vtkImageData* image,
                              const QVariantMap& options)
 {
+  Q_UNUSED(options)
+
   using h5::H5ReadWrite;
   H5ReadWrite::OpenMode mode = H5ReadWrite::OpenMode::ReadOnly;
   H5ReadWrite reader(fileName.c_str(), mode);
-
-  // If /exchange/data is a dataset, assume this is a DataExchangeFormat
-  if (reader.isDataSet("/exchange/data")) {
-    reader.close();
-    DataExchangeFormat deFormat;
-    return deFormat.read(fileName, image, options);
-  }
 
   // Find all 3D datasets. If there is more than one, have the user choose.
   std::vector<std::string> datasets = reader.allDataSets();

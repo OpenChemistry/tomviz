@@ -21,6 +21,7 @@ public:
 
 protected:
   void onTriggered() override { addExpression(); }
+  void updateEnableState() override;
 
 private:
   Q_DISABLE_COPY(AddExpressionReaction)

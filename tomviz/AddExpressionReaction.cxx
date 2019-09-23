@@ -78,4 +78,15 @@ QString AddExpressionReaction::getDefaultExpression(DataSource* source)
                "\n");
   }
 }
+
+void AddExpressionReaction::updateEnableState()
+{
+  // This is currently compatible in all execution environments
+  auto compatibleExecutionMode = true;
+
+  parentAction()->setEnabled(ActiveObjects::instance().activeDataSource() !=
+                               nullptr &&
+                             compatibleExecutionMode);
+}
+
 } // namespace tomviz

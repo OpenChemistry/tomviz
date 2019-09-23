@@ -103,6 +103,7 @@ private:
 
   QTimer* m_statusCheckTimer;
 
+  QString originalFileName();
   void checkContainerStatus();
   void operatorStarted(Operator* op);
   void operatorFinished(Operator* op);

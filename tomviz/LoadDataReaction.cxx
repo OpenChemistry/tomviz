@@ -4,6 +4,7 @@
 #include "LoadDataReaction.h"
 
 #include "ActiveObjects.h"
+#include "DataExchangeFormat.h"
 #include "DataSource.h"
 #include "EmdFormat.h"
 #include "FileFormatManager.h"
@@ -216,11 +217,7 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     }
   } else if (info.suffix().toLower() == "h5") {
     loadWithParaview = false;
-    // The generic HDF5 format will figure out if it is a special
-    // HDF5 format such as DataExchange.
-    GenericHDF5Format hdf5Format;
     QVariantMap hdf5Options;
-    vtkNew<vtkImageData> imageData;
     if (options.contains("subsampleSettings")) {
       // Before we read into the image data, set subsample settings
       hdf5Options["subsampleStride"] =
@@ -229,13 +226,26 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
         options["subsampleSettings"].toObject()["volumeBounds"].toVariant();
       hdf5Options["askForSubsample"] = false;
     }
-    if (hdf5Format.read(fileName.toLatin1().data(), imageData, hdf5Options)) {
+    // Check if it looks like data exchange
+    if (GenericHDF5Format::isDataExchange(fileName.toStdString())) {
+      dataSource = new DataSource(info.completeBaseName());
+      DataExchangeFormat format;
+      if (!format.read(fileName.toLatin1().data(), dataSource, hdf5Options)) {
+        delete dataSource;
+        return nullptr;
+      }
+    } else {
+      vtkNew<vtkImageData> imageData;
+      GenericHDF5Format hdf5Format;
+      if (!hdf5Format.read(fileName.toLatin1().data(), imageData, hdf5Options))
+        return nullptr;
       DataSource::DataSourceType type = DataSource::hasTiltAngles(imageData)
                                           ? DataSource::TiltSeries
                                           : DataSource::Volume;
       dataSource = new DataSource(imageData, type);
-      LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
     }
+
+    LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
   } else if (info.completeSuffix().endsWith("ome.tif")) {
     loadWithParaview = false;
     vtkNew<vtkOMETiffReader> reader;

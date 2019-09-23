@@ -179,6 +179,7 @@ bool ExportDataReaction::exportData(const QString& filename)
 {
   auto server = pqActiveObjects::instance().activeServer();
 
+  auto dataSource = m_module->dataSource();
   auto data = m_module->dataToExport();
 
   if (!server) {
@@ -198,8 +199,7 @@ bool ExportDataReaction::exportData(const QString& filename)
     }
   } else if (info.suffix() == "h5") {
     DataExchangeFormat writer;
-    auto image = vtkImageData::SafeDownCast(data);
-    if (!image || !writer.write(filename.toLatin1().data(), image)) {
+    if (!dataSource || !writer.write(filename.toLatin1().data(), dataSource)) {
       qCritical() << "Failed to write out data.";
       return false;
     } else {
