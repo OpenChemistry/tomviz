@@ -83,6 +83,13 @@ class Operator(object):
         """
         raise NotImplementedError('Must be implemented by subclass')
 
+    def transform(self, data):
+        """
+        This method should be overriden by subclasses to implement the
+        operations the operator should perform.
+        """
+        raise NotImplementedError('Must be implemented by subclass')
+
 
 class CancelableOperator(Operator):
     """
