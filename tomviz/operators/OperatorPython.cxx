@@ -116,7 +116,7 @@ public:
   Python::Module TransformModule;
   Python::Function TransformMethod;
   Python::Module InternalModule;
-  Python::Function FindTransformScalarsFunction;
+  Python::Function FindTransformFunction;
   Python::Function IsCancelableFunction;
   Python::Function DeleteModuleFunction;
 };
@@ -144,10 +144,10 @@ OperatorPython::OperatorPython(DataSource* parentObject)
       qCritical() << "Unable to locate is_cancelable.";
     }
 
-    d->FindTransformScalarsFunction =
-      d->InternalModule.findFunction("find_transform_scalars");
-    if (!d->FindTransformScalarsFunction.isValid()) {
-      qCritical() << "Unable to locate find_transform_scalars.";
+    d->FindTransformFunction =
+      d->InternalModule.findFunction("find_transform_function");
+    if (!d->FindTransformFunction.isValid()) {
+      qCritical() << "Unable to locate find_transform_function.";
     }
 
     d->DeleteModuleFunction = d->InternalModule.findFunction("delete_module");
@@ -323,9 +323,9 @@ void OperatorPython::setScript(const QString& str)
       findArgs.set(0, d->TransformModule);
       findArgs.set(1, op);
 
-      d->TransformMethod = d->FindTransformScalarsFunction.call(findArgs);
+      d->TransformMethod = d->FindTransformFunction.call(findArgs);
       if (!d->TransformMethod.isValid()) {
-        qCritical("Script doesn't have any 'transform_scalars' function.");
+        qCritical("Script doesn't have any 'transform' function.");
         return;
       }
 
@@ -424,7 +424,22 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
     Python python;
 
     Python::Tuple args(1);
-    args.set(0, pydata);
+
+    // This will look something like:
+    // <function transform_scalars at 0x7fd90c866158>
+    QString name = d->TransformMethod.toString();
+    if (name.contains("transform_scalars")) {
+      // Use the arguments for transform_scalars()
+      args.set(0, pydata);
+    }
+    else if (name.contains("transform")) {
+      // Use the arguments for transform()
+      args.set(0, pydata);
+    }
+    else {
+      qDebug() << "Unknown TransformMethod name: " << name;
+      return false;
+    }
 
     Python::Dict kwargs;
     foreach (QString key, m_arguments.keys()) {

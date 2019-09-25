@@ -43,22 +43,29 @@ def find_operator_class(transform_module):
     return operator_class
 
 
-def find_transform_scalars_function(transform_module):
-    transform_function = None
-    functions = inspect.getmembers(transform_module, inspect.isfunction)
+def _find_function(module, function_name):
+    # Finds a function in the module with a given "function_name"
+    # Returns `None` if it is not found
+    functions = inspect.getmembers(module, inspect.isfunction)
     for (name, func) in functions:
-        if name == 'transform_scalars':
-            transform_function = func
-            break
+        if name == function_name:
+            return func
 
-    return transform_function
+
+def find_transform_from_module(transform_module):
+    # This tries to first find transform(), and then transform_scalars()
+    f = _find_function(transform_module, 'transform')
+    if f is None:
+        f = _find_function(transform_module, 'transform_scalars')
+
+    return f
 
 
 def is_cancelable(transform_module):
     cls = find_operator_class(transform_module)
 
     if cls is None:
-        function = find_transform_scalars_function(transform_module)
+        function = find_transform_from_module(transform_module)
 
     if cls is None and function is None:
         raise Exception('Unable to locate function or operator class.')
@@ -67,13 +74,13 @@ def is_cancelable(transform_module):
                                           tomviz.operators.CancelableOperator)
 
 
-def find_transform_scalars(transform_module, op=None):
+def find_transform_function(transform_module, op=None):
 
-    transform_function = find_transform_scalars_function(transform_module)
+    transform_function = find_transform_from_module(transform_module)
     if transform_function is None:
         cls = find_operator_class(transform_module)
         if cls is None:
-            raise Exception('Unable to locate transform_function.')
+            raise Exception('Unable to locate transform function.')
 
         # We call __new__ and __init__ manually here so we can inject the
         # wrapper OperatorPython instance before __init__ is called so that
@@ -84,10 +91,14 @@ def find_transform_scalars(transform_module, op=None):
             o._operator_wrapper = tomviz._wrapping.OperatorPythonWrapper(op)
         cls.__init__(o)
 
-        transform_function = o.transform_scalars
+        transform_function = None
+        if hasattr(o, 'transform'):
+            transform_function = o.transform
+        elif hasattr(o, 'transform_scalars'):
+            transform_function = o.transform_scalars
 
     if transform_function is None:
-        raise Exception('Unable to locate transform_function.')
+        raise Exception('Unable to locate transform function.')
 
     return transform_function
 
@@ -101,7 +112,7 @@ def _load_module(operator_dir, python_file):
 
 
 def _has_operator(module):
-    return find_transform_scalars_function(module) is not None or \
+    return find_transform_from_module(module) is not None or \
         find_operator_class(module) is not None
 
 

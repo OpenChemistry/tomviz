@@ -14,7 +14,7 @@ import errno
 from tqdm import tqdm
 
 from tomviz import utils
-from tomviz._internal import find_transform_scalars
+from tomviz._internal import find_transform_function
 
 LOG_FORMAT = '[%(asctime)s] %(levelname)s: %(message)s'
 
@@ -705,15 +705,14 @@ def _load_transform_functions(operators):
         operator_label = operator['label']
 
         operator_module = _load_operator_module(operator_label, operator_script)
-        transform_scalars = find_transform_scalars(operator_module)
+        transform = find_transform_function(operator_module)
 
         # partial apply the arguments
         arguments = {}
         if 'arguments' in operator:
             arguments = operator['arguments']
 
-        transform_functions.append((operator_label, transform_scalars,
-                                    arguments))
+        transform_functions.append((operator_label, transform, arguments))
 
     return transform_functions
 
