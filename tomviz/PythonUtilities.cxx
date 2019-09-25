@@ -288,6 +288,12 @@ Python::Object Python::Function::call(Tuple& args, Dict& kwargs)
   return result;
 }
 
+QString Python::Function::toString()
+{
+  PyObject* objectRepr = PyObject_Repr(*this);
+  return PyString_AsString(objectRepr);
+}
+
 Python::Object Python::VTK::GetObjectFromPointer(vtkObjectBase* ptr)
 {
   return vtkPythonUtil::GetObjectFromPointer(ptr);

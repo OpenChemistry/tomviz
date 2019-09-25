@@ -127,6 +127,7 @@ public:
     Object call();
     Object call(Tuple& args);
     Object call(Tuple& args, Dict& kwargs);
+    QString toString();
   };
 
   class Module : public Object
