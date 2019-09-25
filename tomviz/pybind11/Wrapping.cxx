@@ -6,6 +6,7 @@
 #include "OperatorPythonWrapper.h"
 #include "PybindVTKTypeCaster.h"
 
+#include "DataSource.h"
 #include "vtkImageData.h"
 
 namespace py = pybind11;
@@ -28,6 +29,12 @@ PYBIND11_PLUGIN(_wrapping)
                   &OperatorPythonWrapper::setProgressMessage)
     .def_property("progress_data", &OperatorPythonWrapper::progressData,
                   &OperatorPythonWrapper::setProgressData);
+
+  py::class_<tomviz::DataSource>(m, "DataSource")
+    .def_property_readonly("dark_data", &tomviz::DataSource::darkData,
+                           "Get the dark image data")
+    .def_property_readonly("white_data", &tomviz::DataSource::whiteData,
+                           "Get the white image data");
 
   return m.ptr();
 }
