@@ -29,6 +29,8 @@ class capsule;
 
 namespace tomviz {
 
+class DataSource;
+
 class Python
 {
 
@@ -54,6 +56,7 @@ public:
     Object(const Object& other);
     Object(const QString& str);
     Object(const Variant& value);
+    Object(const DataSource& source);
     Object(PyObject* obj);
 
     Object& operator=(const Object& other);
@@ -202,6 +205,8 @@ struct OperatorDescription
   bool valid = true;
 };
 
+Python::Object createPyDataObject(vtkObjectBase* data,
+                                  const DataSource& source);
 std::vector<OperatorDescription> findCustomOperators(const QString& path);
 } // namespace tomviz
 

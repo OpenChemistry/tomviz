@@ -5,6 +5,7 @@
 
 #include "vtkPython.h" // must be first
 
+#include "DataSource.h"
 #include "Logger.h"
 
 #include <vtkPythonInterpreter.h>
@@ -12,6 +13,8 @@
 #include <vtkSmartPyObject.h>
 
 #include <pybind11/pybind11.h>
+
+namespace py = pybind11;
 
 namespace tomviz {
 
@@ -48,6 +51,13 @@ Python::Object::Object(const QString& str)
 Python::Object::Object(const Variant& value)
 {
   m_smartPyObject = new vtkSmartPyObject(toPyObject(value));
+}
+
+Python::Object::Object(const DataSource& source)
+{
+  // The vtkSmartPyObject will take ownership of the PyObject*
+  py::object obj = py::cast(source, py::return_value_policy::reference);
+  m_smartPyObject = new vtkSmartPyObject(obj.release().ptr());
 }
 
 Python::Object::Object(PyObject* obj)
@@ -448,6 +458,29 @@ PyObject* Python::toPyObject(long l)
 void Python::prependPythonPath(std::string dir)
 {
   vtkPythonInterpreter::PrependPythonPath(dir.c_str());
+}
+
+Python::Object createPyDataObject(vtkObjectBase* data, const DataSource& source)
+{
+  Python python;
+  auto module = python.import("tomviz.threaded_data_object");
+  if (!module.isValid()) {
+    Logger::critical("Failed to import tomviz.threaded_data_object module.");
+  }
+
+  auto createDataObjFunc = module.findFunction("create_data_object");
+  if (!createDataObjFunc.isValid()) {
+    Logger::critical("Unable to locate create_data_object.");
+  }
+
+  auto dataObj = Python::VTK::GetObjectFromPointer(data);
+  auto dataSourceObj = Python::Object(source);
+
+  Python::Tuple args(2);
+  args.set(0, dataObj);
+  args.set(1, dataSourceObj);
+
+  return createDataObjFunc.call(args);
 }
 
 std::vector<OperatorDescription> findCustomOperators(const QString& path)

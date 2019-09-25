@@ -417,8 +417,6 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
 
   createChildDataSource();
 
-  Python::Object pydata = Python::VTK::GetObjectFromPointer(data);
-
   Python::Object result;
   {
     Python python;
@@ -430,10 +428,12 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
     QString name = d->TransformMethod.toString();
     if (name.contains("transform_scalars")) {
       // Use the arguments for transform_scalars()
+      Python::Object pydata = Python::VTK::GetObjectFromPointer(data);
       args.set(0, pydata);
     }
     else if (name.contains("transform")) {
       // Use the arguments for transform()
+      Python::Object pydata = createPyDataObject(data, *dataSource());
       args.set(0, pydata);
     }
     else {
