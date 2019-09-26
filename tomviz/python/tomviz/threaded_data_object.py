@@ -45,6 +45,10 @@ class DataObject:
     def white(self):
         return np_s.vtk_to_numpy(self._data_source.white_data)
 
+    def make_child_data_object(self):
+        new_data = utils.make_child_dataset(self._data_object)
+        return DataObject(new_data, self._data_source)
+
 
 def create_data_object(data_object, data_source):
     return DataObject(data_object, data_source)
