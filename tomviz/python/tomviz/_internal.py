@@ -22,6 +22,7 @@ def in_application():
 
 if in_application():
     import tomviz._wrapping
+    import vtk
 
 
 def delete_module(name):
@@ -173,3 +174,18 @@ def _operator_method_was_implemented(obj, method):
             return True
 
     return False
+
+
+def convert_to_vtk_data_object(data):
+    # This method will extract/convert certain data types to a vtkDataObject
+    from tomviz.threaded_data_object import DataObject
+
+    if isinstance(data, vtk.vtkDataObject):
+        # It is already a vtkDataObject
+        return data
+
+    if isinstance(data, DataObject):
+        # Should be stored in _data_object
+        return data._data_object
+
+    raise Exception('Cannot convert type to vtkDataObject: ' + str(type(data)))

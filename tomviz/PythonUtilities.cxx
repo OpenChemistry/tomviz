@@ -315,6 +315,31 @@ vtkObjectBase* Python::VTK::GetPointerFromObject(Python::Object obj,
   return vtkPythonUtil::GetPointerFromObject(obj, classname);
 }
 
+vtkObjectBase* Python::VTK::convertToDataObject(Python::Object obj)
+{
+  Python python;
+
+  auto internalModule = python.import("tomviz._internal");
+  if (!internalModule.isValid()) {
+    Logger::critical("Failed to import tomviz._internal module.");
+  }
+
+  auto convertFunc = internalModule.findFunction("convert_to_vtk_data_object");
+  if (!convertFunc.isValid()) {
+    Logger::critical("Unable to locate convert_to_vtk_data_object.");
+  }
+
+  Python::Tuple args(1);
+  args.set(0, obj);
+
+  auto dataObject = convertFunc.call(args);
+  if (!dataObject.isValid()) {
+    Logger::critical("Failed to execute convert_to_vtk_data_object.");
+  }
+
+  return GetPointerFromObject(dataObject, "vtkDataObject");
+}
+
 void Python::initialize()
 {
   vtkPythonInterpreter::Initialize();

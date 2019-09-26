@@ -149,6 +149,9 @@ public:
     static Object GetObjectFromPointer(vtkObjectBase* ptr);
     static vtkObjectBase* GetPointerFromObject(Object obj,
                                                const char* classname);
+    // Performs conversions necessary to get a vtkDataObject, and
+    // then returns the pointer.
+    static vtkObjectBase* convertToDataObject(Object obj);
   };
 
   static void initialize();

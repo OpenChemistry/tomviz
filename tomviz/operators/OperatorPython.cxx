@@ -370,8 +370,7 @@ bool OperatorPython::updateChildDataSource(Python::Dict outputDict)
                   << "defined in dictionary returned from Python script.\n";
       return false;
     } else {
-      vtkObjectBase* vtkobject =
-        Python::VTK::GetPointerFromObject(pyDataObject, "vtkDataObject");
+      vtkObjectBase* vtkobject = Python::VTK::convertToDataObject(pyDataObject);
       vtkDataObject* dataObject = vtkDataObject::SafeDownCast(vtkobject);
       if (dataObject) {
         TemporarilyReleaseGil releaseMe;
