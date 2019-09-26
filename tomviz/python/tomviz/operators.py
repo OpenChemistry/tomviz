@@ -60,7 +60,10 @@ class Progress(object):
         self._operator._operator_wrapper.progress_message = msg
 
     def _data(self, value):
-        self._operator._operator_wrapper.progress_data = value
+        # Make sure this is a vtkDataObject before setting
+        from tomviz._internal import convert_to_vtk_data_object
+        data = convert_to_vtk_data_object(value)
+        self._operator._operator_wrapper.progress_data = data
 
     # Write-only property to update child data
     data = property(fset=_data)
