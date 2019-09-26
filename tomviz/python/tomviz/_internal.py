@@ -92,9 +92,9 @@ def find_transform_function(transform_module, op=None):
         cls.__init__(o)
 
         transform_function = None
-        if hasattr(o, 'transform'):
+        if _operator_method_was_implemented(o, 'transform'):
             transform_function = o.transform
-        elif hasattr(o, 'transform_scalars'):
+        elif _operator_method_was_implemented(o, 'transform_scalars'):
             transform_function = o.transform_scalars
 
     if transform_function is None:
@@ -159,3 +159,17 @@ def find_operators(operator_dir):
         )
 
     return operator_descriptions
+
+
+def _operator_method_was_implemented(obj, method):
+    # It would be nice if there were an easier way to do this, but
+    # I am not currently aware of an easier way.
+    bases = list(inspect.getmro(type(obj)))
+    # We know operator has this attribute, remove it
+    bases.remove(tomviz.operators.Operator)
+
+    for base in bases:
+        if method in vars(base):
+            return True
+
+    return False
