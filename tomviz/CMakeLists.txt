@@ -499,7 +499,7 @@ set(tomviz_python_modules
   _internal.py
   operators.py
   itkutils.py
-  threaded_data_object.py
+  threaded_dataset.py
   utils.py
   web.py
 )

@@ -2,7 +2,7 @@ from tomviz import utils
 import vtk.util.numpy_support as np_s
 
 
-class DataObject:
+class Dataset:
     def __init__(self, data_object, data_source):
         self._data_object = data_object
         self._data_source = data_source
@@ -45,10 +45,10 @@ class DataObject:
     def white(self):
         return np_s.vtk_to_numpy(self._data_source.white_data)
 
-    def make_child_data_object(self):
+    def create_child_dataset(self):
         new_data = utils.make_child_dataset(self._data_object)
-        return DataObject(new_data, self._data_source)
+        return Dataset(new_data, self._data_source)
 
 
-def create_data_object(data_object, data_source):
-    return DataObject(data_object, data_source)
+def create_dataset(data_object, data_source):
+    return Dataset(data_object, data_source)

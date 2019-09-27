@@ -185,6 +185,9 @@ public:
   /// vtkPythonPythonInterpreter::PrependPythonPath(...)  to do the work.
   static void prependPythonPath(std::string dir);
 
+  /// Create a threaded Dataset object for operators to use
+  static Object createDataset(vtkObjectBase* data, const DataSource& source);
+
 private:
   vtkPythonScopeGilEnsurer* m_ensurer = nullptr;
 };
@@ -208,8 +211,6 @@ struct OperatorDescription
   bool valid = true;
 };
 
-Python::Object createPyDataObject(vtkObjectBase* data,
-                                  const DataSource& source);
 std::vector<OperatorDescription> findCustomOperators(const QString& path);
 } // namespace tomviz
 

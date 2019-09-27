@@ -485,17 +485,18 @@ void Python::prependPythonPath(std::string dir)
   vtkPythonInterpreter::PrependPythonPath(dir.c_str());
 }
 
-Python::Object createPyDataObject(vtkObjectBase* data, const DataSource& source)
+Python::Object Python::createDataset(vtkObjectBase* data,
+                                     const DataSource& source)
 {
   Python python;
-  auto module = python.import("tomviz.threaded_data_object");
+  auto module = python.import("tomviz.threaded_dataset");
   if (!module.isValid()) {
-    Logger::critical("Failed to import tomviz.threaded_data_object module.");
+    Logger::critical("Failed to import tomviz.threaded_dataset module.");
   }
 
-  auto createDataObjFunc = module.findFunction("create_data_object");
-  if (!createDataObjFunc.isValid()) {
-    Logger::critical("Unable to locate create_data_object.");
+  auto createDatasetFunc = module.findFunction("create_dataset");
+  if (!createDatasetFunc.isValid()) {
+    Logger::critical("Unable to locate create_dataset.");
   }
 
   auto dataObj = Python::VTK::GetObjectFromPointer(data);
@@ -505,7 +506,7 @@ Python::Object createPyDataObject(vtkObjectBase* data, const DataSource& source)
   args.set(0, dataObj);
   args.set(1, dataSourceObj);
 
-  return createDataObjFunc.call(args);
+  return createDatasetFunc.call(args);
 }
 
 std::vector<OperatorDescription> findCustomOperators(const QString& path)

@@ -178,13 +178,13 @@ def _operator_method_was_implemented(obj, method):
 
 def convert_to_vtk_data_object(data):
     # This method will extract/convert certain data types to a vtkDataObject
-    from tomviz.threaded_data_object import DataObject
+    from tomviz.threaded_dataset import Dataset
 
     if isinstance(data, vtk.vtkDataObject):
         # It is already a vtkDataObject
         return data
 
-    if isinstance(data, DataObject):
+    if isinstance(data, Dataset):
         # Should be stored in _data_object
         return data._data_object
 

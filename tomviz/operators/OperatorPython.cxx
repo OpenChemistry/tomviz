@@ -432,7 +432,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
     }
     else if (name.contains("transform")) {
       // Use the arguments for transform()
-      Python::Object pydata = createPyDataObject(data, *dataSource());
+      Python::Object pydata = Python::createDataset(data, *dataSource());
       args.set(0, pydata);
     }
     else {
