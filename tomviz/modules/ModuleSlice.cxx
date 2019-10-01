@@ -46,6 +46,7 @@
 #include <QHBoxLayout>
 #include <QJsonArray>
 #include <QLabel>
+#include <QSpinBox>
 #include <QVBoxLayout>
 
 namespace tomviz {
@@ -280,6 +281,21 @@ void ModuleSlice::addToPanel(QWidget* panel)
   m_sliceSlider->setValue(m_slice);
 
   formLayout->addRow("Slice", m_sliceSlider);
+
+  m_thicknessSpin = new QSpinBox();
+  m_thicknessSpin->setMaximum(m_sliceSlider->maximum());
+  m_thicknessSpin->setMinimum(1);
+  m_thicknessSpin->setSingleStep(2);
+  m_thicknessSpin->setValue(m_sliceThickness);
+  formLayout->addRow("Slice Thickness", m_thicknessSpin);
+
+  m_sliceCombo = new QComboBox();
+  m_sliceCombo->addItem("Minimum", QVariant(Mode::Min));
+  m_sliceCombo->addItem("Maximum", QVariant(Mode::Max));
+  m_sliceCombo->addItem("Mean", QVariant(Mode::Mean));
+  m_sliceCombo->addItem("Summation", QVariant(Mode::Sum));
+  m_sliceCombo->setCurrentIndex(static_cast<int>(m_thickSliceMode));
+  formLayout->addRow("Aggregation", m_sliceCombo);
 
   m_opacitySlider = new DoubleSliderWidget(true);
   m_opacitySlider->setLineEditWidth(50);

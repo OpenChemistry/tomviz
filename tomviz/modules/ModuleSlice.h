@@ -13,6 +13,7 @@
 
 class QCheckBox;
 class QComboBox;
+class QSpinBox;
 class pqLineEdit;
 class vtkSMProxy;
 class vtkSMSourceProxy;
@@ -60,6 +61,15 @@ public:
   };
   Q_ENUM(Direction)
 
+  enum Mode
+  {
+    Min = 0,
+    Max = 1,
+    Mean = 2,
+    Sum = 3
+  };
+  Q_ENUM(Mode)
+
 protected:
   void updateColorMap() override;
   void updateSliceWidget();
@@ -98,9 +108,13 @@ private:
   bool m_mapOpacity = false;
 
   QPointer<QComboBox> m_directionCombo;
+  QPointer<QComboBox> m_sliceCombo;
   QPointer<IntSliderWidget> m_sliceSlider;
+  QPointer<QSpinBox> m_thicknessSpin;
   Direction m_direction = Direction::XY;
   int m_slice = 0;
+  int m_sliceThickness = 1;
+  Mode m_thickSliceMode = Mode::Sum;
 
   QPointer<QCheckBox> m_interpolateCheckBox;
   bool m_interpolate = false;
