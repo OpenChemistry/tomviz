@@ -440,6 +440,8 @@ QJsonObject ModuleSlice::serialize() const
   props["mapOpacity"] = m_mapOpacity;
 
   props["slice"] = m_slice;
+  props["sliceThickness"] = m_sliceThickness;
+  props["thickSliceMode"] = m_thickSliceMode;
   QVariant qData;
   qData.setValue(m_direction);
   props["direction"] = qData.toString();
@@ -486,6 +488,14 @@ bool ModuleSlice::deserialize(const QJsonObject& json)
     if (props.contains("sliceMode")) {
       Direction direction = modeToDirection(props["sliceMode"].toInt());
       onDirectionChanged(direction);
+    }
+    if (props.contains("sliceThickness")) {
+      m_sliceThickness = props["sliceThickness"].toInt();
+      onThicknessChanged(m_sliceThickness);
+    }
+    if (props.contains("thickSliceMode")) {
+      int mode = props["thickSliceMode"].toInt();
+      onThickSliceModeChanged(mode);
     }
     if (props.contains("direction")) {
       Direction direction = stringToDirection(props["direction"].toString());
