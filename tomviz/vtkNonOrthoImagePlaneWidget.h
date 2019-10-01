@@ -329,6 +329,14 @@ public:
   double GetOpacity() const;
   void SetOpacity(double opacity);
 
+  // Description:
+  // Set the thickness of the slice and the mode for viewing the thick slice.
+  // Selecting a thickness of N will select the (N - 1)/2 slices on either side
+  // of the Reslice and create a composite of those slices. The mode is then
+  // applied to that composite.
+  void SetSliceThickness(int slices);
+  void SetThickSliceMode(int mode);
+
   // BTX
   // Description:
   // Set action associated to buttons.

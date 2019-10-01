@@ -393,6 +393,11 @@ void ModuleSlice::addToPanel(QWidget* panel)
   connect(m_sliceSlider, &IntSliderWidget::valueChanged, this,
           QOverload<int>::of(&ModuleSlice::onSliceChanged));
 
+  connect(m_thicknessSpin, QOverload<int>::of(&QSpinBox::valueChanged),
+          this, &ModuleSlice::onThicknessChanged);
+  connect(m_sliceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+          this, &ModuleSlice::onThickSliceModeChanged);
+
   connect(m_opacitySlider, &DoubleSliderWidget::valueEdited, this,
           &ModuleSlice::onOpacityChanged);
   connect(m_opacitySlider, &DoubleSliderWidget::valueChanged, this,
@@ -687,6 +692,26 @@ void ModuleSlice::onOpacityChanged(double opacity)
 {
   m_opacity = opacity;
   m_widget->SetOpacity(opacity);
+  emit renderNeeded();
+}
+
+void ModuleSlice::onThicknessChanged(int value)
+{
+  m_sliceThickness = value;
+  if(m_thicknessSpin) {
+    m_thicknessSpin->setValue(value);
+  }
+  m_widget->SetSliceThickness(value);
+  emit renderNeeded();
+}
+
+void ModuleSlice::onThickSliceModeChanged(int index)
+{
+  m_thickSliceMode = static_cast<Mode>(index);
+  if (m_sliceCombo) {
+    m_sliceCombo->setCurrentIndex(index);
+  }
+  m_widget->SetThickSliceMode(index);
   emit renderNeeded();
 }
 

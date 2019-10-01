@@ -86,6 +86,8 @@ private slots:
   void onDirectionChanged(Direction direction);
   void onSliceChanged(int slice);
   void onSliceChanged(double* point);
+  void onThicknessChanged(int value);
+  void onThickSliceModeChanged(int index);
   int directionAxis(Direction direction);
   void onOpacityChanged(double opacity);
 
