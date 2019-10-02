@@ -172,12 +172,12 @@
           <widget class="QComboBox" name="orientation">
            <item>
             <property name="text">
-             <string>TEM (Horizontal)</string>
+             <string>Horizontal</string>
             </property>
            </item>
            <item>
             <property name="text">
-             <string>X-ray (Vertical)</string>
+             <string>Vertical</string>
             </property>
            </item>
           </widget>
