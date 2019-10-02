@@ -22,7 +22,7 @@ def in_application():
 
 if in_application():
     import tomviz._wrapping
-    import vtk
+    from vtk import vtkDataObject
 
 
 def delete_module(name):
@@ -180,7 +180,7 @@ def convert_to_vtk_data_object(data):
     # This method will extract/convert certain data types to a vtkDataObject
     from tomviz.threaded_dataset import Dataset
 
-    if isinstance(data, vtk.vtkDataObject):
+    if isinstance(data, vtkDataObject):
         # It is already a vtkDataObject
         return data
 
