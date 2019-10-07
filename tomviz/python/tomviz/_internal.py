@@ -178,7 +178,7 @@ def _operator_method_was_implemented(obj, method):
 
 def convert_to_vtk_data_object(data):
     # This method will extract/convert certain data types to a vtkDataObject
-    from tomviz.threaded_dataset import Dataset
+    from tomviz.internal_dataset import Dataset
 
     if isinstance(data, vtkDataObject):
         # It is already a vtkDataObject

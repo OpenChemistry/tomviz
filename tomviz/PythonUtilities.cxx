@@ -489,9 +489,9 @@ Python::Object Python::createDataset(vtkObjectBase* data,
                                      const DataSource& source)
 {
   Python python;
-  auto module = python.import("tomviz.threaded_dataset");
+  auto module = python.import("tomviz.internal_dataset");
   if (!module.isValid()) {
-    Logger::critical("Failed to import tomviz.threaded_dataset module.");
+    Logger::critical("Failed to import tomviz.internal_dataset module.");
   }
 
   auto createDatasetFunc = module.findFunction("create_dataset");

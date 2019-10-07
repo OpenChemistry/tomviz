@@ -185,7 +185,7 @@ public:
   /// vtkPythonPythonInterpreter::PrependPythonPath(...)  to do the work.
   static void prependPythonPath(std::string dir);
 
-  /// Create a threaded Dataset object for operators to use
+  /// Create an internal Dataset object for operators to use
   static Object createDataset(vtkObjectBase* data, const DataSource& source);
 
 private:
