@@ -72,6 +72,9 @@ public:
     QString toString() const;
     Dict toDict();
     List toList();
+
+    Object getAttr(const QString& name);
+
     virtual ~Object();
 
   protected:

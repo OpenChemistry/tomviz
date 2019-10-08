@@ -422,15 +422,14 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
 
     Python::Tuple args(1);
 
-    // This will look something like:
-    // <function transform_scalars at 0x7fd90c866158>
-    QString name = d->TransformMethod.toString();
-    if (name.contains("transform_scalars")) {
+    // Get the name of the function
+    auto name = d->TransformMethod.getAttr("__name__").toString();
+    if (name == "transform_scalars") {
       // Use the arguments for transform_scalars()
       Python::Object pydata = Python::VTK::GetObjectFromPointer(data);
       args.set(0, pydata);
     }
-    else if (name.contains("transform")) {
+    else if (name == "transform") {
       // Use the arguments for transform()
       Python::Object pydata = Python::createDataset(data, *dataSource());
       args.set(0, pydata);

@@ -129,6 +129,13 @@ QString Python::Object::toString() const
   return QString(cdata ? cdata : "");
 }
 
+Python::Object Python::Object::getAttr(const QString& name)
+{
+  Object attrName(name);
+  auto& attrNamePyObj = *attrName;
+  return PyObject_GetAttr(m_smartPyObject->GetPointer(), &attrNamePyObj);
+}
+
 Python::Object::~Object()
 {
   delete m_smartPyObject;
