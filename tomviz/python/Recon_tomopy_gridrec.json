@@ -1,7 +1,7 @@
 {
-  "name" : "Tomopy",
-  "label" : "Tomopy",
-  "description" : "Tomopy a dataset",
+  "name" : "TomoPy Gridrec Reconstruction",
+  "label" : "TomoPy Gridrec Reconstruction",
+  "description" : "Run TomoPy Gridrec Reconstruction on a dataset",
   "parameters" : [
     {
       "name" : "rot_center",

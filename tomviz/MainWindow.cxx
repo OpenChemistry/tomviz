@@ -293,8 +293,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     m_ui->menuTomography->addAction("Constraint-based Direct Fourier Method");
   QAction* reconTVMinimizationAction =
     m_ui->menuTomography->addAction("TV Minimization Method");
-  QAction* reconTomopyGridRecAction =
-    m_ui->menuTomography->addAction("Tomopy Gridrec Method");
+  QAction* reconTomoPyGridRecAction =
+    m_ui->menuTomography->addAction("TomoPy Gridrec Method");
   m_ui->menuTomography->addSeparator();
 
   QAction* simulationLabel = m_ui->menuTomography->addAction("Simulation:");
@@ -385,7 +385,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     readInPythonScript("Recon_TV_minimization"), true, false, false,
     readInJSONDescription("Recon_TV_minimization"));
   new AddPythonTransformReaction(
-    reconTomopyGridRecAction, "Reconstruct (Tomopy Gridrec)",
+    reconTomoPyGridRecAction, "Reconstruct (TomoPy Gridrec)",
     readInPythonScript("Recon_tomopy_gridrec"), true, false, false,
     readInJSONDescription("Recon_tomopy_gridrec"));
 
