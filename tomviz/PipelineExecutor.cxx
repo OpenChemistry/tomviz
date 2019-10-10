@@ -607,8 +607,10 @@ void DockerPipelineExecutor::operatorFinished(Operator* op)
   // See it we have any child data source updates
   if (operatorPath.exists()) {
     QMap<QString, vtkSmartPointer<vtkDataObject>> childOutput;
+
+    // We are looking for EMD files
     foreach (const QFileInfo& fileInfo,
-             operatorPath.entryInfoList(QDir::NoDotAndDotDot)) {
+             operatorPath.entryInfoList(QDir::Files)) {
 
       auto name = fileInfo.baseName();
       EmdFormat emdFile;
