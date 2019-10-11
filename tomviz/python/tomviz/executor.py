@@ -1,3 +1,4 @@
+import copy
 import h5py
 import importlib
 import os
@@ -434,7 +435,7 @@ def _read_emd(path, options=None):
 def _write_emd(path, dataobject, dims=None):
     tilt_angles = dataobject.tilt_angles
     tilt_axis = dataobject.tilt_axis
-    active_array = dataobject.active
+    active_array = dataobject.active_scalars
     # Separate out the extra channels/arrays as we store them separately
     extra_arrays = {name: array for name, array
                     in dataobject.arrays.items()
@@ -558,7 +559,7 @@ def _is_data_exchange(path):
         return '/exchange/data' in f
 
 
-class DataObject(object):
+class Dataset:
     def __init__(self, arrays, active=None):
         # Holds the map of scalars name => array
         self.arrays = arrays
@@ -576,12 +577,29 @@ class DataObject(object):
         self.dark = None
         self.white = None
 
+    @property
+    def active_scalars(self):
+        return self.arrays[self.active_name]
+
+    @active_scalars.setter
+    def active_scalars(self, array):
+        self.arrays[self.active_name] = array
+
+    @property
+    def scalars_names(self):
+        return list(self.arrays.keys())
+
+    def scalars(self, name=None):
+        if name is None:
+            name = self.active_name
+        return self.arrays[name]
+
     def set_scalars(self, new_scalars):
         order = 'C'
-        if np.isfortran(self.active):
+        if np.isfortran(self.active_scalars):
             order = 'F'
-        new_scalars = np.reshape(new_scalars, self.active.shape, order=order)
-        self.active = np.asfortranarray(new_scalars)
+        new_scalars = np.reshape(new_scalars, self.active_scalars.shape, order=order)
+        self.active_scalars = np.asfortranarray(new_scalars)
 
     def get_scalars(self, name=None):
         if name is None:
@@ -592,7 +610,7 @@ class DataObject(object):
         if not np.isfortran(new_array):
             new_array = np.asfortranarray(new_array)
 
-        self.active = new_array
+        self.active_scalars = new_array
 
     def get_array(self, name=None):
         if name is None:
@@ -600,13 +618,8 @@ class DataObject(object):
 
         return self.arrays[name]
 
-    @property
-    def active(self):
-        return self.arrays[self.active_name]
-
-    @active.setter
-    def active(self, array):
-        self.arrays[self.active_name] = array
+    def create_child_dataset(self):
+        return copy.deepcopy(self)
 
 
 def _patch_utils():
@@ -631,12 +644,12 @@ def _patch_utils():
         return dataobject.tilt_angles
 
     def _make_child_dataset(reference_dataset):
-        child = np.empty_like(reference_dataset.active)
+        child = np.empty_like(reference_dataset.active_scalars)
         arrays = {
             "ImageScalars": child
         }
 
-        return DataObject(arrays)
+        return Dataset(arrays)
 
     def _mark_as_volume(dataobject):
         dataobject.is_volume = True
@@ -762,7 +775,7 @@ def execute(operators, start_at, data_file_path, output_file_path,
     # Create dict of arrays
     arrays = {name: array for (name, array) in arrays}
 
-    data = DataObject(arrays, active_array)
+    data = Dataset(arrays, active_array)
     if 'data_dark' in output:
         data.dark = output['data_dark']
     if 'data_white' in output:
