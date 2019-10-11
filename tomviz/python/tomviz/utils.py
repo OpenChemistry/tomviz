@@ -63,6 +63,12 @@ def get_array(dataobject, name=None, order='F'):
     return scalars_array3d
 
 
+def array_names(dataobject):
+    do = dsa.WrapDataObject(dataobject)
+    num_arrays = do.PointData.GetNumberOfArrays()
+    return [do.PointData.GetArrayName(i) for i in range(num_arrays)]
+
+
 def arrays(dataobject):
     """
     Iterate over (name, array) for the arrays in this datset.
@@ -70,9 +76,7 @@ def arrays(dataobject):
     :param dataobject The incoming dataset
     :type: vtkDataObject
     """
-    do = dsa.WrapDataObject(dataobject)
-    for i in range(0, do.PointData.GetNumberOfArrays()):
-        name = do.PointData.GetArrayName(i)
+    for name in array_names(dataobject):
         yield (name, get_array(dataobject, name))
 
 

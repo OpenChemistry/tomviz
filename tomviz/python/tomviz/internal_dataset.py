@@ -18,8 +18,11 @@ class Dataset:
         utils.set_array(self._data_object, v)
 
     @property
-    def scalars(self):
-        return { key: value for key, value in utils.arrays(self._data_object) }
+    def scalars_names(self):
+        return utils.array_names(self._data_object)
+
+    def scalars(self, name=None):
+        return utils.get_array(self._data_object, name)
 
     @property
     def tilt_angles(self):
