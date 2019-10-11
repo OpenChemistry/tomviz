@@ -18,6 +18,8 @@
       "type" : "bool",
       "default" : true
     }
-  ]
+  ],
+  "help" : {
+    "url": "reconstruction/#tomopy"
+  }
 }
-
