@@ -3,8 +3,8 @@ import tomviz.operators
 
 class BinaryClose(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset, structuring_element_id=0, radius=1,
-                          object_label=1, background_label=0):
+    def transform(self, dataset, structuring_element_id=0, radius=1,
+                  object_label=1, background_label=0):
         """Perform morphological closing on segmented objects with a given label by
         a spherically symmetric structuring element with a given radius.
         """
@@ -32,7 +32,7 @@ class BinaryClose(tomviz.operators.CancelableOperator):
             self.progress.message = "Converting data to ITK image"
 
             # Get the ITK image
-            itk_image = itkutils.convert_vtk_to_itk_image(dataset)
+            itk_image = itk.GetImageViewFromArray(dataset.active_scalars)
             itk_input_image_type = type(itk_image)
 
             itk_kernel_type = itk.FlatStructuringElement[3]
@@ -76,7 +76,9 @@ class BinaryClose(tomviz.operators.CancelableOperator):
 
             self.progress.message = "Saving results"
 
-            itkutils.set_array_from_itk_image(dataset, erode_filter.GetOutput())
+            result = itk.GetArrayFromImage(erode_filter.GetOutput())
+            # Transpose the data to Fortran indexing
+            dataset.active_scalars = result.transpose([2, 1, 0])
 
             self.progress.value = STEP_PCT[4]
         except Exception as exc:

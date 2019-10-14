@@ -3,7 +3,7 @@ import tomviz.operators
 
 class DefaultITKTransform(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset):
+    def transform(self, dataset):
         """Define this method for Python operators that transform the input
         array. This example uses an ITK filter to add 10 to each voxel value."""
 
@@ -26,7 +26,7 @@ class DefaultITKTransform(tomviz.operators.CancelableOperator):
             self.progress.message = "Converting data to ITK image"
 
             # Get the ITK image
-            itk_image = itkutils.convert_vtk_to_itk_image(dataset)
+            itk_image = itk.GetImageViewFromArray(dataset.active_scalars)
             itk_input_image_type = type(itk_image)
             self.progress.value = 30
             self.progress.message = "Running filter"
@@ -46,7 +46,9 @@ class DefaultITKTransform(tomviz.operators.CancelableOperator):
 
             self.progress.message = "Saving results"
 
-            itkutils.set_array_from_itk_image(dataset, filter.GetOutput())
+            result = itk.GetArrayFromImage(filter.GetOutput())
+            # Transpose the data to Fortran indexing
+            dataset.active_scalars = result.transpose([2, 1, 0])
 
             self.progress.value = 100
         except Exception as exc:

@@ -3,8 +3,8 @@ import tomviz.operators
 
 class BinaryMinMaxCurvatureFlow(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset, stencil_radius=2, iterations=10,
-                          threshold=50.0):
+    def transform(self, dataset, stencil_radius=2, iterations=10,
+                  threshold=50.0):
         """This filter smooths a binary image by evolving a level set with a
         curvature-based speed function. The Stencil Radius determines the scale
         of the noise to remove. The Threshold determines the iso-contour
@@ -37,7 +37,7 @@ class BinaryMinMaxCurvatureFlow(tomviz.operators.CancelableOperator):
             self.progress.value = STEP_PCT[0]
             self.progress.message = "Converting data to ITK image"
             # Get the ITK image
-            itk_image = itkutils.convert_vtk_to_itk_image(dataset)
+            itk_image = itk.GetImageViewFromArray(dataset.active_scalars)
             itk_input_image_type = type(itk_image)
             self.progress.message = "Casting input to float type"
             itk_filter_image_type = itk.Image[itkTypes.F,
@@ -90,8 +90,9 @@ class BinaryMinMaxCurvatureFlow(tomviz.operators.CancelableOperator):
             self.progress.value = STEP_PCT[5]
             self.progress.message = "Saving results"
 
-            itkutils.set_array_from_itk_image(dataset,
-                                              itk_image_data)
+            result = itk.GetArrayFromImage(itk_image_data)
+            # Transpose the data to Fortran indexing
+            dataset.active_scalars = result.transpose([2, 1, 0])
 
             self.progress.value = STEP_PCT[6]
 
