@@ -5,6 +5,8 @@
 # It is released under the 3-Clause BSD License, see "LICENSE".
 ###############################################################################
 
+from tomviz._internal import in_application
+
 # Dictionary going from VTK array type to ITK type
 _vtk_to_itk_types = None
 
@@ -168,32 +170,33 @@ def get_python_voxel_type(dataset):
     The dataset can be either a VTK dataset or an ITK image.
     """
 
-    # Try treating dataset as a VTK data set first.
-    try:
-        # Set up map between VTK data type and Python type
-        global _vtk_to_python_types
+    if in_application():
+        # Try treating dataset as a VTK data set first.
+        try:
+            # Set up map between VTK data type and Python type
+            global _vtk_to_python_types
 
-        if _vtk_to_python_types is None:
-            from vtkmodules.util import vtkConstants
-            _vtk_to_python_types = {
-                vtkConstants.VTK_UNSIGNED_CHAR: int,
-                vtkConstants.VTK_CHAR: int,
-                vtkConstants.VTK_UNSIGNED_SHORT: int,
-                vtkConstants.VTK_SHORT: int,
-                vtkConstants.VTK_UNSIGNED_INT: int,
-                vtkConstants.VTK_INT: int,
-                vtkConstants.VTK_UNSIGNED_LONG: int,
-                vtkConstants.VTK_LONG: int,
-                vtkConstants.VTK_FLOAT: float,
-                vtkConstants.VTK_DOUBLE: float
-            }
+            if _vtk_to_python_types is None:
+                from vtkmodules.util import vtkConstants
+                _vtk_to_python_types = {
+                    vtkConstants.VTK_UNSIGNED_CHAR: int,
+                    vtkConstants.VTK_CHAR: int,
+                    vtkConstants.VTK_UNSIGNED_SHORT: int,
+                    vtkConstants.VTK_SHORT: int,
+                    vtkConstants.VTK_UNSIGNED_INT: int,
+                    vtkConstants.VTK_INT: int,
+                    vtkConstants.VTK_UNSIGNED_LONG: int,
+                    vtkConstants.VTK_LONG: int,
+                    vtkConstants.VTK_FLOAT: float,
+                    vtkConstants.VTK_DOUBLE: float
+                }
 
-        pd = dataset.GetPointData()
-        scalars = pd.GetScalars()
+            pd = dataset.GetPointData()
+            scalars = pd.GetScalars()
 
-        return _vtk_to_python_types[scalars.GetDataType()]
-    except AttributeError:
-        pass
+            return _vtk_to_python_types[scalars.GetDataType()]
+        except AttributeError:
+            pass
 
     # If the above fails, treat dataset as an ITK image.
     try:
