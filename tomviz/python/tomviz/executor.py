@@ -619,7 +619,10 @@ class Dataset:
         return self.arrays[name]
 
     def create_child_dataset(self):
-        return copy.deepcopy(self)
+        child = copy.deepcopy(self)
+        # Set tilt angles to None to be consistent with internal dataset
+        child.tilt_angles = None
+        return child
 
 
 def _patch_utils():
