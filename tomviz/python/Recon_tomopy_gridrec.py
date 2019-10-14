@@ -66,7 +66,6 @@ def transform(dataset, rot_center=0, tune_rot_center=True):
 
     # Set the transformed array
     child = dataset.create_child_dataset()
-    child.tilt_angles = None
     child.active_scalars = child
 
     return_values = {}

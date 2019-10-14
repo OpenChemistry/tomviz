@@ -55,9 +55,6 @@ class ReconARTOperator(tomviz.operators.CancelableOperator):
         #create child for recon
         child = dataset.create_child_dataset()
 
-        # Make sure it is recognized as a volume
-        child.tilt_angles = None
-
         counter = 1
         for i in range(Niter):
 
