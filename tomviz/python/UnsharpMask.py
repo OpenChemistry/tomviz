@@ -3,8 +3,7 @@ import tomviz.operators
 
 class UnsharpMask(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset, amount=0.5, threshold=0.0,
-                          sigma=1.0):
+    def transform(self, dataset, amount=0.5, threshold=0.0, sigma=1.0):
         """This filter performs anisotropic diffusion on an image using
         the classic Perona-Malik, gradient magnitude-based equation.
         """
@@ -28,10 +27,8 @@ class UnsharpMask(tomviz.operators.CancelableOperator):
             self.progress.message = "Converting data to ITK image"
             self.progress.value = 0
 
-            # Get the ITK image. The itk.GradientAnisotropicDiffusionImageFilter
-            # is templated over float pixel types only, so explicitly request a
-            # float ITK image type.
-            itk_image = itkutils.convert_vtk_to_itk_image(dataset)
+            # Get the ITK image.
+            itk_image = itk.GetImageViewFromArray(dataset.active_scalars)
             self.progress.value = next(step_pct)
 
             self.progress.message = "Running filter"
@@ -53,9 +50,9 @@ class UnsharpMask(tomviz.operators.CancelableOperator):
 
             self.progress.message = "Saving results"
 
-            enhanced = unsharp_mask.GetOutput()
-            itkutils.set_array_from_itk_image(dataset,
-                                              enhanced)
+            result = itk.GetArrayFromImage(unsharp_mask.GetOutput())
+            # Transpose the data to Fortran indexing
+            dataset.active_scalars = result.transpose([2, 1, 0])
 
             self.progress.value = next(step_pct)
         except Exception as exc:

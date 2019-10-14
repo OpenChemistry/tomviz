@@ -3,8 +3,8 @@ import tomviz.operators
 
 class OtsuMultipleThreshold(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset, number_of_thresholds=1,
-                          enable_valley_emphasis=False):
+    def transform(self, dataset, number_of_thresholds=1,
+                  enable_valley_emphasis=False):
         """This filter performs semi-automatic multithresholding of a data set.
         Voxels are automatically classified into a chosen number of classes such
         that inter-class variance of the voxel values is minimized. The output
@@ -23,9 +23,7 @@ class OtsuMultipleThreshold(tomviz.operators.CancelableOperator):
             import itk
             import itkExtras
             import itkTypes
-            from vtkmodules.vtkCommonDataModel import vtkImageData
             from tomviz import itkutils
-            from tomviz import utils
         except Exception as exc:
             print("Could not import necessary module(s)")
             raise exc
@@ -41,7 +39,7 @@ class OtsuMultipleThreshold(tomviz.operators.CancelableOperator):
             self.progress.message = "Converting data to ITK image"
 
             # Get the ITK image
-            itk_image = itkutils.convert_vtk_to_itk_image(dataset)
+            itk_image = itk.GetImageViewFromArray(dataset.active_scalars)
             itk_input_image_type = type(itk_image)
 
             # OtsuMultipleThresholdsImageFilter's wrapping requires that the
@@ -95,9 +93,9 @@ class OtsuMultipleThreshold(tomviz.operators.CancelableOperator):
             label_buffer = itk.PyBuffer[py_buffer_type] \
                 .GetArrayFromImage(itk_image_data)
 
-            label_map_dataset = vtkImageData()
-            label_map_dataset.CopyStructure(dataset)
-            utils.set_array(label_map_dataset, label_buffer, isFortran=False)
+            label_map_dataset = dataset.create_child_dataset()
+            # Transpose the data to Fortran indexing
+            label_map_dataset.active_scalars = label_buffer.transpose([2, 1, 0])
 
             self.progress.value = STEP_PCT[4]
 
