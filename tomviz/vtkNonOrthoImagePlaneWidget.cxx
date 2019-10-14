@@ -112,6 +112,7 @@ vtkNonOrthoImagePlaneWidget::vtkNonOrthoImagePlaneWidget()
   this->Reslice->TransformInputSamplingOff();
   this->Reslice->AutoCropOutputOff();
   this->Reslice->MirrorOff();
+  this->Reslice->SetSlabModeToSum();
 
   this->ResliceAxes = vtkMatrix4x4::New();
   this->Texture = vtkTexture::New();
@@ -1806,4 +1807,20 @@ void vtkNonOrthoImagePlaneWidget::SetOpacity(double opacity)
 {
   this->Opacity = opacity;
   this->TexturePlaneProperty->SetOpacity(opacity);
+}
+
+void vtkNonOrthoImagePlaneWidget::SetSliceThickness(int slices)
+{
+  if (!this->Reslice) {
+    return;
+  }
+  this->Reslice->SetSlabNumberOfSlices(slices-1);
+}
+
+void vtkNonOrthoImagePlaneWidget::SetThickSliceMode(int mode)
+{
+  if (!this->Reslice) {
+    return;
+  }
+  this->Reslice->SetSlabMode(mode);
 }

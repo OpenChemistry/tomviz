@@ -21,7 +21,7 @@ def transform(dataset, rot_center=0, tune_rot_center=True):
     angles = dataset.tilt_angles
     tilt_axis = dataset.tilt_axis
 
-    # Tomopy wants the tilt axis to be zero, so ensure that is true
+    # TomoPy wants the tilt axis to be zero, so ensure that is true
     if tilt_axis == 2:
         order = [2, 1, 0]
         array = np.transpose(array, order)

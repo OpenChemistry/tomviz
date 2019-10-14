@@ -46,6 +46,7 @@
 #include <QHBoxLayout>
 #include <QJsonArray>
 #include <QLabel>
+#include <QSpinBox>
 #include <QVBoxLayout>
 
 namespace tomviz {
@@ -281,6 +282,21 @@ void ModuleSlice::addToPanel(QWidget* panel)
 
   formLayout->addRow("Slice", m_sliceSlider);
 
+  m_thicknessSpin = new QSpinBox();
+  m_thicknessSpin->setMaximum(m_sliceSlider->maximum());
+  m_thicknessSpin->setMinimum(1);
+  m_thicknessSpin->setSingleStep(2);
+  m_thicknessSpin->setValue(m_sliceThickness);
+  formLayout->addRow("Slice Thickness", m_thicknessSpin);
+
+  m_sliceCombo = new QComboBox();
+  m_sliceCombo->addItem("Minimum", QVariant(Mode::Min));
+  m_sliceCombo->addItem("Maximum", QVariant(Mode::Max));
+  m_sliceCombo->addItem("Mean", QVariant(Mode::Mean));
+  m_sliceCombo->addItem("Summation", QVariant(Mode::Sum));
+  m_sliceCombo->setCurrentIndex(static_cast<int>(m_thickSliceMode));
+  formLayout->addRow("Aggregation", m_sliceCombo);
+
   m_opacitySlider = new DoubleSliderWidget(true);
   m_opacitySlider->setLineEditWidth(50);
   m_opacitySlider->setMinimum(0);
@@ -377,6 +393,11 @@ void ModuleSlice::addToPanel(QWidget* panel)
   connect(m_sliceSlider, &IntSliderWidget::valueChanged, this,
           QOverload<int>::of(&ModuleSlice::onSliceChanged));
 
+  connect(m_thicknessSpin, QOverload<int>::of(&QSpinBox::valueChanged),
+          this, &ModuleSlice::onThicknessChanged);
+  connect(m_sliceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+          this, &ModuleSlice::onThickSliceModeChanged);
+
   connect(m_opacitySlider, &DoubleSliderWidget::valueEdited, this,
           &ModuleSlice::onOpacityChanged);
   connect(m_opacitySlider, &DoubleSliderWidget::valueChanged, this,
@@ -419,6 +440,8 @@ QJsonObject ModuleSlice::serialize() const
   props["mapOpacity"] = m_mapOpacity;
 
   props["slice"] = m_slice;
+  props["sliceThickness"] = m_sliceThickness;
+  props["thickSliceMode"] = m_thickSliceMode;
   QVariant qData;
   qData.setValue(m_direction);
   props["direction"] = qData.toString();
@@ -465,6 +488,14 @@ bool ModuleSlice::deserialize(const QJsonObject& json)
     if (props.contains("sliceMode")) {
       Direction direction = modeToDirection(props["sliceMode"].toInt());
       onDirectionChanged(direction);
+    }
+    if (props.contains("sliceThickness")) {
+      m_sliceThickness = props["sliceThickness"].toInt();
+      onThicknessChanged(m_sliceThickness);
+    }
+    if (props.contains("thickSliceMode")) {
+      int mode = props["thickSliceMode"].toInt();
+      onThickSliceModeChanged(mode);
     }
     if (props.contains("direction")) {
       Direction direction = stringToDirection(props["direction"].toString());
@@ -671,6 +702,26 @@ void ModuleSlice::onOpacityChanged(double opacity)
 {
   m_opacity = opacity;
   m_widget->SetOpacity(opacity);
+  emit renderNeeded();
+}
+
+void ModuleSlice::onThicknessChanged(int value)
+{
+  m_sliceThickness = value;
+  if(m_thicknessSpin) {
+    m_thicknessSpin->setValue(value);
+  }
+  m_widget->SetSliceThickness(value);
+  emit renderNeeded();
+}
+
+void ModuleSlice::onThickSliceModeChanged(int index)
+{
+  m_thickSliceMode = static_cast<Mode>(index);
+  if (m_sliceCombo) {
+    m_sliceCombo->setCurrentIndex(index);
+  }
+  m_widget->SetThickSliceMode(index);
   emit renderNeeded();
 }
 
