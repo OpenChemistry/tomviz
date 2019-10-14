@@ -1,13 +1,12 @@
-def transform_scalars(dataset, SX=0.5, SY=0.5, SZ=0.5, noise=15.0):
+def transform(dataset, SX=0.5, SY=0.5, SZ=0.5, noise=15.0):
     """Deblur Images with a Weiner Filter."""
 
-    from tomviz import utils
     import numpy as np
     from numpy import exp, square, pi
     from scipy.fftpack import fftn, ifftn, fftshift
 
     #Import information from dataset
-    array = utils.get_array(dataset)
+    array = dataset.active_scalars
     dim = array.shape
 
     #Point Spread Function (Estimated with Gaussian Function)
@@ -43,4 +42,4 @@ def transform_scalars(dataset, SX=0.5, SY=0.5, SZ=0.5, noise=15.0):
     final = final/np.amax(final) #Normalize the Image
 
     #Set the result as the new scalars.
-    utils.set_array(dataset, np.asfortranarray(final))
+    dataset.active_scalars = np.asfortranarray(final)

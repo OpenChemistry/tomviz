@@ -1,23 +1,22 @@
 import numpy as np
 import scipy.sparse as ss
-from tomviz import utils
 import tomviz.operators
 import time
 
 
 class ReconARTOperator(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset, Niter=1, Nupdates=0, beta=1.0):
+    def transform(self, dataset, Niter=1, Nupdates=0, beta=1.0):
         """
         3D Reconstruction using Algebraic Reconstruction Technique (ART)
         """
         self.progress.maximum = 1
 
         # Get Tilt angles
-        tiltAngles = utils.get_tilt_angles(dataset)
+        tiltAngles = dataset.tilt_angles
 
         # Get Tilt Series
-        tiltSeries = utils.get_array(dataset)
+        tiltSeries = dataset.active_scalars
         (Nslice, Nray, Nproj) = tiltSeries.shape
 
         if tiltSeries is None:
@@ -54,8 +53,10 @@ class ReconARTOperator(tomviz.operators.CancelableOperator):
         etcMessage = 'Estimated time to complete: n/a'
 
         #create child for recon
-        child = utils.make_child_dataset(dataset)
-        utils.mark_as_volume(child)
+        child = dataset.create_child_dataset()
+
+        # Make sure it is recognized as a volume
+        child.tilt_angles = None
 
         counter = 1
         for i in range(Niter):
@@ -84,7 +85,7 @@ class ReconARTOperator(tomviz.operators.CancelableOperator):
 
                 # Give 4 updates for first iteration.
                 if Nupdates != 0 and i == 0 and (s + 1) % (Nslice//4) == 0:
-                    utils.set_array(child, recon)
+                    child.active_scalars = recon
                     self.progress.data = child
 
                 step += 1
@@ -102,11 +103,11 @@ class ReconARTOperator(tomviz.operators.CancelableOperator):
 
             #Update for XX iterations.
             if Nupdates != 0 and (i + 1) % Nupdates == 0:
-                utils.set_array(child, recon)
+                child.active_scalars = recon
                 self.progress.data = child
 
         # One last update of the child data.
-        utils.set_array(child, recon) #add recon to child
+        child.active_scalars = recon #add recon to child
         self.progress.data = child
 
         returnValues = {}

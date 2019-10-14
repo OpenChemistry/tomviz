@@ -1,10 +1,9 @@
-def transform_scalars(dataset, constant=0.0):
+def transform(dataset, constant=0.0):
     """Add a constant to the data set"""
 
-    from tomviz import utils
     import numpy as np
 
-    scalars = utils.get_scalars(dataset)
+    scalars = dataset.active_scalars
     if scalars is None:
         raise RuntimeError("No scalars found!")
 
@@ -27,6 +26,4 @@ def transform_scalars(dataset, constant=0.0):
             break
 
     # numpy should cast to an appropriate output type to avoid overflow
-    result = scalars + constant
-
-    utils.set_scalars(dataset, result)
+    dataset.active_scalars = scalars + constant

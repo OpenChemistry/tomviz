@@ -6,12 +6,11 @@
 # WARNING: Be patient! Large datasets may take a while.
 
 
-def transform_scalars(dataset):
+def transform(dataset):
 
-    from tomviz import utils
     import numpy as np
 
-    data_py = utils.get_array(dataset)
+    data_py = dataset.active_scalars
 
     if data_py is None: # Check if data exists.
         raise RuntimeError("No data array found!")
@@ -25,4 +24,4 @@ def transform_scalars(dataset):
     output = np.asfortranarray(output)
 
     # Set the result as the new scalars.
-    utils.set_array(dataset, output)
+    dataset.active_scalars = output

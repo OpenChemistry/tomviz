@@ -1,11 +1,9 @@
-def transform_scalars(dataset):
+def transform(dataset):
     """Set negative voxels to zero"""
 
-    from tomviz import utils
-
-    data = utils.get_array(dataset)
+    data = dataset.active_scalars
 
     data[data < 0] = 0 # Set negative voxels to zero
 
     # Set the result as the new scalars.
-    utils.set_array(dataset, data)
+    dataset.active_scalars = data

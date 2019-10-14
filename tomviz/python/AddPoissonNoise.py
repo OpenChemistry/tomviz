@@ -1,15 +1,14 @@
 import numpy as np
-from tomviz import utils
 import tomviz.operators
 
 
 class AddPoissonNoiseOperator(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset, N=25):
+    def transform(self, dataset, N=25):
         """Add Poisson noise to tilt images"""
         self.progress.maximum = 1
 
-        tiltSeries = utils.get_array(dataset).astype(float)
+        tiltSeries = dataset.active_scalars.astype(float)
         if tiltSeries is None:
             raise RuntimeError("No scalars found!")
 
@@ -30,4 +29,4 @@ class AddPoissonNoiseOperator(tomviz.operators.CancelableOperator):
             step += 1
             self.progress.value = step
 
-        utils.set_array(dataset, tiltSeries)
+        dataset.active_scalars = tiltSeries

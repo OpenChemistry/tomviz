@@ -1,10 +1,9 @@
-def transform_scalars(dataset):
+def transform(dataset):
 
-    from tomviz import utils
     import numpy as np
 
     # Get the current volume as a numpy array.
-    array = utils.get_array(dataset)
+    array = dataset.active_scalars
 
     # Save the type
     input_dtype = array.dtype
@@ -20,4 +19,4 @@ def transform_scalars(dataset):
 
     # Recast the data to the input type
     result = array.astype(input_dtype)
-    utils.set_array(dataset, result)
+    dataset.active_scalars = result

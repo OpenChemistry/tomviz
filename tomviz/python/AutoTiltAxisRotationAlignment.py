@@ -6,14 +6,14 @@ import tomviz.operators
 
 class AutoTiltAxisRotationAlignOperator(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset):
+    def transform(self, dataset):
         """
           Automatic align the tilt axis to horizontal direction (x-axis)
         """
         self.progress.maximum = 1
 
         # Get Tilt Series
-        tiltSeries = utils.get_array(dataset)
+        tiltSeries = dataset.active_scalars
 
         if tiltSeries is None: #Check if data exists
             raise RuntimeError("No data array found!")
@@ -96,7 +96,7 @@ class AutoTiltAxisRotationAlignOperator(tomviz.operators.CancelableOperator):
         print("rotate tilt series by %f degrees" % -rot_ang)
 
         # Set the result as the new scalars.
-        utils.set_array(dataset, result)
+        dataset.active_scalars = result
 
 
 def calculateLineIntensity(Intensity_var, angle_d, N):

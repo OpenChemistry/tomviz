@@ -1,4 +1,3 @@
-from tomviz import utils
 import numpy as np
 import scipy.ndimage
 import tomviz.operators
@@ -6,8 +5,8 @@ import tomviz.operators
 
 class GenerateTiltSeriesOperator(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset, start_angle=-90.0, angle_increment=3.0,
-                          num_tilts=60):
+    def transform(self, dataset, start_angle=-90.0, angle_increment=3.0,
+                  num_tilts=60):
         """Generate Tilt Series from Volume"""
         self.progress.maximum = 1
 
@@ -16,7 +15,7 @@ class GenerateTiltSeriesOperator(tomviz.operators.CancelableOperator):
         angles = np.linspace(start_angle, start_angle +
                              (num_tilts - 1) * angle_increment, num_tilts)
 
-        volume = utils.get_array(dataset)
+        volume = dataset.active_scalars
         Ny = volume.shape[1]
         Nz = volume.shape[2]
         # calculate the size s.t. it contains the entire volume
@@ -56,10 +55,7 @@ class GenerateTiltSeriesOperator(tomviz.operators.CancelableOperator):
             self.progress.value = step
 
         # Set the result as the new scalars.
-        utils.set_array(dataset, tiltSeries)
-
-        # Mark dataset as tilt series.
-        utils.mark_as_tiltseries(dataset)
+        dataset.active_scalars = tiltSeries
 
         # Save tilt angles.
-        utils.set_tilt_angles(dataset, angles)
+        dataset.tilt_angles = angles

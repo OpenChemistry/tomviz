@@ -1,11 +1,10 @@
-def transform_scalars(dataset, threshold=None):
+def transform(dataset, threshold=None):
     """Remove bad pixels in tilt series."""
 
-    from tomviz import utils
     import scipy.ndimage
     import numpy as np
 
-    tiltSeries = utils.get_array(dataset).astype(np.float32)
+    tiltSeries = dataset.active_scalars.astype(np.float32)
 
     for i in range(tiltSeries.shape[2]):
         I = tiltSeries[:, :, i]
@@ -25,4 +24,4 @@ def transform_scalars(dataset, threshold=None):
         tiltSeries[:, :, i] = I
 
     # Set the result as the new scalars.
-    utils.set_array(dataset, tiltSeries)
+    dataset.active_scalars = tiltSeries

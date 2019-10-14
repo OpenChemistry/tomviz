@@ -1,14 +1,13 @@
-def transform_scalars(dataset):
+def transform(dataset):
     """Apply a Laplace filter to dataset."""
 
-    from tomviz import utils
     import scipy.ndimage
     import numpy as np
-    array = utils.get_array(dataset)
+    array = dataset.active_scalars
 
     # Transform the dataset
     result = np.empty_like(array)
     scipy.ndimage.filters.laplace(array, output=result)
 
     # Set the result as the new scalars.
-    utils.set_array(dataset, result)
+    dataset.active_scalars = result

@@ -1,21 +1,20 @@
 import pyfftw
 import numpy as np
 import tomviz.operators
-from tomviz import utils
 import time
 
 
 class ReconDFMOperator(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset):
+    def transform(self, dataset):
         """3D Reconstruct from a tilt series using Direct Fourier Method"""
 
         self.progress.maximum = 1
 
         # Get Tilt angles
-        tiltAngles = utils.get_tilt_angles(dataset)
+        tiltAngles = dataset.tilt_angles
 
-        tiltSeries = utils.get_array(dataset)
+        tiltSeries = dataset.active_scalars
         if tiltSeries is None:
             raise RuntimeError("No scalars found!")
 
@@ -108,16 +107,12 @@ class ReconDFMOperator(tomviz.operators.CancelableOperator):
         self.progress.value = step
 
         self.progress.message = 'Passing data to Tomviz'
-        from vtkmodules.vtkCommonDataModel import vtkImageData
-        recon_dataset = vtkImageData()
-        recon_dataset.CopyStructure(dataset)
-        utils.set_array(recon_dataset, recon)
-        utils.mark_as_volume(recon_dataset)
 
-        recon = None #gc
+        child = dataset.create_child_dataset()
+        child.active_scalars = recon
 
         returnValues = {}
-        returnValues["reconstruction"] = recon_dataset
+        returnValues["reconstruction"] = child
         return returnValues
 
 

@@ -5,12 +5,11 @@ NUMBER_OF_CHUNKS = 10
 
 class InvertOperator(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset):
-        from tomviz import utils
+    def transform(self, dataset):
         import numpy as np
         self.progress.maximum = NUMBER_OF_CHUNKS
 
-        scalars = utils.get_scalars(dataset)
+        scalars = dataset.active_scalars
         if scalars is None:
             raise RuntimeError("No scalars found!")
 
@@ -25,4 +24,4 @@ class InvertOperator(tomviz.operators.CancelableOperator):
             step += 1
             self.progress.value = step
 
-        utils.set_scalars(dataset, result)
+        dataset.active_scalars = result

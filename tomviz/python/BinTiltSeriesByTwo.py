@@ -1,4 +1,4 @@
-def transform_scalars(dataset):
+def transform(dataset):
     """Downsample tilt images by a factor of 2"""
 
     from tomviz import utils
@@ -6,7 +6,7 @@ def transform_scalars(dataset):
     import numpy as np
     import warnings
 
-    array = utils.get_array(dataset)
+    array = dataset.active_scalars
 
     zoom = (0.5, 0.5, 1)
     result_shape = utils.zoom_shape(array, zoom)
@@ -20,4 +20,4 @@ def transform_scalars(dataset):
                                      cval=0.0, prefilter=False)
 
     # Set the result as the new scalars.
-    utils.set_array(dataset, result)
+    dataset.active_scalars = result

@@ -1,11 +1,10 @@
-def transform_scalars(dataset, clipNum=5):
+def transform(dataset, clipNum=5):
     """Set values outside a cirular range to minimum(dataset) to
     remove reconstruction artifacts"""
 
-    from tomviz import utils
     import numpy as np
 
-    array = utils.get_array(dataset)
+    array = dataset.active_scalars
 
     # Constant values
     numX = array.shape[1]
@@ -25,4 +24,4 @@ def transform_scalars(dataset, clipNum=5):
         curImage[clipThese] = minVal
 
     # Return to tomviz
-    utils.set_array(dataset, array)
+    dataset.active_scalars = array

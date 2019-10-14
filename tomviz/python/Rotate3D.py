@@ -3,13 +3,13 @@
 # Developed as part of the tomviz project (www.tomviz.com).
 
 
-def transform_scalars(dataset, rotation_angle=90.0, rotation_axis=0):
+def transform(dataset, rotation_angle=90.0, rotation_axis=0):
 
     from tomviz import utils
     import numpy as np
     from scipy import ndimage
 
-    data_py = utils.get_array(dataset) #get data as numpy array
+    data_py = dataset.active_scalars #get data as numpy array
 
     if data_py is None: #Check if data exists
         raise RuntimeError("No data array found!")
@@ -32,4 +32,4 @@ def transform_scalars(dataset, rotation_angle=90.0, rotation_axis=0):
     ndimage.interpolation.rotate(
         data_py, rotation_angle, output=data_py_return, axes=axes)
 
-    utils.set_array(dataset, data_py_return)
+    dataset.active_scalars = data_py_return

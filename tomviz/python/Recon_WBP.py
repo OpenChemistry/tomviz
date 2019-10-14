@@ -6,21 +6,20 @@ import time
 
 class ReconWBPOperator(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset, Nrecon=None, filter=None,
-                          interp=None, Nupdates=None):
+    def transform(self, dataset, Nrecon=None, filter=None, interp=None,
+                  Nupdates=None):
         """
         3D Reconstruct from a tilt series using Weighted Back-projection Method
         """
         self.progress.maximum = 1
 
-        from tomviz import utils
         interpolation_methods = ('linear', 'nearest', 'spline', 'cubic')
         filter_methods = ('none', 'ramp', 'shepp-logan',
                           'cosine', 'hamming', 'hann')
 
         # Get Tilt angles
-        tilt_angles = utils.get_tilt_angles(dataset)
-        tiltSeries = utils.get_array(dataset)
+        tilt_angles = dataset.tilt_angles
+        tiltSeries = dataset.active_scalars
         if tiltSeries is None:
             raise RuntimeError("No scalars found!")
 
@@ -34,8 +33,7 @@ class ReconWBPOperator(tomviz.operators.CancelableOperator):
         counter = 1
         etcMessage = 'Estimated time to complete: n/a'
 
-        child = utils.make_child_dataset(dataset) #create child for recon
-        utils.mark_as_volume(child)
+        child = dataset.create_child_dataset() #create child for recon
 
         for i in range(Nslice):
             if self.canceled:
@@ -57,12 +55,12 @@ class ReconWBPOperator(tomviz.operators.CancelableOperator):
 
             # Update only once every so many steps
             if Nupdates != 0 and (i + 1) % (Nslice//Nupdates) == 0:
-                utils.set_array(child, recon) #add recon to child
+                child.active_scalars = recon #add recon to child
                 # This copies data to the main thread
                 self.progress.data = child
 
         # One last update of the child data.
-        utils.set_array(child, recon) #add recon to child
+        child.active_scalars = recon #add recon to child
         self.progress.data = child
 
         returnValues = {}

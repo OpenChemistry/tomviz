@@ -1,4 +1,3 @@
-from tomviz import utils
 import numpy as np
 from numpy.fft import fftn, fftshift, ifftn, ifftshift
 import tomviz.operators
@@ -6,13 +5,13 @@ import tomviz.operators
 
 class ArtifactsTVOperator(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset, Niter=100, a=0.1,
-                          wedgeSize=5, kmin=5, theta=0):
+    def transform(self, dataset, Niter=100, a=0.1, wedgeSize=5, kmin=5,
+                  theta=0):
         """
         Remove Structured Artifacts with Total Variation Minimization"""
 
         #Import information from dataset
-        array = utils.get_array(dataset)
+        array = dataset.active_scalars
         (nx, ny, nz) = array.shape
 
         # Convert angle from Degrees to Radians.
@@ -86,7 +85,7 @@ class ArtifactsTVOperator(tomviz.operators.CancelableOperator):
             array[:, :, i] = recon_constraint
 
         #Set the result as the new scalars.
-        utils.set_array(dataset, np.asfortranarray(array))
+        dataset.active_scalars = np.asfortranarray(array)
 
 
 def TVDerivative(img, nx, ny):
