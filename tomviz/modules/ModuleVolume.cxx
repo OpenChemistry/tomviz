@@ -11,6 +11,7 @@
 
 #include <vtkColorTransferFunction.h>
 #include <vtkGPUVolumeRayCastMapper.h>
+#include <vtkImageClip.h>
 #include <vtkImageData.h>
 #include <vtkNew.h>
 #include <vtkPiecewiseFunction.h>
@@ -72,8 +73,17 @@ void ModuleVolume::initializeMapper(DataSource* data)
   else {
     output = data->producer()->GetOutputPort();
   }
+
+  m_clipper = vtkSmartPointer<vtkImageClip>::New();
+  m_clipper->SetInputData(dataSource()->dataObject());
+  int* extent = vtkImageData::SafeDownCast(
+    data->producer()->GetOutputDataObject(0))->GetExtent();
+  m_clipper->SetOutputWholeExtent(
+    extent[0], extent[1], extent[2], extent[3], extent[4], extent[5]);
+  m_clipper->ClipDataOn();
+
   m_volumeMapper = vtkSmartPointer<vtkGPUVolumeRayCastMapper>::New();
-  m_volumeMapper->SetInputConnection(output);
+  m_volumeMapper->SetInputConnection(m_clipper->GetOutputPort());
   m_volumeMapper->SetScalarModeToUsePointFieldData();
   m_volumeMapper->SelectScalarArray(scalarsIndex());
   m_volume->SetMapper(m_volumeMapper);

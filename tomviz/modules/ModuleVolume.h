@@ -15,6 +15,7 @@
 class vtkPVRenderView;
 
 class vtkGPUVolumeRayCastMapper;
+class vtkImageClip;
 class vtkVolumeProperty;
 class vtkVolume;
 
@@ -65,6 +66,7 @@ private:
   vtkNew<vtkVolumeProperty> m_volumeProperty;
   QPointer<ModuleVolumeWidget> m_controllers;
   QPointer<ScalarsComboBox> m_scalarsCombo;
+  vtkSmartPointer<vtkImageClip> m_clipper;
 
 private slots:
   /**
