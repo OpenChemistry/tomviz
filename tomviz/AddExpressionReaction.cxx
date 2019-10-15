@@ -50,16 +50,15 @@ QString AddExpressionReaction::getDefaultExpression(DataSource* source)
     // This was done in the Dialog's UI file, but since it needs to change
     // based on the type of dataset, do it here
     return QString("# Transform entry point, do not change function name.\n"
-                   "def transform_scalars(dataset):\n"
+                   "def transform(dataset):\n"
                    "    \"\"\"Define this method for Python operators that \n"
                    "    transform the input array\"\"\"\n"
                    "\n"
-                   "    from tomviz import utils\n"
                    "    import numpy as np\n"
                    "\n"
                    "%1"
                    "    # Get the current volume as a numpy array.\n"
-                   "    array = utils.get_array(dataset)\n"
+                   "    array = dataset.active_scalars\n"
                    "\n"
                    "    # This is where you operate on your data, here we "
                    "square root it.\n"
@@ -67,14 +66,12 @@ QString AddExpressionReaction::getDefaultExpression(DataSource* source)
                    "\n"
                    "    # This is where the transformed data is set, it will "
                    "display in tomviz.\n"
-                   "    utils.set_array(dataset, result)\n")
+                   "    dataset.active_scalars = result\n")
       .arg(source->type() == DataSource::Volume
              ? ""
              : "    # Get the tilt angles array as a numpy array.\n"
-               "    # There is also a utils.set_tilt_angles(dataset, angles) "
-               "function if you need\n"
-               "    # to set tilt angles.\n"
-               "    tilt_angles = utils.get_tilt_angles(dataset)\n"
+               "    # You may also set tilt angles with dataset.tilt_angles\n"
+               "    tilt_angles = dataset.tilt_angles\n"
                "\n");
   }
 }

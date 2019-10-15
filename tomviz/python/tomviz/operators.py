@@ -97,11 +97,11 @@ class Operator(object):
 class CancelableOperator(Operator):
     """
     A cancelable operator allows the user to interrupt the execution of the
-    operator. The canceled property can be using in the transform_scalars(...)
+    operator. The canceled property can be using in the transform(...)
     method to break out when the operator is canceled. The basic structure of
-    the transform_scalars(...) might look something like this:
+    the transform(...) might look something like this:
 
-    def transform_scalars(self, data):
+    def transform(self, data):
         while(not self.canceled):
             # Do work
 
