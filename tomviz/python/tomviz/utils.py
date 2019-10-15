@@ -162,6 +162,12 @@ def get_coordinate_arrays(dataset):
     each point in the dataset. This can be used to evaluate a function at each
     point, for instance.
     """
+    if not in_application():
+        raise Exception('Cannot get coordinate arrays in external mode')
+
+    from tomviz._internal import convert_to_vtk_data_object
+    dataset = convert_to_vtk_data_object(dataset)
+
     assert dataset.IsA("vtkImageData"), "Dataset must be a vtkImageData"
 
     # Create meshgrid for image
@@ -194,16 +200,13 @@ def make_child_dataset(reference_dataset):
 
 def connected_components(dataset, background_value=0, progress_callback=None):
     try:
+        import numpy as np
         import itk
-        import itkTypes
-        import vtk
-        from tomviz import itkutils
     except Exception as exc:
         print("Could not import necessary module(s)")
         print(exc)
 
-    scalarType = dataset.GetScalarType()
-    if scalarType == vtk.VTK_FLOAT or scalarType == vtk.VTK_DOUBLE:
+    if np.issubdtype(dataset.active_scalars.dtype, np.floating):
         raise Exception(
             "Connected Components works only on images with integral types.")
 
@@ -216,7 +219,8 @@ def connected_components(dataset, background_value=0, progress_callback=None):
         # to 65,535 connected components (the number of connected components
         # is limited to the maximum representable number in the voxel type
         # of the input image in the ConnectedComponentsFilter).
-        itk_image = itkutils.convert_vtk_to_itk_image(dataset, itkTypes.US)
+        array = dataset.active_scalars.astype(np.uint16)
+        itk_image = itk.GetImageViewFromArray(array)
         itk_image_type = type(itk_image)
 
         # ConnectedComponentImageFilter
@@ -279,7 +283,9 @@ def connected_components(dataset, background_value=0, progress_callback=None):
         gt_zero = label_buffer > 0
         label_buffer[gt_zero] = minimum - label_buffer[gt_zero] + maximum
 
-        set_array(dataset, label_buffer, isFortran=False)
+        # Transpose the data to Fortran indexing
+        dataset.active_scalars = label_buffer.transpose([2, 1, 0])
+
     except Exception as exc:
         print("Problem encountered while running ConnectedComponents")
         raise exc
@@ -288,7 +294,7 @@ def connected_components(dataset, background_value=0, progress_callback=None):
 def label_object_principal_axes(dataset, label_value):
     import numpy as np
     from tomviz import utils
-    labels = utils.get_array(dataset)
+    labels = dataset.active_scalars
     num_voxels = np.sum(labels == label_value)
     xx, yy, zz = utils.get_coordinate_arrays(dataset)
 
@@ -504,3 +510,83 @@ def rotate_shape(input, angle, axes):
     output_shape[axes[1]] = ox
 
     return output_shape
+
+
+def set_principal_axes(dataset, axes):
+    if not in_application():
+        raise Exception('Cannot set principal axes in external mode')
+
+    from tomviz._internal import convert_to_vtk_data_object
+    from vtkmodules.vtkCommonCore import vtkFloatArray
+
+    data_object = convert_to_vtk_data_object(dataset)
+    fd = data_object.GetFieldData()
+
+    axis_array = vtkFloatArray()
+    axis_array.SetName('PrincipalAxes')
+    axis_array.SetNumberOfComponents(3)
+    axis_array.SetNumberOfTuples(3)
+    axis_array.InsertTypedTuple(0, list(axes[:, 0]))
+    axis_array.InsertTypedTuple(1, list(axes[:, 1]))
+    axis_array.InsertTypedTuple(2, list(axes[:, 2]))
+    fd.RemoveArray('PrincipalAxis')
+    fd.AddArray(axis_array)
+
+
+def get_principal_axes(dataset, principal_axis):
+    if not in_application():
+        raise Exception('Cannot get principal axes in external mode')
+
+    from tomviz._internal import convert_to_vtk_data_object
+
+    data_object = convert_to_vtk_data_object(dataset)
+    fd = data_object.GetFieldData()
+    axis_array = fd.GetArray('PrincipalAxes')
+    assert axis_array is not None, \
+        "Dataset does not have a PrincipalAxes field data array"
+    assert axis_array.GetNumberOfTuples() == 3, \
+        "PrincipalAxes array requires 3 tuples"
+    assert axis_array.GetNumberOfComponents() == 3, \
+        "PrincipalAxes array requires 3 components"
+    assert principal_axis >= 0 and principal_axis <= 2, \
+        "Invalid principal axis. Must be in range [0, 2]."
+
+    return np.array(axis_array.GetTuple(principal_axis))
+
+
+def set_center(dataset, center):
+    if not in_application():
+        raise Exception('Cannot set center in external mode')
+
+    from tomviz._internal import convert_to_vtk_data_object
+    from vtkmodules.vtkCommonCore import vtkFloatArray
+
+    data_object = convert_to_vtk_data_object(dataset)
+    fd = data_object.GetFieldData()
+
+    center_array = vtkFloatArray()
+    center_array.SetName('Center')
+    center_array.SetNumberOfComponents(3)
+    center_array.SetNumberOfTuples(1)
+    center_array.InsertTypedTuple(0, list(center))
+    fd.RemoveArray('Center')
+    fd.AddArray(center_array)
+
+
+def get_center(dataset):
+    if not in_application():
+        raise Exception('Cannot get center in external mode')
+
+    from tomviz._internal import convert_to_vtk_data_object
+
+    data_object = convert_to_vtk_data_object(dataset)
+    fd = data_object.GetFieldData()
+    center_array = fd.GetArray('Center')
+    assert center_array is not None, \
+        "Dataset does not have a Center field data array"
+    assert center_array.GetNumberOfTuples() == 1, \
+        "Center array requires 1 tuple"
+    assert center_array.GetNumberOfComponents() == 3, \
+        "Center array requires 3 components"
+
+    return np.array(center_array.GetTuple(0))

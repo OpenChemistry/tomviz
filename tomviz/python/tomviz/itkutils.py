@@ -339,7 +339,7 @@ def get_label_object_attributes(dataset, progress_callback=None):
         import itk
 
         # Get an ITK image from the data set
-        itk_image = convert_vtk_to_itk_image(dataset)
+        itk_image = itk.GetImageViewFromArray(dataset.active_scalars)
         itk_image_type = type(itk_image)
 
         # Get an appropriate LabelImageToShapelLabelMapFilter type for the
