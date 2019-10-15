@@ -14,7 +14,6 @@ import errno
 
 from tqdm import tqdm
 
-from tomviz import utils
 from tomviz._internal import find_transform_function
 
 LOG_FORMAT = '[%(asctime)s] %(levelname)s: %(message)s'
@@ -564,7 +563,6 @@ class Dataset:
     def __init__(self, arrays, active=None):
         # Holds the map of scalars name => array
         self.arrays = arrays
-        self.is_volume = False
         self.tilt_angles = None
         self.tilt_axis = None
         # The currently active scalar
@@ -595,81 +593,11 @@ class Dataset:
             name = self.active_name
         return self.arrays[name]
 
-    def set_scalars(self, new_scalars):
-        order = 'C'
-        if np.isfortran(self.active_scalars):
-            order = 'F'
-        new_scalars = np.reshape(new_scalars, self.active_scalars.shape, order=order)
-        self.active_scalars = np.asfortranarray(new_scalars)
-
-    def get_scalars(self, name=None):
-        if name is None:
-            name = self.active_name
-        return self.arrays[name].ravel(order='A')
-
-    def set_array(self, new_array):
-        if not np.isfortran(new_array):
-            new_array = np.asfortranarray(new_array)
-
-        self.active_scalars = new_array
-
-    def get_array(self, name=None):
-        if name is None:
-            name = self.active_name
-
-        return self.arrays[name]
-
     def create_child_dataset(self):
         child = copy.deepcopy(self)
         # Set tilt angles to None to be consistent with internal dataset
         child.tilt_angles = None
         return child
-
-
-def _patch_utils():
-    # Monkey patch tomviz.utils to support API outside Tomviz app.
-    # I know this is a little yucky!
-    def _get_scalars(dataobject, name=None):
-        return dataobject.get_scalars(name)
-
-    def _set_scalars(dataobject, new_scalars):
-        dataobject.set_scalars(new_scalars)
-
-    def _get_array(dataobject, name=None):
-        return dataobject.get_array(name)
-
-    def _set_array(dataobject, new_array):
-        dataobject.set_array(new_array)
-
-    def _set_tilt_angles(dataobject, tilt_angles):
-        dataobject.tilt_angles = tilt_angles
-
-    def _get_tilt_angles(dataobject):
-        return dataobject.tilt_angles
-
-    def _make_child_dataset(reference_dataset):
-        child = np.empty_like(reference_dataset.active_scalars)
-        arrays = {
-            "ImageScalars": child
-        }
-
-        return Dataset(arrays)
-
-    def _mark_as_volume(dataobject):
-        dataobject.is_volume = True
-
-    def _arrays(dataobject):
-        return dataobject.arrays.items()
-
-    utils.get_scalars = _get_scalars
-    utils.set_scalars = _set_scalars
-    utils.set_array = _set_array
-    utils.get_array = _get_array
-    utils.set_tilt_angles = _set_tilt_angles
-    utils.get_tilt_angles = _get_tilt_angles
-    utils.make_child_dataset = _make_child_dataset
-    utils.mark_as_volume = _mark_as_volume
-    utils.arrays = _arrays
 
 
 def _execute_transform(operator_label, transform, arguments, input, progress):
@@ -692,8 +620,7 @@ def _execute_transform(operator_label, transform, arguments, input, progress):
     if operator_label == 'SetTiltAngles':
         # Set the tilt angles so downstream operator can retrieve them
         # arguments the tilt angles.
-        utils.set_tilt_angles(input, np.array(arguments['angles'],
-                              dtype=np.float64))
+        input.tilt_angles = np.array(arguments['angles']).astype(np.float64)
     else:
         # Now run the operator
         result = transform(input, **arguments)
@@ -771,8 +698,6 @@ def execute(operators, start_at, data_file_path, output_file_path,
 
     arrays = output['arrays']
     dims = output.get('dims')
-
-    _patch_utils()
 
     # The first is the active array
     (active_array, _) = arrays[0]
