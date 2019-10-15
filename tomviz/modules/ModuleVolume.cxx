@@ -120,6 +120,8 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   connect(data, &DataSource::activeScalarsChanged, this,
           &ModuleVolume::onScalarArrayChanged);
 
+  connect(this, &ModuleVolume::updateClipFilter, this, 
+          &ModuleVolume::onClipFilterChanged);
   // Work around mapper bug on the mac, see the following issue for details:
   // https://github.com/OpenChemistry/tomviz/issues/1776
   // Should be removed when this is fixed.
@@ -410,6 +412,12 @@ int ModuleVolume::scalarsIndex()
     index = activeScalars();
   }
   return index;
+}
+
+void ModuleVolume::onClipFilterChanged(const int* extent) {
+  m_clipper->SetOutputWholeExtent(
+    extent[0], extent[1], extent[2], extent[3], extent[4], extent[5]);
+  emit renderNeeded();
 }
 
 } // end of namespace tomviz

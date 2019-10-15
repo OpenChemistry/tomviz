@@ -84,6 +84,7 @@ private slots:
   void onTransferModeChanged(const int mode);
   void onScalarArrayChanged();
   int scalarsIndex();
+  void onClipFilterChanged(const int* extent);
 };
 } // namespace tomviz
 

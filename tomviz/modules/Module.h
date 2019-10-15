@@ -165,6 +165,10 @@ signals:
   /// a re-render of the scene to take effect.
   void renderNeeded();
 
+  /// Emitted when a clipping plane has been created
+  void clipFilterUpdated(const int* extent);
+  void updateClipFilter(const int* extent);
+
   /// Emitted when the module explicitly requires the opacity of the color map
   /// to be enforced. This will cause the colormap to be detached, and the
   /// "Separate Color Map" box to be checked and disabled. In practice, this is

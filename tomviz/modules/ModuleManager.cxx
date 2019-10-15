@@ -280,6 +280,12 @@ void ModuleManager::addModule(Module* module)
 
     emit moduleAdded(module);
     connect(module, &Module::renderNeeded, this, &ModuleManager::render);
+    if (ModuleFactory::moduleType(module) == "Volume") {
+      connect(this, &ModuleManager::clipChanged, module, &Module::updateClipFilter);
+    }
+    if (ModuleFactory::moduleType(module) == "Clip") {
+      connect(module, &Module::clipFilterUpdated, this, &ModuleManager::clip);
+    }
   }
 }
 
@@ -1109,6 +1115,10 @@ bool ModuleManager::hasDataSources()
 bool ModuleManager::hasMoleculeSources()
 {
   return !d->MoleculeSources.empty();
+}
+
+void ModuleManager::clip(const int* extent) {
+  emit clipChanged(extent);
 }
 
 } // namespace tomviz

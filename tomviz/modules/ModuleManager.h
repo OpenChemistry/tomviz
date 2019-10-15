@@ -129,6 +129,8 @@ private slots:
   void render();
 
   void onPipelineFinished();
+  
+  void clip(const int* extent);
 
 signals:
   void moduleAdded(Module*);
@@ -145,6 +147,8 @@ signals:
   void operatorRemoved(Operator*);
 
   void stateDoneLoading();
+
+  void clipChanged(const int* extent);
 
 private:
   Q_DISABLE_COPY(ModuleManager)
