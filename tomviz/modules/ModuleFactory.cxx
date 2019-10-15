@@ -4,6 +4,7 @@
 #include "ModuleFactory.h"
 
 #include "DataSource.h"
+#include "ModuleClip.h"
 #include "ModuleContour.h"
 #include "ModuleMolecule.h"
 #include "ModuleOutline.h"
@@ -37,7 +38,8 @@ QList<QString> ModuleFactory::moduleTypes()
         << "Contour"
         << "Volume"
         << "Threshold"
-        << "Molecule";
+        << "Molecule"
+        << "Clip";
   qSort(reply);
   return reply;
 }
@@ -96,6 +98,8 @@ Module* ModuleFactory::allocateModule(const QString& type)
     module = new ModuleScaleCube();
   } else if (type == "Molecule") {
     module = new ModuleMolecule();
+  } else if (type== "Clip") {
+    module = new ModuleClip();
   }
   return module;
 }
@@ -215,6 +219,9 @@ const char* ModuleFactory::moduleType(Module* module)
   }
   if (qobject_cast<ModuleMolecule*>(module)) {
     return "Molecule";
+  }
+  if (qobject_cast<ModuleClip*>(module)) {
+    return "Clip";
   }
   return nullptr;
 }

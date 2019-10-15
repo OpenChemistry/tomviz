@@ -212,6 +212,8 @@ set(SOURCES
 list(APPEND SOURCES
   modules/Module.cxx
   modules/Module.h
+  modules/ModuleClip.cxx
+  modules/ModuleClip.h
   modules/ModuleContour.cxx
   modules/ModuleContour.h
   modules/ModuleContourWidget.cxx
