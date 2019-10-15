@@ -111,8 +111,8 @@ void LoadDataReaction::onTriggered()
 QList<DataSource*> LoadDataReaction::loadData()
 {
   QStringList filters;
-  filters << "Common file types (*.emd *.jpg *.jpeg *.png *.tiff *.tif *.raw"
-             " *.dat *.bin *.txt *.mhd *.mha *.vti *.mrc *.st *.rec *.ali "
+  filters << "Common file types (*.emd *.jpg *.jpeg *.png *.tiff *.tif *.h5 "
+             "*.raw *.dat *.bin *.txt *.mhd *.mha *.vti *.mrc *.st *.rec *.ali "
              "*.xmf *.xdmf)"
           << "EMD (*.emd)"
           << "JPeg Image files (*.jpg *.jpeg)"
