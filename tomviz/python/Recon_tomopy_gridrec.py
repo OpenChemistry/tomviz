@@ -66,7 +66,7 @@ def transform(dataset, rot_center=0, tune_rot_center=True):
 
     # Set the transformed array
     child = dataset.create_child_dataset()
-    child.active_scalars = child
+    child.active_scalars = array
 
     return_values = {}
     return_values['reconstruction'] = child
