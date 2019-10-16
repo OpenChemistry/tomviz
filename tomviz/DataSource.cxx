@@ -5,6 +5,7 @@
 
 #include "ActiveObjects.h"
 #include "ColorMap.h"
+#include "DataExchangeFormat.h"
 #include "EmdFormat.h"
 #include "GenericHDF5Format.h"
 #include "ModuleFactory.h"
@@ -321,11 +322,7 @@ bool DataSource::canReloadAndResample() const
 
   const auto& file = files[0];
 
-  // If it ends in emd, we can do it as long as it is a volume
-  if (file.endsWith("emd", Qt::CaseInsensitive) && type() == Volume)
-    return true;
-
-  static const QStringList h5Extensions = { "h5", "he5", "hdf5" };
+  static const QStringList h5Extensions = { "emd", "h5", "he5", "hdf5" };
 
   // If it looks like an HDF5 type (based on its extension), it can be
   // reloaded and resampled.
@@ -342,10 +339,6 @@ bool DataSource::reloadAndResample()
   if (files.size() != 1)
     return false;
 
-  // The type must be a volume
-  if (type() != Volume)
-    return false;
-
   const auto& file = files[0];
 
   auto algo = vtkAlgorithm::SafeDownCast(proxy()->GetClientSideObject());
@@ -357,6 +350,9 @@ bool DataSource::reloadAndResample()
   QVariantMap options{ { "askForSubsample", true } };
   if (file.endsWith("emd", Qt::CaseInsensitive)) {
     EmdFormat format;
+    success = format.read(file.toLatin1().data(), image, options);
+  } else if (GenericHDF5Format::isDataExchange(file.toStdString())) {
+    DataExchangeFormat format;
     success = format.read(file.toLatin1().data(), image, options);
   } else {
     success = GenericHDF5Format::read(file.toLatin1().data(), image, options);
@@ -416,7 +412,11 @@ QJsonObject DataSource::serialize() const
   // If the data was subsampled, save the subsampling settings
   if (wasSubsampled()) {
     QJsonObject settings;
-    settings["stride"] = subsampleStride();
+
+    int s[3];
+    subsampleStrides(s);
+    QJsonArray stridesArray = { s[0], s[1], s[2] };
+    settings["strides"] = stridesArray;
 
     int bs[6];
     subsampleVolumeBounds(bs);
@@ -1343,31 +1343,32 @@ void DataSource::setWasSubsampled(vtkDataObject* image, bool b)
   setFieldDataArray<ArrayType>(fd, arrayName, 1, &b);
 }
 
-int DataSource::subsampleStride(vtkDataObject* image)
+void DataSource::subsampleStrides(vtkDataObject* image, int s[3])
 {
-  int ret = 1;
+  // Set the default in case we return
+  for (int i = 0; i < 3; ++i)
+    s[i] = 1;
 
   if (!image)
-    return ret;
+    return;
 
-  const char* arrayName = "subsample_stride";
+  const char* arrayName = "subsample_strides";
   using ArrayType = vtkTypeInt32Array;
 
   vtkFieldData* fd = image->GetFieldData();
-  getFieldDataArray<ArrayType>(fd, arrayName, 1, &ret);
-  return ret;
+  getFieldDataArray<ArrayType>(fd, arrayName, 3, s);
 }
 
-void DataSource::setSubsampleStride(vtkDataObject* image, int i)
+void DataSource::setSubsampleStrides(vtkDataObject* image, int s[3])
 {
   if (!image)
     return;
 
-  const char* arrayName = "subsample_stride";
+  const char* arrayName = "subsample_strides";
   using ArrayType = vtkTypeInt32Array;
 
   vtkFieldData* fd = image->GetFieldData();
-  setFieldDataArray<ArrayType>(fd, arrayName, 1, &i);
+  setFieldDataArray<ArrayType>(fd, arrayName, 3, s);
 }
 
 void DataSource::subsampleVolumeBounds(vtkDataObject* image, int bs[6])

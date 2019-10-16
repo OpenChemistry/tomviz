@@ -244,15 +244,16 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
       if (dataSource->type() == DataSource::Volume) {
         markAsTiltAction = contextMenu.addAction("Mark as Tilt Series");
         // markAsFibAction = contextMenu.addAction("Mark as Focused Ion Beam");
-        if (dataSource->canReloadAndResample())
-          reloadAndResampleAction =
-            contextMenu.addAction("Reload and Resample");
       } else if (dataSource->type() == DataSource::TiltSeries) {
         markAsVolumeAction = contextMenu.addAction("Mark as Volume");
         // markAsFibAction = contextMenu.addAction("Mark as Focused Ion Beam");
       } else if (dataSource->type() == DataSource::FIB) {
         markAsVolumeAction = contextMenu.addAction("Mark as Volume");
         markAsTiltAction = contextMenu.addAction("Mark as Tilt Series");
+      }
+
+      if (dataSource->canReloadAndResample()) {
+        reloadAndResampleAction = contextMenu.addAction("Reload and Resample");
       }
 
       // Add option to re-execute the pipeline is we have a canceled operator

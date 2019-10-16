@@ -363,7 +363,7 @@ def _read_dataset(dataset, options=None):
     if options is None or 'subsampleSettings' not in options:
         return dataset[:]
 
-    stride = options.get('subsampleSettings', {}).get('stride', 1)
+    strides = options.get('subsampleSettings', {}).get('strides', [1] * 3)
     bnds = options.get('subsampleSettings', {}).get('volumeBounds', [-1] * 6)
 
     if len(bnds) != 6 or any(x < 0 for x in bnds):
@@ -374,9 +374,9 @@ def _read_dataset(dataset, options=None):
 
     # These slice specifications are forwarded directly to the HDF5
     # "hyperslab" selections, and it loads only the data requested.
-    return dataset[bnds[0]:bnds[1]:stride,
-                   bnds[2]:bnds[3]:stride,
-                   bnds[4]:bnds[5]:stride]
+    return dataset[bnds[0]:bnds[1]:strides[0],
+                   bnds[2]:bnds[3]:strides[1],
+                   bnds[4]:bnds[5]:strides[2]]
 
 
 def _read_emd(path, options=None):
