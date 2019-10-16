@@ -30,6 +30,7 @@
 #include "HistogramManager.h"
 #include "Module.h"
 #include "ModuleManager.h"
+#include "Pipeline.h"
 #include "Utilities.h"
 
 namespace tomviz {
@@ -196,8 +197,15 @@ void CentralWidget::setActiveModule(Module* module)
 void CentralWidget::setActiveOperator(Operator* op)
 {
   if (op != nullptr) {
+    DataSource* source = op->dataSource();
+    if (op->isNew() && op->isEditing() && source && source->pipeline()) {
+      // If we are editing a new operator, show the most recently
+      // transformed datasource's histogram rather than the parent
+      // datasource's histogram.
+      source = source->pipeline()->transformedDataSource();
+    }
     m_activeModule = nullptr;
-    setColorMapDataSource(op->dataSource());
+    setColorMapDataSource(source);
   }
 }
 
