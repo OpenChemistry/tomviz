@@ -116,7 +116,7 @@ bool ModuleClip::setupWidget(vtkSMViewProxy* vtkView)
 
   // Setup the color of the border of the widget.
   {
-    double color[3] = { 0.5, 0.5, 0.5 };
+    double color[3] = { 1.0, 0.0, 0.0 };
     double opacity = 1.0;
     m_widget->GetPlaneProperty()->SetColor(color);
     m_widget->GetPlaneProperty()->SetOpacity(opacity);
@@ -226,12 +226,12 @@ void ModuleClip::addToPanel(QWidget* panel)
   }
 
   // Sanity check: make sure the plane value is within the bounds
-  if (m_plane < m_planeSlider->minimum())
-    m_plane = m_planeSlider->minimum();
-  else if (m_plane > m_planeSlider->maximum())
-    m_plane = m_planeSlider->maximum();
+  if (m_planePosition < m_planeSlider->minimum())
+    m_planePosition = m_planeSlider->minimum();
+  else if (m_planePosition > m_planeSlider->maximum())
+    m_planePosition = m_planeSlider->maximum();
 
-  m_planeSlider->setValue(m_plane);
+  m_planeSlider->setValue(m_planePosition);
 
   formLayout->addRow("Plane", m_planeSlider);
 
@@ -328,7 +328,7 @@ QJsonObject ModuleClip::serialize() const
   props["point1"] = point1;
   props["point2"] = point2;
 
-  props["plane"] = m_plane;
+  props["plane"] = m_planePosition;
   QVariant qData;
   qData.setValue(m_direction);
   props["direction"] = qData.toString();
@@ -373,8 +373,8 @@ bool ModuleClip::deserialize(const QJsonObject& json)
       onDirectionChanged(direction);
     }
     if (props.contains("plane")) {
-      m_plane = props["plane"].toInt();
-      onPlaneChanged(m_plane);
+      m_planePosition = props["plane"].toInt();
+      onPlaneChanged(m_planePosition);
     }
     onPlaneChanged();
     return true;
@@ -437,12 +437,6 @@ void ModuleClip::dataSourceMoved(double newX, double newY, double newZ)
   m_widget->SetDisplayOffset(pos);
 }
 
-bool ModuleClip::areScalarsMapped() const
-{
-  vtkSMPropertyHelper mapScalars(m_propsPanelProxy->GetProperty("MapScalars"));
-  return mapScalars.GetAsInt() != 0;
-}
-
 vtkImageData* ModuleClip::imageData() const
 {
   vtkImageData* data = vtkImageData::SafeDownCast(
@@ -503,25 +497,25 @@ void ModuleClip::onDirectionChanged(Direction direction)
     m_planeSlider->setMaximum(maxPlane);
   }
 
-  onPlaneChanged(plane);
+  onPlaneChanged(planePosition);
   onPlaneChanged();
   dataUpdated();
 
   emit clipFilterUpdated(m_clippingPlane, false);
 }
 
-void ModuleClip::onPlaneChanged(int plane)
+void ModuleClip::onPlaneChanged(int planePosition)
 {
-  m_plane = plane;
+  m_planePosition = planePosition;
   int axis = directionAxis(m_direction);
 
   if (axis < 0) {
     return;
   }
 
-  m_widget->SetSliceIndex(plane);
+  m_widget->SetSliceIndex(planePosition);
   if (m_planeSlider) {
-    m_planeSlider->setValue(plane);
+    m_planeSlider->setValue(planePosition);
   }
 
   onPlaneChanged();
@@ -541,12 +535,12 @@ void ModuleClip::onPlaneChanged(double* point)
   imageData()->GetDimensions(dims);
   double bounds[6];
   imageData()->GetBounds(bounds);
-  int plane;
+  int planePosition;
 
-  plane = (dims[axis] - 1) * (point[axis] - bounds[2 * axis]) /
+  planePosition = (dims[axis] - 1) * (point[axis] - bounds[2 * axis]) /
           (bounds[2 * axis + 1] - bounds[2 * axis]);
 
-  onPlaneChanged(plane);
+  onPlaneChanged(planePosition);
 
   emit clipFilterUpdated(m_clippingPlane, false);
 }

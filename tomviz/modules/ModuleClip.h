@@ -39,15 +39,11 @@ public:
   bool visibility() const override;
   QJsonObject serialize() const override;
   bool deserialize(const QJsonObject& json) override;
-  bool isColorMapNeeded() const override { return true; }
-  bool areScalarsMapped() const override;
   void addToPanel(QWidget* panel) override;
 
   void dataSourceMoved(double newX, double newY, double newZ) override;
 
   QString exportDataTypeString() override { return "Image"; }
-
-  // vtkDataObject* dataToExport() override;
 
   enum Direction
   {
@@ -92,8 +88,7 @@ private:
   QPointer<QComboBox> m_directionCombo;
   QPointer<IntSliderWidget> m_planeSlider;
   Direction m_direction = Direction::XY;
-  int m_plane = 0;
-  int* m_extent;
+  int m_planePosition = 0;
 
   QPointer<pqLineEdit> m_pointInputs[3];
   QPointer<pqLineEdit> m_normalInputs[3];
