@@ -13,9 +13,7 @@
 
 class QComboBox;
 class pqLineEdit;
-class vtkActor;
-class vtkPlaneSource;
-class vtkPolyData;
+class vtkPlane;
 class vtkSMProxy;
 class vtkSMSourceProxy;
 class vtkNonOrthoImagePlaneWidget;
@@ -86,9 +84,7 @@ private:
   vtkWeakPointer<vtkSMSourceProxy> m_clipVolume;
   vtkSmartPointer<vtkSMProxy> m_propsPanelProxy;
   vtkSmartPointer<vtkNonOrthoImagePlaneWidget> m_widget;
-  vtkSmartPointer<vtkPlaneSource> m_planeSource;
-  vtkSmartPointer<vtkPolyData> m_planeOutlinePolyData;
-  vtkSmartPointer<vtkActor> m_planeOutlineActor;
+  vtkSmartPointer<vtkPlane> m_clippingPlane;
   bool m_ignoreSignals = false;
 
   pqPropertyLinks m_Links;

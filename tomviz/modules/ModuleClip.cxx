@@ -6,20 +6,15 @@
 #include "IntSliderWidget.h"
 #include "Utilities.h"
 
-#include <vtkActor.h>
 #include <vtkAlgorithm.h>
 #include <vtkCommand.h>
-#include <vtkDataObject.h>
-#include <vtkExtractVOI.h>
 #include <vtkImageData.h>
 #include <vtkNew.h>
 #include <vtkNonOrthoImagePlaneWidget.h>
-#include <vtkPlaneSource.h>
-#include <vtkPolyDataMapper.h>
+#include <vtkPlane.h>
 #include <vtkProperty.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
-#include <vtkScalarsToColors.h>
 #include <vtkTrivialProducer.h>
 
 #include <pqCoreUtilities.h>
@@ -128,7 +123,9 @@ bool ModuleClip::setupWidget(vtkSMViewProxy* vtkView)
     m_widget->GetPlaneProperty()->SetLineWidth(3.0);
   }
 
-  m_extent = new int[6];
+  m_clippingPlane = vtkSmartPointer<vtkPlane>::New();
+  m_clippingPlane->SetOrigin(m_widget->GetCenter());
+  m_clippingPlane->SetNormal(m_widget->GetNormal());
 
   m_widget->SetInputConnection(clipVolumeAlg->GetOutputPort());
 
@@ -213,7 +210,7 @@ void ModuleClip::addToPanel(QWidget* panel)
   m_directionCombo->addItem("XY Plane", QVariant(Direction::XY));
   m_directionCombo->addItem("YZ Plane", QVariant(Direction::YZ));
   m_directionCombo->addItem("XZ Plane", QVariant(Direction::XZ));
-  // m_directionCombo->addItem("Custom", QVariant(Direction::Custom));
+  m_directionCombo->addItem("Custom", QVariant(Direction::Custom));
   m_directionCombo->setCurrentIndex(static_cast<int>(m_direction));
   formLayout->addRow("Direction", m_directionCombo);
 
@@ -403,9 +400,11 @@ void ModuleClip::onPropertyChanged()
   vtkSMPropertyHelper pointProperty(m_propsPanelProxy, "PointOnPlane");
   std::vector<double> centerPoint = pointProperty.GetDoubleArray();
   m_widget->SetCenter(&centerPoint[0]);
+  m_clippingPlane->SetOrigin(&centerPoint[0]);
   vtkSMPropertyHelper normalProperty(m_propsPanelProxy, "PlaneNormal");
   std::vector<double> normalVector = normalProperty.GetDoubleArray();
   m_widget->SetNormal(&normalVector[0]);
+  m_clippingPlane->SetNormal(&normalVector[0]);
   m_widget->UpdatePlacement();
   m_ignoreSignals = false;
 }
@@ -420,9 +419,11 @@ void ModuleClip::onPlaneChanged()
   vtkSMPropertyHelper pointProperty(m_propsPanelProxy, "PointOnPlane");
   double* centerPoint = m_widget->GetCenter();
   pointProperty.Set(centerPoint, 3);
+  m_clippingPlane->SetOrigin(centerPoint);
   vtkSMPropertyHelper normalProperty(m_propsPanelProxy, "PlaneNormal");
   double* normalVector = m_widget->GetNormal();
   normalProperty.Set(normalVector, 3);
+  m_clippingPlane->SetNormal(normalVector);
   vtkSMPropertyHelper mapScalarsProperty(m_propsPanelProxy, "MapScalars");
 
   // Adjust the plane slider if the plane has changed from dragging the arrow
@@ -491,11 +492,10 @@ void ModuleClip::onDirectionChanged(Direction direction)
   imageData()->GetDimensions(dims);
 
   double normal[3] = { 0, 0, 0 };
-  int plane = 0;
+  int planePosition = 0;
   int maxPlane = 0;
 
   normal[axis] = 1;
-  // plane = dims[axis] / 2;
   maxPlane = dims[axis] - 1;
 
   m_widget->SetNormal(normal);
