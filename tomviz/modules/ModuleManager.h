@@ -12,6 +12,7 @@
 #include <QScopedPointer>
 
 class pqView;
+class vtkPlane;
 class vtkSMSourceProxy;
 class vtkSMViewProxy;
 class vtkPVXMLElement;
@@ -130,7 +131,7 @@ private slots:
 
   void onPipelineFinished();
   
-  void clip(const int* extent);
+  void clip(vtkPlane* plane, bool newFilter);
 
 signals:
   void moduleAdded(Module*);
@@ -148,7 +149,7 @@ signals:
 
   void stateDoneLoading();
 
-  void clipChanged(const int* extent);
+  void clipChanged(vtkPlane* plane, bool newFilter);
 
 private:
   Q_DISABLE_COPY(ModuleManager)

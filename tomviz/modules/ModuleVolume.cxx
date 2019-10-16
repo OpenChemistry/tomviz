@@ -15,6 +15,7 @@
 #include <vtkImageData.h>
 #include <vtkNew.h>
 #include <vtkPiecewiseFunction.h>
+#include <vtkPlane.h>
 #include <vtkSmartPointer.h>
 #include <vtkTrivialProducer.h>
 #include <vtkVector.h>
@@ -74,16 +75,8 @@ void ModuleVolume::initializeMapper(DataSource* data)
     output = data->producer()->GetOutputPort();
   }
 
-  m_clipper = vtkSmartPointer<vtkImageClip>::New();
-  m_clipper->SetInputData(dataSource()->dataObject());
-  int* extent = vtkImageData::SafeDownCast(
-    data->producer()->GetOutputDataObject(0))->GetExtent();
-  m_clipper->SetOutputWholeExtent(
-    extent[0], extent[1], extent[2], extent[3], extent[4], extent[5]);
-  m_clipper->ClipDataOn();
-
   m_volumeMapper = vtkSmartPointer<vtkGPUVolumeRayCastMapper>::New();
-  m_volumeMapper->SetInputConnection(m_clipper->GetOutputPort());
+  m_volumeMapper->SetInputConnection(output);
   m_volumeMapper->SetScalarModeToUsePointFieldData();
   m_volumeMapper->SelectScalarArray(scalarsIndex());
   m_volume->SetMapper(m_volumeMapper);
@@ -414,9 +407,14 @@ int ModuleVolume::scalarsIndex()
   return index;
 }
 
-void ModuleVolume::onClipFilterChanged(const int* extent) {
-  m_clipper->SetOutputWholeExtent(
-    extent[0], extent[1], extent[2], extent[3], extent[4], extent[5]);
+void ModuleVolume::onClipFilterChanged(vtkPlane* plane, bool newFilter) {
+  if (m_volumeMapper->GetNumberOfClippingPlanes()) {
+    m_volumeMapper->RemoveClippingPlane(plane);
+  }
+  if (!newFilter) {
+    m_volumeMapper->AddClippingPlane(plane);
+  }
+
   emit renderNeeded();
 }
 

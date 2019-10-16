@@ -152,6 +152,7 @@ void ModuleClip::updatePlaneWidget()
 
 bool ModuleClip::finalize()
 {
+  emit clipFilterUpdated(m_clippingPlane, true);
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
   controller->UnRegisterProxy(m_clipVolume);
 
@@ -177,9 +178,7 @@ bool ModuleClip::setVisibility(bool val)
     m_widget->SetArrowVisibility(showProperty.GetAsInt());
     m_widget->SetInteraction(showProperty.GetAsInt());
   }
-  int extent[6];
-  imageData()->GetExtent(extent);
-  val ? emit clipFilterUpdated(m_extent) : emit clipFilterUpdated(extent); 
+  val ? emit clipFilterUpdated(m_clippingPlane, false) : emit clipFilterUpdated(m_clippingPlane, true);
   return true;
 }
 
@@ -507,10 +506,8 @@ void ModuleClip::onDirectionChanged(Direction direction)
   onPlaneChanged(plane);
   onPlaneChanged();
   dataUpdated();
-  
-  imageData()->GetExtent(m_extent);
-  m_extent[axis*2] = m_plane;
-  emit clipFilterUpdated(m_extent);
+
+  emit clipFilterUpdated(m_clippingPlane, false);
 }
 
 void ModuleClip::onPlaneChanged(int plane)
@@ -529,10 +526,8 @@ void ModuleClip::onPlaneChanged(int plane)
 
   onPlaneChanged();
   dataUpdated();
-  
-  imageData()->GetExtent(m_extent);
-  m_extent[axis*2] = plane;
-  emit clipFilterUpdated(m_extent);
+
+  emit clipFilterUpdated(m_clippingPlane, false);
 }
 
 void ModuleClip::onPlaneChanged(double* point)
@@ -553,9 +548,7 @@ void ModuleClip::onPlaneChanged(double* point)
 
   onPlaneChanged(plane);
 
-  imageData()->GetExtent(m_extent);
-  m_extent[axis*2] = plane;
-  emit clipFilterUpdated(m_extent);
+  emit clipFilterUpdated(m_clippingPlane, false);
 }
 
 int ModuleClip::directionAxis(Direction direction)

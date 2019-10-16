@@ -24,6 +24,7 @@
 
 #include <vtkCamera.h>
 #include <vtkNew.h>
+#include <vtkPlane.h>
 #include <vtkPVRenderView.h>
 #include <vtkPVXMLElement.h>
 #include <vtkPVXMLParser.h>
@@ -1117,8 +1118,8 @@ bool ModuleManager::hasMoleculeSources()
   return !d->MoleculeSources.empty();
 }
 
-void ModuleManager::clip(const int* extent) {
-  emit clipChanged(extent);
+void ModuleManager::clip(vtkPlane* plane, bool newFilter) {
+  emit clipChanged(plane, newFilter);
 }
 
 } // namespace tomviz
