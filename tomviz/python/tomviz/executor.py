@@ -1,4 +1,3 @@
-import copy
 import h5py
 import importlib
 import os
@@ -15,6 +14,8 @@ import errno
 from tqdm import tqdm
 
 from tomviz._internal import find_transform_function
+
+from tomviz.external_dataset import Dataset
 
 LOG_FORMAT = '[%(asctime)s] %(levelname)s: %(message)s'
 
@@ -557,47 +558,6 @@ def _is_data_exchange(path):
     # Open it up and make sure /exchange/data exists
     with h5py.File(path, 'r') as f:
         return '/exchange/data' in f
-
-
-class Dataset:
-    def __init__(self, arrays, active=None):
-        # Holds the map of scalars name => array
-        self.arrays = arrays
-        self.tilt_angles = None
-        self.tilt_axis = None
-        # The currently active scalar
-        self.active_name = active
-        # If we weren't given the active array and we only have one array, set
-        # it as the active array.
-        if active is None and len(arrays.keys()):
-            (self.active_name,) = arrays.keys()
-
-        # Dark and white backgrounds
-        self.dark = None
-        self.white = None
-
-    @property
-    def active_scalars(self):
-        return self.arrays[self.active_name]
-
-    @active_scalars.setter
-    def active_scalars(self, array):
-        self.arrays[self.active_name] = array
-
-    @property
-    def scalars_names(self):
-        return list(self.arrays.keys())
-
-    def scalars(self, name=None):
-        if name is None:
-            name = self.active_name
-        return self.arrays[name]
-
-    def create_child_dataset(self):
-        child = copy.deepcopy(self)
-        # Set tilt angles to None to be consistent with internal dataset
-        child.tilt_angles = None
-        return child
 
 
 def _execute_transform(operator_label, transform, arguments, input, progress):
