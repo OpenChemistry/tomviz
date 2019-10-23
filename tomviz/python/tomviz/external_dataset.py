@@ -1,5 +1,9 @@
+import collections
 import copy
 
+import numpy as np
+
+ARRAY_TYPES = (collections.Sequence, np.ndarray)
 
 class Dataset:
     def __init__(self, arrays, active=None):
@@ -13,6 +17,8 @@ class Dataset:
         # it as the active array.
         if active is None and len(arrays.keys()):
             (self.active_name,) = arrays.keys()
+
+        self._spacing = None
 
         # Dark and white backgrounds
         self.dark = None
@@ -34,6 +40,19 @@ class Dataset:
         if name is None:
             name = self.active_name
         return self.arrays[name]
+
+    @property
+    def spacing(self):
+        return self._spacing
+
+    @spacing.setter
+    def spacing(self, v):
+        if not isinstance(v, ARRAY_TYPES):
+            raise Exception('Spacing must be an iterable type')
+        if not len(v) == 3:
+            raise Exception('Length of spacing must be 3')
+
+        self._spacing = v
 
     def create_child_dataset(self):
         child = copy.deepcopy(self)

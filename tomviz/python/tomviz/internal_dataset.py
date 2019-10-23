@@ -25,6 +25,14 @@ class Dataset:
         return utils.get_array(self._data_object, name)
 
     @property
+    def spacing(self):
+        return utils.get_spacing(self._data_object)
+
+    @spacing.setter
+    def spacing(self, v):
+        utils.set_spacing(self._data_object, v[0], v[1], v[2])
+
+    @property
     def tilt_angles(self):
         return utils.get_tilt_angles(self._data_object)
 

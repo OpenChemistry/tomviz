@@ -432,13 +432,14 @@ def _read_emd(path, options=None):
         return output
 
 
-def _write_emd(path, dataobject, dims=None):
-    tilt_angles = dataobject.tilt_angles
-    tilt_axis = dataobject.tilt_axis
-    active_array = dataobject.active_scalars
+def _write_emd(path, dataset, dims=None):
+    tilt_angles = dataset.tilt_angles
+    tilt_axis = dataset.tilt_axis
+    active_array = dataset.active_scalars
+    spacing = dataset.spacing
     # Separate out the extra channels/arrays as we store them separately
     extra_arrays = {name: array for name, array
-                    in dataobject.arrays.items()
+                    in dataset.arrays.items()
                     if id(array) != id(active_array)}
 
     # If this is a tilt series, swap the X and Z axes
@@ -459,25 +460,33 @@ def _write_emd(path, dataobject, dims=None):
         tomography_group = data_group.create_group('tomography')
         tomography_group.attrs.create('emd_group_type', 1, dtype='uint32')
         data = tomography_group.create_dataset('data', data=active_array)
-        data.attrs['name'] = np.string_(dataobject.active_name)
+        data.attrs['name'] = np.string_(dataset.active_name)
 
         if dims is None:
+            # Set the default dims
             dims = []
             names = ['x', 'y', 'z']
-            if tilt_angles is not None:
-                names = ['angles', 'y', 'x']
 
-            for i, name in zip(range(0, 3), names):
+            for i, name in enumerate(names):
                 values = np.array(range(data.shape[i]))
-                units = '[n_m]' if name != 'angles' else '[deg]'
-                dims.append(('/data/tomography/dim%d' % (i+1),
-                             values, name, units))
-        else:
-            # Swap the dims as well
-            if tilt_angles is not None and tilt_axis == 2:
+                dims.append(('dim%d' % (i+1), values, name, '[n_m]'))
+
+        # Override the dims if spacing is set
+        if spacing is not None:
+            for i, (dataset_name, values, name, units) in enumerate(dims):
+                end = data.shape[i] * spacing[i]
+                res = np.arange(0, end, spacing[i])
+                dims[i] = (dataset_name, res, name, units)
+
+        if tilt_angles is not None:
+            if tilt_axis == 2:
+                # Swap the first and last dims
                 dims[0], dims[-1] = dims[-1], dims[0]
-                # Set the tilt angles as the value for dims[0]
-                dims[0] = (dims[0][0], tilt_angles, dims[0][2], dims[0][3])
+
+            units = dims[0][3] if dims[0][3] in ANGLE_UNITS else '[deg]'
+
+            # Make the x axis the tilt angles
+            dims[0] = (dims[0][0], tilt_angles, 'angles', units)
 
         # add dimension vectors
         for (dataset_name, values, name, units) in dims:
@@ -485,15 +494,6 @@ def _write_emd(path, dataobject, dims=None):
             d.attrs['name'] = np.string_(name)
             d.attrs['units'] = np.string_(units)
             d[:] = values
-
-        # If we have angle update the first dim
-        if tilt_angles is not None:
-            (name, _, _, units) = dims[0]
-            d = tomography_group[name]
-            d.attrs['name'] = np.string_('angles')
-            # Only override we don't already have a valid angle units.
-            if units not in ANGLE_UNITS:
-                d.attrs['units'] = np.string_('[deg]')
 
         # If we have extra scalars add them under tomviz_scalars
         if extra_arrays:
@@ -673,6 +673,8 @@ def execute(operators, start_at, data_file_path, output_file_path,
         data.tilt_angles = output['tilt_angles']
     if 'tilt_axis' in output:
         data.tilt_axis = output['tilt_axis']
+    if dims is not None:
+        data.spacing = [d[1][1] - d[1][0] for d in dims]
 
     operators = operators[start_at:]
     transforms = _load_transform_functions(operators)

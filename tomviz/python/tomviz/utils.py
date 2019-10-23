@@ -380,7 +380,25 @@ def set_size(dataobject, x=None, y=None, z=None):
     dataobject.SetSpacing(spacing)
 
 
-def set_spacing(dataobject, x=None, y=None, z=None):
+def get_spacing(dataset):
+    if not in_application():
+        raise Exception('Cannot get spacing in external mode')
+
+    from tomviz._internal import convert_to_vtk_data_object
+
+    dataobject = convert_to_vtk_data_object(dataset)
+
+    return dataobject.GetSpacing()
+
+
+def set_spacing(dataset, x=None, y=None, z=None):
+    if not in_application():
+        raise Exception('Cannot set spacing in external mode')
+
+    from tomviz._internal import convert_to_vtk_data_object
+
+    dataobject = convert_to_vtk_data_object(dataset)
+
     spacing = list(dataobject.GetSpacing())
     if x is not None:
         spacing[0] = x
