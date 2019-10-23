@@ -221,6 +221,7 @@ def connected_components(dataset, background_value=0, progress_callback=None):
         # of the input image in the ConnectedComponentsFilter).
         array = dataset.active_scalars.astype(np.uint16)
         itk_image = itk.GetImageViewFromArray(array)
+        itk_image.SetSpacing(dataset.spacing)
         itk_image_type = type(itk_image)
 
         # ConnectedComponentImageFilter

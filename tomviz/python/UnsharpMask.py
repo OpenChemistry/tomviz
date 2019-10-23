@@ -28,7 +28,7 @@ class UnsharpMask(tomviz.operators.CancelableOperator):
             self.progress.value = 0
 
             # Get the ITK image.
-            itk_image = itk.GetImageViewFromArray(dataset.active_scalars)
+            itk_image = itkutils.dataset_to_itk_image(dataset)
             self.progress.value = next(step_pct)
 
             self.progress.message = "Running filter"

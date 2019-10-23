@@ -283,6 +283,7 @@ class SegmentPores(tomviz.operators.CancelableOperator):
 
         try:
             import itk
+            from tomviz import itkutils
             import numpy as np
         except Exception as exc:
             print("Could not import necessary module(s)")
@@ -298,7 +299,7 @@ class SegmentPores(tomviz.operators.CancelableOperator):
             self.progress.message = "Converting data to ITK image"
 
             # Get the ITK image
-            itk_input_image = itk.GetImageViewFromArray(dataset.active_scalars)
+            itk_input_image = itkutils.dataset_to_itk_image(dataset)
             self.progress.value = next(step_pct)
 
             # Reduce noise

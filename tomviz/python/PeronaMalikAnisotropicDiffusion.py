@@ -34,6 +34,7 @@ class PeronaMalikAnisotropicDiffusion(tomviz.operators.CancelableOperator):
             # float ITK image type.
             array = dataset.active_scalars.astype(np.float32)
             itk_image = itk.GetImageViewFromArray(array)
+            itk_image.SetSpacing(dataset.spacing)
             itk_image_type = type(itk_image)
 
             self.progress.value = STEP_PCT[1]

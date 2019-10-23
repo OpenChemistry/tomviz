@@ -339,7 +339,7 @@ def get_label_object_attributes(dataset, progress_callback=None):
         import itk
 
         # Get an ITK image from the data set
-        itk_image = itk.GetImageViewFromArray(dataset.active_scalars)
+        itk_image = dataset_to_itk_image(dataset)
         itk_image_type = type(itk_image)
 
         # Get an appropriate LabelImageToShapelLabelMapFilter type for the
@@ -413,3 +413,15 @@ def observe_filter_progress(transform, filter, start_pct, end_pct):
     progress_observer = itk.PyCommand.New()
     progress_observer.SetCommandCallable(progress_func)
     filter.AddObserver(itk.ProgressEvent(), progress_observer)
+
+
+def dataset_to_itk_image(dataset):
+
+    import itk
+
+    itk_image = itk.GetImageViewFromArray(dataset.active_scalars)
+
+    if dataset.spacing is not None:
+        itk_image.SetSpacing(dataset.spacing)
+
+    return itk_image

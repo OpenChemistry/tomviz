@@ -39,7 +39,7 @@ class OtsuMultipleThreshold(tomviz.operators.CancelableOperator):
             self.progress.message = "Converting data to ITK image"
 
             # Get the ITK image
-            itk_image = itk.GetImageViewFromArray(dataset.active_scalars)
+            itk_image = itkutils.dataset_to_itk_image(dataset)
             itk_input_image_type = type(itk_image)
 
             # OtsuMultipleThresholdsImageFilter's wrapping requires that the
