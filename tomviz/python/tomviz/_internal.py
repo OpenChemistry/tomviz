@@ -218,3 +218,31 @@ def convert_to_vtk_data_object(data):
 
     msg = 'Cannot convert type to vtkDataObject: ' + str(type(data))
     raise Exception(msg)
+
+
+def with_vtk_dataobject(f):
+    # A decorator to automatically convert the first argument to
+    # a vtkDataObject. This also confirms we are running internally.
+
+    def wrapped(*args, **kwargs):
+        if not in_application():
+            name = f.__name__
+            raise Exception('Cannot call ' + name + ' in external mode')
+
+        dataobject = convert_to_vtk_data_object(args[0])
+        args = (dataobject, *args[1:])
+        return f(*args, **kwargs)
+
+    return wrapped
+
+
+def with_dataset(f):
+    # A decorator to automatically convert the first argument to
+    # a Dataset.
+
+    def wrapped(*args, **kwargs):
+        dataset = convert_to_dataset(args[0])
+        args = (dataset, *args[1:])
+        return f(*args, **kwargs)
+
+    return wrapped

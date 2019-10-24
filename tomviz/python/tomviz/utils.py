@@ -7,19 +7,17 @@
 import math
 import numpy as np
 from tomviz._internal import in_application
-from tomviz._internal import convert_to_dataset
 from tomviz._internal import require_internal_mode
+from tomviz._internal import with_vtk_dataobject
+from tomviz._internal import with_dataset
 # Only import vtk if we are running within the tomviz application ( not cli )
 if in_application():
     import vtk.numpy_interface.dataset_adapter as dsa
     import vtk.util.numpy_support as np_s
-    from tomviz._internal import convert_to_vtk_data_object
 
 
-def get_scalars(dataset, name=None):
-    require_internal_mode()
-    dataobject = convert_to_vtk_data_object(dataset)
-
+@with_vtk_dataobject
+def get_scalars(dataobject, name=None):
     do = dsa.WrapDataObject(dataobject)
     if name is not None:
         rawarray = do.PointData.GetAbstractArray(name)
@@ -42,10 +40,8 @@ def is_numpy_vtk_type(newscalars):
         return True
 
 
-def set_scalars(dataset, newscalars):
-    require_internal_mode()
-    dataobject = convert_to_vtk_data_object(dataset)
-
+@with_vtk_dataobject
+def set_scalars(dataobject, newscalars):
     do = dsa.WrapDataObject(dataobject)
     oldscalars = do.PointData.GetScalars()
     if oldscalars is None:
@@ -61,10 +57,8 @@ def set_scalars(dataset, newscalars):
     do.PointData.SetActiveScalars(name)
 
 
-def get_array(dataset, name=None, order='F'):
-    require_internal_mode()
-    dataobject = convert_to_vtk_data_object(dataset)
-
+@with_vtk_dataobject
+def get_array(dataobject, name=None, order='F'):
     scalars_array = get_scalars(dataobject, name=name)
     if order == 'F':
         scalars_array3d = np.reshape(scalars_array,
@@ -77,15 +71,14 @@ def get_array(dataset, name=None, order='F'):
     return scalars_array3d
 
 
-def array_names(dataset):
-    require_internal_mode()
-    dataobject = convert_to_vtk_data_object(dataset)
-
+@with_vtk_dataobject
+def array_names(dataobject):
     do = dsa.WrapDataObject(dataobject)
     num_arrays = do.PointData.GetNumberOfArrays()
     return [do.PointData.GetArrayName(i) for i in range(num_arrays)]
 
 
+@with_vtk_dataobject
 def arrays(dataobject):
     """
     Iterate over (name, array) for the arrays in this datset.
@@ -93,21 +86,18 @@ def arrays(dataobject):
     :param dataobject The incoming dataset
     :type: vtkDataObject
     """
-    require_internal_mode()
     for name in array_names(dataobject):
         yield (name, get_array(dataobject, name))
 
 
-def set_array(dataset, newarray, minextent=None, isFortran=True):
+@with_vtk_dataobject
+def set_array(dataobject, newarray, minextent=None, isFortran=True):
     # Set the extent if needed, i.e. if the minextent is not the same as
     # the data object starting index, or if the newarray shape is not the same
     # as the size of the dataobject.
     # isFortran indicates whether the NumPy array has Fortran-order indexing,
     # i.e. i,j,k indexing. If isFortran is False, then the NumPy array uses
     # C-order indexing, i.e. k,j,i indexing.
-    require_internal_mode()
-    dataobject = convert_to_vtk_data_object(dataset)
-
     if not isFortran:
         # Flatten according to array.flags
         arr = newarray.ravel(order='A')
@@ -153,10 +143,8 @@ def set_array(dataset, newarray, minextent=None, isFortran=True):
     do.PointData.SetActiveScalars(arrayname)
 
 
-def get_tilt_angles(dataset):
-    require_internal_mode()
-    dataobject = convert_to_vtk_data_object(dataset)
-
+@with_vtk_dataobject
+def get_tilt_angles(dataobject):
     # Get the tilt angles array
     do = dsa.WrapDataObject(dataobject)
     rawarray = do.FieldData.GetArray('tilt_angles')
@@ -167,10 +155,8 @@ def get_tilt_angles(dataset):
     return vtkarray
 
 
-def set_tilt_angles(dataset, newarray):
-    require_internal_mode()
-    dataobject = convert_to_vtk_data_object(dataset)
-
+@with_vtk_dataobject
+def set_tilt_angles(dataobject, newarray):
     # replace the tilt angles with the new array
     from vtkmodules.util.vtkConstants import VTK_DOUBLE
     # deep copy avoids having to keep numpy array around, but is more
@@ -183,14 +169,12 @@ def set_tilt_angles(dataset, newarray):
     do.FieldData.AddArray(vtkarray)
 
 
-def get_coordinate_arrays(dataset):
+@with_vtk_dataobject
+def get_coordinate_arrays(dataobject):
     """Returns a triple of Numpy arrays containing x, y, and z coordinates for
     each point in the dataset. This can be used to evaluate a function at each
     point, for instance.
     """
-    require_internal_mode()
-    dataobject = convert_to_vtk_data_object(dataset)
-
     assert dataobject.IsA("vtkImageData"), "Dataset must be a vtkImageData"
 
     # Create meshgrid for image
@@ -207,12 +191,10 @@ def get_coordinate_arrays(dataset):
     return (xx, yy, zz)
 
 
-def make_child_dataset(dataset):
+@with_vtk_dataobject
+def make_child_dataset(dataobject):
     """Creates a child dataset with the same size as the reference_dataset.
     """
-    require_internal_mode()
-    dataobject = convert_to_vtk_data_object(dataset)
-
     from vtk import vtkImageData
     new_child = vtkImageData()
     new_child.CopyStructure(dataobject)
@@ -224,8 +206,8 @@ def make_child_dataset(dataset):
     return new_child
 
 
+@with_dataset
 def connected_components(dataset, background_value=0, progress_callback=None):
-    dataset = convert_to_dataset(dataset)
     try:
         import numpy as np
         import itk
@@ -319,9 +301,8 @@ def connected_components(dataset, background_value=0, progress_callback=None):
         raise exc
 
 
+@with_dataset
 def label_object_principal_axes(dataset, label_value):
-    dataset = convert_to_dataset(dataset)
-
     import numpy as np
     from tomviz import utils
 
@@ -350,10 +331,8 @@ def label_object_principal_axes(dataset, label_value):
     return (evecs, center)
 
 
-def make_dataset(x, y, z, dataset, generate_data_function, **kwargs):
-    require_internal_mode()
-    dataobject = convert_to_vtk_data_object(dataset)
-
+@with_vtk_dataobject
+def make_dataset(x, y, z, dataobject, generate_data_function, **kwargs):
     from vtk import VTK_DOUBLE
     array = np.zeros((x, y, z), order='F')
     generate_data_function(array, **kwargs)
@@ -366,10 +345,8 @@ def make_dataset(x, y, z, dataset, generate_data_function, **kwargs):
     dataobject.GetPointData().SetScalars(vtkarray)
 
 
-def mark_as_volume(dataset):
-    require_internal_mode()
-    dataobject = convert_to_vtk_data_object(dataset)
-
+@with_vtk_dataobject
+def mark_as_volume(dataobject):
     from vtk import vtkTypeInt8Array
     fd = dataobject.GetFieldData()
     arr = fd.GetArray("tomviz_data_source_type")
@@ -382,10 +359,8 @@ def mark_as_volume(dataset):
     arr.SetTuple1(0, 0)
 
 
-def mark_as_tiltseries(dataset):
-    require_internal_mode()
-    dataobject = convert_to_vtk_data_object(dataset)
-
+@with_vtk_dataobject
+def mark_as_tiltseries(dataobject):
     from vtk import vtkTypeInt8Array
     fd = dataobject.GetFieldData()
     arr = fd.GetArray("tomviz_data_source_type")
@@ -398,10 +373,8 @@ def mark_as_tiltseries(dataset):
     arr.SetTuple1(0, 1)
 
 
-def set_size(dataset, x=None, y=None, z=None):
-    require_internal_mode()
-    dataobject = convert_to_vtk_data_object(dataset)
-
+@with_vtk_dataobject
+def set_size(dataobject, x=None, y=None, z=None):
     axes = []
     lengths = []
     if x is not None:
@@ -423,17 +396,13 @@ def set_size(dataset, x=None, y=None, z=None):
     dataobject.SetSpacing(spacing)
 
 
-def get_spacing(dataset):
-    require_internal_mode()
-    dataobject = convert_to_vtk_data_object(dataset)
-
+@with_vtk_dataobject
+def get_spacing(dataobject):
     return dataobject.GetSpacing()
 
 
-def set_spacing(dataset, x=None, y=None, z=None):
-    require_internal_mode()
-    dataobject = convert_to_vtk_data_object(dataset)
-
+@with_vtk_dataobject
+def set_spacing(dataobject, x=None, y=None, z=None):
     spacing = list(dataobject.GetSpacing())
     if x is not None:
         spacing[0] = x
@@ -566,10 +535,8 @@ def rotate_shape(input, angle, axes):
     return output_shape
 
 
-def set_principal_axes(dataset, axes):
-    require_internal_mode()
-    dataobject = convert_to_vtk_data_object(dataset)
-
+@with_vtk_dataobject
+def set_principal_axes(dataobject, axes):
     from vtkmodules.vtkCommonCore import vtkFloatArray
 
     fd = dataobject.GetFieldData()
@@ -585,10 +552,8 @@ def set_principal_axes(dataset, axes):
     fd.AddArray(axis_array)
 
 
-def get_principal_axes(dataset, principal_axis):
-    require_internal_mode()
-    dataobject = convert_to_vtk_data_object(dataset)
-
+@with_vtk_dataobject
+def get_principal_axes(dataobject, principal_axis):
     fd = dataobject.GetFieldData()
     axis_array = fd.GetArray('PrincipalAxes')
     assert axis_array is not None, \
@@ -603,10 +568,8 @@ def get_principal_axes(dataset, principal_axis):
     return np.array(axis_array.GetTuple(principal_axis))
 
 
-def set_center(dataset, center):
-    require_internal_mode()
-    dataobject = convert_to_vtk_data_object(dataset)
-
+@with_vtk_dataobject
+def set_center(dataobject, center):
     from vtkmodules.vtkCommonCore import vtkFloatArray
 
     fd = dataobject.GetFieldData()
@@ -620,10 +583,8 @@ def set_center(dataset, center):
     fd.AddArray(center_array)
 
 
-def get_center(dataset):
-    require_internal_mode()
-    dataobject = convert_to_vtk_data_object(dataset)
-
+@with_vtk_dataobject
+def get_center(dataobject):
     fd = dataobject.GetFieldData()
     center_array = fd.GetArray('Center')
     assert center_array is not None, \

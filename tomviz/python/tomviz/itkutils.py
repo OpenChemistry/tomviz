@@ -7,7 +7,8 @@
 
 from tomviz._internal import in_application
 from tomviz._internal import require_internal_mode
-from tomviz._internal import convert_to_dataset
+from tomviz._internal import with_dataset
+from tomviz._internal import with_vtk_dataobject
 
 # Dictionary going from VTK array type to ITK type
 _vtk_to_itk_types = None
@@ -23,10 +24,6 @@ _itkctype_to_python_types = None
 
 # Map between VTK numeric type and Python numeric type
 _vtk_to_python_types = None
-
-
-if in_application():
-    from tomviz._internal import convert_to_vtk_data_object
 
 
 def vtk_itk_type_map():
@@ -240,10 +237,10 @@ def get_python_voxel_type(dataset):
         print(attribute_error)
 
 
+@with_vtk_dataobject
 def convert_vtk_to_itk_image(vtk_image_data, itk_pixel_type=None):
     """Get an ITK image from the provided vtkImageData object.
     This image can be passed to ITK filters."""
-    require_internal_mode()
 
     # Save the VTKGlue optimization for later
     #------------------------------------------
@@ -306,10 +303,9 @@ def convert_vtk_to_itk_image(vtk_image_data, itk_pixel_type=None):
     return itk_image
 
 
-def set_array_from_itk_image(dataset, itk_image):
-    """Set dataset array from an ITK image."""
-    require_internal_mode()
-
+@with_vtk_dataobject
+def set_array_from_itk_image(dataobject, itk_image):
+    """Set dataobject array from an ITK image."""
     itk_output_image_type = type(itk_image)
 
     # Save the VTKGlue optimization for later
@@ -334,9 +330,10 @@ def set_array_from_itk_image(dataset, itk_image):
     result = itk.PyBuffer[
         itk_output_image_type].GetArrayFromImage(itk_image)
     result = result.copy()
-    utils.set_array(dataset, result, isFortran=False)
+    utils.set_array(dataobject, result, isFortran=False)
 
 
+@with_dataset
 def get_label_object_attributes(dataset, progress_callback=None):
     """Compute shape attributes of integer-labeled objects in a dataset. Returns
     an ITK shape label map. An optional progress_callback function can be passed
@@ -344,7 +341,6 @@ def get_label_object_attributes(dataset, progress_callback=None):
     in the range [0, 1] that represents the progress amount. It returns a value
     indicating whether the caller should be cancelled.
     """
-    dataset = convert_to_dataset(dataset)
 
     try:
         import itk
@@ -390,11 +386,11 @@ def get_label_object_attributes(dataset, progress_callback=None):
         raise(exc)
 
 
+@with_vtk_dataobject
 def _get_itk_image_type(vtk_image_data):
     """
     Get an ITK image type corresponding to the provided vtkImageData object.
     """
-    require_internal_mode()
     image_type = None
 
     # Get the scalars
@@ -427,6 +423,7 @@ def observe_filter_progress(transform, filter, start_pct, end_pct):
     filter.AddObserver(itk.ProgressEvent(), progress_observer)
 
 
+@with_dataset
 def dataset_to_itk_image(dataset):
 
     import itk
