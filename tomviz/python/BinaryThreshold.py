@@ -67,10 +67,8 @@ class BinaryThreshold(tomviz.operators.CancelableOperator):
 
             # Set the output as a new child data object of the current data set
             label_map_dataset = dataset.create_child_dataset()
-
-            result = itk.GetArrayFromImage(threshold_filter.GetOutput())
-            # Transpose the data to Fortran indexing
-            label_map_dataset.active_scalars = result.transpose([2, 1, 0])
+            itkutils.set_itk_image_on_dataset(threshold_filter.GetOutput(),
+                                              label_map_dataset)
 
             self.progress.value = STEP_PCT[4]
 

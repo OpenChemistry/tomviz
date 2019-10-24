@@ -437,3 +437,17 @@ def dataset_to_itk_image(dataset):
         itk_image.SetSpacing(dataset.spacing)
 
     return itk_image
+
+
+def set_itk_image_on_dataset(itk_image, dataset, dtype=None):
+    # Write the itk image data to the dataset
+
+    import itk
+
+    if dtype is None:
+        array = itk.GetArrayFromImage(itk_image)
+    else:
+        array = itk.PyBuffer[dtype].GetArrayFromImage(itk_image)
+
+    # Transpose the data to Fortran indexing
+    dataset.active_scalars = array.transpose([2, 1, 0])

@@ -221,12 +221,9 @@ class SegmentParticles(tomviz.operators.CancelableOperator):
 
             self.progress.message = "Saving results"
 
-            label_buffer = itk.PyBuffer[type(itk_input_image)] \
-                .GetArrayFromImage(opening)
-
             label_map_dataset = dataset.create_child_dataset()
-            # Transpose the data to Fortran indexing
-            label_map_dataset.active_scalars = label_buffer.transpose([2, 1, 0])
+            itkutils.set_itk_image_on_dataset(opening, label_map_dataset,
+                                              dtype=type(itk_input_image))
 
             # Set up dictionary to return operator results
             returnValues = {}

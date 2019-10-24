@@ -66,9 +66,7 @@ class BinaryErode(tomviz.operators.CancelableOperator):
 
             self.progress.message = "Saving results"
 
-            result = itk.GetArrayFromImage(erode_filter.GetOutput())
-            # Transpose the data to Fortran indexing
-            dataset.active_scalars = result.transpose([2, 1, 0])
+            itkutils.set_itk_image_on_dataset(erode_filter.GetOutput(), dataset)
 
             self.progress.value = STEP_PCT[3]
         except Exception as exc:

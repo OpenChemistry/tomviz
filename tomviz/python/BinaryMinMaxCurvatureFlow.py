@@ -90,9 +90,7 @@ class BinaryMinMaxCurvatureFlow(tomviz.operators.CancelableOperator):
             self.progress.value = STEP_PCT[5]
             self.progress.message = "Saving results"
 
-            result = itk.GetArrayFromImage(itk_image_data)
-            # Transpose the data to Fortran indexing
-            dataset.active_scalars = result.transpose([2, 1, 0])
+            itkutils.set_itk_image_on_dataset(itk_image_data, dataset)
 
             self.progress.value = STEP_PCT[6]
 

@@ -90,12 +90,9 @@ class OtsuMultipleThreshold(tomviz.operators.CancelableOperator):
             self.progress.value = STEP_PCT[3]
             self.progress.message = "Saving results"
 
-            label_buffer = itk.PyBuffer[py_buffer_type] \
-                .GetArrayFromImage(itk_image_data)
-
             label_map_dataset = dataset.create_child_dataset()
-            # Transpose the data to Fortran indexing
-            label_map_dataset.active_scalars = label_buffer.transpose([2, 1, 0])
+            itkutils.set_itk_image_on_dataset(itk_image_data, label_map_dataset,
+                                              dtype=py_buffer_type)
 
             self.progress.value = STEP_PCT[4]
 

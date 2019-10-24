@@ -46,9 +46,7 @@ class DefaultITKTransform(tomviz.operators.CancelableOperator):
 
             self.progress.message = "Saving results"
 
-            result = itk.GetArrayFromImage(filter.GetOutput())
-            # Transpose the data to Fortran indexing
-            dataset.active_scalars = result.transpose([2, 1, 0])
+            itkutils.set_itk_image_on_dataset(filter.GetOutput(), dataset)
 
             self.progress.value = 100
         except Exception as exc:
