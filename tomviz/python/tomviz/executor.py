@@ -464,6 +464,13 @@ def _write_emd(path, dataset, dims=None):
     extra_arrays = {name: np.ascontiguousarray(array) for (name, array)
                     in extra_arrays.items()}
 
+    # We can't do 16 bit floats, so up the size if they are 16 bit
+    if active_array.dtype == np.float16:
+        active_array = active_array.astype(np.float32)
+    for key, value in extra_arrays.items():
+        if value.dtype == np.float16:
+            extra_arrays[key] = value.astype(np.float32)
+
     with h5py.File(path, 'w') as f:
         f.attrs.create('version_major', 0, dtype='uint32')
         f.attrs.create('version_minor', 2, dtype='uint32')
