@@ -58,4 +58,9 @@ class Dataset:
         child = copy.deepcopy(self)
         # Set tilt angles to None to be consistent with internal dataset
         child.tilt_angles = None
+        # If the parent had tilt angles, set the spacing of the tilt
+        # axis to match that of x, as is done in the internal dataset
+        if self.tilt_angles is not None:
+            s = self.spacing
+            child.spacing = [s[0], s[1], s[0]]
         return child
