@@ -1,3 +1,5 @@
+import collections
+import copy
 import h5py
 import importlib
 import os
@@ -28,6 +30,8 @@ logger.addHandler(stream_handler)
 
 DIMS = ['dim1', 'dim2', 'dim3']
 ANGLE_UNITS = [b'[deg]', b'[rad]']
+
+Dim = collections.namedtuple('Dim', 'path values name units')
 
 
 class ProgressBase(object):
@@ -380,16 +384,23 @@ def _read_dataset(dataset, options=None):
                    bnds[4]:bnds[5]:stride]
 
 
+def _swap_dims(dims, i, j):
+    # Keeps the paths the same, but swaps everything else
+    tmp = Dim(dims[i].path, dims[j].values, dims[j].name, dims[j].units)
+    dims[j] = Dim(dims[j].path, dims[i].values, dims[i].name, dims[i].units)
+    dims[i] = tmp
+
+
 def _read_emd(path, options=None):
     with h5py.File(path, 'r') as f:
         tomography = f['data/tomography']
 
         dims = []
         for dim in DIMS:
-            dims.append((dim,
-                         tomography[dim][:],
-                         tomography[dim].attrs['name'][0],
-                         tomography[dim].attrs['units'][0]))
+            dims.append(Dim(dim,
+                            tomography[dim][:],
+                            tomography[dim].attrs['name'][0],
+                            tomography[dim].attrs['units'][0]))
 
         data = tomography['data']
         # We default the name to ImageScalars
@@ -409,12 +420,12 @@ def _read_emd(path, options=None):
 
         # If this is a tilt series, swap the X and Z axes
         tilt_axis = None
-        if dims[0][2] == b'angles' or dims[0][3] in ANGLE_UNITS:
+        if dims[0].name == b'angles' or dims[0].units in ANGLE_UNITS:
             arrays = [(name, np.transpose(data, [2, 1, 0])) for (name, data)
                       in arrays]
 
-            # Swap the dims order as well
-            dims[0], dims[-1] = dims[-1], dims[0]
+            # Swap the first and last dims
+            _swap_dims(dims, 0, -1)
             tilt_axis = 2
 
         # EMD stores data as row major order.  VTK expects column major order.
@@ -426,8 +437,8 @@ def _read_emd(path, options=None):
             'tilt_axis': tilt_axis
         }
 
-        if dims is not None and dims[-1][2] == b'angles':
-            output['tilt_angles'] = dims[-1][1][:].astype(np.float64)
+        if dims is not None and dims[-1].name == b'angles':
+            output['tilt_angles'] = dims[-1].values[:].astype(np.float64)
 
         return output
 
@@ -469,31 +480,40 @@ def _write_emd(path, dataset, dims=None):
 
             for i, name in enumerate(names):
                 values = np.array(range(data.shape[i]))
-                dims.append(('dim%d' % (i+1), values, name, '[n_m]'))
+                dims.append(Dim('dim%d' % (i+1), values, name, '[n_m]'))
+        else:
+            # Make a deep copy to modify
+            dims = copy.deepcopy(dims)
 
         # Override the dims if spacing is set
         if spacing is not None:
-            for i, (dataset_name, values, name, units) in enumerate(dims):
+            for i, dim in enumerate(dims):
                 end = data.shape[i] * spacing[i]
                 res = np.arange(0, end, spacing[i])
-                dims[i] = (dataset_name, res, name, units)
+                dims[i] = Dim(dim.path, res, dim.name, dim.units)
 
         if tilt_angles is not None:
             if tilt_axis == 2:
                 # Swap the first and last dims
-                dims[0], dims[-1] = dims[-1], dims[0]
+                _swap_dims(dims, 0, -1)
 
-            units = dims[0][3] if dims[0][3] in ANGLE_UNITS else '[deg]'
+            units = dims[0].units if dims[0].units in ANGLE_UNITS else '[deg]'
 
             # Make the x axis the tilt angles
-            dims[0] = (dims[0][0], tilt_angles, 'angles', units)
+            dims[0] = Dim(dims[0].path, tilt_angles, 'angles', units)
+        else:
+            # In case the input was a tilt series, make the first dim x,
+            # and the units [n_m]
+            if dims[0].name == 'angles':
+                dims[0].name = 'x'
+                dims[0].units = '[n_m]'
 
         # add dimension vectors
-        for (dataset_name, values, name, units) in dims:
-            d = tomography_group.create_dataset(dataset_name, values.shape)
-            d.attrs['name'] = np.string_(name)
-            d.attrs['units'] = np.string_(units)
-            d[:] = values
+        for dim in dims:
+            d = tomography_group.create_dataset(dim.path, dim.values.shape)
+            d.attrs['name'] = np.string_(dim.name)
+            d.attrs['units'] = np.string_(dim.units)
+            d[:] = dim.values
 
         # If we have extra scalars add them under tomviz_scalars
         if extra_arrays:
@@ -675,7 +695,7 @@ def execute(operators, start_at, data_file_path, output_file_path,
         data.tilt_axis = output['tilt_axis']
     if dims is not None:
         # Convert to native type, as is required by itk
-        data.spacing = [float(d[1][1] - d[1][0]) for d in dims]
+        data.spacing = [float(d.values[1] - d.values[0]) for d in dims]
 
     operators = operators[start_at:]
     transforms = _load_transform_functions(operators)
