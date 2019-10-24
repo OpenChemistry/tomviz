@@ -6,6 +6,8 @@
 ###############################################################################
 
 from tomviz._internal import in_application
+from tomviz._internal import require_internal_mode
+from tomviz._internal import convert_to_dataset
 
 # Dictionary going from VTK array type to ITK type
 _vtk_to_itk_types = None
@@ -60,6 +62,8 @@ def vtk_cast_map():
     """Set up mapping between VTK array numeric types to VTK numeric types
     that correspond to supported ITK numeric ctypes supported by the ITK
     wrapping."""
+    require_internal_mode()
+
     global _vtk_cast_types
 
     if _vtk_cast_types is None:
@@ -239,6 +243,7 @@ def get_python_voxel_type(dataset):
 def convert_vtk_to_itk_image(vtk_image_data, itk_pixel_type=None):
     """Get an ITK image from the provided vtkImageData object.
     This image can be passed to ITK filters."""
+    require_internal_mode()
 
     # Save the VTKGlue optimization for later
     #------------------------------------------
@@ -303,6 +308,7 @@ def convert_vtk_to_itk_image(vtk_image_data, itk_pixel_type=None):
 
 def set_array_from_itk_image(dataset, itk_image):
     """Set dataset array from an ITK image."""
+    require_internal_mode()
 
     itk_output_image_type = type(itk_image)
 
@@ -338,6 +344,7 @@ def get_label_object_attributes(dataset, progress_callback=None):
     in the range [0, 1] that represents the progress amount. It returns a value
     indicating whether the caller should be cancelled.
     """
+    dataset = convert_to_dataset(dataset)
 
     try:
         import itk
@@ -387,6 +394,7 @@ def _get_itk_image_type(vtk_image_data):
     """
     Get an ITK image type corresponding to the provided vtkImageData object.
     """
+    require_internal_mode()
     image_type = None
 
     # Get the scalars

@@ -25,6 +25,12 @@ if in_application():
     from vtk import vtkDataObject
 
 
+def require_internal_mode():
+    if not in_application():
+        func_name = str(inspect.currentframe().f_back.f_code.co_name)
+        raise Exception('Cannot call ' + func_name + ' in external mode')
+
+
 def delete_module(name):
     if name in sys.modules:
         del sys.modules[name]
@@ -176,8 +182,30 @@ def _operator_method_was_implemented(obj, method):
     return False
 
 
+def convert_to_dataset(data):
+    # This method will extract/convert certain data types to a dataset
+
+    if in_application():
+        from tomviz.internal_dataset import Dataset
+    else:
+        from tomviz.external_dataset import Dataset
+
+    if isinstance(data, Dataset):
+        # It is already a dataset
+        return data
+
+    if in_application():
+        if isinstance(data, vtkDataObject):
+            # Make a new dataset object with no Datasource
+            return Dataset(data, None)
+
+    msg = 'Cannot convert type to Dataset: ' + str(type(data))
+    raise Exception(msg)
+
+
 def convert_to_vtk_data_object(data):
     # This method will extract/convert certain data types to a vtkDataObject
+
     from tomviz.internal_dataset import Dataset
 
     if isinstance(data, vtkDataObject):
@@ -188,4 +216,5 @@ def convert_to_vtk_data_object(data):
         # Should be stored in _data_object
         return data._data_object
 
-    raise Exception('Cannot convert type to vtkDataObject: ' + str(type(data)))
+    msg = 'Cannot convert type to vtkDataObject: ' + str(type(data))
+    raise Exception(msg)
