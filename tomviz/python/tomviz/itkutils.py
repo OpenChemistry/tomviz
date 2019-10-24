@@ -23,6 +23,10 @@ _itkctype_to_python_types = None
 _vtk_to_python_types = None
 
 
+if in_application():
+    from tomviz._internal import convert_to_vtk_data_object
+
+
 def vtk_itk_type_map():
     """Set up mappings between VTK image types and available ITK image
     types."""

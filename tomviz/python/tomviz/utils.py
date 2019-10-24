@@ -11,6 +11,7 @@ from tomviz._internal import in_application
 if in_application():
     import vtk.numpy_interface.dataset_adapter as dsa
     import vtk.util.numpy_support as np_s
+    from tomviz._internal import convert_to_vtk_data_object
 
 
 def get_scalars(dataobject, name=None):
@@ -165,7 +166,6 @@ def get_coordinate_arrays(dataset):
     if not in_application():
         raise Exception('Cannot get coordinate arrays in external mode')
 
-    from tomviz._internal import convert_to_vtk_data_object
     dataset = convert_to_vtk_data_object(dataset)
 
     assert dataset.IsA("vtkImageData"), "Dataset must be a vtkImageData"
@@ -385,8 +385,6 @@ def get_spacing(dataset):
     if not in_application():
         raise Exception('Cannot get spacing in external mode')
 
-    from tomviz._internal import convert_to_vtk_data_object
-
     dataobject = convert_to_vtk_data_object(dataset)
 
     return dataobject.GetSpacing()
@@ -395,8 +393,6 @@ def get_spacing(dataset):
 def set_spacing(dataset, x=None, y=None, z=None):
     if not in_application():
         raise Exception('Cannot set spacing in external mode')
-
-    from tomviz._internal import convert_to_vtk_data_object
 
     dataobject = convert_to_vtk_data_object(dataset)
 
@@ -535,7 +531,6 @@ def set_principal_axes(dataset, axes):
     if not in_application():
         raise Exception('Cannot set principal axes in external mode')
 
-    from tomviz._internal import convert_to_vtk_data_object
     from vtkmodules.vtkCommonCore import vtkFloatArray
 
     data_object = convert_to_vtk_data_object(dataset)
@@ -556,8 +551,6 @@ def get_principal_axes(dataset, principal_axis):
     if not in_application():
         raise Exception('Cannot get principal axes in external mode')
 
-    from tomviz._internal import convert_to_vtk_data_object
-
     data_object = convert_to_vtk_data_object(dataset)
     fd = data_object.GetFieldData()
     axis_array = fd.GetArray('PrincipalAxes')
@@ -577,7 +570,6 @@ def set_center(dataset, center):
     if not in_application():
         raise Exception('Cannot set center in external mode')
 
-    from tomviz._internal import convert_to_vtk_data_object
     from vtkmodules.vtkCommonCore import vtkFloatArray
 
     data_object = convert_to_vtk_data_object(dataset)
@@ -595,8 +587,6 @@ def set_center(dataset, center):
 def get_center(dataset):
     if not in_application():
         raise Exception('Cannot get center in external mode')
-
-    from tomviz._internal import convert_to_vtk_data_object
 
     data_object = convert_to_vtk_data_object(dataset)
     fd = data_object.GetFieldData()
