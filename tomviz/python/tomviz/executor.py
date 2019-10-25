@@ -443,11 +443,11 @@ def _read_emd(path, options=None):
         return output
 
 
-def _write_emd(path, dataset, dims=None):
+def _get_arrays_for_writing(dataset):
     tilt_angles = dataset.tilt_angles
     tilt_axis = dataset.tilt_axis
     active_array = dataset.active_scalars
-    spacing = dataset.spacing
+
     # Separate out the extra channels/arrays as we store them separately
     extra_arrays = {name: array for name, array
                     in dataset.arrays.items()
@@ -471,6 +471,55 @@ def _write_emd(path, dataset, dims=None):
         if value.dtype == np.float16:
             extra_arrays[key] = value.astype(np.float32)
 
+    return active_array, extra_arrays
+
+
+def _get_dims_for_writing(dataset, data, default_dims=None):
+    tilt_angles = dataset.tilt_angles
+    tilt_axis = dataset.tilt_axis
+    spacing = dataset.spacing
+
+    if default_dims is None:
+        # Set the default dims
+        dims = []
+        names = ['x', 'y', 'z']
+
+        for i, name in enumerate(names):
+            values = np.array(range(data.shape[i]))
+            dims.append(Dim('dim%d' % (i+1), values, name, '[n_m]'))
+    else:
+        # Make a deep copy to modify
+        dims = copy.deepcopy(default_dims)
+
+    # Override the dims if spacing is set
+    if spacing is not None:
+        for i, dim in enumerate(dims):
+            end = data.shape[i] * spacing[i]
+            res = np.arange(0, end, spacing[i])
+            dims[i] = Dim(dim.path, res, dim.name, dim.units)
+
+    if tilt_angles is not None:
+        if tilt_axis == 2:
+            # Swap the first and last dims
+            _swap_dims(dims, 0, -1)
+
+        units = dims[0].units if dims[0].units in ANGLE_UNITS else '[deg]'
+
+        # Make the x axis the tilt angles
+        dims[0] = Dim(dims[0].path, tilt_angles, 'angles', units)
+    else:
+        # In case the input was a tilt series, make the first dim x,
+        # and the units [n_m]
+        if dims[0].name == 'angles':
+            dims[0].name = 'x'
+            dims[0].units = '[n_m]'
+
+    return dims
+
+
+def _write_emd(path, dataset, dims=None):
+    active_array, extra_arrays = _get_arrays_for_writing(dataset)
+
     with h5py.File(path, 'w') as f:
         f.attrs.create('version_major', 0, dtype='uint32')
         f.attrs.create('version_minor', 2, dtype='uint32')
@@ -480,40 +529,7 @@ def _write_emd(path, dataset, dims=None):
         data = tomography_group.create_dataset('data', data=active_array)
         data.attrs['name'] = np.string_(dataset.active_name)
 
-        if dims is None:
-            # Set the default dims
-            dims = []
-            names = ['x', 'y', 'z']
-
-            for i, name in enumerate(names):
-                values = np.array(range(data.shape[i]))
-                dims.append(Dim('dim%d' % (i+1), values, name, '[n_m]'))
-        else:
-            # Make a deep copy to modify
-            dims = copy.deepcopy(dims)
-
-        # Override the dims if spacing is set
-        if spacing is not None:
-            for i, dim in enumerate(dims):
-                end = data.shape[i] * spacing[i]
-                res = np.arange(0, end, spacing[i])
-                dims[i] = Dim(dim.path, res, dim.name, dim.units)
-
-        if tilt_angles is not None:
-            if tilt_axis == 2:
-                # Swap the first and last dims
-                _swap_dims(dims, 0, -1)
-
-            units = dims[0].units if dims[0].units in ANGLE_UNITS else '[deg]'
-
-            # Make the x axis the tilt angles
-            dims[0] = Dim(dims[0].path, tilt_angles, 'angles', units)
-        else:
-            # In case the input was a tilt series, make the first dim x,
-            # and the units [n_m]
-            if dims[0].name == 'angles':
-                dims[0].name = 'x'
-                dims[0].units = '[n_m]'
+        dims = _get_dims_for_writing(dataset, data, dims)
 
         # add dimension vectors
         for dim in dims:
@@ -552,8 +568,8 @@ def _read_data_exchange(path, options=None):
             to_fortran = not options.get('keep_c_ordering', False)
 
         if to_fortran:
-            datasets = { name: np.asfortranarray(data)
-                         for (name, data) in datasets.items() }
+            datasets = {name: np.asfortranarray(data)
+                        for (name, data) in datasets.items()}
 
             if 'theta' in datasets:
                 # Swap x and z axes

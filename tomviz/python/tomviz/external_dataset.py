@@ -5,6 +5,7 @@ import numpy as np
 
 ARRAY_TYPES = (collections.Sequence, np.ndarray)
 
+
 class Dataset:
     def __init__(self, arrays, active=None):
         # Holds the map of scalars name => array
