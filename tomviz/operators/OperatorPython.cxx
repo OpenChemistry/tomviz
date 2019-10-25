@@ -428,13 +428,11 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
       // Use the arguments for transform_scalars()
       Python::Object pydata = Python::VTK::GetObjectFromPointer(data);
       args.set(0, pydata);
-    }
-    else if (name == "transform") {
+    } else if (name == "transform") {
       // Use the arguments for transform()
       Python::Object pydata = Python::createDataset(data, *dataSource());
       args.set(0, pydata);
-    }
-    else {
+    } else {
       qDebug() << "Unknown TransformMethod name: " << name;
       return false;
     }
