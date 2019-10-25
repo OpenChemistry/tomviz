@@ -52,6 +52,7 @@ void DataTransformMenu::buildTransforms()
   auto resampleAction = menu->addAction("Resample");
   auto rotateAction = menu->addAction("Rotate");
   auto clearAction = menu->addAction("Clear Subvolume");
+  auto swapAction = menu->addAction("Swap Axes");
   menu->addSeparator();
   auto setNegativeVoxelsToZeroAction =
     menu->addAction("Set Negative Voxels To Zero");
@@ -106,6 +107,9 @@ void DataTransformMenu::buildTransforms()
                                  false, readInJSONDescription("Rotate3D"));
   new AddPythonTransformReaction(clearAction, "Clear Volume",
                                  readInPythonScript("ClearVolume"));
+  new AddPythonTransformReaction(swapAction, "Swap Axes",
+                                 readInPythonScript("SwapAxes"), false, false,
+                                 false, readInJSONDescription("SwapAxes"));
   new AddPythonTransformReaction(setNegativeVoxelsToZeroAction,
                                  "Set Negative Voxels to Zero",
                                  readInPythonScript("SetNegativeVoxelsToZero"));
