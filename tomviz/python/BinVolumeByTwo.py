@@ -1,11 +1,11 @@
-def transform_scalars(dataset):
+def transform(dataset):
     """Downsample volume by a factor of 2"""
 
     from tomviz import utils
     import scipy.ndimage
     import numpy as np
 
-    array = utils.get_array(dataset)
+    array = dataset.active_scalars
 
     # Downsample the dataset x2 using order 1 spline (linear)
     # Calculate out array shape
@@ -18,16 +18,16 @@ def transform_scalars(dataset):
                                      prefilter=False)
 
     # Set the result as the new scalars.
-    utils.set_array(dataset, result)
+    dataset.active_scalars = result
 
     # Update tilt angles if dataset is a tilt series.
     try:
-        tilt_angles = utils.get_tilt_angles(dataset)
+        tilt_angles = dataset.tilt_angles
         result_shape = utils.zoom_shape(tilt_angles, 0.5)
         result = np.empty(result_shape, array.dtype, order='F')
         tilt_angles = scipy.ndimage.interpolation.zoom(tilt_angles, 0.5,
                                                        output=result)
-        utils.set_tilt_angles(dataset, result)
+        dataset.tilt_angles = result
     except: # noqa
         # TODO What exception are we ignoring?
         pass

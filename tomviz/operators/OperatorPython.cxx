@@ -116,7 +116,7 @@ public:
   Python::Module TransformModule;
   Python::Function TransformMethod;
   Python::Module InternalModule;
-  Python::Function FindTransformScalarsFunction;
+  Python::Function FindTransformFunction;
   Python::Function IsCancelableFunction;
   Python::Function DeleteModuleFunction;
 };
@@ -144,10 +144,10 @@ OperatorPython::OperatorPython(DataSource* parentObject)
       qCritical() << "Unable to locate is_cancelable.";
     }
 
-    d->FindTransformScalarsFunction =
-      d->InternalModule.findFunction("find_transform_scalars");
-    if (!d->FindTransformScalarsFunction.isValid()) {
-      qCritical() << "Unable to locate find_transform_scalars.";
+    d->FindTransformFunction =
+      d->InternalModule.findFunction("find_transform_function");
+    if (!d->FindTransformFunction.isValid()) {
+      qCritical() << "Unable to locate find_transform_function.";
     }
 
     d->DeleteModuleFunction = d->InternalModule.findFunction("delete_module");
@@ -323,9 +323,9 @@ void OperatorPython::setScript(const QString& str)
       findArgs.set(0, d->TransformModule);
       findArgs.set(1, op);
 
-      d->TransformMethod = d->FindTransformScalarsFunction.call(findArgs);
+      d->TransformMethod = d->FindTransformFunction.call(findArgs);
       if (!d->TransformMethod.isValid()) {
-        qCritical("Script doesn't have any 'transform_scalars' function.");
+        qCritical("Script doesn't have any 'transform' function.");
         return;
       }
 
@@ -370,8 +370,7 @@ bool OperatorPython::updateChildDataSource(Python::Dict outputDict)
                   << "defined in dictionary returned from Python script.\n";
       return false;
     } else {
-      vtkObjectBase* vtkobject =
-        Python::VTK::GetPointerFromObject(pyDataObject, "vtkDataObject");
+      vtkObjectBase* vtkobject = Python::VTK::convertToDataObject(pyDataObject);
       vtkDataObject* dataObject = vtkDataObject::SafeDownCast(vtkobject);
       if (dataObject) {
         TemporarilyReleaseGil releaseMe;
@@ -417,14 +416,26 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
 
   createChildDataSource();
 
-  Python::Object pydata = Python::VTK::GetObjectFromPointer(data);
-
   Python::Object result;
   {
     Python python;
 
     Python::Tuple args(1);
-    args.set(0, pydata);
+
+    // Get the name of the function
+    auto name = d->TransformMethod.getAttr("__name__").toString();
+    if (name == "transform_scalars") {
+      // Use the arguments for transform_scalars()
+      Python::Object pydata = Python::VTK::GetObjectFromPointer(data);
+      args.set(0, pydata);
+    } else if (name == "transform") {
+      // Use the arguments for transform()
+      Python::Object pydata = Python::createDataset(data, *dataSource());
+      args.set(0, pydata);
+    } else {
+      qDebug() << "Unknown TransformMethod name: " << name;
+      return false;
+    }
 
     Python::Dict kwargs;
     foreach (QString key, m_arguments.keys()) {

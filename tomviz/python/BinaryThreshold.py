@@ -3,8 +3,7 @@ import tomviz.operators
 
 class BinaryThreshold(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset, lower_threshold=40.0,
-                          upper_threshold=255.0):
+    def transform(self, dataset, lower_threshold=40.0, upper_threshold=255.0):
         """This filter computes a binary threshold on the data set and
         stores the result in a child data set. It does not modify the dataset
         passed in."""
@@ -24,7 +23,6 @@ class BinaryThreshold(tomviz.operators.CancelableOperator):
         try:
             self.progress.message = "Loading modules"
             import itk
-            from vtkmodules.vtkCommonDataModel import vtkImageData
             from tomviz import itkutils
         except Exception as exc:
             print("Could not import necessary module(s)")
@@ -38,7 +36,7 @@ class BinaryThreshold(tomviz.operators.CancelableOperator):
             self.progress.message = "Converting data to ITK image"
 
             # Get the ITK image
-            itk_image = itkutils.convert_vtk_to_itk_image(dataset)
+            itk_image = itkutils.dataset_to_itk_image(dataset)
             itk_input_image_type = type(itk_image)
             self.progress.value = STEP_PCT[1]
             self.progress.message = "Running filter"
@@ -68,11 +66,10 @@ class BinaryThreshold(tomviz.operators.CancelableOperator):
             self.progress.message = "Creating child data set"
 
             # Set the output as a new child data object of the current data set
-            label_map_dataset = vtkImageData()
-            label_map_dataset.CopyStructure(dataset)
+            label_map_dataset = dataset.create_child_dataset()
+            itkutils.set_itk_image_on_dataset(threshold_filter.GetOutput(),
+                                              label_map_dataset)
 
-            itkutils.set_array_from_itk_image(label_map_dataset,
-                                              threshold_filter.GetOutput())
             self.progress.value = STEP_PCT[4]
 
             returnValue = {

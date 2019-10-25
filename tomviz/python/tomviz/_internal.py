@@ -22,6 +22,13 @@ def in_application():
 
 if in_application():
     import tomviz._wrapping
+    from vtk import vtkDataObject
+
+
+def require_internal_mode():
+    if not in_application():
+        func_name = str(inspect.currentframe().f_back.f_code.co_name)
+        raise Exception('Cannot call ' + func_name + ' in external mode')
 
 
 def delete_module(name):
@@ -43,22 +50,29 @@ def find_operator_class(transform_module):
     return operator_class
 
 
-def find_transform_scalars_function(transform_module):
-    transform_function = None
-    functions = inspect.getmembers(transform_module, inspect.isfunction)
+def _find_function(module, function_name):
+    # Finds a function in the module with a given "function_name"
+    # Returns `None` if it is not found
+    functions = inspect.getmembers(module, inspect.isfunction)
     for (name, func) in functions:
-        if name == 'transform_scalars':
-            transform_function = func
-            break
+        if name == function_name:
+            return func
 
-    return transform_function
+
+def find_transform_from_module(transform_module):
+    # This tries to first find transform(), and then transform_scalars()
+    f = _find_function(transform_module, 'transform')
+    if f is None:
+        f = _find_function(transform_module, 'transform_scalars')
+
+    return f
 
 
 def is_cancelable(transform_module):
     cls = find_operator_class(transform_module)
 
     if cls is None:
-        function = find_transform_scalars_function(transform_module)
+        function = find_transform_from_module(transform_module)
 
     if cls is None and function is None:
         raise Exception('Unable to locate function or operator class.')
@@ -67,13 +81,13 @@ def is_cancelable(transform_module):
                                           tomviz.operators.CancelableOperator)
 
 
-def find_transform_scalars(transform_module, op=None):
+def find_transform_function(transform_module, op=None):
 
-    transform_function = find_transform_scalars_function(transform_module)
+    transform_function = find_transform_from_module(transform_module)
     if transform_function is None:
         cls = find_operator_class(transform_module)
         if cls is None:
-            raise Exception('Unable to locate transform_function.')
+            raise Exception('Unable to locate transform function.')
 
         # We call __new__ and __init__ manually here so we can inject the
         # wrapper OperatorPython instance before __init__ is called so that
@@ -84,10 +98,14 @@ def find_transform_scalars(transform_module, op=None):
             o._operator_wrapper = tomviz._wrapping.OperatorPythonWrapper(op)
         cls.__init__(o)
 
-        transform_function = o.transform_scalars
+        transform_function = None
+        if _operator_method_was_implemented(o, 'transform'):
+            transform_function = o.transform
+        elif _operator_method_was_implemented(o, 'transform_scalars'):
+            transform_function = o.transform_scalars
 
     if transform_function is None:
-        raise Exception('Unable to locate transform_function.')
+        raise Exception('Unable to locate transform function.')
 
     return transform_function
 
@@ -101,7 +119,7 @@ def _load_module(operator_dir, python_file):
 
 
 def _has_operator(module):
-    return find_transform_scalars_function(module) is not None or \
+    return find_transform_from_module(module) is not None or \
         find_operator_class(module) is not None
 
 
@@ -148,3 +166,83 @@ def find_operators(operator_dir):
         )
 
     return operator_descriptions
+
+
+def _operator_method_was_implemented(obj, method):
+    # It would be nice if there were an easier way to do this, but
+    # I am not currently aware of an easier way.
+    bases = list(inspect.getmro(type(obj)))
+    # We know operator has this attribute, remove it
+    bases.remove(tomviz.operators.Operator)
+
+    for base in bases:
+        if method in vars(base):
+            return True
+
+    return False
+
+
+def convert_to_dataset(data):
+    # This method will extract/convert certain data types to a dataset
+
+    if in_application():
+        from tomviz.internal_dataset import Dataset
+    else:
+        from tomviz.external_dataset import Dataset
+
+    if isinstance(data, Dataset):
+        # It is already a dataset
+        return data
+
+    if in_application():
+        if isinstance(data, vtkDataObject):
+            # Make a new dataset object with no Datasource
+            return Dataset(data, None)
+
+    msg = 'Cannot convert type to Dataset: ' + str(type(data))
+    raise Exception(msg)
+
+
+def convert_to_vtk_data_object(data):
+    # This method will extract/convert certain data types to a vtkDataObject
+
+    from tomviz.internal_dataset import Dataset
+
+    if isinstance(data, vtkDataObject):
+        # It is already a vtkDataObject
+        return data
+
+    if isinstance(data, Dataset):
+        # Should be stored in _data_object
+        return data._data_object
+
+    msg = 'Cannot convert type to vtkDataObject: ' + str(type(data))
+    raise Exception(msg)
+
+
+def with_vtk_dataobject(f):
+    # A decorator to automatically convert the first argument to
+    # a vtkDataObject. This also confirms we are running internally.
+
+    def wrapped(*args, **kwargs):
+        if not in_application():
+            name = f.__name__
+            raise Exception('Cannot call ' + name + ' in external mode')
+
+        dataobject = convert_to_vtk_data_object(args[0])
+        args = (dataobject, *args[1:])
+        return f(*args, **kwargs)
+
+    return wrapped
+
+
+def with_dataset(f):
+    # A decorator to automatically convert the first argument to
+    # a Dataset.
+
+    def wrapped(*args, **kwargs):
+        dataset = convert_to_dataset(args[0])
+        args = (dataset, *args[1:])
+        return f(*args, **kwargs)
+
+    return wrapped

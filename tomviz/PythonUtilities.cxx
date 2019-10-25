@@ -5,6 +5,7 @@
 
 #include "vtkPython.h" // must be first
 
+#include "DataSource.h"
 #include "Logger.h"
 
 #include <vtkPythonInterpreter.h>
@@ -12,6 +13,8 @@
 #include <vtkSmartPyObject.h>
 
 #include <pybind11/pybind11.h>
+
+namespace py = pybind11;
 
 namespace tomviz {
 
@@ -48,6 +51,13 @@ Python::Object::Object(const QString& str)
 Python::Object::Object(const Variant& value)
 {
   m_smartPyObject = new vtkSmartPyObject(toPyObject(value));
+}
+
+Python::Object::Object(const DataSource& source)
+{
+  // The vtkSmartPyObject will take ownership of the PyObject*
+  py::object obj = py::cast(source, py::return_value_policy::reference);
+  m_smartPyObject = new vtkSmartPyObject(obj.release().ptr());
 }
 
 Python::Object::Object(PyObject* obj)
@@ -117,6 +127,13 @@ QString Python::Object::toString() const
 #endif
 
   return QString(cdata ? cdata : "");
+}
+
+Python::Object Python::Object::getAttr(const QString& name)
+{
+  Object attrName(name);
+  auto& attrNamePyObj = *attrName;
+  return PyObject_GetAttr(m_smartPyObject->GetPointer(), &attrNamePyObj);
 }
 
 Python::Object::~Object()
@@ -288,6 +305,12 @@ Python::Object Python::Function::call(Tuple& args, Dict& kwargs)
   return result;
 }
 
+QString Python::Function::toString()
+{
+  PyObject* objectRepr = PyObject_Repr(*this);
+  return PyString_AsString(objectRepr);
+}
+
 Python::Object Python::VTK::GetObjectFromPointer(vtkObjectBase* ptr)
 {
   return vtkPythonUtil::GetObjectFromPointer(ptr);
@@ -297,6 +320,31 @@ vtkObjectBase* Python::VTK::GetPointerFromObject(Python::Object obj,
                                                  const char* classname)
 {
   return vtkPythonUtil::GetPointerFromObject(obj, classname);
+}
+
+vtkObjectBase* Python::VTK::convertToDataObject(Python::Object obj)
+{
+  Python python;
+
+  auto internalModule = python.import("tomviz._internal");
+  if (!internalModule.isValid()) {
+    Logger::critical("Failed to import tomviz._internal module.");
+  }
+
+  auto convertFunc = internalModule.findFunction("convert_to_vtk_data_object");
+  if (!convertFunc.isValid()) {
+    Logger::critical("Unable to locate convert_to_vtk_data_object.");
+  }
+
+  Python::Tuple args(1);
+  args.set(0, obj);
+
+  auto dataObject = convertFunc.call(args);
+  if (!dataObject.isValid()) {
+    Logger::critical("Failed to execute convert_to_vtk_data_object.");
+  }
+
+  return GetPointerFromObject(dataObject, "vtkDataObject");
 }
 
 void Python::initialize()
@@ -442,6 +490,30 @@ PyObject* Python::toPyObject(long l)
 void Python::prependPythonPath(std::string dir)
 {
   vtkPythonInterpreter::PrependPythonPath(dir.c_str());
+}
+
+Python::Object Python::createDataset(vtkObjectBase* data,
+                                     const DataSource& source)
+{
+  Python python;
+  auto module = python.import("tomviz.internal_dataset");
+  if (!module.isValid()) {
+    Logger::critical("Failed to import tomviz.internal_dataset module.");
+  }
+
+  auto createDatasetFunc = module.findFunction("create_dataset");
+  if (!createDatasetFunc.isValid()) {
+    Logger::critical("Unable to locate create_dataset.");
+  }
+
+  auto dataObj = Python::VTK::GetObjectFromPointer(data);
+  auto dataSourceObj = Python::Object(source);
+
+  Python::Tuple args(2);
+  args.set(0, dataObj);
+  args.set(1, dataSourceObj);
+
+  return createDatasetFunc.call(args);
 }
 
 std::vector<OperatorDescription> findCustomOperators(const QString& path)

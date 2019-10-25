@@ -5,15 +5,14 @@ NUMBER_OF_CHUNKS = 10
 
 class SquareRootOperator(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset):
+    def transform(self, dataset):
         """Define this method for Python operators that
         transform input scalars"""
 
-        from tomviz import utils
         import numpy as np
         self.progress.maximum = NUMBER_OF_CHUNKS
 
-        scalars = utils.get_scalars(dataset)
+        scalars = dataset.active_scalars
         if scalars is None:
             raise RuntimeError("No scalars found!")
 
@@ -33,4 +32,4 @@ class SquareRootOperator(tomviz.operators.CancelableOperator):
                 self.progress.value = step
 
             # set the result as the new scalars.
-            utils.set_scalars(dataset, result)
+            dataset.active_scalars = result

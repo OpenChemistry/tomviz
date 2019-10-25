@@ -6,23 +6,22 @@ import time
 
 class ReconConstrintedDFMOperator(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset, Niter=None, Niter_update_support=None,
-                          supportSigma=None, supportThreshold=None):
+    def transform(self, dataset, Niter=None, Niter_update_support=None,
+                  supportSigma=None, supportThreshold=None):
         """
         3D Reconstruct from a tilt series using constraint-based Direct Fourier
         Method
         """
         self.progress.maximum = 1
 
-        from tomviz import utils
         import numpy as np
 
         supportThreshold = supportThreshold / 100.0
 
         nonnegativeVoxels = True
-        tiltAngles = utils.get_tilt_angles(dataset) #Get Tilt angles
+        tiltAngles = dataset.tilt_angles #Get Tilt angles
 
-        tiltSeries = utils.get_array(dataset)
+        tiltSeries = dataset.active_scalars
         if tiltSeries is None:
             raise RuntimeError("No scalars found!")
 
@@ -139,14 +138,11 @@ class ReconConstrintedDFMOperator(tomviz.operators.CancelableOperator):
         recon[:] = (y2 + y1) / 2
         recon[:] = np.fft.fftshift(recon)
 
-        from vtkmodules.vtkCommonDataModel import vtkImageData
-        recon_dataset = vtkImageData()
-        recon_dataset.CopyStructure(dataset)
-        utils.set_array(recon_dataset, recon)
-        utils.mark_as_volume(recon_dataset)
+        child = dataset.create_child_dataset()
+        child.active_scalars = recon
 
         returnValues = {}
-        returnValues["reconstruction"] = recon_dataset
+        returnValues["reconstruction"] = child
         return returnValues
 
 

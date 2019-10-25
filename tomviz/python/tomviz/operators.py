@@ -60,7 +60,10 @@ class Progress(object):
         self._operator._operator_wrapper.progress_message = msg
 
     def _data(self, value):
-        self._operator._operator_wrapper.progress_data = value
+        # Make sure this is a vtkDataObject before setting
+        from tomviz._internal import convert_to_vtk_data_object
+        data = convert_to_vtk_data_object(value)
+        self._operator._operator_wrapper.progress_data = data
 
     # Write-only property to update child data
     data = property(fset=_data)
@@ -83,15 +86,22 @@ class Operator(object):
         """
         raise NotImplementedError('Must be implemented by subclass')
 
+    def transform(self, data):
+        """
+        This method should be overriden by subclasses to implement the
+        operations the operator should perform.
+        """
+        raise NotImplementedError('Must be implemented by subclass')
+
 
 class CancelableOperator(Operator):
     """
     A cancelable operator allows the user to interrupt the execution of the
-    operator. The canceled property can be using in the transform_scalars(...)
+    operator. The canceled property can be using in the transform(...)
     method to break out when the operator is canceled. The basic structure of
-    the transform_scalars(...) might look something like this:
+    the transform(...) might look something like this:
 
-    def transform_scalars(self, data):
+    def transform(self, data):
         while(not self.canceled):
             # Do work
 

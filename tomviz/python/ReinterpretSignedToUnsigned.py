@@ -1,11 +1,10 @@
-def transform_scalars(dataset):
+def transform(dataset):
     """Reinterpret a signed integral array type as its unsigned counterpart.
     This can be used when the bytes of a data array have been interpreted as a
     signed array when it should have been interpreted as an unsigned array."""
 
-    from tomviz import utils
     import numpy as np
-    scalars = utils.get_scalars(dataset)
+    scalars = dataset.active_scalars
     if scalars is None:
         raise RuntimeError("No scalars found!")
 
@@ -31,4 +30,4 @@ def transform_scalars(dataset):
     addend = typeAddend[dtype]
 
     newScalars = scalars.astype(dtype=newType) + addend
-    utils.set_scalars(dataset, newScalars)
+    dataset.active_scalars = newScalars

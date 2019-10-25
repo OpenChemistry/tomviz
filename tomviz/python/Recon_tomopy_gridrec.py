@@ -1,4 +1,4 @@
-def transform_scalars(dataset, rot_center=0, tune_rot_center=True):
+def transform(dataset, rot_center=0, tune_rot_center=True):
     """Reconstruct sinograms using the tomopy gridrec algorithm
 
     Typically, a data exchange file would be loaded for this
@@ -10,16 +10,15 @@ def transform_scalars(dataset, rot_center=0, tune_rot_center=True):
     docker image, or a python environment with tomopy installed.
     """
 
-    from tomviz import utils
     import numpy as np
     import tomopy
 
     # Get the current volume as a numpy array.
-    array = utils.get_array(dataset)
+    array = dataset.active_scalars
 
     dark = dataset.dark
     white = dataset.white
-    angles = utils.get_tilt_angles(dataset)
+    angles = dataset.tilt_angles
     tilt_axis = dataset.tilt_axis
 
     # TomoPy wants the tilt axis to be zero, so ensure that is true
@@ -66,9 +65,8 @@ def transform_scalars(dataset, rot_center=0, tune_rot_center=True):
     array = tomopy.circ_mask(array, axis=0, ratio=0.95)
 
     # Set the transformed array
-    child = utils.make_child_dataset(dataset)
-    utils.mark_as_volume(child)
-    utils.set_array(child, array)
+    child = dataset.create_child_dataset()
+    child.active_scalars = array
 
     return_values = {}
     return_values['reconstruction'] = child

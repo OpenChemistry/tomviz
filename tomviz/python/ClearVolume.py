@@ -1,11 +1,10 @@
-def transform_scalars(dataset,  XRANGE=None, YRANGE=None, ZRANGE=None):
+def transform(dataset,  XRANGE=None, YRANGE=None, ZRANGE=None):
     """Define this method for Python operators that
     transform input scalars"""
 
-    from tomviz import utils
     import numpy as np
 
-    array = utils.get_array(dataset)
+    array = dataset.active_scalars
     if array is None:
         raise RuntimeError("No scalars found!")
 
@@ -13,4 +12,4 @@ def transform_scalars(dataset,  XRANGE=None, YRANGE=None, ZRANGE=None):
     result = np.copy(array)
     result[XRANGE[0]:XRANGE[1], YRANGE[0]:YRANGE[1], ZRANGE[0]:ZRANGE[1]] = 0
     # Set the result as the new scalars.
-    utils.set_array(dataset, result)
+    dataset.active_scalars = result

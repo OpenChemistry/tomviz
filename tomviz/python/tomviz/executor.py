@@ -1,3 +1,5 @@
+import collections
+import copy
 import h5py
 import importlib
 import os
@@ -13,8 +15,9 @@ import errno
 
 from tqdm import tqdm
 
-from tomviz import utils
-from tomviz._internal import find_transform_scalars
+from tomviz._internal import find_transform_function
+
+from tomviz.external_dataset import Dataset
 
 LOG_FORMAT = '[%(asctime)s] %(levelname)s: %(message)s'
 
@@ -27,6 +30,8 @@ logger.addHandler(stream_handler)
 
 DIMS = ['dim1', 'dim2', 'dim3']
 ANGLE_UNITS = [b'[deg]', b'[rad]']
+
+Dim = collections.namedtuple('Dim', 'path values name units')
 
 
 class ProgressBase(object):
@@ -379,16 +384,23 @@ def _read_dataset(dataset, options=None):
                    bnds[4]:bnds[5]:stride]
 
 
+def _swap_dims(dims, i, j):
+    # Keeps the paths the same, but swaps everything else
+    tmp = Dim(dims[i].path, dims[j].values, dims[j].name, dims[j].units)
+    dims[j] = Dim(dims[j].path, dims[i].values, dims[i].name, dims[i].units)
+    dims[i] = tmp
+
+
 def _read_emd(path, options=None):
     with h5py.File(path, 'r') as f:
         tomography = f['data/tomography']
 
         dims = []
         for dim in DIMS:
-            dims.append((dim,
-                         tomography[dim][:],
-                         tomography[dim].attrs['name'][0],
-                         tomography[dim].attrs['units'][0]))
+            dims.append(Dim(dim,
+                            tomography[dim][:],
+                            tomography[dim].attrs['name'][0],
+                            tomography[dim].attrs['units'][0]))
 
         data = tomography['data']
         # We default the name to ImageScalars
@@ -408,12 +420,12 @@ def _read_emd(path, options=None):
 
         # If this is a tilt series, swap the X and Z axes
         tilt_axis = None
-        if dims[0][2] == b'angles' or dims[0][3] in ANGLE_UNITS:
+        if dims[0].name == b'angles' or dims[0].units in ANGLE_UNITS:
             arrays = [(name, np.transpose(data, [2, 1, 0])) for (name, data)
                       in arrays]
 
-            # Swap the dims order as well
-            dims[0], dims[-1] = dims[-1], dims[0]
+            # Swap the first and last dims
+            _swap_dims(dims, 0, -1)
             tilt_axis = 2
 
         # EMD stores data as row major order.  VTK expects column major order.
@@ -425,19 +437,20 @@ def _read_emd(path, options=None):
             'tilt_axis': tilt_axis
         }
 
-        if dims is not None and dims[-1][2] == b'angles':
-            output['tilt_angles'] = dims[-1][1][:].astype(np.float64)
+        if dims is not None and dims[-1].name == b'angles':
+            output['tilt_angles'] = dims[-1].values[:].astype(np.float64)
 
         return output
 
 
-def _write_emd(path, dataobject, dims=None):
-    tilt_angles = dataobject.tilt_angles
-    tilt_axis = dataobject.tilt_axis
-    active_array = dataobject.active
+def _get_arrays_for_writing(dataset):
+    tilt_angles = dataset.tilt_angles
+    tilt_axis = dataset.tilt_axis
+    active_array = dataset.active_scalars
+
     # Separate out the extra channels/arrays as we store them separately
     extra_arrays = {name: array for name, array
-                    in dataobject.arrays.items()
+                    in dataset.arrays.items()
                     if id(array) != id(active_array)}
 
     # If this is a tilt series, swap the X and Z axes
@@ -451,6 +464,62 @@ def _write_emd(path, dataobject, dims=None):
     extra_arrays = {name: np.ascontiguousarray(array) for (name, array)
                     in extra_arrays.items()}
 
+    # We can't do 16 bit floats, so up the size if they are 16 bit
+    if active_array.dtype == np.float16:
+        active_array = active_array.astype(np.float32)
+    for key, value in extra_arrays.items():
+        if value.dtype == np.float16:
+            extra_arrays[key] = value.astype(np.float32)
+
+    return active_array, extra_arrays
+
+
+def _get_dims_for_writing(dataset, data, default_dims=None):
+    tilt_angles = dataset.tilt_angles
+    tilt_axis = dataset.tilt_axis
+    spacing = dataset.spacing
+
+    if default_dims is None:
+        # Set the default dims
+        dims = []
+        names = ['x', 'y', 'z']
+
+        for i, name in enumerate(names):
+            values = np.array(range(data.shape[i]))
+            dims.append(Dim('dim%d' % (i+1), values, name, '[n_m]'))
+    else:
+        # Make a deep copy to modify
+        dims = copy.deepcopy(default_dims)
+
+    # Override the dims if spacing is set
+    if spacing is not None:
+        for i, dim in enumerate(dims):
+            end = data.shape[i] * spacing[i]
+            res = np.arange(0, end, spacing[i])
+            dims[i] = Dim(dim.path, res, dim.name, dim.units)
+
+    if tilt_angles is not None:
+        if tilt_axis == 2:
+            # Swap the first and last dims
+            _swap_dims(dims, 0, -1)
+
+        units = dims[0].units if dims[0].units in ANGLE_UNITS else '[deg]'
+
+        # Make the x axis the tilt angles
+        dims[0] = Dim(dims[0].path, tilt_angles, 'angles', units)
+    else:
+        # In case the input was a tilt series, make the first dim x,
+        # and the units [n_m]
+        if dims[0].name == 'angles':
+            dims[0].name = 'x'
+            dims[0].units = '[n_m]'
+
+    return dims
+
+
+def _write_emd(path, dataset, dims=None):
+    active_array, extra_arrays = _get_arrays_for_writing(dataset)
+
     with h5py.File(path, 'w') as f:
         f.attrs.create('version_major', 0, dtype='uint32')
         f.attrs.create('version_minor', 2, dtype='uint32')
@@ -458,41 +527,16 @@ def _write_emd(path, dataobject, dims=None):
         tomography_group = data_group.create_group('tomography')
         tomography_group.attrs.create('emd_group_type', 1, dtype='uint32')
         data = tomography_group.create_dataset('data', data=active_array)
-        data.attrs['name'] = np.string_(dataobject.active_name)
+        data.attrs['name'] = np.string_(dataset.active_name)
 
-        if dims is None:
-            dims = []
-            names = ['x', 'y', 'z']
-            if tilt_angles is not None:
-                names = ['angles', 'y', 'x']
-
-            for i, name in zip(range(0, 3), names):
-                values = np.array(range(data.shape[i]))
-                units = '[n_m]' if name != 'angles' else '[deg]'
-                dims.append(('/data/tomography/dim%d' % (i+1),
-                             values, name, units))
-        else:
-            # Swap the dims as well
-            if tilt_angles is not None and tilt_axis == 2:
-                dims[0], dims[-1] = dims[-1], dims[0]
-                # Set the tilt angles as the value for dims[0]
-                dims[0] = (dims[0][0], tilt_angles, dims[0][2], dims[0][3])
+        dims = _get_dims_for_writing(dataset, data, dims)
 
         # add dimension vectors
-        for (dataset_name, values, name, units) in dims:
-            d = tomography_group.create_dataset(dataset_name, values.shape)
-            d.attrs['name'] = np.string_(name)
-            d.attrs['units'] = np.string_(units)
-            d[:] = values
-
-        # If we have angle update the first dim
-        if tilt_angles is not None:
-            (name, _, _, units) = dims[0]
-            d = tomography_group[name]
-            d.attrs['name'] = np.string_('angles')
-            # Only override we don't already have a valid angle units.
-            if units not in ANGLE_UNITS:
-                d.attrs['units'] = np.string_('[deg]')
+        for dim in dims:
+            d = tomography_group.create_dataset(dim.path, dim.values.shape)
+            d.attrs['name'] = np.string_(dim.name)
+            d.attrs['units'] = np.string_(dim.units)
+            d[:] = dim.values
 
         # If we have extra scalars add them under tomviz_scalars
         if extra_arrays:
@@ -524,8 +568,8 @@ def _read_data_exchange(path, options=None):
             to_fortran = not options.get('keep_c_ordering', False)
 
         if to_fortran:
-            datasets = { name: np.asfortranarray(data)
-                         for (name, data) in datasets.items() }
+            datasets = {name: np.asfortranarray(data)
+                        for (name, data) in datasets.items()}
 
             if 'theta' in datasets:
                 # Swap x and z axes
@@ -559,103 +603,6 @@ def _is_data_exchange(path):
         return '/exchange/data' in f
 
 
-class DataObject(object):
-    def __init__(self, arrays, active=None):
-        # Holds the map of scalars name => array
-        self.arrays = arrays
-        self.is_volume = False
-        self.tilt_angles = None
-        self.tilt_axis = None
-        # The currently active scalar
-        self.active_name = active
-        # If we weren't given the active array and we only have one array, set
-        # it as the active array.
-        if active is None and len(arrays.keys()):
-            (self.active_name,) = arrays.keys()
-
-        # Dark and white backgrounds
-        self.dark = None
-        self.white = None
-
-    def set_scalars(self, new_scalars):
-        order = 'C'
-        if np.isfortran(self.active):
-            order = 'F'
-        new_scalars = np.reshape(new_scalars, self.active.shape, order=order)
-        self.active = np.asfortranarray(new_scalars)
-
-    def get_scalars(self, name=None):
-        if name is None:
-            name = self.active_name
-        return self.arrays[name].ravel(order='A')
-
-    def set_array(self, new_array):
-        if not np.isfortran(new_array):
-            new_array = np.asfortranarray(new_array)
-
-        self.active = new_array
-
-    def get_array(self, name=None):
-        if name is None:
-            name = self.active_name
-
-        return self.arrays[name]
-
-    @property
-    def active(self):
-        return self.arrays[self.active_name]
-
-    @active.setter
-    def active(self, array):
-        self.arrays[self.active_name] = array
-
-
-def _patch_utils():
-    # Monkey patch tomviz.utils to support API outside Tomviz app.
-    # I know this is a little yucky!
-    def _get_scalars(dataobject, name=None):
-        return dataobject.get_scalars(name)
-
-    def _set_scalars(dataobject, new_scalars):
-        dataobject.set_scalars(new_scalars)
-
-    def _get_array(dataobject, name=None):
-        return dataobject.get_array(name)
-
-    def _set_array(dataobject, new_array):
-        dataobject.set_array(new_array)
-
-    def _set_tilt_angles(dataobject, tilt_angles):
-        dataobject.tilt_angles = tilt_angles
-
-    def _get_tilt_angles(dataobject):
-        return dataobject.tilt_angles
-
-    def _make_child_dataset(reference_dataset):
-        child = np.empty_like(reference_dataset.active)
-        arrays = {
-            "ImageScalars": child
-        }
-
-        return DataObject(arrays)
-
-    def _mark_as_volume(dataobject):
-        dataobject.is_volume = True
-
-    def _arrays(dataobject):
-        return dataobject.arrays.items()
-
-    utils.get_scalars = _get_scalars
-    utils.set_scalars = _set_scalars
-    utils.set_array = _set_array
-    utils.get_array = _get_array
-    utils.set_tilt_angles = _set_tilt_angles
-    utils.get_tilt_angles = _get_tilt_angles
-    utils.make_child_dataset = _make_child_dataset
-    utils.mark_as_volume = _mark_as_volume
-    utils.arrays = _arrays
-
-
 def _execute_transform(operator_label, transform, arguments, input, progress):
     # Update the progress attribute to an instance that will work outside the
     # application and give use a nice progress information.
@@ -676,8 +623,7 @@ def _execute_transform(operator_label, transform, arguments, input, progress):
     if operator_label == 'SetTiltAngles':
         # Set the tilt angles so downstream operator can retrieve them
         # arguments the tilt angles.
-        utils.set_tilt_angles(input, np.array(arguments['angles'],
-                              dtype=np.float64))
+        input.tilt_angles = np.array(arguments['angles']).astype(np.float64)
     else:
         # Now run the operator
         result = transform(input, **arguments)
@@ -706,15 +652,14 @@ def _load_transform_functions(operators):
         operator_label = operator['label']
 
         operator_module = _load_operator_module(operator_label, operator_script)
-        transform_scalars = find_transform_scalars(operator_module)
+        transform = find_transform_function(operator_module)
 
         # partial apply the arguments
         arguments = {}
         if 'arguments' in operator:
             arguments = operator['arguments']
 
-        transform_functions.append((operator_label, transform_scalars,
-                                    arguments))
+        transform_functions.append((operator_label, transform, arguments))
 
     return transform_functions
 
@@ -757,14 +702,12 @@ def execute(operators, start_at, data_file_path, output_file_path,
     arrays = output['arrays']
     dims = output.get('dims')
 
-    _patch_utils()
-
     # The first is the active array
     (active_array, _) = arrays[0]
     # Create dict of arrays
     arrays = {name: array for (name, array) in arrays}
 
-    data = DataObject(arrays, active_array)
+    data = Dataset(arrays, active_array)
     if 'data_dark' in output:
         data.dark = output['data_dark']
     if 'data_white' in output:
@@ -773,6 +716,9 @@ def execute(operators, start_at, data_file_path, output_file_path,
         data.tilt_angles = output['tilt_angles']
     if 'tilt_axis' in output:
         data.tilt_axis = output['tilt_axis']
+    if dims is not None:
+        # Convert to native type, as is required by itk
+        data.spacing = [float(d.values[1] - d.values[0]) for d in dims]
 
     operators = operators[start_at:]
     transforms = _load_transform_functions(operators)

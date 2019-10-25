@@ -3,8 +3,8 @@ import tomviz.operators
 
 class PeronaMalikAnisotropicDiffusion(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset, conductance=1.0, iterations=100,
-                          timestep=0.0625):
+    def transform(self, dataset, conductance=1.0, iterations=100,
+                  timestep=0.0625):
         """This filter performs anisotropic diffusion on an image using
         the classic Perona-Malik, gradient magnitude-based equation.
         """
@@ -18,8 +18,8 @@ class PeronaMalikAnisotropicDiffusion(tomviz.operators.CancelableOperator):
         STEP_PCT = [10, 20, 90, 100]
 
         try:
+            import numpy as np
             import itk
-            import itkTypes
             from tomviz import itkutils
         except Exception as exc:
             print("Could not import necessary module(s)")
@@ -32,7 +32,9 @@ class PeronaMalikAnisotropicDiffusion(tomviz.operators.CancelableOperator):
             # Get the ITK image. The itk.GradientAnisotropicDiffusionImageFilter
             # is templated over float pixel types only, so explicitly request a
             # float ITK image type.
-            itk_image = itkutils.convert_vtk_to_itk_image(dataset, itkTypes.F)
+            array = dataset.active_scalars.astype(np.float32)
+            itk_image = itk.GetImageViewFromArray(array)
+            itk_image.SetSpacing(dataset.spacing)
             itk_image_type = type(itk_image)
 
             self.progress.value = STEP_PCT[1]
@@ -56,8 +58,8 @@ class PeronaMalikAnisotropicDiffusion(tomviz.operators.CancelableOperator):
 
             self.progress.message = "Saving results"
 
-            itkutils.set_array_from_itk_image(dataset,
-                                              diffusion_filter.GetOutput())
+            itkutils.set_itk_image_on_dataset(diffusion_filter.GetOutput(),
+                                              dataset)
 
             self.progress.value = STEP_PCT[3]
         except Exception as exc:

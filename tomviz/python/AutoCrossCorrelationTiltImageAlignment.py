@@ -5,12 +5,12 @@ import tomviz.operators
 
 class CrossCorrelationAlignmentOperator(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset):
+    def transform(self, dataset):
         """Automatically align tilt images by cross-correlation"""
         self.progress.maximum = 1
 
-        tiltSeries = utils.get_array(dataset).astype(float)
-        tiltAngles = utils.get_tilt_angles(dataset)
+        tiltSeries = dataset.active_scalars.astype(float)
+        tiltAngles = dataset.tilt_angles
 
         # determine reference image index
         zeroDegreeTiltImage = None
@@ -64,7 +64,7 @@ class CrossCorrelationAlignmentOperator(tomviz.operators.CancelableOperator):
             step += 1
             self.progress.value = step
 
-        utils.set_array(dataset, tiltSeries)
+        dataset.active_scalars = tiltSeries
 
         # Assign Negative Shifts when Shift > N/2.
         indices_X = np.where(offsets[:, 0] > tiltSeries.shape[0] / 2)

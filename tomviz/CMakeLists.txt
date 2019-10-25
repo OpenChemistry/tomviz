@@ -498,6 +498,7 @@ set(tomviz_python_modules
   __init__.py
   _internal.py
   operators.py
+  internal_dataset.py
   itkutils.py
   utils.py
   web.py

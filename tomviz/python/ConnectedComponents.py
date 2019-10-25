@@ -3,7 +3,7 @@ import tomviz.operators
 
 class ConnectedComponents(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset, background_value=0):
+    def transform(self, dataset, background_value=0):
         """Converts a label map of connected components of foreground-valued
         voxels in the input image to a label map where each connected component
         has a unique label. Foreground voxels have any value other than the

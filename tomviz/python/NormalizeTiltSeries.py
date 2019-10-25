@@ -1,12 +1,11 @@
-def transform_scalars(dataset):
+def transform(dataset):
     """
     Normalize tilt series so that each tilt image has the same total intensity.
     """
 
-    from tomviz import utils
     import numpy as np
 
-    data = utils.get_array(dataset) # Get data as numpy array
+    data = dataset.active_scalars # Get data as numpy array
 
     if data is None: # Check if data exists
         raise RuntimeError("No data array found!")
@@ -20,4 +19,4 @@ def transform_scalars(dataset):
         # Normalize each tilt image.
         data[:, :, i] = data[:, :, i] / np.sum(data[:, :, i]) * intensity
 
-    utils.set_array(dataset, data)
+    dataset.active_scalars = data

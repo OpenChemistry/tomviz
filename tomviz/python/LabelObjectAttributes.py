@@ -3,7 +3,7 @@ import tomviz.operators
 
 class LabelObjectAttributes(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset):
+    def transform(self, dataset):
         """Computes certain attributes of labeled objects, including surface
         area, volume, surface-area-to-volume ratio, and centroid.
         """
@@ -17,7 +17,7 @@ class LabelObjectAttributes(tomviz.operators.CancelableOperator):
         STEP_PCT = [10, 20, 80, 90, 100]
 
         try:
-            from vtkmodules.util.vtkConstants import VTK_FLOAT, VTK_DOUBLE
+            import numpy as np
             from tomviz import itkutils
             from tomviz import utils
         except Exception as exc:
@@ -26,8 +26,7 @@ class LabelObjectAttributes(tomviz.operators.CancelableOperator):
 
         returnValues = None
 
-        scalarType = dataset.GetScalarType()
-        if scalarType == VTK_FLOAT or scalarType == VTK_DOUBLE:
+        if np.issubdtype(dataset.active_scalars.dtype, np.floating):
             raise Exception(
                 "Label Object Attributes works only on \
                  images with integral types.")

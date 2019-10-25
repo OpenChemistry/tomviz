@@ -3,7 +3,7 @@ import tomviz.operators
 
 class LabelObjectDistanceFromPrincipalAxis(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset, label_value=1, principal_axis=0):
+    def transform(self, dataset, label_value=1, principal_axis=0):
         """Computes the distance from the centroid of each connected component
         in the label object with the given label_value to the given principal
         axis and store that distance in each voxel of the label object connected
@@ -11,6 +11,7 @@ class LabelObjectDistanceFromPrincipalAxis(tomviz.operators.CancelableOperator):
         second, and 2 is third.
         """
 
+        import copy
         import numpy as np
         from tomviz import itkutils
         from tomviz import utils
@@ -20,33 +21,15 @@ class LabelObjectDistanceFromPrincipalAxis(tomviz.operators.CancelableOperator):
 
         STEP_PCT = [20, 60, 80, 100]
 
-        fd = dataset.GetFieldData()
-        axis_array = fd.GetArray('PrincipalAxes')
-        assert axis_array is not None, \
-            "Dataset does not have a PrincipalAxes field data array"
-        assert axis_array.GetNumberOfTuples() == 3, \
-            "PrincipalAxes array requires 3 tuples"
-        assert axis_array.GetNumberOfComponents() == 3, \
-            "PrincipalAxes array requires 3 components"
-        assert principal_axis >= 0 and principal_axis <= 2, \
-            "Invalid principal axis. Must be in range [0, 2]."
-
-        axis = np.array(axis_array.GetTuple(principal_axis))
-
-        center_array = fd.GetArray('Center')
-        assert center_array is not None, \
-            "Dataset does not have a Center field data array"
-        assert center_array.GetNumberOfTuples() == 1, \
-            "Center array requires 1 tuple"
-        assert center_array.GetNumberOfComponents() == 3, \
-            "Center array requires 3 components"
-
-        center = np.array(center_array.GetTuple(0))
+        # These are obtained from the vtkDataObject
+        axis = utils.get_principal_axes(dataset, principal_axis)
+        center = utils.get_center(dataset)
 
         # Blank out the undesired label values
-        scalars = utils.get_scalars(dataset)
+        data_shape = dataset.active_scalars.shape
+        scalars = dataset.active_scalars.flatten(order='F')
         scalars[scalars != label_value] = 0
-        utils.set_scalars(dataset, scalars)
+        dataset.active_scalars = scalars.reshape(data_shape, order='F')
         self.progress.value = STEP_PCT[0]
 
         # Get connected components of voxels labeled by label value
@@ -69,7 +52,7 @@ class LabelObjectDistanceFromPrincipalAxis(tomviz.operators.CancelableOperator):
 
         # Map from label value to distance from principal axis. Used later to
         # fill in distance array.
-        labels = utils.get_scalars(dataset)
+        labels = dataset.active_scalars.flatten(order='F')
         max_label = np.max(labels)
         label_value_to_distance = [0 for i in range(max_label + 1)]
         for i in range(0, num_label_objects):
@@ -83,13 +66,11 @@ class LabelObjectDistanceFromPrincipalAxis(tomviz.operators.CancelableOperator):
             d = np.linalg.norm(v - dot*axis)
             label_value_to_distance[label_object.GetLabel()] = d
 
-        distance = np.zeros(dataset.GetNumberOfPoints())
+        distance = np.zeros(dataset.active_scalars.size)
         for i in range(len(labels)):
             distance[i] = label_value_to_distance[labels[i]]
 
         self.progress.value = STEP_PCT[3]
 
-        import vtk.util.numpy_support as np_s
-        distance_array = np_s.numpy_to_vtk(distance, deep=1)
-        distance_array.SetName('Distance')
-        dataset.GetPointData().SetScalars(distance_array)
+        dataset.active_scalars = copy.deepcopy(distance.reshape(data_shape,
+                                                                order='F'))

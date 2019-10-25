@@ -1,11 +1,10 @@
-def transform_scalars(dataset):
+def transform(dataset):
     """Calculate gradient magnitude of each tilt image using Sobel operator"""
 
-    from tomviz import utils
     import numpy as np
     import scipy.ndimage.filters
 
-    array = utils.get_array(dataset)
+    array = dataset.active_scalars
     array = array.astype(np.float32)
 
     # Transform the dataset along the third axis.
@@ -20,4 +19,4 @@ def transform_scalars(dataset):
     result = np.hypot(aaSobelX, aaSobelY)
 
     # Set the result as the new scalars.
-    utils.set_array(dataset, result)
+    dataset.active_scalars = result

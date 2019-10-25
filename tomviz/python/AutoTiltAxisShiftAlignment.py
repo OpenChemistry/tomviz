@@ -5,15 +5,14 @@ import tomviz.operators
 
 class AutoTiltAxisShiftAlignmentOperator(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset):
+    def transform(self, dataset):
         """Automatic align the tilt axis to the center of images"""
         self.progress.maximum = 1
 
-        from tomviz import utils
         # Get Tilt angles
-        tilt_angles = utils.get_tilt_angles(dataset)
+        tilt_angles = dataset.tilt_angles
 
-        tiltSeries = utils.get_array(dataset)
+        tiltSeries = dataset.active_scalars
         if tiltSeries is None:
             raise RuntimeError("No scalars found!")
 
@@ -57,7 +56,7 @@ class AutoTiltAxisShiftAlignmentOperator(tomviz.operators.CancelableOperator):
         result = np.asfortranarray(result)
 
         # Set the result as the new scalars.
-        utils.set_array(dataset, result)
+        dataset.active_scalars = result
 
 
 def wbp2(sinogram, angles, N=None, filter="ramp", interp="linear"):

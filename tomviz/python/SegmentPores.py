@@ -268,7 +268,7 @@ def opening_by_reconstruction(operator, step_pct, input_image,
 
 class SegmentPores(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset, minimum_radius=0.5, maximum_radius=6.):
+    def transform(self, dataset, minimum_radius=0.5, maximum_radius=6.):
         """Segment pores. The pore size must be greater than the minimum radius
         and less than the maximum radius.  Pores will be separated according to
         the minimum radius."""
@@ -283,9 +283,7 @@ class SegmentPores(tomviz.operators.CancelableOperator):
 
         try:
             import itk
-            from vtkmodules.vtkCommonDataModel import vtkImageData
             from tomviz import itkutils
-            from tomviz import utils
             import numpy as np
         except Exception as exc:
             print("Could not import necessary module(s)")
@@ -301,7 +299,7 @@ class SegmentPores(tomviz.operators.CancelableOperator):
             self.progress.message = "Converting data to ITK image"
 
             # Get the ITK image
-            itk_input_image = itkutils.convert_vtk_to_itk_image(dataset)
+            itk_input_image = itkutils.dataset_to_itk_image(dataset)
             self.progress.value = next(step_pct)
 
             # Reduce noise
@@ -356,14 +354,8 @@ class SegmentPores(tomviz.operators.CancelableOperator):
 
             self.progress.message = "Saving results"
 
-            label_buffer = itk.PyBuffer[type(opened)] \
-                .GetArrayFromImage(opened)
-
-            # temp
-            label_buffer = label_buffer.copy()
-            label_map_dataset = vtkImageData()
-            label_map_dataset.CopyStructure(dataset)
-            utils.set_array(label_map_dataset, label_buffer, isFortran=False)
+            label_map_dataset = dataset.create_child_dataset()
+            itkutils.set_itk_image_on_dataset(opened, label_map_dataset)
 
             # Set up dictionary to return operator results
             returnValues = {}

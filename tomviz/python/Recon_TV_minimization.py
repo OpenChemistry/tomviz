@@ -1,25 +1,24 @@
 import numpy as np
 import scipy.sparse as ss
-from tomviz import utils
 import tomviz.operators
 import time
 
 
 class ReconTVOperator(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset, Niter=10, Nupdates=0):
+    def transform(self, dataset, Niter=10, Nupdates=0):
         """3D Reconstruct from a tilt series using simple TV minimzation"""
         self.progress.maximum = 1
 
         # Get Tilt angles
-        tiltAngles = utils.get_tilt_angles(dataset)
+        tiltAngles = dataset.tilt_angles
 
         #remove zero tilt anlges
         if np.count_nonzero(tiltAngles) < tiltAngles.size:
             tiltAngles = tiltAngles + 0.001
 
         # Get Tilt Series
-        tiltSeries = utils.get_array(dataset)
+        tiltSeries = dataset.active_scalars
         (Nslice, Nray, Nproj) = tiltSeries.shape
 
         # Determine the slices for live updates.
@@ -52,8 +51,7 @@ class ReconTVOperator(tomviz.operators.CancelableOperator):
         etcMessage = 'Estimated time to complete: n/a'
 
         #Create child dataset for recon
-        child = utils.make_child_dataset(dataset)
-        utils.mark_as_volume(child)
+        child = dataset.create_child_dataset()
 
         for i in range(Niter): #main loop
 
@@ -94,7 +92,7 @@ class ReconTVOperator(tomviz.operators.CancelableOperator):
 
             #Update for XX iterations.
             if Nupdates != 0 and (i + 1) % Nupdates == 0:
-                utils.set_array(child, recon)
+                child.active_scalars = recon
                 self.progress.data = child
 
             if i != (Niter - 1):
@@ -129,7 +127,7 @@ class ReconTVOperator(tomviz.operators.CancelableOperator):
                     recon = r_max*dPOCS/dg*(recon - recon_temp) + recon_temp
 
         # One last update of the child data.
-        utils.set_array(child, recon) #add recon to child
+        child.active_scalars = recon #add recon to child
         self.progress.data = child
 
         returnValues = {}

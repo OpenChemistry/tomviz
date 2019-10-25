@@ -5,6 +5,11 @@
 # It is released under the 3-Clause BSD License, see "LICENSE".
 ###############################################################################
 
+from tomviz._internal import in_application
+from tomviz._internal import require_internal_mode
+from tomviz._internal import with_dataset
+from tomviz._internal import with_vtk_dataobject
+
 # Dictionary going from VTK array type to ITK type
 _vtk_to_itk_types = None
 
@@ -54,6 +59,8 @@ def vtk_cast_map():
     """Set up mapping between VTK array numeric types to VTK numeric types
     that correspond to supported ITK numeric ctypes supported by the ITK
     wrapping."""
+    require_internal_mode()
+
     global _vtk_cast_types
 
     if _vtk_cast_types is None:
@@ -168,32 +175,33 @@ def get_python_voxel_type(dataset):
     The dataset can be either a VTK dataset or an ITK image.
     """
 
-    # Try treating dataset as a VTK data set first.
-    try:
-        # Set up map between VTK data type and Python type
-        global _vtk_to_python_types
+    if in_application():
+        # Try treating dataset as a VTK data set first.
+        try:
+            # Set up map between VTK data type and Python type
+            global _vtk_to_python_types
 
-        if _vtk_to_python_types is None:
-            from vtkmodules.util import vtkConstants
-            _vtk_to_python_types = {
-                vtkConstants.VTK_UNSIGNED_CHAR: int,
-                vtkConstants.VTK_CHAR: int,
-                vtkConstants.VTK_UNSIGNED_SHORT: int,
-                vtkConstants.VTK_SHORT: int,
-                vtkConstants.VTK_UNSIGNED_INT: int,
-                vtkConstants.VTK_INT: int,
-                vtkConstants.VTK_UNSIGNED_LONG: int,
-                vtkConstants.VTK_LONG: int,
-                vtkConstants.VTK_FLOAT: float,
-                vtkConstants.VTK_DOUBLE: float
-            }
+            if _vtk_to_python_types is None:
+                from vtkmodules.util import vtkConstants
+                _vtk_to_python_types = {
+                    vtkConstants.VTK_UNSIGNED_CHAR: int,
+                    vtkConstants.VTK_CHAR: int,
+                    vtkConstants.VTK_UNSIGNED_SHORT: int,
+                    vtkConstants.VTK_SHORT: int,
+                    vtkConstants.VTK_UNSIGNED_INT: int,
+                    vtkConstants.VTK_INT: int,
+                    vtkConstants.VTK_UNSIGNED_LONG: int,
+                    vtkConstants.VTK_LONG: int,
+                    vtkConstants.VTK_FLOAT: float,
+                    vtkConstants.VTK_DOUBLE: float
+                }
 
-        pd = dataset.GetPointData()
-        scalars = pd.GetScalars()
+            pd = dataset.GetPointData()
+            scalars = pd.GetScalars()
 
-        return _vtk_to_python_types[scalars.GetDataType()]
-    except AttributeError:
-        pass
+            return _vtk_to_python_types[scalars.GetDataType()]
+        except AttributeError:
+            pass
 
     # If the above fails, treat dataset as an ITK image.
     try:
@@ -229,6 +237,7 @@ def get_python_voxel_type(dataset):
         print(attribute_error)
 
 
+@with_vtk_dataobject
 def convert_vtk_to_itk_image(vtk_image_data, itk_pixel_type=None):
     """Get an ITK image from the provided vtkImageData object.
     This image can be passed to ITK filters."""
@@ -294,9 +303,9 @@ def convert_vtk_to_itk_image(vtk_image_data, itk_pixel_type=None):
     return itk_image
 
 
-def set_array_from_itk_image(dataset, itk_image):
-    """Set dataset array from an ITK image."""
-
+@with_vtk_dataobject
+def set_array_from_itk_image(dataobject, itk_image):
+    """Set dataobject array from an ITK image."""
     itk_output_image_type = type(itk_image)
 
     # Save the VTKGlue optimization for later
@@ -321,9 +330,10 @@ def set_array_from_itk_image(dataset, itk_image):
     result = itk.PyBuffer[
         itk_output_image_type].GetArrayFromImage(itk_image)
     result = result.copy()
-    utils.set_array(dataset, result, isFortran=False)
+    utils.set_array(dataobject, result, isFortran=False)
 
 
+@with_dataset
 def get_label_object_attributes(dataset, progress_callback=None):
     """Compute shape attributes of integer-labeled objects in a dataset. Returns
     an ITK shape label map. An optional progress_callback function can be passed
@@ -336,7 +346,7 @@ def get_label_object_attributes(dataset, progress_callback=None):
         import itk
 
         # Get an ITK image from the data set
-        itk_image = convert_vtk_to_itk_image(dataset)
+        itk_image = dataset_to_itk_image(dataset)
         itk_image_type = type(itk_image)
 
         # Get an appropriate LabelImageToShapelLabelMapFilter type for the
@@ -376,6 +386,7 @@ def get_label_object_attributes(dataset, progress_callback=None):
         raise(exc)
 
 
+@with_vtk_dataobject
 def _get_itk_image_type(vtk_image_data):
     """
     Get an ITK image type corresponding to the provided vtkImageData object.
@@ -410,3 +421,30 @@ def observe_filter_progress(transform, filter, start_pct, end_pct):
     progress_observer = itk.PyCommand.New()
     progress_observer.SetCommandCallable(progress_func)
     filter.AddObserver(itk.ProgressEvent(), progress_observer)
+
+
+@with_dataset
+def dataset_to_itk_image(dataset):
+
+    import itk
+
+    itk_image = itk.GetImageViewFromArray(dataset.active_scalars)
+
+    if dataset.spacing is not None:
+        itk_image.SetSpacing(dataset.spacing)
+
+    return itk_image
+
+
+def set_itk_image_on_dataset(itk_image, dataset, dtype=None):
+    # Write the itk image data to the dataset
+
+    import itk
+
+    if dtype is None:
+        array = itk.GetArrayFromImage(itk_image)
+    else:
+        array = itk.PyBuffer[dtype].GetArrayFromImage(itk_image)
+
+    # Transpose the data to Fortran indexing
+    dataset.active_scalars = array.transpose([2, 1, 0])

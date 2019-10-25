@@ -29,6 +29,8 @@ class capsule;
 
 namespace tomviz {
 
+class DataSource;
+
 class Python
 {
 
@@ -54,6 +56,7 @@ public:
     Object(const Object& other);
     Object(const QString& str);
     Object(const Variant& value);
+    Object(const DataSource& source);
     Object(PyObject* obj);
 
     Object& operator=(const Object& other);
@@ -69,6 +72,9 @@ public:
     QString toString() const;
     Dict toDict();
     List toList();
+
+    Object getAttr(const QString& name);
+
     virtual ~Object();
 
   protected:
@@ -127,6 +133,7 @@ public:
     Object call();
     Object call(Tuple& args);
     Object call(Tuple& args, Dict& kwargs);
+    QString toString();
   };
 
   class Module : public Object
@@ -145,6 +152,9 @@ public:
     static Object GetObjectFromPointer(vtkObjectBase* ptr);
     static vtkObjectBase* GetPointerFromObject(Object obj,
                                                const char* classname);
+    // Performs conversions necessary to get a vtkDataObject, and
+    // then returns the pointer.
+    static vtkObjectBase* convertToDataObject(Object obj);
   };
 
   static void initialize();
@@ -177,6 +187,9 @@ public:
   /// Prepends the path to the sys.path variable calls
   /// vtkPythonPythonInterpreter::PrependPythonPath(...)  to do the work.
   static void prependPythonPath(std::string dir);
+
+  /// Create an internal Dataset object for operators to use
+  static Object createDataset(vtkObjectBase* data, const DataSource& source);
 
 private:
   vtkPythonScopeGilEnsurer* m_ensurer = nullptr;

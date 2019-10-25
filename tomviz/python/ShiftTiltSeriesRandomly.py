@@ -1,14 +1,13 @@
 import numpy as np
-from tomviz import utils
 import tomviz.operators
 
 
 class RandomTiltSeriesShiftOperator(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset, maxShift=1):
+    def transform(self, dataset, maxShift=1):
         """Apply random integer shifts to tilt images"""
 
-        tiltSeries = utils.get_array(dataset)
+        tiltSeries = dataset.active_scalars
         if tiltSeries is None:
             raise RuntimeError("No scalars found!")
 
@@ -25,4 +24,4 @@ class RandomTiltSeriesShiftOperator(tomviz.operators.CancelableOperator):
             step += 1
             self.progress.value = step
 
-        utils.set_array(dataset, tiltSeries)
+        dataset.active_scalars = tiltSeries
