@@ -19,12 +19,12 @@ public:
   virtual ~Hdf5SubsampleWidget();
 
   // For setting defaults
-  void setStride(int i);
+  void setStrides(int s[3]);
   void setBounds(int bs[6]);
 
   // For getting the results
   void bounds(int bs[6]) const;
-  int stride() const;
+  void strides(int s[3]) const;
 
 private slots:
   void valueChanged();

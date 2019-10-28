@@ -202,8 +202,8 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     vtkNew<vtkImageData> imageData;
     if (options.contains("subsampleSettings")) {
       // Before we read into the image data, set subsample settings
-      emdOptions["subsampleStride"] =
-        options["subsampleSettings"].toObject()["stride"].toVariant();
+      emdOptions["subsampleStrides"] =
+        options["subsampleSettings"].toObject()["strides"].toVariant();
       emdOptions["subsampleVolumeBounds"] =
         options["subsampleSettings"].toObject()["volumeBounds"].toVariant();
       emdOptions["askForSubsample"] = false;
@@ -220,8 +220,8 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     QVariantMap hdf5Options;
     if (options.contains("subsampleSettings")) {
       // Before we read into the image data, set subsample settings
-      hdf5Options["subsampleStride"] =
-        options["subsampleSettings"].toObject()["stride"].toVariant();
+      hdf5Options["subsampleStrides"] =
+        options["subsampleSettings"].toObject()["strides"].toVariant();
       hdf5Options["subsampleVolumeBounds"] =
         options["subsampleSettings"].toObject()["volumeBounds"].toVariant();
       hdf5Options["askForSubsample"] = false;

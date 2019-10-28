@@ -68,12 +68,27 @@ bool DataExchangeFormat::read(const std::string& fileName,
 
   dataSource->setData(image);
 
+  // Use the same strides and volume bounds for the dark and white data,
+  // except for the tilt axis.
+  QVariantMap darkWhiteOptions = options;
+  int strides[3];
+  int bs[6];
+  dataSource->subsampleStrides(strides);
+  dataSource->subsampleVolumeBounds(bs);
+
+  QVariantList stridesList = { 1, strides[1], strides[2] };
+  QVariantList boundsList = { 0, 1, bs[2], bs[3], bs[4], bs[5] };
+
+  darkWhiteOptions["subsampleStrides"] = stridesList;
+  darkWhiteOptions["subsampleVolumeBounds"] = boundsList;
+  darkWhiteOptions["askForSubsample"] = false;
+
   // Read in the dark and white image data as well
   vtkNew<vtkImageData> darkImage, whiteImage;
-  readDark(fileName, darkImage, options);
+  readDark(fileName, darkImage, darkWhiteOptions);
   dataSource->setDarkData(std::move(darkImage));
 
-  readWhite(fileName, whiteImage, options);
+  readWhite(fileName, whiteImage, darkWhiteOptions);
   dataSource->setWhiteData(std::move(whiteImage));
 
   QVector<double> angles = readTheta(fileName, options);

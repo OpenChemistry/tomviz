@@ -136,11 +136,11 @@ public:
   /// Set whether the data was subsampled while reading
   void setWasSubsampled(bool b);
 
-  /// Get the stride used to generate the subsample
-  int subsampleStride() const;
+  /// Get the strides used to generate the subsample
+  void subsampleStrides(int s[3]) const;
 
-  /// Set the stride used to generate the subsample
-  void setSubsampleStride(int i);
+  /// Set the strides used to generate the subsample
+  void setSubsampleStrides(int s[3]);
 
   /// Get the volume bounds used to generate the subsample
   void subsampleVolumeBounds(int bs[6]) const;
@@ -276,11 +276,11 @@ public:
   /// Set whether the data was subsampled while reading
   static void setWasSubsampled(vtkDataObject* image, bool b);
 
-  /// Get the stride used to generate the subsample
-  static int subsampleStride(vtkDataObject* image);
+  /// Get the strides used to generate the subsample
+  static void subsampleStrides(vtkDataObject* image, int s[3]);
 
-  /// Set the stride used to generate the subsample
-  static void setSubsampleStride(vtkDataObject* image, int i);
+  /// Set the strides used to generate the subsample
+  static void setSubsampleStrides(vtkDataObject* image, int s[3]);
 
   /// Get the volume bounds used to generate the subsample
   static void subsampleVolumeBounds(vtkDataObject* image, int bs[6]);
@@ -345,14 +345,14 @@ inline void DataSource::setWasSubsampled(bool b)
   setWasSubsampled(dataObject(), b);
 }
 
-inline int DataSource::subsampleStride() const
+inline void DataSource::subsampleStrides(int s[3]) const
 {
-  return subsampleStride(dataObject());
+  subsampleStrides(dataObject(), s);
 }
 
-inline void DataSource::setSubsampleStride(int i)
+inline void DataSource::setSubsampleStrides(int s[3])
 {
-  setSubsampleStride(dataObject(), i);
+  setSubsampleStrides(dataObject(), s);
 }
 
 inline void DataSource::subsampleVolumeBounds(int bs[6]) const

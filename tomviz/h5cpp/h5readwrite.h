@@ -194,10 +194,10 @@ public:
    * @param data A pointer to a block of memory with a size large enough
    *             to hold the data (size >= dim1 * dim2 * dim3...). This
    *             will be set to the data read from the data set.
-   * @param stride A stride that will be applied to all dimensions when
-   *               reading the data. If used, ensure that the dimensions
-   *               of @p data are all divided by the stride with integer
-   *               division (i. e., dims[i] /= stride).
+   * @param strides The strides that will be applied when reading the
+   *                data. If used, ensure that the dimensions of @p data
+   *                are all divided by the strides with integer division
+   *                (i. e., dims[i] /= strides[i]).
    * @param start The start of the block of data to be read. If used,
    *              must have a length of ndims. If unspecified, the
    *              origin will be used.
@@ -207,7 +207,7 @@ public:
    * @return True on success, false on failure.
    */
   bool readData(const std::string& path, const DataType& type, void* data,
-                int stride = 1, size_t* start = nullptr,
+                int* strides = nullptr, size_t* start = nullptr,
                 size_t* counts = nullptr);
 
   /**

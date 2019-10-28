@@ -70,19 +70,19 @@ bool GenericHDF5Format::addScalarArray(h5::H5ReadWrite& reader,
   // Get the dimensions
   std::vector<int> dims = reader.getDimensions(path);
 
-  // Set up the stride and counts
-  int stride = 1;
+  // Set up the strides and counts
+  int strides[3] = { 1, 1, 1 };
   size_t start[3], counts[3];
   if (DataSource::wasSubsampled(image)) {
     // If the main image was subsampled, we need to use the same
     // subsampling for the scalars
-    stride = DataSource::subsampleStride(image);
+    DataSource::subsampleStrides(image, strides);
     int bs[6];
     DataSource::subsampleVolumeBounds(image, bs);
 
     for (int i = 0; i < 3; ++i) {
       start[i] = static_cast<size_t>(bs[i * 2]);
-      counts[i] = (bs[i * 2 + 1] - start[i]) / stride;
+      counts[i] = (bs[i * 2 + 1] - start[i]) / strides[i];
     }
   } else {
     for (int i = 0; i < 3; ++i) {
@@ -100,7 +100,7 @@ bool GenericHDF5Format::addScalarArray(h5::H5ReadWrite& reader,
   tmp->SetDimensions(&vtkCounts[0]);
   tmp->AllocateScalars(vtkDataType, 1);
 
-  if (!reader.readData(path, type, tmp->GetScalarPointer(), stride, start,
+  if (!reader.readData(path, type, tmp->GetScalarPointer(), strides, start,
                        counts)) {
     std::cerr << "Failed to read the data\n";
     return false;
@@ -152,7 +152,7 @@ bool GenericHDF5Format::readVolume(h5::H5ReadWrite& reader,
   std::vector<int> dims = reader.getDimensions(path);
 
   int bs[6] = { -1, -1, -1, -1, -1, -1 };
-  int stride = 1;
+  int strides[3] = { 1, 1, 1 };
   if (options.contains("subsampleVolumeBounds")) {
     // Get the subsample volume bounds if the caller specified them
     QVariantList list = options["subsampleVolumeBounds"].toList();
@@ -168,14 +168,17 @@ bool GenericHDF5Format::readVolume(h5::H5ReadWrite& reader,
     }
   }
 
-  if (options.contains("subsampleStride")) {
-    // Get the stride if the caller specified it
-    stride = options["subsampleStride"].toInt();
-    if (stride == 0)
-      stride = 1;
+  if (options.contains("subsampleStrides")) {
+    // Get the strides if the caller specified them
+    QVariantList list = options["subsampleStrides"].toList();
+    for (int i = 0; i < list.size() && i < 3; ++i) {
+      strides[i] = list[i].toInt();
+      if (strides[i] < 1)
+        strides[i] = 1;
+    }
 
     DataSource::setWasSubsampled(image, true);
-    DataSource::setSubsampleStride(image, stride);
+    DataSource::setSubsampleStrides(image, strides);
   }
 
   bool askForSubsample = false;
@@ -206,7 +209,8 @@ bool GenericHDF5Format::readVolume(h5::H5ReadWrite& reader,
 
     if (DataSource::wasSubsampled(image)) {
       // If it was previously subsampled, start with the previous values
-      widget.setStride(DataSource::subsampleStride(image));
+      DataSource::subsampleStrides(image, strides);
+      widget.setStrides(strides);
 
       DataSource::subsampleVolumeBounds(image, bs);
       widget.setBounds(bs);
@@ -227,10 +231,10 @@ bool GenericHDF5Format::readVolume(h5::H5ReadWrite& reader,
       return false;
 
     widget.bounds(bs);
-    stride = widget.stride();
+    widget.strides(strides);
 
     DataSource::setWasSubsampled(image, true);
-    DataSource::setSubsampleStride(image, stride);
+    DataSource::setSubsampleStrides(image, strides);
     DataSource::setSubsampleVolumeBounds(image, bs);
   }
 
@@ -243,12 +247,12 @@ bool GenericHDF5Format::readVolume(h5::H5ReadWrite& reader,
     }
   }
 
-  // Set up the stride and counts
+  // Set up the strides and counts
   size_t start[3] = { static_cast<size_t>(bs[0]), static_cast<size_t>(bs[2]),
                       static_cast<size_t>(bs[4]) };
   size_t counts[3];
   for (size_t i = 0; i < 3; ++i)
-    counts[i] = (bs[i * 2 + 1] - start[i]) / stride;
+    counts[i] = (bs[i * 2 + 1] - start[i]) / strides[i];
 
   // vtk requires the counts to be an int array
   int vtkCounts[3];
@@ -261,7 +265,7 @@ bool GenericHDF5Format::readVolume(h5::H5ReadWrite& reader,
   image->SetDimensions(&vtkCounts[0]);
   image->AllocateScalars(vtkDataType, 1);
 
-  if (!reader.readData(path, type, tmp->GetScalarPointer(), stride, start,
+  if (!reader.readData(path, type, tmp->GetScalarPointer(), strides, start,
                        counts)) {
     std::cerr << "Failed to read the data\n";
     return false;
