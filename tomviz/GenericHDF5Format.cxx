@@ -137,6 +137,16 @@ bool GenericHDF5Format::isDataExchange(const std::string& fileName)
   return reader.isDataSet("/exchange/data");
 }
 
+bool GenericHDF5Format::isFxi(const std::string& fileName)
+{
+  using h5::H5ReadWrite;
+  H5ReadWrite::OpenMode mode = H5ReadWrite::OpenMode::ReadOnly;
+  H5ReadWrite reader(fileName.c_str(), mode);
+
+  // Look for a few keys, loosely defined BNL FXI data format.
+  return reader.isDataSet("/img_tomo") && reader.isDataSet("/img_bkg");
+}
+
 bool GenericHDF5Format::readVolume(h5::H5ReadWrite& reader,
                                    const std::string& path, vtkImageData* image,
                                    const QVariantMap& options)
