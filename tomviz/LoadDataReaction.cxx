@@ -8,6 +8,7 @@
 #include "DataSource.h"
 #include "EmdFormat.h"
 #include "FileFormatManager.h"
+#include "FxiFormat.h"
 #include "GenericHDF5Format.h"
 #include "ImageStackDialog.h"
 #include "ImageStackModel.h"
@@ -230,6 +231,13 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     if (GenericHDF5Format::isDataExchange(fileName.toStdString())) {
       dataSource = new DataSource(info.completeBaseName());
       DataExchangeFormat format;
+      if (!format.read(fileName.toLatin1().data(), dataSource, hdf5Options)) {
+        delete dataSource;
+        return nullptr;
+      }
+    } else if (GenericHDF5Format::isFxi(fileName.toStdString())) {
+      dataSource = new DataSource(info.completeBaseName());
+      FxiFormat format;
       if (!format.read(fileName.toLatin1().data(), dataSource, hdf5Options)) {
         delete dataSource;
         return nullptr;
