@@ -373,6 +373,7 @@ set(python_files
   Shift_Stack_Uniformly.py
   Shift3D.py
   Square_Root_Data.py
+  SwapAxes.py
   Subtract_TiltSer_Background.py
   Subtract_TiltSer_Background_Auto.py
   RemoveBadPixelsTiltSeries.py
@@ -445,6 +446,7 @@ set(json_files
   Recon_WBP.json
   Shift3D.json
   ShiftTiltSeriesRandomly.json
+  SwapAxes.json
   BinaryMinMaxCurvatureFlow.json
   SegmentParticles.json
   UnsharpMask.json

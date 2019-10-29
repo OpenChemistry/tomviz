@@ -1,0 +1,31 @@
+{
+  "name" : "Swap Axes",
+  "label" : "Swap Axes",
+  "description" : "Swap two axes in the dataset.",
+  "parameters" : [
+    {
+      "name" : "axis1",
+      "label" : "Axis1",
+      "description" : "First axis",
+      "type" : "enumeration",
+      "default" : 0,
+      "options" : [
+        {"X" : 0},
+        {"Y" : 1},
+        {"Z" : 2}
+      ]
+    },
+    {
+      "name" : "axis2",
+      "label" : "Axis2",
+      "description" : "Second axis",
+      "type" : "enumeration",
+      "default" : 2,
+      "options" : [
+        {"X" : 0},
+        {"Y" : 1},
+        {"Z" : 2}
+      ]
+    }
+  ]
+}
