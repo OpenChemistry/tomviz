@@ -50,11 +50,11 @@ class Dataset:
 
     @property
     def dark(self):
-        return np_s.vtk_to_numpy(self._data_source.dark_data)
+        return utils.get_array(self._data_source.dark_data)
 
     @property
     def white(self):
-        return np_s.vtk_to_numpy(self._data_source.white_data)
+        return utils.get_array(self._data_source.white_data)
 
     def create_child_dataset(self):
         new_data = utils.make_child_dataset(self._data_object)
