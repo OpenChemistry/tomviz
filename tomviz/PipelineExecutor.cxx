@@ -56,12 +56,11 @@ bool PipelineExecutor::cancel(Operator* op)
 class ExternalPipelineFuture : public Pipeline::Future
 {
 public:
-  ExternalPipelineFuture(QList<Operator*> operators,
-                         QObject* parent = nullptr);
+  ExternalPipelineFuture(QList<Operator*> operators, QObject* parent = nullptr);
 };
 
-ExternalPipelineFuture::ExternalPipelineFuture(
-  QList<Operator*> operators, QObject* parent)
+ExternalPipelineFuture::ExternalPipelineFuture(QList<Operator*> operators,
+                                               QObject* parent)
   : Pipeline::Future(operators, parent)
 {
 }
@@ -73,8 +72,8 @@ const char* ExternalPipelineExecutor::CONTAINER_MOUNT = "/tomviz";
 const char* ExternalPipelineExecutor::PROGRESS_PATH = "progress";
 
 Pipeline::Future* ExternalPipelineExecutor::execute(vtkDataObject* data,
-                                                  QList<Operator*> operators,
-                                                  int start, int end)
+                                                    QList<Operator*> operators,
+                                                    int start, int end)
 {
   if (end == -1) {
     end = operators.size();
@@ -196,10 +195,11 @@ ExternalPipelineExecutor::~ExternalPipelineExecutor() = default;
 
 ExternalPipelineExecutor::ExternalPipelineExecutor(Pipeline* pipeline)
   : PipelineExecutor(pipeline)
-{}
+{
+}
 
 void ExternalPipelineExecutor::displayError(const QString& title,
-                                          const QString& msg)
+                                            const QString& msg)
 {
   QMessageBox::critical(tomviz::mainWidget(), title, msg);
   qCritical() << msg;
@@ -234,7 +234,6 @@ QStringList ExternalPipelineExecutor::executorArgs(int start)
 
 void ExternalPipelineExecutor::pipelineStarted()
 {
-
 }
 
 void ExternalPipelineExecutor::operatorStarted(Operator* op)
@@ -303,7 +302,7 @@ void ExternalPipelineExecutor::operatorProgressStep(Operator* op, int step)
 }
 
 void ExternalPipelineExecutor::operatorProgressMessage(Operator* op,
-                                                     const QString& msg)
+                                                       const QString& msg)
 {
   op->setProgressMessage(msg);
 }
@@ -330,8 +329,7 @@ QString ExternalPipelineExecutor::originalFileName()
 {
   QString ext = ".emd";
   auto* dataSource = pipeline()->dataSource();
-  if (dataSource->darkData() && dataSource->whiteData())
-  {
+  if (dataSource->darkData() && dataSource->whiteData()) {
     // Let's write out to data exchange
     ext = ".h5";
   }

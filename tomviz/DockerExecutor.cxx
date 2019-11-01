@@ -4,9 +4,8 @@
 #include "DockerExecutor.h"
 
 #include "DockerUtilities.h"
-#include "Utilities.h"
 #include "ProgressDialog.h"
-
+#include "Utilities.h"
 
 namespace tomviz {
 

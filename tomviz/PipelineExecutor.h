@@ -6,15 +6,15 @@
 
 #include <QObject>
 
-#include "PipelineWorker.h"
 #include "Pipeline.h"
+#include "PipelineWorker.h"
 
 #include <QFile>
 #include <QFileSystemWatcher>
 #include <QLocalServer>
 #include <QLocalSocket>
-#include <QProcess>
 #include <QPointer>
+#include <QProcess>
 #include <QScopedPointer>
 #include <QSettings>
 #include <QTemporaryDir>
@@ -78,7 +78,8 @@ protected:
   virtual void operatorProgressMaximum(Operator* op, int max);
   virtual void operatorProgressStep(Operator* op, int step);
   virtual void operatorProgressMessage(Operator* op, const QString& msg);
-  virtual void operatorProgressData(Operator* op, vtkSmartPointer<vtkDataObject> data);
+  virtual void operatorProgressData(Operator* op,
+                                    vtkSmartPointer<vtkDataObject> data);
   virtual void pipelineStarted();
   virtual void reset();
 

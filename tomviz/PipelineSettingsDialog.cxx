@@ -10,9 +10,9 @@
 #include <QCheckBox>
 #include <QCloseEvent>
 #include <QDebug>
+#include <QFileDialog>
 #include <QMetaEnum>
 #include <QPushButton>
-#include <QFileDialog>
 #include <QPushButton>
 
 #include "PipelineManager.h"
@@ -67,8 +67,8 @@ PipelineSettingsDialog::PipelineSettingsDialog(QWidget* parent)
               m_executorTypeMetaEnum.keyToValue(text.toLatin1().data());
             m_ui->dockerGroupBox->setHidden(executionMode !=
                                             Pipeline::ExecutionMode::Docker);
-            m_ui->externalGroupBox->setHidden(executionMode !=
-                                              Pipeline::ExecutionMode::ExternalPython);
+            m_ui->externalGroupBox->setHidden(
+              executionMode != Pipeline::ExecutionMode::ExternalPython);
           });
 
   connect(this, &QDialog::accepted, this, [this]() {
@@ -88,7 +88,8 @@ PipelineSettingsDialog::PipelineSettingsDialog(QWidget* parent)
           []() { openHelpUrl("pipelines/#configuration"); });
 
   connect(m_ui->browseButton, &QPushButton::clicked, [this]() {
-    auto executable = QFileDialog::getOpenFileName(this, "Select Python executable");
+    auto executable =
+      QFileDialog::getOpenFileName(this, "Select Python executable");
     m_ui->externalLineEdit->setText(executable);
   });
 
@@ -145,12 +146,11 @@ void PipelineSettingsDialog::checkEnableOk()
 
   bool enabled = true;
   auto currentMode = m_executorTypeMetaEnum.keyToValue(
-        m_ui->modeComboBox->currentText().toLatin1().data());
+    m_ui->modeComboBox->currentText().toLatin1().data());
 
   if (currentMode == Pipeline::ExecutionMode::Docker) {
     enabled = !m_ui->dockerImageLineEdit->text().isEmpty();
-  }
-  else if (currentMode == Pipeline::ExecutionMode::ExternalPython) {
+  } else if (currentMode == Pipeline::ExecutionMode::ExternalPython) {
     enabled = !m_ui->externalLineEdit->text().isEmpty();
   }
 
@@ -166,10 +166,12 @@ bool PipelineSettingsDialog::validatePythonEnvironment()
   }
 
   auto baseDir = pythonExecutable.dir();
-  auto tomvizPipelineExecutable = QFileInfo(baseDir.filePath("tomviz-pipeline"));
+  auto tomvizPipelineExecutable =
+    QFileInfo(baseDir.filePath("tomviz-pipeline"));
   if (!tomvizPipelineExecutable.exists()) {
-    m_ui->errorLabel->setText("Unable to find tomviz-pipeline executable, please ensure " \
-            "tomviz package has been installed in python environment.");
+    m_ui->errorLabel->setText(
+      "Unable to find tomviz-pipeline executable, please ensure "
+      "tomviz package has been installed in python environment.");
     return false;
   }
 
@@ -187,7 +189,7 @@ void PipelineSettingsDialog::done(int r)
   }
 
   // Perform validation for external Python
-  if(QDialog::Accepted != r || validatePythonEnvironment()) {
+  if (QDialog::Accepted != r || validatePythonEnvironment()) {
     QDialog::done(r);
   }
 }

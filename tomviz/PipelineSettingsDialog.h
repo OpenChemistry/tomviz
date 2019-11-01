@@ -26,7 +26,7 @@ public:
   void readSettings();
 
 public slots:
-  void	done(int r) override;
+  void done(int r) override;
 
 private slots:
   void writeSettings();
