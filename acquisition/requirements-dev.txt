@@ -1,6 +1,6 @@
 pytest==3.0.6
 requests==2.20.0
-Pillow==4.2.1
+Pillow==6.2.0
 # Need this for testing so we can stop there server, change when the required
 # get into a release.
 https://github.com/bottlepy/bottle/archive/41ed6965.zip
