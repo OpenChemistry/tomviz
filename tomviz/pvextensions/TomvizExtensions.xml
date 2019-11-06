@@ -160,6 +160,9 @@
         floating point type) and then directly used as
         color.</Documentation>
       </IntVectorProperty>
+      <IntVectorProperty default_values="1" number_of_elements="1" name="ShowPlane">
+        <BooleanDomain name="bool"/>
+      </IntVectorProperty>
       <IntVectorProperty default_values="1" number_of_elements="1" name="ShowArrow">
         <BooleanDomain name="bool"/>
       </IntVectorProperty>

@@ -169,14 +169,15 @@ bool ModuleClip::setVisibility(bool val)
 {
   Q_ASSERT(m_widget);
   m_widget->SetEnabled(val ? 1 : 0);
-  // update the state of the arrow as well since it cannot update when the
-  // widget is not enabled
-  if (val) {
-    vtkSMPropertyHelper showProperty(m_propsPanelProxy, "ShowArrow");
+  // If the state of the plane is set to visible, update the state of the arrow
+  // as well since it cannot update when the widget is not enabled
+  vtkSMPropertyHelper showPlaneProperty(m_propsPanelProxy, "ShowPlane");
+  if (val && showPlaneProperty.GetAsInt()) {
+    vtkSMPropertyHelper showArrowProperty(m_propsPanelProxy, "ShowArrow");
     // Not this: it hides the plane as well as the arrow...
-    // Widget->SetEnabled(showProperty.GetAsInt());
-    m_widget->SetArrowVisibility(showProperty.GetAsInt());
-    m_widget->SetInteraction(showProperty.GetAsInt());
+    // Widget->SetEnabled(showArrowProperty.GetAsInt());
+    m_widget->SetArrowVisibility(showArrowProperty.GetAsInt());
+    m_widget->SetInteraction(showArrowProperty.GetAsInt());
   }
   val ? emit clipFilterUpdated(m_clippingPlane, false) : emit clipFilterUpdated(m_clippingPlane, true);
   return true;
@@ -204,6 +205,14 @@ void ModuleClip::addToPanel(QWidget* panel)
   container->setLayout(formLayout);
   layout->addWidget(container);
   formLayout->setContentsMargins(0, 0, 0, 0);
+
+  QCheckBox* showPlane = new QCheckBox("Show Plane");
+  formLayout->addRow(showPlane);
+  
+  m_Links.addPropertyLink(showPlane, "checked", SIGNAL(toggled(bool)),
+                        m_propsPanelProxy,
+                        m_propsPanelProxy->GetProperty("ShowPlane"), 0);
+  connect(showPlane, &QCheckBox::toggled, this, &ModuleClip::dataUpdated);
 
   m_directionCombo = new QComboBox();
   m_directionCombo->addItem("XY Plane", QVariant(Direction::XY));
@@ -242,6 +251,7 @@ void ModuleClip::addToPanel(QWidget* panel)
                           m_propsPanelProxy,
                           m_propsPanelProxy->GetProperty("ShowArrow"), 0);
   connect(showArrow, &QCheckBox::toggled, this, &ModuleClip::dataUpdated);
+  connect(showPlane, &QCheckBox::toggled, showArrow, &QCheckBox::setEnabled);
 
   QLabel* label = new QLabel("Point on Plane");
   layout->addWidget(label);
@@ -312,8 +322,11 @@ QJsonObject ModuleClip::serialize() const
   auto json = Module::serialize();
   auto props = json["properties"].toObject();
 
-  vtkSMPropertyHelper showProperty(m_propsPanelProxy, "ShowArrow");
-  props["showArrow"] = showProperty.GetAsInt() != 0;
+  vtkSMPropertyHelper showArrowProperty(m_propsPanelProxy, "ShowArrow");
+  props["showArrow"] = showArrowProperty.GetAsInt() != 0;
+
+  vtkSMPropertyHelper showPlaneProperty(m_propsPanelProxy, "ShowPlane");
+  props["showPlane"] = showPlaneProperty.GetAsInt() != 0;
 
   // Serialize the plane
   double point[3];
@@ -344,8 +357,10 @@ bool ModuleClip::deserialize(const QJsonObject& json)
   }
   if (json["properties"].isObject()) {
     auto props = json["properties"].toObject();
-    vtkSMPropertyHelper showProperty(m_propsPanelProxy, "ShowArrow");
-    showProperty.Set(props["showArrow"].toBool() ? 1 : 0);
+    vtkSMPropertyHelper showArrowProperty(m_propsPanelProxy, "ShowArrow");
+    showArrowProperty.Set(props["showArrow"].toBool() ? 1 : 0);
+    vtkSMPropertyHelper showPlaneProperty(m_propsPanelProxy, "ShowPlane");
+    showPlaneProperty.Set(props["showPlane"].toBool() ? 1 : 0);
     if (props.contains("origin") && props.contains("point1") &&
         props.contains("point2")) {
       auto o = props["origin"].toArray();
@@ -389,12 +404,12 @@ void ModuleClip::onPropertyChanged()
     return;
   }
   m_ignoreSignals = true;
-  vtkSMPropertyHelper showProperty(m_propsPanelProxy, "ShowArrow");
+  vtkSMPropertyHelper showArrowProperty(m_propsPanelProxy, "ShowArrow");
   if (m_widget->GetEnabled()) {
     // Not this: it hides the plane as well as the arrow...
-    // Widget->SetEnabled(showProperty.GetAsInt());
-    m_widget->SetArrowVisibility(showProperty.GetAsInt());
-    m_widget->SetInteraction(showProperty.GetAsInt());
+    // Widget->SetEnabled(showArrowProperty.GetAsInt());
+    m_widget->SetArrowVisibility(showArrowProperty.GetAsInt());
+    m_widget->SetInteraction(showArrowProperty.GetAsInt());
   }
   vtkSMPropertyHelper pointProperty(m_propsPanelProxy, "PointOnPlane");
   std::vector<double> centerPoint = pointProperty.GetDoubleArray();
@@ -406,6 +421,13 @@ void ModuleClip::onPropertyChanged()
   m_clippingPlane->SetNormal(&normalVector[0]);
   m_widget->UpdatePlacement();
   m_ignoreSignals = false;
+  vtkSMPropertyHelper showPlaneProperty(m_propsPanelProxy, "ShowPlane");
+  if (m_widget->GetEnabled()) {
+    m_widget->SetTextureVisibility(showPlaneProperty.GetAsInt());
+    m_widget->SetInteraction(showPlaneProperty.GetAsInt());
+    m_widget->GetPlaneProperty()->SetOpacity(showPlaneProperty.GetAsDouble());
+    m_widget->SetArrowVisibility(showPlaneProperty.GetAsInt());
+  }
 }
 
 void ModuleClip::onPlaneChanged()
@@ -485,7 +507,7 @@ void ModuleClip::onDirectionChanged(Direction direction)
   imageData()->GetDimensions(dims);
 
   double normal[3] = { 0, 0, 0 };
-  int planePosition = 0;
+  int planePosition = 1;
   int maxPlane = 0;
 
   normal[axis] = 1;
