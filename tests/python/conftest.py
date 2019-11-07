@@ -13,7 +13,7 @@ DATA_URL = 'https://data.kitware.com/api/v1/file'
 def test_state_file(tmpdir_factory):
     tmpdir = tmpdir_factory.mktemp('state')
 
-    _id = '5acbb5958d777f0685792521'
+    _id = '5dbca381e3566bda4b4f94f0'
     download_url = '%s/%s/download' % (DATA_URL, _id)
     cache_path = os.path.join(tempfile.gettempdir(), 'tomviz_test_cache')
     with diskcache.Cache(cache_path) as cache:
