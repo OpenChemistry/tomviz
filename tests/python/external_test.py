@@ -17,9 +17,9 @@ def test_external_pipeline(test_state_file, tmpdir):
         tomography = f['data/tomography']
         sha.update(tomography['data'][:])
 
-    excepted_sha = ('c9cc816ece3c32eda0b394a8a9242bbeb128e8ee7fa380d5aa731ab'
-                    'a8e2cc4b889ad508be94089c8961eeb97316b05855fe8f7df29c8d4'
-                    'ec496168afe3775955')
+    expected_sha = ('ae828cfdabffe364bc46d3c0229d3f1bfde4b9157bb3db0049803d8'
+                    '9ded713effb752ea2442e386cea6aabbfed85878f6fdd04ecc14ac8'
+                    '61f56ee4361b51efe7')
 
     # assert that we have the right output
-    assert sha.hexdigest() == excepted_sha
+    assert sha.hexdigest() == expected_sha

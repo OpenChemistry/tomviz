@@ -17,6 +17,8 @@ class DockerUtilitiesTest : public QObject
   Q_OBJECT
 
 private:
+  int m_invocationTimeout = 30000;
+
   docker::DockerRunInvocation* run(
     const QString& image, const QString& entryPoint = QString(),
     const QStringList& containerArgs = QStringList(),
@@ -27,7 +29,7 @@ private:
     QSignalSpy runError(runInvocation, &docker::DockerPullInvocation::error);
     QSignalSpy runFinished(runInvocation,
                            &docker::DockerPullInvocation::finished);
-    runFinished.wait();
+    runFinished.wait(m_invocationTimeout);
 
     return runInvocation;
   }
@@ -39,7 +41,7 @@ private:
                            &docker::DockerRemoveInvocation::error);
     QSignalSpy removeFinished(removeInvocation,
                               &docker::DockerRemoveInvocation::finished);
-    removeFinished.wait();
+    QVERIFY(removeFinished.wait(m_invocationTimeout));
     removeInvocation->deleteLater();
   }
 
@@ -50,7 +52,7 @@ private:
                                &docker::DockerPullInvocation::error);
     QSignalSpy alpinePullFinished(alpinePullInvocation,
                                   &docker::DockerPullInvocation::finished);
-    alpinePullFinished.wait();
+    QVERIFY(alpinePullFinished.wait(m_invocationTimeout));
   }
 
 private slots:
@@ -70,7 +72,8 @@ private slots:
     QSignalSpy runError(runInvocation, &docker::DockerPullInvocation::error);
     QSignalSpy runFinished(runInvocation,
                            &docker::DockerPullInvocation::finished);
-    runFinished.wait();
+
+    QVERIFY(runFinished.wait(m_invocationTimeout));
     QVERIFY(runError.isEmpty());
     QCOMPARE(runFinished.size(), 1);
     auto arguments = runFinished.takeFirst();
@@ -84,7 +87,7 @@ private slots:
     QSignalSpy logError(logInvocation, &docker::DockerLogsInvocation::error);
     QSignalSpy logFinished(logInvocation,
                            &docker::DockerLogsInvocation::finished);
-    logFinished.wait();
+    QVERIFY(logFinished.wait(m_invocationTimeout));
     QVERIFY(logError.isEmpty());
     QCOMPARE(logFinished.size(), 1);
     arguments = logFinished.takeFirst();
@@ -100,7 +103,7 @@ private slots:
     QSignalSpy pullError(pullInvocation, &docker::DockerPullInvocation::error);
     QSignalSpy pullFinished(pullInvocation,
                             &docker::DockerPullInvocation::finished);
-    pullFinished.wait();
+    QVERIFY(pullFinished.wait(m_invocationTimeout));
     QVERIFY(pullError.isEmpty());
     QCOMPARE(pullFinished.size(), 1);
     auto arguments = pullFinished.takeFirst();
@@ -128,7 +131,7 @@ private slots:
     QSignalSpy runError(runInvocation, &docker::DockerPullInvocation::error);
     QSignalSpy runFinished(runInvocation,
                            &docker::DockerPullInvocation::finished);
-    runFinished.wait();
+    QVERIFY(runFinished.wait(m_invocationTimeout));
     QVERIFY(runError.isEmpty());
     QCOMPARE(runFinished.size(), 1);
     auto arguments = runFinished.takeFirst();
@@ -148,7 +151,7 @@ private slots:
     QSignalSpy runError(runInvocation, &docker::DockerPullInvocation::error);
     QSignalSpy runFinished(runInvocation,
                            &docker::DockerPullInvocation::finished);
-    runFinished.wait();
+    QVERIFY(runFinished.wait(m_invocationTimeout));
     QVERIFY(runError.isEmpty());
     QCOMPARE(runFinished.size(), 1);
     auto arguments = runFinished.takeFirst();
@@ -172,7 +175,7 @@ private slots:
     QSignalSpy stopError(stopInvocation, &docker::DockerPullInvocation::error);
     QSignalSpy stopFinished(stopInvocation,
                             &docker::DockerPullInvocation::finished);
-    stopFinished.wait();
+    QVERIFY(stopFinished.wait(m_invocationTimeout));
     QVERIFY(stopError.isEmpty());
     QCOMPARE(stopFinished.size(), 1);
     auto arguments = stopFinished.takeFirst();
@@ -184,7 +187,7 @@ private slots:
                             &docker::DockerPullInvocation::error);
     QSignalSpy inspectFinished(inspectInvocation,
                                &docker::DockerPullInvocation::finished);
-    inspectFinished.wait();
+    QVERIFY(inspectFinished.wait(m_invocationTimeout));
     QVERIFY(inspectError.isEmpty());
     QCOMPARE(inspectFinished.size(), 1);
     arguments = inspectFinished.takeFirst();
@@ -201,12 +204,15 @@ private slots:
     QVERIFY(!containerId.isEmpty());
     runInvocation->deleteLater();
 
+    // Sleep for a second to let the previous container cleanup
+    QTest::qSleep(1000);
+
     auto inspectInvocation = docker::inspect(containerId);
     QSignalSpy inspectError(inspectInvocation,
                             &docker::DockerPullInvocation::error);
     QSignalSpy inspectFinished(inspectInvocation,
                                &docker::DockerPullInvocation::finished);
-    inspectFinished.wait();
+    QVERIFY(inspectFinished.wait(m_invocationTimeout));
     QVERIFY(inspectError.isEmpty());
     QCOMPARE(inspectFinished.size(), 1);
     auto arguments = inspectFinished.takeFirst();
@@ -224,12 +230,15 @@ private slots:
     QVERIFY(!containerId.isEmpty());
     runInvocation->deleteLater();
 
+    // Sleep for a second to let the previous container cleanup
+    QTest::qSleep(1000);
+
     auto removeInvocation = docker::remove(containerId);
     QSignalSpy removeError(removeInvocation,
                            &docker::DockerRemoveInvocation::error);
     QSignalSpy removeFinished(removeInvocation,
                               &docker::DockerRemoveInvocation::finished);
-    removeFinished.wait();
+    QVERIFY(removeFinished.wait(m_invocationTimeout));
     QVERIFY(removeError.isEmpty());
     QCOMPARE(removeFinished.size(), 1);
     removeInvocation->deleteLater();
@@ -239,7 +248,7 @@ private slots:
                             &docker::DockerPullInvocation::error);
     QSignalSpy inspectFinished(inspectInvocation,
                                &docker::DockerPullInvocation::finished);
-    inspectFinished.wait();
+    QVERIFY(inspectFinished.wait(m_invocationTimeout));
     QVERIFY(inspectError.isEmpty());
     QCOMPARE(inspectFinished.size(), 1);
     auto arguments = inspectFinished.takeFirst();
