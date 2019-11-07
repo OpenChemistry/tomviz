@@ -1,5 +1,5 @@
 mock==2.0.0
 pytest==3.5.0
 diskcache==3.0.1
-h5py==2.7.1
+h5py==2.10.0
 requests==2.20.0
