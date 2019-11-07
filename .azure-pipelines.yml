@@ -84,3 +84,17 @@ jobs:
 
   - bash: scripts/azure-pipelines/run_pytest.sh
     displayName: Run PyTest
+
+- job: clang_format
+  pool:
+    vmImage: 'ubuntu-18.04'
+  steps:
+  - bash: scripts/azure-pipelines/run_clang_format_diff.sh
+    displayName: Run clang-format
+
+- job: flake8
+  pool:
+    vmImage: 'ubuntu-18.04'
+  steps:
+  - bash: scripts/azure-pipelines/run_flake8.sh
+    displayName: Run flake8
