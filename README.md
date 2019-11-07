@@ -1,6 +1,6 @@
 ![tomviz_logo]
 
-[![Stories in Ready](https://badge.waffle.io/OpenChemistry/tomviz.png?label=ready&title=Ready "Waffle")](https://waffle.io/OpenChemistry/tomviz) [![Travis build status](https://travis-ci.org/OpenChemistry/tomviz.svg?branch=master "Travis")](https://travis-ci.org/OpenChemistry/tomviz) [![Circle build status](https://circleci.com/gh/OpenChemistry/tomviz.png?style=shield "CircleCI")](https://circleci.com/gh/OpenChemistry/tomviz) [![AppVeyor build status](https://ci.appveyor.com/api/projects/status/github/OpenChemistry/tomviz?branch=master&svg=true "AppVeyor")](https://ci.appveyor.com/project/OpenChemistry/tomviz) [![Build Status](https://dev.azure.com/OpenChemistry/tomviz/_apis/build/status/OpenChemistry.tomviz?branchName=master)](https://dev.azure.com/OpenChemistry/tomviz/_build/latest?definitionId=1&branchName=master)
+[![Build Status](https://dev.azure.com/OpenChemistry/tomviz/_apis/build/status/OpenChemistry.tomviz?branchName=master)](https://dev.azure.com/OpenChemistry/tomviz/_build/latest?definitionId=1&branchName=master)
 
 The [Tomviz project][tomviz] is developing a cross platform, open source
 application for the processing, visualization, and analysis of 3D tomographic
