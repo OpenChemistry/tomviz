@@ -1,5 +1,4 @@
 from tomviz import utils
-import vtk.util.numpy_support as np_s
 
 
 class Dataset:
