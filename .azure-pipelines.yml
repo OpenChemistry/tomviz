@@ -1,0 +1,86 @@
+trigger:
+- master
+
+variables:
+  PARAVIEW_SOURCE_FOLDER: $(Pipeline.Workspace)/paraview_source
+  PARAVIEW_BUILD_FOLDER: $(Pipeline.Workspace)/paraview_build
+
+jobs:
+- job: Build
+  timeoutInMinutes: 0
+
+  strategy:
+    matrix:
+      Linux:
+        imageName: 'ubuntu-18.04'
+      Mac:
+        imageName: 'macos-10.14'
+      Windows:
+        imageName: 'vs2017-win2016'
+        # The D:\ drive (default) on Windows only has about 4 GB of disk
+        # space available, which is not enough to build ParaView.
+        # But the C:\ drive has a lot of free space, around 150 GB.
+        PARAVIEW_SOURCE_FOLDER: 'C:\paraview_source'
+        PARAVIEW_BUILD_FOLDER: 'C:\paraview_build'
+
+  pool:
+    vmImage: $(imageName)
+
+  steps:
+  - checkout: self
+    submodules: true
+
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: 3.7
+    # The azure-pipelines python3.7 on mac doesn't include the needed
+    # .dylib file for some reason. Just use the system python3.7.
+    condition: ne(variables['Agent.OS'], 'Darwin')
+    displayName: Enable Python 3.7
+
+  - bash: |
+      paraview_sha1=$(git ls-remote https://github.com/openchemistry/paraview | head -1 | cut -f 1)
+      echo "##vso[task.setvariable variable=paraview_sha1]$paraview_sha1"
+    displayName: Get ParaView SHA1
+
+  - task: CacheBeta@0
+    inputs:
+      # Change the "v*" at the end to force a re-build
+      key: paraview | $(Agent.OS) | $(paraview_sha1) | v1
+      path: $(PARAVIEW_BUILD_FOLDER)
+      cacheHitVar: PARAVIEW_BUILD_RESTORED
+    displayName: Restore ParaView Build
+
+  - bash: scripts/azure-pipelines/install.sh
+    displayName: Install Dependencies
+
+  - bash: scripts/azure-pipelines/install_python_deps.sh
+    displayName: Install Python Dependencies
+
+  # Use the OS's native script language for this command
+  - script: git clone --recursive https://github.com/openchemistry/paraview $(PARAVIEW_SOURCE_FOLDER)
+    displayName: Clone ParaView
+
+  - bash: scripts/azure-pipelines/prepend_paths.sh
+    displayName: Prepend Paths
+
+  # This will set up the MSVC environment for future commands
+  - task: BatchScript@1
+    inputs:
+      filename: scripts/azure-pipelines/setup_msvc_env.bat
+      modifyEnvironment: True
+    condition: eq(variables['Agent.OS'], 'Windows_NT')
+    displayName: Setup MSVC Environment
+
+  - bash: scripts/azure-pipelines/build_paraview.sh
+    condition: ne(variables.PARAVIEW_BUILD_RESTORED, 'true')
+    displayName: Build ParaView
+
+  - bash: scripts/azure-pipelines/build_tomviz.sh
+    displayName: Build Tomviz
+
+  - bash: scripts/azure-pipelines/run_ctest.sh
+    displayName: Run CTest
+
+  - bash: scripts/azure-pipelines/run_pytest.sh
+    displayName: Run PyTest
