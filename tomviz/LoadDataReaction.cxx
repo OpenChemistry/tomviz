@@ -146,14 +146,13 @@ QList<DataSource*> LoadDataReaction::loadData()
     QString fileName = filenames.size() > 0 ? filenames[0] : "";
     QFileInfo info(fileName);
     auto suffix = info.suffix().toLower();
-    QStringList tiffExt = { "tif", "tiff" };
     QStringList moleculeExt = { "xyz" };
-    if (filenames.size() > 1 && tiffExt.contains(suffix)) {
-      dataSources << LoadStackReaction::loadData(filenames);
-    } else if (moleculeExt.contains(suffix)) {
+    if (moleculeExt.contains(suffix)) {
       loadMolecule(filenames);
     } else {
-      dataSources << loadData(filenames);
+      for (auto f : filenames) {
+        dataSources << loadData(f);
+      }
     }
   }
 
