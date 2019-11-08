@@ -163,6 +163,9 @@
       <IntVectorProperty default_values="1" number_of_elements="1" name="ShowPlane">
         <BooleanDomain name="bool"/>
       </IntVectorProperty>
+      <IntVectorProperty default_values="0" number_of_elements="1" name="InvertPlane">
+        <BooleanDomain name="bool"/>
+      </IntVectorProperty>
       <IntVectorProperty default_values="1" number_of_elements="1" name="ShowArrow">
         <BooleanDomain name="bool"/>
       </IntVectorProperty>
@@ -193,6 +196,34 @@
           <Widget type="multi_line" syntax="python" />
         </Hints>
       </StringVectorProperty>
+    </Proxy>
+    <Proxy name="NonOrthogonalClip">
+      <IntVectorProperty default_values="1" number_of_elements="1" name="ShowPlane">
+        <BooleanDomain name="bool"/>
+      </IntVectorProperty>
+      <IntVectorProperty default_values="1" number_of_elements="1" name="ShowArrow">
+        <BooleanDomain name="bool"/>
+      </IntVectorProperty>
+      <DoubleVectorProperty name="PointOnPlane" default_values="0 0 0" number_of_elements="3">
+        <DoubleRangeDomain name="range" />
+        <Hints>
+          <ShowComponentLabels>
+            <ComponentLabel component="0" label="X:" />
+            <ComponentLabel component="1" label="Y:" />
+            <ComponentLabel component="2" label="Z:" />
+          </ShowComponentLabels>
+        </Hints>
+      </DoubleVectorProperty>
+      <DoubleVectorProperty name="PlaneNormal" default_values="1 0 0" number_of_elements="3">
+        <DoubleRangeDomain name="range" />
+        <Hints>
+          <ShowComponentLabels>
+            <ComponentLabel component="0" label="X:" />
+            <ComponentLabel component="1" label="Y:" />
+            <ComponentLabel component="2" label="Z:" />
+          </ShowComponentLabels>
+        </Hints>
+      </DoubleVectorProperty>
     </Proxy>
   </ProxyGroup>
   <ProxyGroup name="filters">

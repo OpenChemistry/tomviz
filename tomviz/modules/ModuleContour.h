@@ -51,6 +51,7 @@ protected:
 
   vtkWeakPointer<vtkSMSourceProxy> m_contourFilter;
   vtkWeakPointer<vtkSMProxy> m_activeRepresentation;
+  // vtkSmartPointer<vtkGPUVolumeRayCastMapper> m_contourMapper;
 
   class Private;
   Private* d;

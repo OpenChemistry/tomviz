@@ -819,6 +819,7 @@ void vtkNonOrthoImagePlaneWidget::Push(double* p1, double* p2)
   // take only the primary component of the motion vector
   double norm[3];
   this->PlaneSource->GetNormal(norm);
+  norm[this->PlaneOrientation] = abs(norm[this->PlaneOrientation]);
   float dotV = vtkMath::Dot(v, norm);
 
   if (this->PlaneOrientation >= 0) {

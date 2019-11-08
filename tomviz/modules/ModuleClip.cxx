@@ -32,6 +32,7 @@
 #include <QHBoxLayout>
 #include <QJsonArray>
 #include <QLabel>
+#include <QHBoxLayout>
 #include <QVBoxLayout>
 
 namespace tomviz {
@@ -108,20 +109,11 @@ bool ModuleClip::setupWidget(vtkSMViewProxy* vtkView)
   }
 
   m_widget = vtkSmartPointer<vtkNonOrthoImagePlaneWidget>::New();
-  m_widget->SetTextureVisibility(0);
+  m_widget->GetTexturePlaneProperty()->SetOpacity(0.1);
 
   // Set the interactor on the widget to be what the current
   // render window is using.
   m_widget->SetInteractor(rwi);
-
-  // Setup the color of the border of the widget.
-  {
-    double color[3] = { 1.0, 0.0, 0.0 };
-    double opacity = 1.0;
-    m_widget->GetPlaneProperty()->SetColor(color);
-    m_widget->GetPlaneProperty()->SetOpacity(opacity);
-    m_widget->GetPlaneProperty()->SetLineWidth(3.0);
-  }
 
   m_clippingPlane = vtkSmartPointer<vtkPlane>::New();
   m_clippingPlane->SetOrigin(m_widget->GetCenter());
@@ -206,13 +198,23 @@ void ModuleClip::addToPanel(QWidget* panel)
   layout->addWidget(container);
   formLayout->setContentsMargins(0, 0, 0, 0);
 
+  QHBoxLayout* rowLayout = new QHBoxLayout;
   QCheckBox* showPlane = new QCheckBox("Show Plane");
-  formLayout->addRow(showPlane);
+  rowLayout->addWidget(showPlane);
   
   m_Links.addPropertyLink(showPlane, "checked", SIGNAL(toggled(bool)),
                         m_propsPanelProxy,
                         m_propsPanelProxy->GetProperty("ShowPlane"), 0);
   connect(showPlane, &QCheckBox::toggled, this, &ModuleClip::dataUpdated);
+
+  QCheckBox* invertPlane = new QCheckBox("Invert Plane Direction");
+  rowLayout->addWidget(invertPlane);
+  formLayout->addRow(rowLayout);
+
+  m_Links.addPropertyLink(invertPlane, "checked", SIGNAL(toggled(bool)),
+                        m_propsPanelProxy,
+                        m_propsPanelProxy->GetProperty("InvertPlane"), 0);
+  connect(invertPlane, &QCheckBox::toggled, this, &ModuleClip::dataUpdated);
 
   m_directionCombo = new QComboBox();
   m_directionCombo->addItem("XY Plane", QVariant(Direction::XY));
@@ -328,6 +330,9 @@ QJsonObject ModuleClip::serialize() const
   vtkSMPropertyHelper showPlaneProperty(m_propsPanelProxy, "ShowPlane");
   props["showPlane"] = showPlaneProperty.GetAsInt() != 0;
 
+  vtkSMPropertyHelper invertPlaneProperty(m_propsPanelProxy, "InvertPlane");
+  props["invertPlane"] = invertPlaneProperty.GetAsInt() != 0;
+
   // Serialize the plane
   double point[3];
   m_widget->GetOrigin(point);
@@ -361,6 +366,8 @@ bool ModuleClip::deserialize(const QJsonObject& json)
     showArrowProperty.Set(props["showArrow"].toBool() ? 1 : 0);
     vtkSMPropertyHelper showPlaneProperty(m_propsPanelProxy, "ShowPlane");
     showPlaneProperty.Set(props["showPlane"].toBool() ? 1 : 0);
+    vtkSMPropertyHelper invertPlaneProperty(m_propsPanelProxy, "InvertPlane");
+    invertPlaneProperty.Set(props["invertPlane"].toBool() ? 1 : 0);
     if (props.contains("origin") && props.contains("point1") &&
         props.contains("point2")) {
       auto o = props["origin"].toArray();
@@ -417,10 +424,15 @@ void ModuleClip::onPropertyChanged()
   m_clippingPlane->SetOrigin(&centerPoint[0]);
   vtkSMPropertyHelper normalProperty(m_propsPanelProxy, "PlaneNormal");
   std::vector<double> normalVector = normalProperty.GetDoubleArray();
+  vtkSMPropertyHelper invertPlaneProperty(m_propsPanelProxy, "InvertPlane");
+  for (auto i = 0; i < 3; ++i) {
+    if (invertPlaneProperty.GetAsInt()) {
+      normalVector[i] *= -1;
+    }
+  }
   m_widget->SetNormal(&normalVector[0]);
   m_clippingPlane->SetNormal(&normalVector[0]);
   m_widget->UpdatePlacement();
-  m_ignoreSignals = false;
   vtkSMPropertyHelper showPlaneProperty(m_propsPanelProxy, "ShowPlane");
   if (m_widget->GetEnabled()) {
     m_widget->SetTextureVisibility(showPlaneProperty.GetAsInt());
@@ -428,6 +440,8 @@ void ModuleClip::onPropertyChanged()
     m_widget->GetPlaneProperty()->SetOpacity(showPlaneProperty.GetAsDouble());
     m_widget->SetArrowVisibility(showPlaneProperty.GetAsInt());
   }
+  m_ignoreSignals = false;
+  emit clipFilterUpdated(m_clippingPlane, false);
 }
 
 void ModuleClip::onPlaneChanged()
@@ -508,10 +522,15 @@ void ModuleClip::onDirectionChanged(Direction direction)
 
   double normal[3] = { 0, 0, 0 };
   int planePosition = 1;
-  int maxPlane = 0;
+  int maxPlane = dims[axis] - 1;;
 
-  normal[axis] = 1;
-  maxPlane = dims[axis] - 1;
+  vtkSMPropertyHelper invertPlaneProperty(m_propsPanelProxy, "InvertPlane");
+  if (invertPlaneProperty.GetAsInt() && isOrtho) {
+    normal[axis] = -1;
+    planePosition = maxPlane;
+  } else {
+    normal[axis] = 1;
+  }
 
   m_widget->SetNormal(normal);
   if (m_planeSlider) {
