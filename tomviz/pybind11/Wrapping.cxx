@@ -1,12 +1,13 @@
 /* This source file is part of the Tomviz project, https://tomviz.org/.
    It is released under the 3-Clause BSD License, see "LICENSE". */
 
-#include <pybind11/pybind11.h>
-
 #include "OperatorPythonWrapper.h"
 #include "PybindVTKTypeCaster.h"
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 #include "DataSource.h"
+#include "PipelineStateManager.h"
 #include "vtkImageData.h"
 
 namespace py = pybind11;
@@ -35,6 +36,21 @@ PYBIND11_PLUGIN(_wrapping)
                            "Get the dark image data")
     .def_property_readonly("white_data", &tomviz::DataSource::whiteData,
                            "Get the white image data");
+
+  py::class_<PipelineStateManager>(m, "PipelineStateManagerBase")
+    .def(py::init())
+    .def("serialize", &PipelineStateManager::serialize)
+    .def("sync", &PipelineStateManager::sync)
+    .def("load", &PipelineStateManager::load)
+    .def("module_json", &PipelineStateManager::modulesJson)
+    .def("operator_json", &PipelineStateManager::operatorsJson)
+    .def("serialize_op", &PipelineStateManager::serializeOperator)
+    .def("serialize_module", &PipelineStateManager::serializeModule)
+    .def("deserialize_op", &PipelineStateManager::deserializeOperator)
+    .def("deserialize_module", &PipelineStateManager::deserializeModule)
+    .def("modified", &PipelineStateManager::modified)
+    .def("add_module", &PipelineStateManager::addModule)
+    .def("add_op", &PipelineStateManager::addOperator);
 
   return m.ptr();
 }

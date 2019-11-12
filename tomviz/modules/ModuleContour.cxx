@@ -235,6 +235,7 @@ QJsonObject ModuleContour::serialize() const
   auto toJson = [](vtkSMProxy* representation) {
     QJsonObject obj;
     QJsonArray color;
+    std::cout << representation << std::endl;
     vtkSMPropertyHelper diffuseColor(
       representation->GetProperty("DiffuseColor"));
     for (int i = 0; i < 3; i++) {

@@ -133,7 +133,7 @@ private slots:
   void render();
 
   void onPipelineFinished();
-  
+
   void clip(vtkPlane* plane, bool newFilter);
 
 signals:
@@ -153,6 +153,7 @@ signals:
   void stateDoneLoading();
 
   void clipChanged(vtkPlane* plane, bool newFilter);
+  void enablePythonConsole(bool enable);
 
 private:
   Q_DISABLE_COPY(ModuleManager)

@@ -1,5 +1,8 @@
 set(CMAKE_MODULE_LINKER_FLAGS "")
-pybind11_add_module(_wrapping OperatorPythonWrapper.cxx Wrapping.cxx)
+pybind11_add_module(_wrapping
+  OperatorPythonWrapper.cxx
+  PipelineStateManager.cxx
+  Wrapping.cxx)
 target_link_libraries(_wrapping PRIVATE tomvizlib)
 
 set_target_properties(_wrapping PROPERTIES

@@ -7,6 +7,7 @@
 #include "DataSource.h"
 #include "EditOperatorDialog.h"
 #include "OperatorDialog.h"
+#include "OperatorFactory.h"
 #include "OperatorPython.h"
 #include "Pipeline.h"
 #include "PipelineManager.h"
@@ -167,6 +168,8 @@ AddPythonTransformReaction::AddPythonTransformReaction(
       }
     }
   }
+
+  OperatorFactory::instance().registerPythonOperator(l, s, rts, rv, rf, json);
 
   updateEnableState();
 }

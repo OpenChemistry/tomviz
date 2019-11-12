@@ -262,6 +262,8 @@ QJsonObject Module::serialize() const
   }
   json["properties"] = props;
   json["activeScalars"] = m_activeScalars;
+  json["id"] = QString().sprintf("%p", static_cast<const void*>(this));
+
   return json;
 }
 

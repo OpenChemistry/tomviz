@@ -34,6 +34,7 @@
 #include "ModuleManager.h"
 #include "ModuleMenu.h"
 #include "ModulePropertiesPanel.h"
+#include "OperatorFactory.h"
 #include "PassiveAcquisitionWidget.h"
 #include "Pipeline.h"
 #include "PipelineManager.h"
@@ -103,6 +104,9 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   if (!qtSettings->contains("pqOutputWidget.ShowFullMessages")) {
     qtSettings->setValue("pqOutputWidget.ShowFullMessages", true);
   }
+
+  connect(&ModuleManager::instance(), &ModuleManager::enablePythonConsole, this,
+          &MainWindow::setEnabledPythonConsole);
 
   // Update back light azimuth default on view.
   connect(pqApplicationCore::instance()->getServerManagerModel(),
@@ -508,6 +512,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
             delete pythonWatcher;
             statusBar()->showMessage("Initialization complete", 1500);
           });
+
   auto pythonFuture = QtConcurrent::run(initPython);
   pythonWatcher->setFuture(pythonFuture);
 }
@@ -529,6 +534,7 @@ std::vector<OperatorDescription> MainWindow::initPython()
   auto operators = findCustomOperators();
   FileFormatManager::instance().registerPythonReaders();
   FileFormatManager::instance().registerPythonWriters();
+
   return operators;
 }
 
@@ -938,6 +944,11 @@ std::vector<OperatorDescription> MainWindow::findCustomOperators()
             });
 
   return operators;
+}
+
+void MainWindow::setEnabledPythonConsole(bool enabled)
+{
+  m_ui->dockWidgetPythonConsole->setEnabled(enabled);
 }
 
 } // namespace tomviz

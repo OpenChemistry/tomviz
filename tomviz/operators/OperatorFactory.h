@@ -11,27 +11,49 @@
 namespace tomviz {
 class Operator;
 
+struct PythonOperatorInfo
+{
+  QString label;
+  QString source;
+  bool requiresTiltSeries;
+  bool requiresVolume;
+  bool requiresFib;
+  QString json;
+};
+
 class OperatorFactory
 {
   typedef QObject Superclass;
 
 public:
-  /// Returns a list of module types
-  static QList<QString> operatorTypes();
+  static OperatorFactory& instance();
 
-  static Operator* createConvertToVolumeOperator(
+  /// Returns a list of module types
+  QList<QString> operatorTypes();
+
+  Operator* createConvertToVolumeOperator(
     DataSource::DataSourceType t = DataSource::Volume);
 
   /// Creates an operator of the given type
-  static Operator* createOperator(const QString& type, DataSource* ds);
+  Operator* createOperator(const QString& type, DataSource* ds);
 
   /// Returns the type for an operator instance.
-  static const char* operatorType(const Operator* module);
+  const char* operatorType(const Operator* module);
+
+  /// Register a Python operator
+  void registerPythonOperator(const QString& label, const QString& source,
+                              bool requiresTiltSeries, bool requiresVolume,
+                              bool requiresFib, const QString& json);
+
+  /// Returns the list of register Python operators
+  const QList<PythonOperatorInfo>& registeredPythonOperators();
 
 private:
   OperatorFactory();
   ~OperatorFactory();
   Q_DISABLE_COPY(OperatorFactory)
+
+  QList<PythonOperatorInfo> m_pythonOperators;
 };
 } // namespace tomviz
 

@@ -79,6 +79,8 @@ private slots:
   /// raise output widget on errors.
   void handleMessage(const QString&, int);
 
+  void setEnabledPythonConsole(bool enabled);
+
 private:
   Q_DISABLE_COPY(MainWindow)
 

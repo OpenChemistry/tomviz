@@ -24,6 +24,7 @@ public:
   /// Update the execution mode the pipelines are using.
   void updateExecutionMode(Pipeline::ExecutionMode mode);
   Pipeline::ExecutionMode executionMode();
+  QList<QPointer<Pipeline>>& pipelines();
 
 public slots:
   void addPipeline(Pipeline*);

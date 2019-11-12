@@ -7,6 +7,8 @@
 
 #include "DataSource.h"
 #include "Logger.h"
+#include "OperatorFactory.h"
+#include <QDebug>
 
 #include <vtkPythonInterpreter.h>
 #include <vtkPythonUtil.h>

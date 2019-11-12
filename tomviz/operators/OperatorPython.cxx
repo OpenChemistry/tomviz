@@ -157,7 +157,7 @@ OperatorPython::OperatorPython(DataSource* parentObject)
   }
 
   auto connectionType = Qt::BlockingQueuedConnection;
-  if (dataSource() != nullptr &&
+  if (dataSource() != nullptr && dataSource()->pipeline() != nullptr &&
       dataSource()->pipeline()->executionMode() ==
         Pipeline::ExecutionMode::Docker) {
     connectionType = Qt::DirectConnection;
