@@ -412,8 +412,13 @@ void ModuleClip::onPropertyChanged()
     return;
   }
   m_ignoreSignals = true;
-  vtkSMPropertyHelper showArrowProperty(m_propsPanelProxy, "ShowArrow");
+  vtkSMPropertyHelper showPlaneProperty(m_propsPanelProxy, "ShowPlane");
   if (m_widget->GetEnabled()) {
+    m_widget->SetTextureVisibility(showPlaneProperty.GetAsInt());
+    m_widget->SetArrowVisibility(showPlaneProperty.GetAsInt());
+  }
+  vtkSMPropertyHelper showArrowProperty(m_propsPanelProxy, "ShowArrow");
+  if (m_widget->GetEnabled() && showPlaneProperty.GetAsInt()) {
     // Not this: it hides the plane as well as the arrow...
     // Widget->SetEnabled(showArrowProperty.GetAsInt());
     m_widget->SetArrowVisibility(showArrowProperty.GetAsInt());
