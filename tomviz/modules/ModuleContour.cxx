@@ -97,18 +97,6 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 
   m_activeRepresentation = controller->Show(m_contourFilter, 0, vtkView);
 
-  vtkAlgorithmOutput *output = nullptr;
-  if (data == nullptr) {
-    output = m_contourMapper->GetInputConnection(0, 0);
-  }
-  else {
-    output = data->producer()->GetOutputPort();
-  }
-
-  // m_contourMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-  // m_contourMapper->SetInputConnection(output);
-  // m_volume->SetMapper(m_contourMapper);
-
   // Color by the data source by default
   d->ColorByDataSource = dataSource();
 

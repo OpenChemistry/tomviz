@@ -281,10 +281,10 @@ void ModuleManager::addModule(Module* module)
 
     emit moduleAdded(module);
     connect(module, &Module::renderNeeded, this, &ModuleManager::render);
-    if (ModuleFactory::moduleType(module) == "Volume") {
+    if (strcmp(ModuleFactory::moduleType(module), "Volume") == 0) {
       connect(this, &ModuleManager::clipChanged, module, &Module::updateClipFilter);
     }
-    if (ModuleFactory::moduleType(module) == "Clip") {
+    if (strcmp(ModuleFactory::moduleType(module), "Clip") == 0) {
       connect(module, &Module::clipFilterUpdated, this, &ModuleManager::clip);
     }
   }
