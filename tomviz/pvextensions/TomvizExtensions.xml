@@ -201,6 +201,9 @@
       <IntVectorProperty default_values="1" number_of_elements="1" name="ShowPlane">
         <BooleanDomain name="bool"/>
       </IntVectorProperty>
+      <IntVectorProperty default_values="0" number_of_elements="1" name="InvertPlane">
+        <BooleanDomain name="bool"/>
+      </IntVectorProperty>
       <IntVectorProperty default_values="1" number_of_elements="1" name="ShowArrow">
         <BooleanDomain name="bool"/>
       </IntVectorProperty>

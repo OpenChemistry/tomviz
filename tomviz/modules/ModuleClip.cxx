@@ -64,7 +64,7 @@ bool ModuleClip::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 
   // Create the Properties panel proxy
   m_propsPanelProxy.TakeReference(
-    pxm->NewProxy("tomviz_proxies", "NonOrthogonalSlice"));
+    pxm->NewProxy("tomviz_proxies", "NonOrthogonalClip"));
 
   pqCoreUtilities::connect(m_propsPanelProxy, vtkCommand::PropertyModifiedEvent,
                            this, SLOT(onPropertyChanged()));
@@ -461,7 +461,6 @@ void ModuleClip::onPlaneChanged()
   double* normalVector = m_widget->GetNormal();
   normalProperty.Set(normalVector, 3);
   m_clippingPlane->SetNormal(normalVector);
-  vtkSMPropertyHelper mapScalarsProperty(m_propsPanelProxy, "MapScalars");
 
   // Adjust the plane slider if the plane has changed from dragging the arrow
   onPlaneChanged(centerPoint);
