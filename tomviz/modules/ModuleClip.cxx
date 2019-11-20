@@ -170,6 +170,7 @@ bool ModuleClip::setVisibility(bool val)
     // Widget->SetEnabled(showArrowProperty.GetAsInt());
     m_widget->SetArrowVisibility(showArrowProperty.GetAsInt());
     m_widget->SetInteraction(showArrowProperty.GetAsInt());
+    m_widget->SetTextureVisibility(showPlaneProperty.GetAsInt());
   }
   val ? emit clipFilterUpdated(m_clippingPlane, false) : emit clipFilterUpdated(m_clippingPlane, true);
   return true;
@@ -433,15 +434,11 @@ void ModuleClip::onPropertyChanged()
   m_widget->SetNormal(&normalVector[0]);
   m_clippingPlane->SetNormal(&normalVector[0]);
   m_widget->UpdatePlacement();
-  vtkSMPropertyHelper showPlaneProperty(m_propsPanelProxy, "ShowPlane");
-  if (m_widget->GetEnabled()) {
-    m_widget->SetTextureVisibility(showPlaneProperty.GetAsInt());
-    m_widget->SetInteraction(showPlaneProperty.GetAsInt());
-    m_widget->GetPlaneProperty()->SetOpacity(showPlaneProperty.GetAsDouble());
-    m_widget->SetArrowVisibility(showPlaneProperty.GetAsInt());
-  }
   m_ignoreSignals = false;
-  emit clipFilterUpdated(m_clippingPlane, false);
+
+  if (m_widget->GetEnabled()) {
+    emit clipFilterUpdated(m_clippingPlane, false);
+  }
 }
 
 void ModuleClip::onPlaneChanged()
