@@ -15,6 +15,8 @@
 class vtkPVRenderView;
 
 class vtkGPUVolumeRayCastMapper;
+class vtkImageClip;
+class vtkPlane;
 class vtkVolumeProperty;
 class vtkVolume;
 
@@ -82,6 +84,7 @@ private slots:
   void onTransferModeChanged(const int mode);
   void onScalarArrayChanged();
   int scalarsIndex();
+  void onClipFilterChanged(vtkPlane* plane, bool newFilter);
 };
 } // namespace tomviz
 

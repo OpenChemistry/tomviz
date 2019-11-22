@@ -11,9 +11,11 @@
 
 #include <vtkColorTransferFunction.h>
 #include <vtkGPUVolumeRayCastMapper.h>
+#include <vtkImageClip.h>
 #include <vtkImageData.h>
 #include <vtkNew.h>
 #include <vtkPiecewiseFunction.h>
+#include <vtkPlane.h>
 #include <vtkSmartPointer.h>
 #include <vtkTrivialProducer.h>
 #include <vtkVector.h>
@@ -72,6 +74,7 @@ void ModuleVolume::initializeMapper(DataSource* data)
   else {
     output = data->producer()->GetOutputPort();
   }
+
   m_volumeMapper = vtkSmartPointer<vtkGPUVolumeRayCastMapper>::New();
   m_volumeMapper->SetInputConnection(output);
   m_volumeMapper->SetScalarModeToUsePointFieldData();
@@ -110,6 +113,8 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   connect(data, &DataSource::activeScalarsChanged, this,
           &ModuleVolume::onScalarArrayChanged);
 
+  connect(this, &ModuleVolume::updateClipFilter, this, 
+          &ModuleVolume::onClipFilterChanged);
   // Work around mapper bug on the mac, see the following issue for details:
   // https://github.com/OpenChemistry/tomviz/issues/1776
   // Should be removed when this is fixed.
@@ -400,6 +405,17 @@ int ModuleVolume::scalarsIndex()
     index = activeScalars();
   }
   return index;
+}
+
+void ModuleVolume::onClipFilterChanged(vtkPlane* plane, bool newFilter) {
+  if (m_volumeMapper->GetNumberOfClippingPlanes()) {
+    m_volumeMapper->RemoveClippingPlane(plane);
+  }
+  if (!newFilter) {
+    m_volumeMapper->AddClippingPlane(plane);
+  }
+
+  emit renderNeeded();
 }
 
 } // end of namespace tomviz

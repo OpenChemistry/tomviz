@@ -15,6 +15,7 @@
 
 class QWidget;
 class vtkImageData;
+class vtkPlane;
 class vtkSMProxy;
 class vtkSMViewProxy;
 class vtkPiecewiseFunction;
@@ -164,6 +165,10 @@ signals:
   /// Emitted when the module properties are changed in a way that would require
   /// a re-render of the scene to take effect.
   void renderNeeded();
+
+  /// Emitted when a clipping plane has been created
+  void clipFilterUpdated(vtkPlane* plane, bool newFilter);
+  void updateClipFilter(vtkPlane* plane, bool newFilter);
 
   /// Emitted when the module explicitly requires the opacity of the color map
   /// to be enforced. This will cause the colormap to be detached, and the
