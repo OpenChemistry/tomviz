@@ -73,6 +73,8 @@ void DataTransformMenu::buildTransforms()
   auto medianFilterAction = menu->addAction("Median Filter");
   auto moleculeAction = menu->addAction("Add Molecule");
   menu->addSeparator();
+  auto tortuosityAction = menu->addAction("Tortuosity");
+  menu->addSeparator();
   auto cloneAction = menu->addAction("Clone");
   auto deleteDataAction = menu->addAction(
     QIcon(":/QtWidgets/Icons/pqDelete32.png"), "Delete Data and Modules");
@@ -155,6 +157,10 @@ void DataTransformMenu::buildTransforms()
   new AddPythonTransformReaction(
     moleculeAction, "Add Molecule", readInPythonScript("DummyMolecule"), false,
     false, false, readInJSONDescription("DummyMolecule"));
+
+  new AddPythonTransformReaction(
+    tortuosityAction, "Tortuosity", readInPythonScript("Tortuosity"), false,
+    false, false, readInJSONDescription("Tortuosity"));
 
   new CloneDataReaction(cloneAction);
   new DeleteDataReaction(deleteDataAction);
