@@ -331,7 +331,6 @@ def label_object_principal_axes(dataset, label_value):
     return (evecs, center)
 
 
-@with_vtk_dataobject
 def make_dataset(x, y, z, dataobject, generate_data_function, **kwargs):
     from vtk import VTK_DOUBLE
     array = np.zeros((x, y, z), order='F')
