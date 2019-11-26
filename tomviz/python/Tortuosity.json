@@ -1,0 +1,51 @@
+{
+  "name" : "Tortuosity",
+  "label" : "Tortuosity",
+  "description" : "Tortuosity calculation",
+  "parameters" : [
+    {
+      "name" : "phase",
+      "label" : "Phase",
+      "type" : "int",
+      "default" : 1,
+      "minimum" : 0
+    },
+    {
+      "name" : "distance_method",
+      "label" : "Distance Method",
+      "type" : "enumeration",
+      "default" : 0,
+      "options" : [
+        {"Eucledian" : 0},
+        {"CityBlock" : 1},
+        {"ChessBoard" : 2}
+      ]
+    },
+    {
+      "name" : "propagation_direction",
+      "label" : "Propagation Direction",
+      "type" : "enumeration",
+      "default" : 0,
+      "options" : [
+        {"X +" : 0},
+        {"X -" : 1},
+        {"Y +" : 2},
+        {"Y -" : 3},
+        {"Z +" : 4},
+        {"Z -" : 5}
+      ]
+    }
+  ],
+  "results" : [
+    {
+      "name" : "path_length",
+      "label" : "Path Length",
+      "type" : "table"
+    },
+    {
+      "name" : "tortuosity_distribution",
+      "label" : "Tortuosity Distribution",
+      "type" : "table"
+    }
+  ]
+}
