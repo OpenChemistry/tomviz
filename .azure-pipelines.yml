@@ -32,11 +32,8 @@ jobs:
 
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: 3.7
-    # The azure-pipelines python3.7 on mac doesn't include the needed
-    # .dylib file for some reason. Just use the system python3.7.
-    condition: ne(variables['Agent.OS'], 'Darwin')
-    displayName: Enable Python 3.7
+      versionSpec: 3.8
+    displayName: Enable Python 3.8
 
   - bash: |
       paraview_sha1=$(git ls-remote https://github.com/openchemistry/paraview | head -1 | cut -f 1)
@@ -46,7 +43,7 @@ jobs:
   - task: CacheBeta@0
     inputs:
       # Change the "v*" at the end to force a re-build
-      key: paraview | $(Agent.OS) | $(paraview_sha1) | v1
+      key: paraview | $(Agent.OS) | $(paraview_sha1) | v2
       path: $(PARAVIEW_BUILD_FOLDER)
       cacheHitVar: PARAVIEW_BUILD_RESTORED
     displayName: Restore ParaView Build
