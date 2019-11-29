@@ -1,0 +1,28 @@
+{
+  "name" : "PoreSizeDistribution",
+  "label" : "Continuous Pore Size Distribution",
+  "description" : "Continuous Pore Size Distribution calculation",
+  "parameters" : [
+    {
+      "name" : "threshold",
+      "label" : "Threshold",
+      "type" : "int",
+      "default" : 127,
+      "minimum" : 0
+    },
+    {
+      "name" : "radius_spacing",
+      "label" : "Spacing between radii",
+      "type" : "int",
+      "default" : 1,
+      "minimum" : 1
+    }
+  ],
+  "results" : [
+    {
+      "name" : "pore_size_distribution",
+      "label" : "Pore Size Distribution",
+      "type" : "table"
+    }
+  ]
+}
