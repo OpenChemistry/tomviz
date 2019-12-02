@@ -130,7 +130,10 @@ def volume_to_graph(volume, phase, method, update_progress=None):
                 continue
 
             if delta_dist is not None:
-                edges[(node_idx, neighbor_idx)] = delta_dist
+                # Reduce memory footprint by only saving edges once
+                edge_key = (min(node_idx, neighbor_idx),
+                            max(node_idx, neighbor_idx))
+                edges[edge_key] = delta_dist
 
     # Add edges between aux nodes at the faces of the volume
     for i in range(volume.ndim):
