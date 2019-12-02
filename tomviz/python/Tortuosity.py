@@ -1,6 +1,7 @@
 import tomviz.operators
 import tomviz.utils
 
+import os
 from enum import Enum
 import numpy as np
 from scipy.sparse import csr_matrix
@@ -228,6 +229,27 @@ def calculate_avg_path_length(volume, propagation_direction):
     return column_names, table_data
 
 
+def calculate_tortuosity(straight_distance, path_length):
+    column_names = ["Scale", "End", "Average", "Slope"]
+    table_data = np.empty(shape=(1, 4))
+
+    # Scale Tortuosity
+    m, _ = np.polyfit(straight_distance, path_length, deg=1)
+    table_data[0, 0] = m
+
+    # End Tortuosity
+    table_data[0, 1] = path_length[-1] / straight_distance[-1]
+
+    # Average Tortuosity
+    table_data[0, 2] = np.mean(path_length / straight_distance)
+
+    # Slope Tortuosity
+    # TODO: implement Slope Tortuosity
+    table_data[0, 3] = -1
+
+    return column_names, table_data
+
+
 def calculate_tortuosity_distribution(volume, propagation_direction):
     unreachable_scalar_value = -1
     axis_idx = propagation_direction // 2
@@ -281,13 +303,25 @@ class TortuosityOperator(tomviz.operators.CancelableOperator):
 
     def transform(self, dataset, phase=1,
                   distance_method=DistanceMethod.Eucledian,
-                  propagation_direction=PropagationDirection.Xpos):
+                  propagation_direction=PropagationDirection.Xpos,
+                  save_to_file=False, output_folder=""):
         distance_method = DistanceMethod(distance_method)
         propagation_direction = PropagationDirection(propagation_direction)
         scalars = dataset.active_scalars
 
         if scalars is None:
             raise RuntimeError("No scalars found!")
+
+        if save_to_file and not os.access(output_folder, os.W_OK):
+            import warnings
+            save_to_file = False
+            warnings.warn(
+                "Unable to write to destination folder %s" % output_folder)
+
+        if save_to_file:
+            propagation_directions = list(PropagationDirection)
+        else:
+            propagation_directions = [propagation_direction]
 
         self.progress.maximum = 100
 
@@ -303,35 +337,77 @@ class TortuosityOperator(tomviz.operators.CancelableOperator):
                 graph_generation_update_progress_fn)
         )
 
-        csgraph = edges_to_sparse_matrix(
-            edges, aux_edges, propagation_direction.value,
-            len(inv_node_map), scalars.ndim)
+        n_directions = len(propagation_directions)
 
-        graph_traversal_update_progress_fn(0.25)
-
-        self.progress.message = "Propagating along direction..."
-        dist_matrix = dijkstra(csgraph, directed=False,
-                               indices=propagation_direction.value)
-        graph_traversal_update_progress_fn(0.75)
-
-        self.progress.message = "Generating outputs..."
-        result = distance_matrix_to_volume(inv_node_map, dist_matrix,
-                                           scalars.shape)
-        graph_traversal_update_progress_fn(1)
-
-        dataset.active_scalars = result
-
-        # Create a spreadsheet data set from table data
         return_values = {}
 
-        column_names, table_data = calculate_avg_path_length(
-            result, propagation_direction.value)
-        table = tomviz.utils.make_spreadsheet(column_names, table_data)
-        return_values["path_length"] = table
+        for i, direction in enumerate(propagation_directions):
+            self.progress.message = "Propagating along %s" % direction.name
+            graph_traversal_update_progress_fn(i / n_directions)
 
-        column_names, table_data = calculate_tortuosity_distribution(
-            result, propagation_direction.value)
-        table = tomviz.utils.make_spreadsheet(column_names, table_data)
-        return_values["tortuosity_distribution"] = table
+            csgraph = edges_to_sparse_matrix(
+                edges, aux_edges, direction.value,
+                len(inv_node_map), scalars.ndim)
+
+            graph_traversal_update_progress_fn(i / n_directions + 0.33)
+
+            dist_matrix = dijkstra(csgraph, directed=False,
+                                   indices=direction.value)
+
+            graph_traversal_update_progress_fn(i / n_directions + 0.9)
+
+            # Generate the distance map
+
+            result = distance_matrix_to_volume(inv_node_map, dist_matrix,
+                                               scalars.shape)
+
+            if save_to_file:
+                filename = "distance_map_%s.npy" % direction.name
+                np.save(os.path.join(output_folder, filename), result)
+
+            if direction == propagation_direction:
+                dataset.active_scalars = result
+
+            # Calculate the average path length per slice
+
+            column_names, table_data = calculate_avg_path_length(
+                result, direction.value)
+
+            if save_to_file:
+                filename = "path_length_%s.csv" % direction.name
+                np.savetxt(os.path.join(output_folder, filename), table_data,
+                           delimiter=", ", header=", ".join(column_names))
+
+            if direction == propagation_direction:
+                table = tomviz.utils.make_spreadsheet(column_names, table_data)
+                return_values["path_length"] = table
+
+            # Calculate the tortuosity (4 different ways)
+
+            column_names, table_data = calculate_tortuosity(
+                table_data[:, 0], table_data[:, 1])
+
+            if save_to_file:
+                filename = "tortuosity_%s.csv" % direction.name
+                np.savetxt(os.path.join(output_folder, filename), table_data,
+                           delimiter=", ", header=", ".join(column_names))
+
+            if direction == propagation_direction:
+                table = tomviz.utils.make_spreadsheet(column_names, table_data)
+                return_values["tortuosity"] = table
+
+            # Calculate the tortuosity distribution of the last slice
+
+            column_names, table_data = calculate_tortuosity_distribution(
+                result, direction.value)
+
+            if save_to_file:
+                filename = "tortuosity_distribution_%s.csv" % direction.name
+                np.savetxt(os.path.join(output_folder, filename), table_data,
+                           delimiter=", ", header=", ".join(column_names))
+
+            if direction == propagation_direction:
+                table = tomviz.utils.make_spreadsheet(column_names, table_data)
+                return_values["tortuosity_distribution"] = table
 
         return return_values
