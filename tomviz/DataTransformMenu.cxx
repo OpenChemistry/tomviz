@@ -74,6 +74,7 @@ void DataTransformMenu::buildTransforms()
   auto moleculeAction = menu->addAction("Add Molecule");
   menu->addSeparator();
   auto tortuosityAction = menu->addAction("Tortuosity");
+  auto poreSizeAction = menu->addAction("Pore Size Distribution");
   menu->addSeparator();
   auto cloneAction = menu->addAction("Clone");
   auto deleteDataAction = menu->addAction(
@@ -161,6 +162,10 @@ void DataTransformMenu::buildTransforms()
   new AddPythonTransformReaction(
     tortuosityAction, "Tortuosity", readInPythonScript("Tortuosity"), false,
     false, false, readInJSONDescription("Tortuosity"));
+  new AddPythonTransformReaction(
+    poreSizeAction, "Pore Size Distribution",
+    readInPythonScript("PoreSizeDistribution"), false, false, false,
+    readInJSONDescription("PoreSizeDistribution"));
 
   new CloneDataReaction(cloneAction);
   new DeleteDataReaction(deleteDataAction);
