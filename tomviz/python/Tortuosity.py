@@ -303,11 +303,29 @@ def get_update_progress_fn(progress, stage):
 
 
 class TortuosityOperator(tomviz.operators.CancelableOperator):
-
+    """Distance propagation method for calculating tortuosity.
+    https://doi.org/10.1016/j.jpowsour.2013.10.026
+    """
     def transform(self, dataset, phase=1,
                   distance_method=DistanceMethod.Eucledian,
                   propagation_direction=PropagationDirection.Xpos,
                   save_to_file=False, output_folder=""):
+        """Operator transform method
+
+        Args:
+            phase (int): the scalar value in the dataset that is considered
+                         a pore
+            distance_method (enum): the distance method to calculate distance
+                                    between nodes
+            propagation_direction (enum): the face from which distances are
+                                          calculated (X+, X-, Y+, etc.)
+            save_to_file (bool): save the detailed output of the operator to
+                                 files. If set to True, propagate along all
+                                 six directions and save the results, but only
+                                 display results for one in the application.
+            output_folder (str): the path to the folder where the optional
+                                 output files are written to
+        """
         distance_method = DistanceMethod(distance_method)
         propagation_direction = PropagationDirection(propagation_direction)
         scalars = dataset.active_scalars

@@ -101,9 +101,26 @@ def get_dilation_count(volume, distance_map, radius, dilation_fn=None):
 
 
 class PoreSizeDistribution(tomviz.operators.CancelableOperator):
-
+    """Continuous pore size distribution method
+    https://doi.org/10.1111/j.1551-2916.2008.02736.x
+    """
     def transform(self, dataset, threshold=127, radius_spacing=1,
                   save_to_file=False, output_folder=""):
+        """Operator transform method
+
+        Args:
+            threshold (int): scalars >= threshold are considered matter.
+                             scalars < threshold are considered pore.
+            radius_spacing (int): size distribution is computed for all radii
+                                  from 1 to r_max. tweak radius spacing to
+                                  reduce the number of radii. For example,
+                                  if radius_spacing is 3, only calculate
+                                  r_s = 1, 4, 7, ... , r_max
+            save_to_file (bool): save the detailed output of the operator to
+                                 files.
+            output_folder (str): the path to the folder where the optional
+                                 output files are written to
+        """
         scalars = dataset.active_scalars
 
         if scalars is None:
