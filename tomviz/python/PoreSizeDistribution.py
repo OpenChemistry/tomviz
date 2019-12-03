@@ -1,6 +1,7 @@
 import tomviz.operators
 import tomviz.utils
 
+import os
 import numpy as np
 import scipy.ndimage
 
@@ -101,11 +102,18 @@ def get_dilation_count(volume, distance_map, radius, dilation_fn=None):
 
 class PoreSizeDistribution(tomviz.operators.CancelableOperator):
 
-    def transform(self, dataset, threshold=127, radius_spacing=1):
+    def transform(self, dataset, threshold=127, radius_spacing=1,
+                  save_to_file=False, output_folder=""):
         scalars = dataset.active_scalars
 
         if scalars is None:
             raise RuntimeError("No scalars found!")
+
+        if save_to_file and not os.access(output_folder, os.W_OK):
+            import warnings
+            save_to_file = False
+            warnings.warn(
+                "Unable to write to destination folder %s" % output_folder)
 
         self.progress.maximum = 100
         self.progress.value = 0
@@ -144,6 +152,11 @@ class PoreSizeDistribution(tomviz.operators.CancelableOperator):
 
         table_data[:, 0] = pore_radius
         table_data[:, 1] = pore_volume
+
+        if save_to_file:
+            filename = "pore_size_distribution.csv"
+            np.savetxt(os.path.join(output_folder, filename), table_data,
+                       delimiter=", ", header=", ".join(column_names))
 
         table = tomviz.utils.make_spreadsheet(column_names, table_data)
         return_values["pore_size_distribution"] = table
