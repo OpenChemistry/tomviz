@@ -16,6 +16,18 @@
       "type" : "int",
       "default" : 1,
       "minimum" : 1
+    },
+    {
+      "name" : "save_to_file",
+      "label" : "Save Extra Output to File",
+      "type" : "bool",
+      "default" : false
+    },
+    {
+      "name" : "output_folder",
+      "label" : "Destination Folder",
+      "type" : "string",
+      "default" : ""
     }
   ],
   "results" : [

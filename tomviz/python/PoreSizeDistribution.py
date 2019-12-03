@@ -1,6 +1,7 @@
 import tomviz.operators
 import tomviz.utils
 
+import os
 import numpy as np
 import scipy.ndimage
 
@@ -100,12 +101,36 @@ def get_dilation_count(volume, distance_map, radius, dilation_fn=None):
 
 
 class PoreSizeDistribution(tomviz.operators.CancelableOperator):
+    """Continuous pore size distribution method
+    https://doi.org/10.1111/j.1551-2916.2008.02736.x
+    """
+    def transform(self, dataset, threshold=127, radius_spacing=1,
+                  save_to_file=False, output_folder=""):
+        """Operator transform method
 
-    def transform(self, dataset, threshold=127, radius_spacing=1):
+        Args:
+            threshold (int): scalars >= threshold are considered matter.
+                             scalars < threshold are considered pore.
+            radius_spacing (int): size distribution is computed for all radii
+                                  from 1 to r_max. tweak radius spacing to
+                                  reduce the number of radii. For example,
+                                  if radius_spacing is 3, only calculate
+                                  r_s = 1, 4, 7, ... , r_max
+            save_to_file (bool): save the detailed output of the operator to
+                                 files.
+            output_folder (str): the path to the folder where the optional
+                                 output files are written to
+        """
         scalars = dataset.active_scalars
 
         if scalars is None:
             raise RuntimeError("No scalars found!")
+
+        if save_to_file and not os.access(output_folder, os.W_OK):
+            import warnings
+            save_to_file = False
+            warnings.warn(
+                "Unable to write to destination folder %s" % output_folder)
 
         self.progress.maximum = 100
         self.progress.value = 0
@@ -144,6 +169,11 @@ class PoreSizeDistribution(tomviz.operators.CancelableOperator):
 
         table_data[:, 0] = pore_radius
         table_data[:, 1] = pore_volume
+
+        if save_to_file:
+            filename = "pore_size_distribution.csv"
+            np.savetxt(os.path.join(output_folder, filename), table_data,
+                       delimiter=", ", header=", ".join(column_names))
 
         table = tomviz.utils.make_spreadsheet(column_names, table_data)
         return_values["pore_size_distribution"] = table

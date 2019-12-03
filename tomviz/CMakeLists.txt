@@ -414,6 +414,8 @@ set(python_files
   RotationAlign.py
   WienerFilter.py
   TV_Filter.py
+  PoreSizeDistribution.py
+  Tortuosity.py
   )
 
 set(json_files
@@ -459,6 +461,8 @@ set(json_files
   RotationAlign.json
   WienerFilter.json
   TV_Filter.json
+  PoreSizeDistribution.json
+  Tortuosity.json
   )
 
 set(resource_files

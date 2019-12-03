@@ -34,9 +34,26 @@
         {"Z +" : 4},
         {"Z -" : 5}
       ]
+    },
+    {
+      "name" : "save_to_file",
+      "label" : "Save Extra Output to File",
+      "type" : "bool",
+      "default" : false
+    },
+    {
+      "name" : "output_folder",
+      "label" : "Destination Folder",
+      "type" : "string",
+      "default" : ""
     }
   ],
   "results" : [
+    {
+      "name" : "tortuosity",
+      "label" : "Tortuosity",
+      "type" : "table"
+    },
     {
       "name" : "path_length",
       "label" : "Path Length",
