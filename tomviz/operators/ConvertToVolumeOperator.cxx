@@ -31,20 +31,7 @@ Operator* ConvertToVolumeOperator::clone() const
 
 bool ConvertToVolumeOperator::applyTransform(vtkDataObject* data)
 {
-  // The array should already exist.
-  auto fd = data->GetFieldData();
-  // Make sure the data is marked as a tilt series
-  auto dataType =
-    vtkTypeInt8Array::SafeDownCast(fd->GetArray("tomviz_data_source_type"));
-  if (!dataType) {
-    vtkNew<vtkTypeInt8Array> array;
-    array->SetNumberOfTuples(1);
-    array->SetName("tomviz_data_source_type");
-    fd->AddArray(array);
-    dataType = array;
-  }
-  // It should already be this value...
-  dataType->SetTuple1(0, m_type);
+  DataSource::setType(data, m_type);
   return true;
 }
 

@@ -190,6 +190,9 @@ public:
   /// Set the tilt angles to the values in the given QVector
   void setTiltAngles(const QVector<double>& angles);
 
+  /// Remove the tilt angles from the data source
+  void clearTiltAngles();
+
   /// Moves the displayPosition of the DataSource by deltaPosition
   void translate(const double deltaPosition[3]);
 
@@ -269,6 +272,7 @@ public:
   static QVector<double> getTiltAngles(vtkDataObject* image);
   static void setTiltAngles(vtkDataObject* image,
                             const QVector<double>& angles);
+  static void clearTiltAngles(vtkDataObject* image);
 
   /// Check to see if the data was subsampled while reading
   static bool wasSubsampled(vtkDataObject* image);
@@ -334,6 +338,11 @@ private:
 
   QJsonObject m_json;
 };
+
+inline void DataSource::clearTiltAngles()
+{
+  clearTiltAngles(dataObject());
+}
 
 inline bool DataSource::wasSubsampled() const
 {
