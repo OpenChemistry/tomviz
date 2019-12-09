@@ -30,7 +30,6 @@ private slots:
   void onViewPropertyChanged();
   void onViewChanged();
 
-  void setShowAxesGrid(bool show);
   void setShowCenterAxes(bool show);
   void setShowOrientationAxes(bool show);
 
@@ -40,7 +39,6 @@ private:
 
   QPointer<QAction> m_perspectiveProjectionAction;
   QPointer<QAction> m_orthographicProjectionAction;
-  QPointer<QAction> m_showAxesGridAction;
   QPointer<QAction> m_showCenterAxesAction;
   QPointer<QAction> m_showOrientationAxesAction;
 
