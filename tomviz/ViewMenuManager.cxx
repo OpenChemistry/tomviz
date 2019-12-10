@@ -57,11 +57,6 @@ ViewMenuManager::ViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
 
   Menu->addSeparator();
 
-  m_showAxesGridAction = Menu->addAction("Show Axes Grid");
-  m_showAxesGridAction->setCheckable(true);
-  m_showAxesGridAction->setChecked(false);
-  connect(m_showAxesGridAction, &QAction::triggered, this,
-          &ViewMenuManager::setShowAxesGrid);
   m_showCenterAxesAction = Menu->addAction("Show Center Axes");
   m_showCenterAxesAction->setCheckable(true);
   m_showCenterAxesAction->setChecked(false);
@@ -139,29 +134,15 @@ void ViewMenuManager::onViewChanged()
   if (m_view) {
     m_view->RemoveObserver(m_viewObserverId);
   }
+
   m_view = ActiveObjects::instance().activeView();
+
   if (m_view) {
     m_viewObserverId =
       pqCoreUtilities::connect(m_view, vtkCommand::PropertyModifiedEvent, this,
                                SLOT(onViewPropertyChanged()));
-    if (m_view->GetProperty("AxesGrid")) {
-      vtkSMPropertyHelper axesGridProp(m_view, "AxesGrid");
-      vtkSMProxy* proxy = axesGridProp.GetAsProxy();
-      if (!proxy) {
-        vtkSMSessionProxyManager* pxm = m_view->GetSessionProxyManager();
-        proxy = pxm->NewProxy("annotations", "GridAxes3DActor");
-        axesGridProp.Set(proxy);
-        m_view->UpdateVTKObjects();
-        proxy->Delete();
-      }
-      vtkSMPropertyHelper visibilityHelper(proxy, "Visibility");
-      m_showAxesGridAction->setChecked(visibilityHelper.GetAsInt() == 1);
-      m_showAxesGridAction->setEnabled(true);
-    } else {
-      m_showAxesGridAction->setChecked(false);
-      m_showAxesGridAction->setEnabled(false);
-    }
   }
+
   bool enableProjectionModes =
     (m_view && m_view->GetProperty("CameraParallelProjection"));
   m_orthographicProjectionAction->setEnabled(enableProjectionModes);
@@ -187,22 +168,6 @@ void ViewMenuManager::onViewChanged()
                                             "OrientationAxesVisibility");
     m_showOrientationAxesAction->setChecked(showOrientationAxes.GetAsInt() ==
                                             1);
-  }
-}
-
-void ViewMenuManager::setShowAxesGrid(bool show)
-{
-  if (!m_view || !m_view->GetProperty("AxesGrid")) {
-    return;
-  }
-  vtkSMPropertyHelper axesGridProp(m_view, "AxesGrid");
-  auto axesGridProxy = axesGridProp.GetAsProxy();
-  vtkSMPropertyHelper visibility(axesGridProxy, "Visibility");
-  visibility.Set(show ? 1 : 0);
-  axesGridProxy->UpdateVTKObjects();
-  pqView* view = tomviz::convert<pqView*>(m_view);
-  if (view) {
-    view->render();
   }
 }
 
