@@ -619,8 +619,11 @@ def _execute_transform(operator_label, transform, arguments, input, progress):
         print('Operator doesn\'t support progress updates.')
 
     result = None
-    # Special case for SetTiltAngles
-    if operator_label == 'SetTiltAngles':
+    # Special cases for marking as volume or tilt series
+    if operator_label == 'ConvertToVolume':
+        # Easy peasy
+        input.tilt_angles = None
+    elif operator_label == 'SetTiltAngles':
         # Set the tilt angles so downstream operator can retrieve them
         # arguments the tilt angles.
         input.tilt_angles = np.array(arguments['angles']).astype(np.float64)
@@ -637,8 +640,11 @@ def _execute_transform(operator_label, transform, arguments, input, progress):
 def _load_transform_functions(operators):
     transform_functions = []
     for operator in operators:
-        # Special case for tilt angles operator
-        if operator['type'] == 'SetTiltAngles':
+        # Special case for marking as volume or tilt series
+        if operator['type'] == 'ConvertToVolume':
+            transform_functions.append((operator['type'], None, {}))
+            continue
+        elif operator['type'] == 'SetTiltAngles':
             # Just save the angles
             angles = {'angles': [float(a) for a in operator['angles']]}
             transform_functions.append((operator['type'], None, angles))

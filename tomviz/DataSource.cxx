@@ -1314,6 +1314,23 @@ void DataSource::setType(vtkDataObject* image, DataSourceType t)
 
   vtkFieldData* fd = image->GetFieldData();
   setFieldDataArray<ArrayType>(fd, arrayName, 1, &i);
+
+  if (t != DataSourceType::TiltSeries) {
+    // Clear the tilt angles
+    clearTiltAngles(image);
+  }
+}
+
+void DataSource::clearTiltAngles(vtkDataObject* image)
+{
+  if (!image)
+    return;
+
+  const char* arrayName = "tilt_angles";
+  auto fd = image->GetFieldData();
+  if (fd->HasArray(arrayName)) {
+    fd->RemoveArray(arrayName);
+  }
 }
 
 bool DataSource::wasSubsampled(vtkDataObject* image)
