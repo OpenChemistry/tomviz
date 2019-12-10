@@ -38,16 +38,13 @@ int main(int argc, char** argv)
   splash.show();
   app.processEvents();
 
-#ifndef _WIN32
-  // See if this helps Python initialize itself on macOS.
   std::string exeDir = QApplication::applicationDirPath().toLatin1().data();
-  if (!tomviz::isBuildDir(exeDir)) {
-    QByteArray pythonPath =
-      (exeDir + tomviz::PythonInitializationPythonPath()).c_str();
+  if (tomviz::isApplicationBundle(exeDir)) {
+    QByteArray pythonPath = tomviz::bundlePythonPath(exeDir).c_str();
     qputenv("PYTHONPATH", pythonPath);
     qputenv("PYTHONHOME", pythonPath);
   }
-#endif
+
   // Set environment variable to indicate that we are running inside the Tomviz
   // application vs Python command line. This can be used to selectively load
   // modules.
