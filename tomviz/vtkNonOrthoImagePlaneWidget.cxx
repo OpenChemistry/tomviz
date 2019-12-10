@@ -1171,12 +1171,12 @@ void vtkNonOrthoImagePlaneWidget::FindPlaneBounds(vtkInformation* outInfo,
 
   int i;
 
-  double orig_bounds[] = { origin[0] + spacing[0] * extent[0],   // xmin
-                           origin[0] + spacing[0] * extent[1],   // xmax
-                           origin[1] + spacing[1] * extent[2],   // ymin
-                           origin[1] + spacing[1] * extent[3],   // ymax
-                           origin[2] + spacing[2] * extent[4],   // zmin
-                           origin[2] + spacing[2] * extent[5] }; // zmax
+  double orig_bounds[] = { origin[0] + spacing[0] * (extent[0] - 0.5),   // xmin
+                           origin[0] + spacing[0] * (extent[1] + 0.5),   // xmax
+                           origin[1] + spacing[1] * (extent[2] - 0.5),   // ymin
+                           origin[1] + spacing[1] * (extent[3] + 0.5),   // ymax
+                           origin[2] + spacing[2] * (extent[4] - 0.5),   // zmin
+                           origin[2] + spacing[2] * (extent[5] + 0.5) }; // zmax
 
   for (i = 0; i <= 4; i += 2) // reverse bounds if necessary
   {
