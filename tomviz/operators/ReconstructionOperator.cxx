@@ -4,6 +4,7 @@
 #include "ReconstructionOperator.h"
 
 #include "DataSource.h"
+#include "Pipeline.h"
 #include "ReconstructionWidget.h"
 #include "TomographyReconstruction.h"
 #include "TomographyTiltSeries.h"
@@ -60,7 +61,13 @@ Operator* ReconstructionOperator::clone() const
 
 QWidget* ReconstructionOperator::getCustomProgressWidget(QWidget* p) const
 {
-  ReconstructionWidget* widget = new ReconstructionWidget(m_dataSource, p);
+  DataSource* source = m_dataSource;
+  if (source && source->pipeline()) {
+    // Use the transformed data source for the reconstruction widget
+    source = source->pipeline()->transformedDataSource();
+  }
+
+  ReconstructionWidget* widget = new ReconstructionWidget(source, p);
   QObject::connect(this, &Operator::progressStepChanged, widget,
                    &ReconstructionWidget::updateProgress);
   QObject::connect(this, &ReconstructionOperator::intermediateResults, widget,
