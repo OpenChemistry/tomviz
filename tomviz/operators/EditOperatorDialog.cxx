@@ -163,7 +163,7 @@ void EditOperatorDialog::applyChanges()
         auto dataSource = this->Internals->dataSource;
         auto whenCanceled = [op, dataSource]() {
           // Resume the pipeline and emit transformModified
-          dataSource->pipeline()->resume(false);
+          dataSource->pipeline()->resume();
           emit op->transformModified();
         };
         if (this->Internals->needsToBeAdded) {

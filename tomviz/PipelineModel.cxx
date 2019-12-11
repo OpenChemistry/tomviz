@@ -202,7 +202,7 @@ bool PipelineModel::TreeItem::remove(DataSource* source)
       ModuleManager::instance().removeOperator(childItem->op());
       if (pipeline != nullptr) {
         // Resume but don't execute as we are removing this data source.
-        pipeline->resume(false);
+        pipeline->resume();
       }
     } else if (childItem->module()) {
       ModuleManager::instance().removeModule(childItem->module());

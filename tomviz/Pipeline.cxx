@@ -404,18 +404,9 @@ bool Pipeline::paused() const
   return m_paused;
 }
 
-void Pipeline::resume(bool run)
+void Pipeline::resume()
 {
   m_paused = false;
-  if (run) {
-    execute()->deleteWhenFinished();
-  }
-}
-
-void Pipeline::resume(DataSource* at)
-{
-  m_paused = false;
-  execute(at)->deleteWhenFinished();
 }
 
 void Pipeline::cancel(std::function<void()> canceled)

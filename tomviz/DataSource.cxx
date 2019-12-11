@@ -243,7 +243,7 @@ bool DataSource::appendSlice(vtkImageData* slice)
 
       emit dataChanged();
       emit dataPropertiesChanged();
-      pipeline()->execute();
+      pipeline()->execute()->deleteWhenFinished();
     }
   }
   return true;
@@ -360,7 +360,7 @@ bool DataSource::reloadAndResample()
 
   // If there are operators, re-run the pipeline
   if (!operators().empty())
-    pipeline()->execute(this, operators().first());
+    pipeline()->execute(this, operators().first())->deleteWhenFinished();
 
   dataModified();
   emit activeScalarsChanged();
@@ -561,7 +561,10 @@ bool DataSource::deserialize(const QJsonObject& state)
       }
     }
 
-    pipeline()->resume(this);
+    if (!ModuleManager::instance().pipelinesPaused()) {
+      pipeline()->resume();
+      pipeline()->execute(this)->deleteWhenFinished();
+    }
   }
   return true;
 }
