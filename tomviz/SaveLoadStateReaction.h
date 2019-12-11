@@ -24,6 +24,7 @@ public:
 
 protected:
   void onTriggered() override;
+  static bool automaticallyExecutePipelines();
 
 private:
   Q_DISABLE_COPY(SaveLoadStateReaction)
