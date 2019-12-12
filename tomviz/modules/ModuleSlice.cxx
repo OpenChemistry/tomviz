@@ -679,11 +679,18 @@ void ModuleSlice::onSliceChanged(double* point)
   imageData()->GetDimensions(dims);
   double bounds[6];
   imageData()->GetBounds(bounds);
-  int slice;
 
-  slice = (dims[axis] - 1) * (point[axis] - bounds[2 * axis]) /
+  // Due to changes from commit 43182619 the point on the slice plane could
+  // fall outside the bounds of the volume.
+  // This could yield slice numbers that are negative, or are larger than
+  // the number of slices. The next two lines ensure this never happens.
+  point[axis] = std::max(point[axis], bounds[2 * axis]);
+  point[axis] = std::min(point[axis], bounds[2 * axis + 1]);
+
+  double slice = (dims[axis] - 1) * (point[axis] - bounds[2 * axis]) /
           (bounds[2 * axis + 1] - bounds[2 * axis]);
-  onSliceChanged(slice);
+
+  onSliceChanged(round(slice));
 }
 
 void ModuleSlice::onTextureInterpolateChanged(bool flag)
