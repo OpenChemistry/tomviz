@@ -43,7 +43,7 @@ jobs:
   - task: CacheBeta@0
     inputs:
       # Change the "v*" at the end to force a re-build
-      key: paraview | $(Agent.OS) | $(paraview_sha1) | v2
+      key: paraview | $(Agent.OS) | $(paraview_sha1) | v3
       path: $(PARAVIEW_BUILD_FOLDER)
       cacheHitVar: PARAVIEW_BUILD_RESTORED
     displayName: Restore ParaView Build
