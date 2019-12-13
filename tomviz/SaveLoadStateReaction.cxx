@@ -107,7 +107,7 @@ bool SaveLoadStateReaction::loadState(const QString& filename)
   }
 
   auto executeOnLoad = automaticallyExecutePipelines();
-  ModuleManager::instance().pausePipelines(!executeOnLoad);
+  ModuleManager::instance().executePipelinesOnLoad(executeOnLoad);
 
   if (doc.isObject()) {
     // This needs to run here, but needs to run after the dialog is connected

@@ -561,7 +561,7 @@ bool DataSource::deserialize(const QJsonObject& state)
       }
     }
 
-    if (!ModuleManager::instance().pipelinesPaused()) {
+    if (ModuleManager::instance().executePipelinesOnLoad()) {
       pipeline()->resume();
       pipeline()->execute(this)->deleteWhenFinished();
     }
