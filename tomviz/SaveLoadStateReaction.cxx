@@ -7,11 +7,16 @@
 #include "RecentFilesMenu.h"
 #include "Utilities.h"
 
+#include <pqSettings.h>
 #include <vtkSMProxyManager.h>
 
+#include <QCheckBox>
 #include <QDebug>
+#include <QDialog>
+#include <QDialogButtonBox>
 #include <QDir>
 #include <QFileDialog>
+#include <QFormLayout>
 #include <QHBoxLayout>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -101,6 +106,9 @@ bool SaveLoadStateReaction::loadState(const QString& filename)
     }
   }
 
+  auto executeOnLoad = automaticallyExecutePipelines();
+  ModuleManager::instance().executePipelinesOnLoad(executeOnLoad);
+
   if (doc.isObject()) {
     // This needs to run here, but needs to run after the dialog is connected
     // and execed.  Otherwise we miss singals fired from within deserialize.
@@ -165,6 +173,48 @@ QString SaveLoadStateReaction::extractLegacyStateFileVersion(
   }
 
   return fullVersion;
+}
+
+bool SaveLoadStateReaction::automaticallyExecutePipelines()
+{
+  QSettings* settings = pqApplicationCore::instance()->settings();
+  QString key = "PipelineSettings.AutoExecuteOnStateLoad";
+  if (settings->contains(key)) {
+    return settings->value(key).toBool();
+  }
+
+  QDialog dialog(tomviz::mainWidget());
+  dialog.setFixedWidth(300);
+  dialog.setMaximumHeight(50);
+  dialog.setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+
+  QVBoxLayout vLayout;
+  dialog.setLayout(&vLayout);
+  dialog.setWindowTitle(tr("Load state"));
+
+  QFormLayout formLayout;
+  vLayout.addLayout(&formLayout);
+
+  QLabel title(tr("Automatically execute pipelines?"));
+  formLayout.addRow(&title);
+
+  QCheckBox dontAskAgain("Don't ask again");
+  formLayout.addRow(&dontAskAgain);
+
+  QDialogButtonBox buttons(QDialogButtonBox::Yes | QDialogButtonBox::No);
+  vLayout.addWidget(&buttons);
+
+  connect(&buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+  connect(&buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+
+  auto r = dialog.exec();
+
+  bool executePipelines = r == QDialog::Accepted;
+  if (dontAskAgain.isChecked()) {
+    settings->setValue(key, executePipelines);
+  }
+
+  return executePipelines;
 }
 
 bool SaveLoadStateReaction::checkForLegacyStateFileFormat(

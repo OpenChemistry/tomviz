@@ -90,6 +90,9 @@ public:
 
   bool lastLoadStateSucceeded();
 
+  void executePipelinesOnLoad(bool execute);
+  bool executePipelinesOnLoad() const;
+
 public slots:
   void addModule(Module*);
 

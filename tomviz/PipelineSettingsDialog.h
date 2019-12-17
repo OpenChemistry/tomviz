@@ -28,6 +28,9 @@ public:
 private slots:
   void writeSettings();
 
+protected:
+  void showEvent(QShowEvent* event) override;
+
 private:
   Q_DISABLE_COPY(PipelineSettingsDialog)
   QScopedPointer<Ui::PipelineSettingsDialog> m_ui;

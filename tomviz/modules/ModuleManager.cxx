@@ -76,6 +76,9 @@ public:
   int RemaningPipelinesToWaitFor;
   bool LastStateLoadSuccess;
 
+  // Ensure all pipelines created when restoring the state are not executed
+  bool ExecutePipelinesOnLoad = true;
+
   // Only used by onPVStateLoaded for the second half of deserialize
   QDir dir;
   QMap<vtkTypeUInt32, vtkSMViewProxy*> ViewIdMap;
@@ -998,7 +1001,7 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
       }
 
       if (dataSource) {
-        if (dsObject.contains("operators") &&
+        if (executePipelinesOnLoad() && dsObject.contains("operators") &&
             dsObject["operators"].toArray().size() > 0) {
           connect(dataSource->pipeline(), &Pipeline::finished, this,
                   &ModuleManager::onPipelineFinished);
@@ -1060,6 +1063,10 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
       }
     }
   }
+
+  if (!executePipelinesOnLoad()) {
+    emit stateDoneLoading();
+  }
 }
 
 void ModuleManager::incrementPipelinesToWaitFor()
@@ -1078,6 +1085,16 @@ void ModuleManager::onPipelineFinished()
     disconnect(p, &Pipeline::finished, this,
                &ModuleManager::onPipelineFinished);
   }
+}
+
+void ModuleManager::executePipelinesOnLoad(bool execute)
+{
+  d->ExecutePipelinesOnLoad = execute;
+}
+
+bool ModuleManager::executePipelinesOnLoad() const
+{
+  return d->ExecutePipelinesOnLoad;
 }
 
 void ModuleManager::onViewRemoved(pqView* view)

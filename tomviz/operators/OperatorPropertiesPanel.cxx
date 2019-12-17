@@ -120,7 +120,7 @@ void OperatorPropertiesPanel::apply()
         } else {
           auto whenCanceled = [pythonOperator, dataSource]() {
             // Resume the pipeline and emit transformModified
-            dataSource->pipeline()->resume(false);
+            dataSource->pipeline()->resume();
             emit pythonOperator->transformModified();
           };
           // We pause the pipeline so applyChangesToOperator does cause it to

@@ -79,10 +79,22 @@ PipelineSettingsDialog::~PipelineSettingsDialog()
 void PipelineSettingsDialog::readSettings()
 {
   auto settings = pqApplicationCore::instance()->settings();
-  if (!settings->contains("pipeline/geometry")) {
-    return;
+
+  if (settings->contains("PipelineSettings.AutoExecuteOnStateLoad")) {
+    auto execute =
+      settings->value("PipelineSettings.AutoExecuteOnStateLoad").toBool();
+    Qt::CheckState checked = execute ? Qt::Checked : Qt::Unchecked;
+    m_ui->executePipelinesCheckBox->setCheckState(checked);
+    m_ui->executePipelinesLabel->show();
+    m_ui->executePipelinesCheckBox->show();
+  } else {
+    m_ui->executePipelinesLabel->hide();
+    m_ui->executePipelinesCheckBox->hide();
   }
-  setGeometry(settings->value("pipeline/geometry").toRect());
+
+  if (settings->contains("pipeline/geometry")) {
+    setGeometry(settings->value("pipeline/geometry").toRect());
+  }
 
   PipelineSettings pipelineSettings;
 
@@ -101,6 +113,25 @@ void PipelineSettingsDialog::readSettings()
 void PipelineSettingsDialog::writeSettings()
 {
   auto settings = pqApplicationCore::instance()->settings();
+
+  if (settings->contains("PipelineSettings.AutoExecuteOnStateLoad")) {
+    switch (m_ui->executePipelinesCheckBox->checkState()) {
+      case Qt::Checked: {
+        settings->setValue("PipelineSettings.AutoExecuteOnStateLoad", true);
+        break;
+      }
+      case Qt::Unchecked: {
+        settings->setValue("PipelineSettings.AutoExecuteOnStateLoad", false);
+        break;
+      }
+      case Qt::PartiallyChecked:
+      default: {
+        settings->remove("PipelineSettings.AutoExecuteOnStateLoad");
+        break;
+      }
+    }
+  }
+
   settings->setValue("pipeline/geometry", geometry());
 
   PipelineSettings pipelineSettings;
@@ -108,6 +139,12 @@ void PipelineSettingsDialog::writeSettings()
   pipelineSettings.setDockerImage(m_ui->dockerImageLineEdit->text());
   pipelineSettings.setDockerPull(m_ui->pullImageCheckBox->isChecked());
   pipelineSettings.setDockerRemove(m_ui->removeContainersCheckBox->isChecked());
+}
+
+void PipelineSettingsDialog::showEvent(QShowEvent* event)
+{
+  QDialog::showEvent(event);
+  readSettings();
 }
 
 void PipelineSettingsDialog::checkEnableOk()

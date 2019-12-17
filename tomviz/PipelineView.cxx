@@ -374,7 +374,10 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
       dataSource = op->dataSource();
     }
     // Re-execute from the beginning
-    dataSource->pipeline()->execute(dataSource, dataSource->operators().first());
+    dataSource->pipeline()->resume();
+    dataSource->pipeline()
+      ->execute(dataSource, dataSource->operators().first())
+      ->deleteWhenFinished();
   } else if (markAsVolumeAction != nullptr &&
              markAsVolumeAction == selectedItem) {
     auto mainWindow = qobject_cast<QMainWindow*>(window());
@@ -473,7 +476,8 @@ void PipelineView::deleteItems(const QModelIndexList& idxs)
 
   // Now resume the pipelines
   foreach (DataSource* dataSource, paused) {
-    dataSource->pipeline()->resume(dataSource);
+    dataSource->pipeline()->resume();
+    dataSource->pipeline()->execute(dataSource)->deleteWhenFinished();
   }
 
   // Delay rendering until signals have been processed and all modules removed.
