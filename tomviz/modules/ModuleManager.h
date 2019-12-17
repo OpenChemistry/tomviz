@@ -92,6 +92,7 @@ public:
 
   void executePipelinesOnLoad(bool execute);
   bool executePipelinesOnLoad() const;
+  DataSource* loadDataSource(QJsonObject& ds);
 
 public slots:
   void addModule(Module*);
