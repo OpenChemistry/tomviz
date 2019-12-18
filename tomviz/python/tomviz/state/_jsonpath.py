@@ -19,7 +19,7 @@ def find_pipeline(path):
 def find_operator(path):
     pipeline = find_pipeline(path);
 
-    if len(path) < 2:
+    if len(path) < 1:
         raise ValueError("Path doesn't have enough parts.")
 
 
@@ -27,12 +27,12 @@ def find_operator(path):
     if obj_type != "operators":
         raise ValueError("Path doesn't contain 'operators'.")
 
+    op_index = 0
+    if path:
+        op_index = path.pop(0)
+        op_index = int(op_index)
 
-    op_index = path.pop(0)
-    op_index = int(op_index)
-
-
-    operators = pipeline.datasource.operators
+    operators = pipeline.dataSource.operators
     if op_index >= len(operators):
         raise ValueError("Operator index no longer exists.")
 
@@ -47,7 +47,7 @@ def find_datasource(path):
   if 'dataSources' not in copy:
     del path[:2]
 
-    return pipeline.datasource
+    return pipeline.dataSource
 
   # Find the operator (the child data source has to be assocated with one ...)
   op = find_operator(path);
@@ -61,16 +61,17 @@ def find_module(path):
     if datasource is None:
         raise ValueError('Unable to find data source.')
 
-    if len(path) < 2:
+    if len(path) < 1:
         raise ValueError("Path doesn't have enough parts.")
 
     obj_type = path.pop(0)
     if obj_type != 'modules':
         raise ValueError("Path doesn't contain 'modules'.")
 
-
-    mod_index = path.pop(0)
-    mod_index = int(mod_index)
+    mod_index = 0:
+    if path:
+        mod_index = path.pop(0)
+        mod_index = int(mod_index)
 
     modules = datasource.modules
     if mod_index >= len(modules):
