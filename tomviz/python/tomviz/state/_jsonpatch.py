@@ -1,6 +1,7 @@
 import jsonpatch
 import re
 import json
+import types
 
 from ._jsonpath import (
     operator_path,
@@ -12,7 +13,55 @@ from ._jsonpath import (
     find_datasource
 )
 
+from ._schemata import (
+    load_operator,
+    load_module,
+    load_datasource
+)
+
 from ._pipeline import PipelineStateManager
+
+def update_list(src, dst):
+
+    same = True
+    if len(src) == len(dst):
+        for (x, y) in zip(src, dst):
+            same = hasattr(x, 'id') and hasattr(y, 'id') and x.id == y.id
+            if not same:
+                break
+
+    # If we are dealing with a list of the same object we can just update
+    if same:
+        for i in range(0, len(src)):
+            x = src[i]
+            if isinstance(x, built_in):
+                dst[i] = x
+            else:
+                update(x, dst[i])
+    # Otherwise, clear the list and start again
+    else:
+        for x in dst:
+            if hasattr(x, '_kill'):
+                x._kill()
+        dst.clear()
+        for x in src:
+            dst.append(x)
+
+built_in = (str, int, float, complex, dict)
+def update(src, dst):
+    print('type: %s' % type(src))
+    for attr, value in vars(src).items():
+        if isinstance(value, list):
+            update_list(value, getattr(dst, attr))
+        elif isinstance(value, built_in):
+            setattr(dst, attr, value)
+        else:
+            if not hasattr(dst, attr) or getattr(dst, attr) is None:
+                setattr(dst, attr, value)
+            else:
+                update(value, getattr(dst, attr))
+
+    return dst
 
 
 def operator_replace(patch_op):
@@ -41,7 +90,7 @@ def module_replace(patch_module):
     path = patch_module['path']
     module_path = module_path(path)
 
-    # Now get the current state of the operator
+    # Now get the current state of the module
     module = find_module(module_path.split('/')[1:])
     current_state = PipelineStateManager().serialize_module(path, module.id)
     current_state_dct = json.loads(current_state)
@@ -56,6 +105,28 @@ def module_replace(patch_module):
     PipelineStateManager().deserialize_module(module_path, json.dumps(current_state_dct))
 
     return module_path
+
+def datasource_replace(patch_datasource):
+    # First get path to datasource
+    path = patch_datasource['path']
+    datasource_path = datasouce_path(path)
+
+    # Now get the current state of the datasource
+    datasource = find_datasource(datasource_path.split('/')[1:])
+    current_state = PipelineStateManager().serialize_datasource(path, datasource.id)
+    current_state_dct = json.loads(current_state)
+
+    # Apply the update
+    # Adjust the path
+    patch_datasource['path'] = path.replace(datasource_path, '')
+    patch = jsonpatch.JsonPatch([patch_datasource])
+    current_state_dct = patch.apply(current_state_dct)
+
+    # Now update the datasource
+    PipelineStateManager().deserialize_datasource(datasource_path, json.dumps(current_state_dct))
+
+    return datasource_path
+
 
 def module_add(patch_module):
     if patch_module['value'] == []:
@@ -84,6 +155,10 @@ def module_add(patch_module):
     # Now update the module
     PipelineStateManager().deserialize_module(path, state['id'], json.dumps(state))
 
+    module_state = PipelineStateManager().serialize_module(path, state['id'])
+    new_module = load_module(json.loads(module_state))
+    update(new_module, module)
+
 def operator_add(patch_op):
     if patch_op['value'] == []:
         return
@@ -95,7 +170,25 @@ def operator_add(patch_op):
     ds_path = datasource_path(path)
     data_source = find_datasource(ds_path.split('/')[1:])
 
-    PipelineStateManager().add_operator(ds_path, data_source.id, json.dumps(op_json))
+    op_state = PipelineStateManager().add_operator(ds_path, data_source.id, json.dumps(op_json))
+
+    op = find_operator(path.split('/')[1:])
+    new_op = load_operator(json.loads(op_state))
+    update(new_op, op)
+
+def datasource_add(patch_datasource):
+    if patch_datasource['value'] == []:
+        return
+
+    datasource_json = patch_datasource['value']
+    # if isinstance(datasource_json, list):
+    #     datasource_json = datasource_json[0]
+    path = patch_datasource['path']
+
+    datasource = find_datasource(path.split('/')[1:])
+    datasource_state = PipelineStateManager().add_datasource(json.dumps(datasource_json))
+    new_datasource = load_datasource(json.loads(datasource_state))
+    update(new_datasource, datasource)
 
 _datasource_regx = re.compile(r'.*/dataSources/\d(.*)')
 def is_datasource_update(path):
@@ -124,6 +217,10 @@ def is_module_add(path):
 _op_add_regx = re.compile(r'.*/operators/?\d*$')
 def is_op_add(path):
     return _op_add_regx.match(path)
+
+_datasource_add_regx = re.compile(r'.*/dataSources/?\d*$')
+def is_datasource_add(path):
+    return _datasource_add_regx.match(path)
 
 def diff(src, dst):
     patch = jsonpatch.JsonPatch.from_diff(src, dst)

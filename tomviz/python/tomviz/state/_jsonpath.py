@@ -68,7 +68,7 @@ def find_module(path):
     if obj_type != 'modules':
         raise ValueError("Path doesn't contain 'modules'.")
 
-    mod_index = 0:
+    mod_index = 0
     if path:
         mod_index = path.pop(0)
         mod_index = int(mod_index)

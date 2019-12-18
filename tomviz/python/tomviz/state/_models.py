@@ -6,6 +6,26 @@ from ._pipeline import PipelineStateManager
 
 op_class_attrs = ['description', 'label', 'script', 'type']
 
+class InvalidStateError(RuntimeError):
+    pass
+
+class Base(object):
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+class Mortal(object):
+    _dead = False
+
+    def _kill(self):
+        self._dead = True
+
+    def _getattribute__(self, item):
+        if self._dead:
+            raise InvalidStateError('%s nolonger represents a valid pipeline element.')
+        else:
+            super(Mortal, self)._getattribute__(item)
+
 class OperatorMeta(type):
     def __init__(cls, name, bases, dict):
         attrs = {}
@@ -44,27 +64,29 @@ class Pipeline(object):
         self._datasource = datasource
 
     @property
-    def datasource(self):
+    def dataSource(self):
         return self._datasource
 
+class Reader(Base, Mortal):
+    pass
 
-class DataSource(object):
+class DataSource(Base, Mortal):
     def __init__(self, **kwargs):
-        #self.operators = []
-        #self.modules = []
-        for k, v in kwargs.items():
-            setattr(self, k, v)
+        self.reader = Reader(name=kwargs.pop('name', None),
+                             fileNames=kwargs.pop('fileNames', []))
+        self.operators = []
+        self.modules = []
+        super(DataSource, self).__init__(**kwargs)
 
     def add_module(self, module):
         self.modules.append(module)
 
-class Operator(object):
-    def __init__(self, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self, k, v)
+class Operator(Base, Mortal):
+    pass
 
-class Module(object):
+class Module(Mortal):
     def __init__(self, **kwargs):
+        from ._schemata import dump_module
         args = self._props
         args.update(kwargs)
 
@@ -74,19 +96,16 @@ class Module(object):
             setattr(self, k, v)
 
     def _updates(self):
-        current_state = serialize_module(self)
+        current_state = dump_module(self)
         patch = jsonpatch.JsonPatch.from_diff(self._props, current_state)
         patch = json.loads(patch.to_string())
 
         return patch
 
 class Tomviz(object):
-    def __init__(self, pipelines):
-        self._pipelines = pipelines
+    def __init__(self, pipelines=None):
+        self.pipelines = pipelines if pipelines else []
 
-    @property
-    def pipelines(self):
-        return self._pipelines
 
 def module_json_to_classes(module_json):
     for name, info in module_json.items():

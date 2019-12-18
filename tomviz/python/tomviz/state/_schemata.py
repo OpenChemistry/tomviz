@@ -1,6 +1,4 @@
-import collections
 import json
-from types import SimpleNamespace
 
 from marshmallow import fields, Schema, post_load, EXCLUDE, INCLUDE, pre_load, post_dump
 
@@ -9,60 +7,21 @@ from ._models import (
     Pipeline,
     DataSource,
     Operator,
-    Module
+    Module,
+    Reader
+)
+
+from ._utils import (
+    to_namespaces,
+    from_namespace,
+    attrs
 )
 
 from . import operators, modules
 from ._models import op_class_attrs
 
-def iter_paths(tree, parent_path=()):
-    for path, node in tree.items():
-        current_path = parent_path + (path,)
-        if isinstance(node, collections.Mapping):
-            for inner_path in iter_paths(node, current_path):
-                yield inner_path
-        else:
-            yield current_path
 
-def to_namespaces(dct):
-    root = SimpleNamespace()
-    for path in iter_paths(dct):
-        prop_name = path[-1]
-        path = path[:-1]
-        current_namespace = root
-
-        for p in path:
-            if hasattr(current_namespace, p):
-                current_namespace = getattr(current_namespace, p)
-            else:
-                new_namespace = SimpleNamespace()
-                setattr(current_namespace, p, new_namespace)
-                current_namespace = new_namespace
-
-        v = dct
-        for k in path + (prop_name,):
-            v = v[k]
-
-        setattr(current_namespace, prop_name, v)
-
-    return root
-
-def from_namespace(namespace):
-    d = {}
-
-    for a in attrs(namespace):
-        v = getattr(namespace, a)
-        if attrs(v):
-            d[a] = from_namespace(v)
-        else:
-            d[a] = v
-
-    return d
-
-def attrs(o):
-    return [x for x in dir(o) if not x.startswith('_') and not callable(getattr(o, x)) and not isinstance(o, (int, float, str, dict)) ]
-
-class OperatorSchema(fields.Field):
+class OperatorField(fields.Field):
     def _serialize(self, value, attr, obj, **kwargs):
         if value is None:
             return ""
@@ -154,12 +113,12 @@ def dump_module(module):
     return ModuleSchema().dump(ns)['module']
 
 class ColorMap2DBoxSchema(Schema):
-    x = fields.Integer()
-    y = fields.Integer()
+    x = fields.Float()
+    y = fields.Float()
     height = fields.Float()
     width = fields.Float()
     @post_load
-    def make_datasource(self, data, **kwargs):
+    def make_namespace(self, data, **kwargs):
         return to_namespaces(data)
 
     class Meta:
@@ -171,7 +130,7 @@ class ColorOpacityMap(Schema):
     points = fields.List(fields.Float)
 
     @post_load
-    def make_datasource(self, data, **kwargs):
+    def make_namespace(self, data, **kwargs):
         return to_namespaces(data)
 
     class Meta:
@@ -181,22 +140,40 @@ class GradientOpacityMap(Schema):
     points = fields.List(fields.Float)
 
     @post_load
-    def make_datasource(self, data, **kwargs):
+    def make_namespace(self, data, **kwargs):
         return to_namespaces(data)
 
     class Meta:
         unknown = INCLUDE
 
+class ReaderSchema(Schema):
+    fileNames = fields.List(fields.String)
+    name = fields.String()
+
+    @post_load
+    def make_reader(self, data, **kwargs):
+        return Reader(**data)
+
+    @post_dump
+    def remove_empty(self, data, **kwargs):
+        if data['name'] is None:
+            del data['name']
+
+        return data
 
 class DataSourceSchema(Schema):
-    operators = fields.List(OperatorSchema, missing=[])
+    operators = fields.List(OperatorField, missing=[])
     colorMap2DBox = fields.Nested(ColorMap2DBoxSchema)
     colorOpacityMap = fields.Nested(ColorOpacityMap)
     gradientOpacityMap = fields.Nested(GradientOpacityMap)
     modules = fields.List(ModuleField, missing=[])
     useDetachedColorMap = fields.Boolean()
+    spacing = fields.List(fields.Float)
+    units = fields.String()
     id = fields.String()
     label = fields.String()
+    reader = fields.Nested(ReaderSchema)
+    active = fields.Boolean()
 
     @post_load
     def make_datasource(self, data, **kwargs):
@@ -217,7 +194,7 @@ def load_datasource(datasource):
     return DataSourceSchema().load(datasource)
 
 class PipelineSchema(Schema):
-    datasource = fields.Nested(DataSourceSchema)
+    dataSource = fields.Nested(DataSourceSchema)
 
     # The following @pre_load and @post_dump are need to allow use to have
     # a Pipeline object with a datasource attribute. The JSON object in
@@ -230,7 +207,7 @@ class PipelineSchema(Schema):
         Add the DataSource as an attribute of the pipeline.
         """
         return {
-            'datasource': data
+            'dataSource': data
         }
 
     @post_dump
@@ -239,11 +216,11 @@ class PipelineSchema(Schema):
         Extract DataSource from pipeline attribute.
         """
 
-        return data['datasource']
+        return data['dataSource']
 
     @post_load
     def make_pipeline(self, data, **kwargs):
-        return Pipeline(data['datasource'])
+        return Pipeline(data['dataSource'])
 
     class Meta:
         unknown = EXCLUDE

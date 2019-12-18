@@ -17,8 +17,11 @@ from ._schemata import (
 )
 
 from ._models import (
+    Tomviz,
+    Pipeline,
     Module,
     Operator,
+    DataSource,
     ModuleMeta,
     OperatorMeta,
     init_operators,
@@ -39,16 +42,19 @@ from ._jsonpatch import (
     is_operator_update,
     is_module_add,
     is_op_add,
+    is_datasource_add,
     operator_replace,
     module_replace,
+    datasource_replace,
     operator_add,
-    module_add
+    module_add,
+    datasource_add
 )
 
 from ._pipeline import PipelineStateManager
 
-pipelines = []
 t = None
+pipelines = None
 
 def _mark_modified(ops, modules):
     ops_to_mark = {}
@@ -66,6 +72,8 @@ def _update_state(src, dst):
 
     ops_modified = set()
     modules_modified = set()
+    datasources_modified = set()
+
 
     for o in patch:
         path = o['path']
@@ -74,11 +82,17 @@ def _update_state(src, dst):
                 ops_modified.add(operator_replace(o))
             elif is_module_update(path):
                 modules_modified.add(module_replace(o))
+            elif is_datasource_update(path):
+                pass
+                # TODO: Deal with changing file Names
+                # datasources_modified.add(datasource_replace(o))
         elif o['op'] == 'add':
             if is_module_add(path):
                 module_add(o)
             elif is_op_add(path):
                 operator_add(o)
+            elif is_datasource_add(path):
+                datasource_add(o)
 
     _mark_modified(ops_modified, modules_modified)
 
@@ -93,8 +107,7 @@ def _init():
 
     global t
     t = schema.load(_state)
-    pipelines.clear()
-    pipelines += t.pipelines
+    pipelines = t.pipelines
 
 def sync():
     global _state
@@ -132,7 +145,7 @@ def load(state, state_dir=None):
 
     PipelineStateManager().load(state, state_dir)
 
-
 init_modules()
 init_operators()
+_init()
 

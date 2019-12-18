@@ -50,7 +50,10 @@ PYBIND11_PLUGIN(_wrapping)
     .def("deserialize_module", &PipelineStateManager::deserializeModule)
     .def("modified", &PipelineStateManager::modified)
     .def("add_module", &PipelineStateManager::addModule)
-    .def("add_op", &PipelineStateManager::addOperator);
+    .def("add_operator", &PipelineStateManager::addOperator)
+    .def("serialize_datsource", &PipelineStateManager::serializeDataSource)
+    .def("deserialize_datasource", &PipelineStateManager::deserializeDataSource)
+    .def("add_datasource", &PipelineStateManager::addDataSource);
 
   return m.ptr();
 }

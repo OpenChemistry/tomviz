@@ -18,11 +18,15 @@ struct PipelineStateManager
   void deserializeOperator(const std::string& path, const std::string& state);
   std::string serializeModule(const std::string& path, const std::string& id);
   void deserializeModule(const std::string& path, const std::string& state);
+  std::string serializeDataSource(const std::string& path, const std::string& id);
+  void deserializeDataSource(const std::string& path, const std::string& state);
   std::string addModule(const std::string& dataSourcePath,
                         const std::string& dataSourceId,
                         const std::string& moduleType);
-  void addOperator(const std::string& dataSourcePath,
+  std::string addOperator(const std::string& dataSourcePath,
                    const std::string& dataSourceId, const std::string& opState);
+  std::string addDataSource(const std::string& dataSourceState);
+
   void modified(std::vector<std::string> opPaths,
                 std::vector<std::string> modulePaths);
 };

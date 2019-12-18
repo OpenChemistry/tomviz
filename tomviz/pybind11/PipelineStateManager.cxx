@@ -475,6 +475,36 @@ void PipelineStateManager::deserializeModule(const std::string& path,
   module->deserialize(doc.object());
 }
 
+
+std::string PipelineStateManager::serializeDataSource(const std::string& path, const std::string& id)
+{
+  auto p = QString::fromStdString(path);
+  auto i = QString::fromStdString(id);
+  auto ds = findDataSource(p, i);
+  if (ds == nullptr) {
+    return "";
+  }
+
+  QJsonDocument doc(ds->serialize());
+  auto stateByteArray = doc.toJson(QJsonDocument::Compact);
+
+  return stateByteArray.toStdString();
+}
+
+void PipelineStateManager::deserializeDataSource(const std::string& path,
+                                             const std::string& state)
+{
+  auto p = QString::fromStdString(path);
+  auto json = QByteArray::fromStdString(state);
+  auto doc = QJsonDocument::fromJson(json);
+  auto id = doc.object()["id"].toString();
+  auto ds = findDataSource(p, id);
+  if (ds == nullptr) {
+    return;
+  }
+  ds->deserialize(doc.object());
+}
+
 void PipelineStateManager::modified(std::vector<std::string> opPaths,
                                     std::vector<std::string> modulePaths)
 {
@@ -511,7 +541,7 @@ std::string PipelineStateManager::addModule(const std::string& dataSourcePath,
   return stateByteArray.toStdString();
 }
 
-void PipelineStateManager::addOperator(const std::string& dataSourcePath,
+std::string PipelineStateManager::addOperator(const std::string& dataSourcePath,
                                        const std::string& dataSourceId,
                                        const std::string& opState)
 {
@@ -526,11 +556,29 @@ void PipelineStateManager::addOperator(const std::string& dataSourcePath,
   auto op = OperatorFactory::instance().createOperator(type, dataSource);
   if (op == nullptr) {
     qCritical() << "Failed to create operator.";
-    return;
+    return "";
   }
   if (op->deserialize(opJson)) {
     dataSource->addOperator(op);
   } else {
     qCritical() << "Failed to deserialize operator.";
   }
+
+  QJsonDocument newDoc(op->serialize());
+  auto stateByteArray = newDoc.toJson(QJsonDocument::Compact);
+
+  return stateByteArray.toStdString();
+}
+
+std::string PipelineStateManager::addDataSource(const std::string& dataSourceState)
+{
+  auto json = QByteArray::fromStdString(dataSourceState);
+  auto doc = QJsonDocument::fromJson(json);
+  auto obj = doc.object();
+  auto ds = ModuleManager::instance().loadDataSource(obj);
+
+  QJsonDocument newDoc(ds->serialize());
+  auto stateByteArray = newDoc.toJson(QJsonDocument::Compact);
+
+  return stateByteArray.toStdString();
 }
