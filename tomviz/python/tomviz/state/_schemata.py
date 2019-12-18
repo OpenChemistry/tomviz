@@ -108,8 +108,13 @@ class OperatorSchema(fields.Field):
 
         return  cls(**args)
 
-class TestSchema(Schema):
-    test = fields.List(OperatorSchema)
+class OperatorSchema(Schema):
+    operator = OperatorField()
+
+def load_operator(operator):
+    return OperatorSchema().load({
+        'operator': operator
+    })['operator']
 
 class ModuleField(fields.Field):
     def _serialize(self, value, attr, obj, **kwargs):
@@ -137,8 +142,16 @@ class ModuleField(fields.Field):
         return  cls(**value)
 
 class ModuleSchema(Schema):
-    module = fields.List(ModuleField)
+    module = ModuleField()
 
+def load_module(module):
+    return ModuleSchema().load({
+        'module': module
+    })['module']
+
+def dump_module(module):
+    ns = types.SimpleNamespace(module=module)
+    return ModuleSchema().dump(ns)['module']
 
 class ColorMap2DBoxSchema(Schema):
     x = fields.Integer()
@@ -200,6 +213,8 @@ class DataSourceSchema(Schema):
     class Meta:
         unknown = EXCLUDE
 
+def load_datasource(datasource):
+    return DataSourceSchema().load(datasource)
 
 class PipelineSchema(Schema):
     datasource = fields.Nested(DataSourceSchema)
