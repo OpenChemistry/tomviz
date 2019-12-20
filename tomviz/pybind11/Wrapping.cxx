@@ -39,23 +39,22 @@ PYBIND11_PLUGIN(_wrapping)
 
   py::class_<PipelineStateManager>(m, "PipelineStateManagerBase")
     .def(py::init())
-    .def("serialize", &PipelineStateManager::serialize)
-    .def("sync", &PipelineStateManager::sync)
     .def("load", &PipelineStateManager::load)
     .def("module_json", &PipelineStateManager::modulesJson)
     .def("operator_json", &PipelineStateManager::operatorsJson)
     .def("serialize_op", &PipelineStateManager::serializeOperator)
     .def("serialize_module", &PipelineStateManager::serializeModule)
-    .def("serialize_datsource", &PipelineStateManager::serializeDataSource)
+    .def("serialize_datasource", &PipelineStateManager::serializeDataSource)
     .def("update_op", &PipelineStateManager::updateOperator)
     .def("update_module", &PipelineStateManager::updateModule)
     .def("update_datasource", &PipelineStateManager::updateDataSource)
     .def("modified", &PipelineStateManager::modified)
     .def("add_module", &PipelineStateManager::addModule)
     .def("add_operator", &PipelineStateManager::addOperator)
-    .def("serialize_datsource", &PipelineStateManager::serializeDataSource)
-    .def("deserialize_datasource", &PipelineStateManager::deserializeDataSource)
-    .def("add_datasource", &PipelineStateManager::addDataSource);
+    .def("add_datasource", &PipelineStateManager::addDataSource)
+    .def("remove_operator", &PipelineStateManager::removeOperator)
+    .def("remove_module", &PipelineStateManager::removeModule)
+    .def("remove_datasource", &PipelineStateManager::removeDataSource);
 
   return m.ptr();
 }

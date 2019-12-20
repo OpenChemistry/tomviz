@@ -1,8 +1,11 @@
 import json
+import jsonpatch
 
 from . import operators, modules
 
 from ._pipeline import PipelineStateManager
+
+from ._utils import to_namespaces
 
 op_class_attrs = ['description', 'label', 'script', 'type']
 
@@ -96,6 +99,7 @@ class Module(Mortal):
             setattr(self, k, v)
 
     def _updates(self):
+        from ._schemata import dump_module
         current_state = dump_module(self)
         patch = jsonpatch.JsonPatch.from_diff(self._props, current_state)
         patch = json.loads(patch.to_string())

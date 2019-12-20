@@ -1,4 +1,5 @@
 import json
+import types
 
 from marshmallow import fields, Schema, post_load, EXCLUDE, INCLUDE, pre_load, post_dump
 
@@ -74,6 +75,10 @@ def load_operator(operator):
     return OperatorSchema().load({
         'operator': operator
     })['operator']
+
+def dump_operator(op):
+    ns = types.SimpleNamespace(operator=op)
+    return OperatorSchema().dump(ns)['operator']
 
 class ModuleField(fields.Field):
     def _serialize(self, value, attr, obj, **kwargs):
@@ -192,6 +197,9 @@ class DataSourceSchema(Schema):
 
 def load_datasource(datasource):
     return DataSourceSchema().load(datasource)
+
+def dump_datasource(datasource):
+    return DataSourceSchema().dump(datasource)
 
 class PipelineSchema(Schema):
     dataSource = fields.Nested(DataSourceSchema)

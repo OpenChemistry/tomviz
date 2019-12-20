@@ -605,3 +605,79 @@ std::string PipelineStateManager::addDataSource(const std::string& dataSourceSta
 
   return stateByteArray.toStdString();
 }
+
+void PipelineStateManager::removeOperator(const std::string& opPath,
+                                          const std::string& dataSourceId,
+                                          const std::string& opId)
+{
+  auto p = QString::fromStdString(opPath);
+  auto i = QString::fromStdString(dataSourceId);
+  auto o = QString::fromStdString(opId);
+
+  // Are we removing them all?
+  if (o.isEmpty()) {
+    auto ds = findDataSource(p, i);
+    if (ds == nullptr) {
+      qCritical() << "Failed to find data source.";
+      return;
+    }
+
+    auto ops = ds->operators();
+    while (ops.size() > 0) {
+      auto lastOperator = ops.takeLast();
+      ModuleManager::instance().removeOperator(lastOperator);
+    }
+  } else {
+    auto op = findOperator(p, o);
+    if (op == nullptr) {
+      qCritical() << "Failed to find operator.";
+      return;
+    }
+    ModuleManager::instance().removeOperator(op);
+  }
+}
+
+void PipelineStateManager::removeModule(const std::string& modulePath,
+                                        const std::string& dataSourceId,
+                                        const std::string& moduleId)
+{
+  auto p = QString::fromStdString(modulePath);
+  auto i = QString::fromStdString(dataSourceId);
+  auto m = QString::fromStdString(moduleId);
+
+  // Are we removing them all?
+  if (m.isEmpty()) {
+    auto ds = findDataSource(p, i);
+    if (ds == nullptr) {
+      qCritical() << "Failed to find data source.";
+      return;
+    }
+    ModuleManager::instance().removeAllModules(ds);
+  } else {
+    auto module = findModule(p, m);
+    if (module == nullptr) {
+      qCritical() << "Failed to find module.";
+      return;
+    }
+    ModuleManager::instance().removeModule(module);
+  }
+}
+
+void PipelineStateManager::removeDataSource(const std::string& dataSourcePath,
+                                            const std::string& dataSourceId)
+{
+  auto p = QString::fromStdString(dataSourcePath);
+  auto i = QString::fromStdString(dataSourceId);
+
+  // Are we removing them all?
+  if (i.isEmpty()) {
+    ModuleManager::instance().removeAllDataSources();
+  } else {
+    auto ds = findDataSource(p, i);
+    if (ds == nullptr) {
+      qCritical() << "Failed to find data source.";
+      return;
+    }
+    ModuleManager::instance().removeDataSource(ds);
+  }
+}

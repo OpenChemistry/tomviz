@@ -1,3 +1,5 @@
+from jsonpointer import resolve_pointer
+
 def find_pipeline(path):
     from . import pipelines
 
@@ -27,7 +29,7 @@ def find_operator(path):
     if obj_type != "operators":
         raise ValueError("Path doesn't contain 'operators'.")
 
-    op_index = 0
+    op_index = -1
     if path:
         op_index = path.pop(0)
         op_index = int(op_index)
@@ -68,7 +70,7 @@ def find_module(path):
     if obj_type != 'modules':
         raise ValueError("Path doesn't contain 'modules'.")
 
-    mod_index = 0
+    mod_index = -1
     if path:
         mod_index = path.pop(0)
         mod_index = int(mod_index)
@@ -78,6 +80,14 @@ def find_module(path):
         raise ValueError("Module index no longer exists.")
 
     return modules[mod_index]
+
+# Note: This can only use using during a _update_state(...) call!
+def find_removed_object_id(path):
+    # _state is the old state containing the remove object
+    from . import _state
+    obj = resolve_pointer(_state, path)
+
+    return obj['id']
 
 def _path(path, obj_type):
     path = path.split('/')

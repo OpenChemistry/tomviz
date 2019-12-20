@@ -37,18 +37,8 @@ from ._jsonpath import (
 
 from ._jsonpatch import (
     diff,
-    is_datasource_update,
-    is_module_update,
-    is_operator_update,
-    is_module_add,
-    is_op_add,
-    is_datasource_add,
-    operator_replace,
-    module_replace,
-    datasource_replace,
-    operator_add,
-    module_add,
-    datasource_add
+    sync_state_to_app,
+    sync_state_to_python
 )
 
 from ._pipeline import PipelineStateManager
@@ -56,45 +46,7 @@ from ._pipeline import PipelineStateManager
 t = None
 pipelines = None
 
-def _mark_modified(ops, modules):
-    ops_to_mark = {}
 
-    for path in ops:
-        pindex = pipeline_index(path)
-        op_index = path[-1]
-        if pindex not in ops_to_mark or op_index < ops_to_mark[pindex][-1]:
-            ops_to_mark[pindex] = path
-
-    PipelineStateManager().modified(list(ops_to_mark.values()), list(modules))
-
-def _update_state(src, dst):
-    patch = diff(src, dst)
-
-    ops_modified = set()
-    modules_modified = set()
-    datasources_modified = set()
-
-
-    for o in patch:
-        path = o['path']
-        if o['op'] == 'replace':
-            if is_operator_update(path):
-                ops_modified.add(operator_replace(o))
-            elif is_module_update(path):
-                modules_modified.add(module_replace(o))
-            elif is_datasource_update(path):
-                pass
-                # TODO: Deal with changing file Names
-                # datasources_modified.add(datasource_replace(o))
-        elif o['op'] == 'add':
-            if is_module_add(path):
-                module_add(o)
-            elif is_op_add(path):
-                operator_add(o)
-            elif is_datasource_add(path):
-                datasource_add(o)
-
-    _mark_modified(ops_modified, modules_modified)
 
 _state = None
 
@@ -109,14 +61,21 @@ def _init():
     t = schema.load(_state)
     pipelines = t.pipelines
 
+def _sync_to_python(pipeline_state):
+    global _state
+    schema  = TomvizSchema()
+    _state = schema.dump(t)
+
+    sync_state_to_python(_state, json.loads(pipeline_state))
+
 def sync():
     global _state
 
     schema  = TomvizSchema()
     new_state = schema.dump(t)
 
-    _update_state(_state, new_state)
-    _state = new_state
+    sync_state_to_app(_state, new_state)
+    _state = schema.dump(t)#new_state
 
 def reset():
     _init()
@@ -144,6 +103,11 @@ def load(state, state_dir=None):
         raise Exception("'state_dir' must be provided inorder to locate data associated with state file.")
 
     PipelineStateManager().load(state, state_dir)
+
+def _current_state():
+    global t
+    schema  = TomvizSchema()
+    return schema.dump(t)
 
 init_modules()
 init_operators()
