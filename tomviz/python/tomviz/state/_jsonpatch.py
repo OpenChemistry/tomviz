@@ -64,7 +64,7 @@ def update(src, dst):
     return dst
 
 
-def operator_replace(patch_op):
+def operator_update(patch_op):
     # First get path to operator
     path = patch_op['path']
     op_path = operator_path(path)
@@ -81,11 +81,11 @@ def operator_replace(patch_op):
     current_state_dct = patch.apply(current_state_dct)
 
     # Now update the operator
-    PipelineStateManager().deserialize_op(op_path, json.dumps(current_state_dct))
+    PipelineStateManager().update_op(op_path, json.dumps(current_state_dct))
 
     return op_path
 
-def module_replace(patch_module):
+def module_update(patch_module):
     # First get path to module
     path = patch_module['path']
     module_path = module_path(path)
@@ -102,11 +102,11 @@ def module_replace(patch_module):
     current_state_dct = patch.apply(current_state_dct)
 
     # Now update the module
-    PipelineStateManager().deserialize_module(module_path, json.dumps(current_state_dct))
+    PipelineStateManager().update_module(module_path, json.dumps(current_state_dct))
 
     return module_path
 
-def datasource_replace(patch_datasource):
+def datasource_update(patch_datasource):
     # First get path to datasource
     path = patch_datasource['path']
     datasource_path = datasouce_path(path)
@@ -123,7 +123,7 @@ def datasource_replace(patch_datasource):
     current_state_dct = patch.apply(current_state_dct)
 
     # Now update the datasource
-    PipelineStateManager().deserialize_datasource(datasource_path, json.dumps(current_state_dct))
+    PipelineStateManager().update_datasource(datasource_path, json.dumps(current_state_dct))
 
     return datasource_path
 
@@ -153,7 +153,7 @@ def module_add(patch_module):
     state = jsonpatch.JsonPatch(updates).apply(json.loads(state))
 
     # Now update the module
-    PipelineStateManager().deserialize_module(path, state['id'], json.dumps(state))
+    PipelineStateManager().update_module(path, json.dumps(state))
 
     module_state = PipelineStateManager().serialize_module(path, state['id'])
     new_module = load_module(json.loads(module_state))

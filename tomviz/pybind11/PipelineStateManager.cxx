@@ -454,8 +454,8 @@ std::string PipelineStateManager::serializeOperator(const std::string& path,
   return stateByteArray.toStdString();
 }
 
-void PipelineStateManager::deserializeOperator(const std::string& path,
-                                               const std::string& state)
+void PipelineStateManager::updateOperator(const std::string& path,
+                                          const std::string& state)
 {
   auto p = QString::fromStdString(path);
   auto json = QByteArray::fromStdString(state);
@@ -484,8 +484,8 @@ std::string PipelineStateManager::serializeModule(const std::string& path,
   return stateByteArray.toStdString();
 }
 
-void PipelineStateManager::deserializeModule(const std::string& path,
-                                             const std::string& state)
+void PipelineStateManager::updateModule(const std::string& path,
+                                        const std::string& state)
 {
   auto p = QString::fromStdString(path);
   auto json = QByteArray::fromStdString(state);
@@ -514,8 +514,8 @@ std::string PipelineStateManager::serializeDataSource(const std::string& path, c
   return stateByteArray.toStdString();
 }
 
-void PipelineStateManager::deserializeDataSource(const std::string& path,
-                                             const std::string& state)
+void PipelineStateManager::updateDataSource(const std::string& path,
+                                            const std::string& state)
 {
   auto p = QString::fromStdString(path);
   auto json = QByteArray::fromStdString(state);
