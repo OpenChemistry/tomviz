@@ -39,6 +39,7 @@ PYBIND11_PLUGIN(_wrapping)
 
   py::class_<PipelineStateManager>(m, "PipelineStateManagerBase")
     .def(py::init())
+    .def("serialize", &PipelineStateManager::serialize)
     .def("load", &PipelineStateManager::load)
     .def("module_json", &PipelineStateManager::modulesJson)
     .def("operator_json", &PipelineStateManager::operatorsJson)

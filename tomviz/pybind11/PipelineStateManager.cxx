@@ -251,11 +251,9 @@ Module* findModule(const QString& path, QString id = QString())
 
 PipelineStateManager::PipelineStateManager()
 {
-  std::cout << "PipMan\n";
   QObject::connect(&ModuleManager::instance(), &ModuleManager::dataSourceAdded,
                    [this](DataSource* ds) {
                      QObject::connect(ds, &DataSource::dataChanged, [this]() {
-                       std::cout << "dataChanged ...\n";
                        this->syncToPython();
                      });
 
@@ -275,16 +273,13 @@ PipelineStateManager::PipelineStateManager()
 
   QObject::connect(&ModuleManager::instance(), &ModuleManager::moduleAdded,
                    [this](Module* module) {
-                     std::cout << "module added\n";
                      QObject::connect(module, &Module::renderNeeded, [this]() {
-                       std::cout << "need render\n";
                        this->syncToPython();
                      });
                    });
 
   QObject::connect(&ModuleManager::instance(), &ModuleManager::moduleRemoved,
                    [this]() {
-                     std::cout << "moduleRemoved\n";
                      this->syncToPython();
                    });
 }
