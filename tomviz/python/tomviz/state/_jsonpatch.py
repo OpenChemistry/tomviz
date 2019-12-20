@@ -223,7 +223,7 @@ def module_remove(patch_module):
     PipelineStateManager().remove_module(path, data_source.id, module_id)
 
 def datasource_remove(patch_datasource):
-    path = patch_module['path']
+    path = patch_datasource['path']
 
     ds_id = ''
     # Are we removing them all?
@@ -315,17 +315,31 @@ def add_to_app(patch):
 
     if is_module_add(path):
         module_add(patch)
+    elif is_module_update(path):
+        module_update(patch)
     elif is_operator_add(path):
         operator_add(patch)
+    elif is_operator_update(path):
+        operator_update(path)
     elif is_datasource_add(path):
         datasource_add(patch)
+    elif is_datasource_update(path):
+        pass
 
 def remove_from_app(patch):
     path = patch['path']
     if is_operator_remove(path):
         operator_remove(patch)
+    elif is_operator_update(path):
+        operator_update(patch)
     elif is_module_remove(path):
         module_remove(patch)
+    elif is_module_update(path):
+        module_update(patch)
+    elif is_datasource_remove(path):
+        datasource_remove(patch)
+    elif is_datasource_update(path):
+        pass
 
 def convert_move_app(patch):
     # Just convert to a remove and add
