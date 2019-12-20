@@ -21,6 +21,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QObject>
 
 using namespace tomviz;
 
@@ -242,6 +243,74 @@ Module* findModule(const QString& path, QString id = QString())
   return findModule(parts, id);
 }
 
+/*PipelineStateManager& PipelineStateManager::instance()
+{
+  static PipelineStateManager theInstance;
+  return theInstance;
+}*/
+
+PipelineStateManager::PipelineStateManager()
+{
+  std::cout << "PipMan\n";
+  QObject::connect(&ModuleManager::instance(), &ModuleManager::dataSourceAdded,
+                   [this](DataSource* ds) {
+                     QObject::connect(ds, &DataSource::dataChanged, [this]() {
+                       std::cout << "dataChanged ...\n";
+                       this->syncToPython();
+                     });
+
+                     QObject::connect(
+                       ds, &DataSource::operatorAdded, [this](Operator* op) {
+                         QObject::connect(op, &Operator::transformModified,
+                                          [this]() { this->syncToPython(); });
+                       });
+
+                     QObject::connect(ds, &DataSource::operatorRemoved,
+                                      [this]() { this->syncToPython(); });
+                   });
+
+  QObject::connect(&ModuleManager::instance(),
+                   &ModuleManager::dataSourceRemoved,
+                   [this]() { this->syncToPython(); });
+
+  QObject::connect(&ModuleManager::instance(), &ModuleManager::moduleAdded,
+                   [this](Module* module) {
+                     std::cout << "module added\n";
+                     QObject::connect(module, &Module::renderNeeded, [this]() {
+                       std::cout << "need render\n";
+                       this->syncToPython();
+                     });
+                   });
+
+  QObject::connect(&ModuleManager::instance(), &ModuleManager::moduleRemoved,
+                   [this]() {
+                     std::cout << "moduleRemoved\n";
+                     this->syncToPython();
+                   });
+}
+
+void PipelineStateManager::syncToPython()
+{
+  Python python;
+  auto tomvizState = python.import("tomviz.state");
+  if (!tomvizState.isValid()) {
+    qCritical() << "Failed to import tomviz.state";
+  }
+
+  auto sync = tomvizState.findFunction("_sync_to_python");
+  if (!sync.isValid()) {
+    qCritical() << "Unable to locate _sync_to_python.";
+  }
+
+  auto state = serialize();
+
+  Python::Tuple args(1);
+  Python::Object pyState(state);
+  args.set(0, pyState);
+  Python::Dict kwargs;
+  sync.call(args, kwargs);
+}
+
 std::string PipelineStateManager::serialize()
 {
   QJsonObject state;
@@ -256,52 +325,6 @@ std::string PipelineStateManager::serialize()
   auto stateByteArray = doc.toJson(QJsonDocument::Compact);
 
   return stateByteArray.toStdString();
-}
-
-void PipelineStateManager::sync(const std::string& jsonpatch)
-{
-  emit(&ModuleManager::instance())->enablePythonConsole(false);
-  auto json = QByteArray::fromStdString(jsonpatch);
-  auto doc = QJsonDocument::fromJson(json);
-  auto ops = doc.array();
-  foreach (auto op, ops) {
-    auto opObj = op.toObject();
-    auto opName = opObj["op"].toString();
-    if (opName == "replace") {
-      auto path = opObj["path"].toString();
-
-      auto parts = path.split("/");
-      auto index = 2;
-      auto pipelineIndex = parts[index++];
-      auto objectType = parts[index++];
-
-      if (objectType == "operators") {
-        auto opIndex = parts[index++];
-
-        if (index == parts.size()) {
-          auto& mgr = PipelineManager::instance();
-          auto pipelines = mgr.pipelines();
-          auto pipeline = pipelines[0];
-          auto dataSource = pipeline->dataSource();
-          auto ops = dataSource->operators();
-          auto op = ops[opIndex.toInt()];
-          auto value = opObj["value"].toObject();
-          op->deserialize(value);
-
-          QObject::connect(op, &Operator::transformingDone, []() {
-            emit(&ModuleManager::instance())->enablePythonConsole(true);
-          });
-
-          emit op->transformModified();
-        } else if (parts[index] == "dataSource") {
-          auto dataSourceIndex = parts[index++];
-          if (parts[index++] == "modules") {
-            auto moduleIndex = parts[index++];
-          }
-        }
-      }
-    }
-  }
 }
 
 void PipelineStateManager::load(const std::string& state,

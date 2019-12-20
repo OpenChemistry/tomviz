@@ -10,16 +10,15 @@
 struct PipelineStateManager
 {
   std::string serialize();
-  void sync(const std::string& jsonpatch);
   void load(const std::string& state, const std::string& stateRelDir);
   std::string modulesJson();
   std::string operatorsJson();
   std::string serializeOperator(const std::string& path, const std::string& id);
-  void deserializeOperator(const std::string& path, const std::string& state);
+  void updateOperator(const std::string& path, const std::string& state);
   std::string serializeModule(const std::string& path, const std::string& id);
-  void deserializeModule(const std::string& path, const std::string& state);
+  void updateModule(const std::string& path, const std::string& state);
   std::string serializeDataSource(const std::string& path, const std::string& id);
-  void deserializeDataSource(const std::string& path, const std::string& state);
+  void updateDataSource(const std::string& path, const std::string& state);
   std::string addModule(const std::string& dataSourcePath,
                         const std::string& dataSourceId,
                         const std::string& moduleType);
@@ -29,6 +28,7 @@ struct PipelineStateManager
 
   void modified(std::vector<std::string> opPaths,
                 std::vector<std::string> modulePaths);
+  void syncToPython();
 };
 
 #endif
