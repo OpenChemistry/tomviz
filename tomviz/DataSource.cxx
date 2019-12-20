@@ -515,6 +515,11 @@ bool DataSource::deserialize(const QJsonObject& state)
       auto moduleObj = moduleArray[i].toObject();
       auto viewId = moduleObj["viewId"].toInt();
       auto viewProxy = ModuleManager::instance().lookupView(viewId);
+
+      // If we can't find the view, just defaulf the currently active view
+      if (viewProxy == nullptr) {
+        viewProxy = ActiveObjects::instance().activeView();
+      }
       auto type = moduleObj["type"].toString();
       auto m =
         ModuleManager::instance().createAndAddModule(type, this, viewProxy);
