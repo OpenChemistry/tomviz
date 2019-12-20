@@ -498,27 +498,36 @@ def datasource_update_python(patch_ds):
     patch_ds['path'] = path.replace(ds_path, '')
     patch = jsonpatch.JsonPatch([patch_ds])
 
-
     current_ds_state = patch.apply(current_ds_state)
     new_ds = load_datasource(current_ds_state)
 
     # Finally update the object inplace
     update(new_ds, ds)
 
-def datasource_remove_from_python(patch_op):
+def datasource_remove_from_python(patch_module):
     from . import pipelines
 
      # First get path to datasource
-    path = patch_op['path']
+    path = patch_module['path']
     ds_path = datasource_path(path)
 
     # Find parent data source
-    ds = find_datasource(mod_path.split('/')[1:])
+    ds = find_datasource(ds_path.split('/')[1:])
 
     # Remove from pipelines
-    pipelines.remove(ds)
+    pipeline = None
+    for p in pipelines:
+        if p.dataSource == ds:
+            pipeline = p
+            break
 
-    # Kill it!
+    if pipeline is None:
+        raise Exception('Unable to find data source.')
+
+    pipelines.remove(pipeline)
+
+    # Kill them!
+    pipeline._kill()
     ds._kill()
 
 def module_add_to_python(patch_datasource):
@@ -539,7 +548,7 @@ def add_to_python(patch):
     elif is_operator_add(path):
         operator_add_to_python(patch)
     elif is_operator_update(path):
-        operator_update_python(path)
+        operator_update_python(patch)
     elif is_datasource_add(path):
         datasource_add_to_python(patch)
     elif is_datasource_update(path):
@@ -564,10 +573,10 @@ def remove_from_python(patch):
         operator_update_python(patch)
     elif is_operator_remove(path):
         operator_remove_from_python(patch)
-    elif is_datasource_update(path):
-        datasource_update_python(patch)
     elif is_datasource_remove(path):
         datasource_remove_from_python(patch)
+    elif is_datasource_update(path):
+        datasource_update_python(patch)
 
 def convert_move_python(patch):
     from . import _current_state

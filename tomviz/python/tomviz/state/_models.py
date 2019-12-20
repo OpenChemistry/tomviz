@@ -67,7 +67,7 @@ class ModuleMeta(type):
         return super(ModuleMeta, meta).__new__(meta, name, parents, attrs)
 
 
-class Pipeline(object):
+class Pipeline(Mortal):
     def __init__(self, datasource):
         self._datasource = datasource
 
