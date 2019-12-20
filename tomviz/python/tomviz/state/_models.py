@@ -23,11 +23,16 @@ class Mortal(object):
     def _kill(self):
         self._dead = True
 
-    def _getattribute__(self, item):
+    def __getattribute__(self, item):
+        # Make an exception for the attribute we need to check or we will go recursive!
+        if item == '_dead':
+            return super(Mortal, self).__getattribute__(item)
+
         if self._dead:
-            raise InvalidStateError('%s nolonger represents a valid pipeline element.')
+            raise InvalidStateError("'%s' no longer represents a valid pipeline element." % self)
         else:
-            super(Mortal, self)._getattribute__(item)
+            return super(Mortal, self).__getattribute__(item)
+
 
 class OperatorMeta(type):
     def __init__(cls, name, bases, dict):
