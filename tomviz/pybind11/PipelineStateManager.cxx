@@ -340,12 +340,12 @@ void PipelineStateManager::load(const std::string& state,
     &ModuleManager::instance(), &ModuleManager::stateDoneLoading, []() {
       tomviz::Python python;
 
-      auto state = python.import("tomviz.state");
-      if (!state.isValid()) {
+      auto stateModule = python.import("tomviz.state");
+      if (!stateModule.isValid()) {
         qCritical() << "Failed to import tomviz.state";
       }
 
-      auto tomviz = state.findFunction("_init");
+      auto tomviz = stateModule.findFunction("_init");
       if (!tomviz.isValid()) {
         qCritical() << "Unable to locate _init.";
       }
