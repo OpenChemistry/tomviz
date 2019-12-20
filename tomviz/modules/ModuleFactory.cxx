@@ -189,35 +189,35 @@ QIcon ModuleFactory::moduleIcon(const QString& type)
   return icon;
 }
 
-const char* ModuleFactory::moduleType(Module* module)
+const char* ModuleFactory::moduleType(const Module* module)
 {
   // WARNING: to ensure the most useful result is returned from this
   // function, the if statements should be ordered so that child
   // classes are checked before parent classes. Otherwise, the module
   // type may be reported to be a class's parent.
 
-  if (qobject_cast<ModuleOutline*>(module)) {
+  if (qobject_cast<const ModuleOutline*>(module)) {
     return "Outline";
   }
-  if (qobject_cast<ModuleContour*>(module)) {
+  if (qobject_cast<const ModuleContour*>(module)) {
     return "Contour";
   }
-  if (qobject_cast<ModuleVolume*>(module)) {
+  if (qobject_cast<const ModuleVolume*>(module)) {
     return "Volume";
   }
-  if (qobject_cast<ModuleSlice*>(module)) {
+  if (qobject_cast<const ModuleSlice*>(module)) {
     return "Slice";
   }
-  if (qobject_cast<ModuleThreshold*>(module)) {
+  if (qobject_cast<const ModuleThreshold*>(module)) {
     return "Threshold";
   }
-  if (qobject_cast<ModuleRuler*>(module)) {
+  if (qobject_cast<const ModuleRuler*>(module)) {
     return "Ruler";
   }
-  if (qobject_cast<ModuleScaleCube*>(module)) {
+  if (qobject_cast<const ModuleScaleCube*>(module)) {
     return "Scale Cube";
   }
-  if (qobject_cast<ModuleMolecule*>(module)) {
+  if (qobject_cast<const ModuleMolecule*>(module)) {
     return "Molecule";
   }
   if (qobject_cast<ModuleClip*>(module)) {

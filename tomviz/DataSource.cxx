@@ -466,9 +466,6 @@ QJsonObject DataSource::serialize() const
   QJsonArray jModules;
   foreach (Module* module, modules) {
     QJsonObject jModule = module->serialize();
-    jModule["type"] = ModuleFactory::moduleType(module);
-    jModule["viewId"] = static_cast<int>(module->view()->GetGlobalID());
-
     jModules.append(jModule);
   }
   if (!jModules.isEmpty()) {

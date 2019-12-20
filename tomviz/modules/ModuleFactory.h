@@ -42,7 +42,7 @@ public:
                               vtkSMViewProxy* view);
 
   /// Returns the type for a module instance.
-  static const char* moduleType(Module* module);
+  static const char* moduleType(const Module* module);
 
   /// Returns the icon for a module.
   static QIcon moduleIcon(const QString& type);
