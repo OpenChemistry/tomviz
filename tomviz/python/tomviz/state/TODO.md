@@ -1,13 +1,13 @@
 # TODO/Notes
 
-- We currently only have one way syncing from the Python console to the GUI.
+- ~~We currently only have one way syncing from the Python console to the GUI.
   When changes are made in the GUI they should be synced back to the Python
   console state, when possible. We will have to add some sort of checking to the
   methods of the python objects to check whether their state is still valid. For
   state, if an operator is deleted in the UI then accessing it in the console
-  should cause an exception to be raised.
-- We are only dealing with the replace case for operators ( modify ). We need to
-  support 'remove' and modules etc.
+  should cause an exception to be raised.~~
+- ~~We are only dealing with the replace case for operators ( modify ). We need to
+  support 'remove' and modules etc.~~
 - We should think about modifying the deserialize(...) method so they will accept
   a sub set the other parameters that have changed.
 - How do we deal with view, colormap etc.?
@@ -17,9 +17,9 @@
 - ~~Split state/__init.py  into _schemata, _models and _utils?~~
 - Refactor model class (DataSource, Operator etc. ) to have common base class
   that deals with attributes.
-- Add support for updating
+- ~~Add support for updating~~
 - ~~Add support for adding DataSources.~~
-- Add support for removing operators, modules and datasources.
+- ~~Add support for removing operators, modules and datasources.~~
 - Add support for screenshoting view?
 - ~~Split ModuleManagerWrapper.cxx into a couple of appropriately named files.
   It would be nice if we had _wrapping.operators and _wrapping.state or
