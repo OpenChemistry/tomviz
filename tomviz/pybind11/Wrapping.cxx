@@ -55,7 +55,9 @@ PYBIND11_PLUGIN(_wrapping)
     .def("add_datasource", &PipelineStateManager::addDataSource)
     .def("remove_operator", &PipelineStateManager::removeOperator)
     .def("remove_module", &PipelineStateManager::removeModule)
-    .def("remove_datasource", &PipelineStateManager::removeDataSource);
+    .def("remove_datasource", &PipelineStateManager::removeDataSource)
+    .def("enable_sync_to_python",  &PipelineStateManager::enableSyncToPython)
+    .def("disable_sync_to_python",  &PipelineStateManager::disableSyncToPython);
 
   return m.ptr();
 }

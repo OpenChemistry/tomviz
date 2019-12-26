@@ -7,8 +7,9 @@
 #include <string>
 #include <vector>
 
-struct PipelineStateManager
+class PipelineStateManager
 {
+public:
   PipelineStateManager();
   std::string serialize();
   void load(const std::string& state, const std::string& stateRelDir);
@@ -37,6 +38,11 @@ struct PipelineStateManager
   void modified(std::vector<std::string> opPaths,
                 std::vector<std::string> modulePaths);
   void syncToPython();
+  void enableSyncToPython();
+  void disableSyncToPython();
+
+private:
+  bool m_syncToPython = true;
 };
 
 #endif

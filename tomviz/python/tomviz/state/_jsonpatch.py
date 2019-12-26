@@ -364,6 +364,8 @@ def sync_state_to_app(src, dst):
     modules_modified = set()
     datasources_modified = set()
 
+    PipelineStateManager().disable_sync_to_python()
+
     for o in patch:
         patch_op = o['op']
         if  patch_op == 'replace':
@@ -376,6 +378,8 @@ def sync_state_to_app(src, dst):
             convert_move_app(o)
         else:
             raise Exception('Unexcepted op type: %s' % o['op'])
+
+    PipelineStateManager().enable_sync_to_python()
 
     mark_modified(ops_modified, modules_modified)
 

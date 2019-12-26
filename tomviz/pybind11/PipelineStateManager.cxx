@@ -290,6 +290,10 @@ PipelineStateManager::PipelineStateManager()
 
 void PipelineStateManager::syncToPython()
 {
+  if (!m_syncToPython) {
+    return;
+  }
+
   Python python;
   auto tomvizState = python.import("tomviz.state");
   if (!tomvizState.isValid()) {
@@ -679,4 +683,12 @@ void PipelineStateManager::removeDataSource(const std::string& dataSourcePath,
     }
     ModuleManager::instance().removeDataSource(ds);
   }
+}
+
+void PipelineStateManager::enableSyncToPython() {
+  m_syncToPython = true;
+}
+
+void PipelineStateManager::disableSyncToPython() {
+  m_syncToPython = false;
 }
