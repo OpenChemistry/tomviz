@@ -18,7 +18,7 @@ from ._utils import (
     attrs
 )
 
-from . import operators, modules
+from tomviz import operators, modules
 from ._models import op_class_attrs
 
 

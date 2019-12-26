@@ -1,7 +1,7 @@
 import json
 import jsonpatch
 
-from . import operators, modules
+from tomviz import operators, modules
 
 from ._pipeline import PipelineStateManager
 
@@ -100,11 +100,10 @@ class Reader(Base, Mortal):
 
 class DataSource(Base, Mortal):
     def __init__(self, **kwargs):
-        from .modules import Outline, Slice
         self.reader = Reader(name=kwargs.pop('name', None),
                              fileNames=kwargs.pop('fileNames', []))
         self.operators = []
-        self.modules = [Outline(), Slice()]
+        self.modules = [modules.Outline(), modules.Slice()]
         super(DataSource, self).__init__(**kwargs)
 
 class Operator(Base, Mortal):

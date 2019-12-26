@@ -341,9 +341,9 @@ def remove_from_app(patch):
     elif is_datasource_update(path):
         pass
 
-def convert_move_app(patch):
+def convert_move_app(patch, ops_modified, modules_modified):
     # Just convert to a remove and add
-    state = PipelineStateManager().seralize()
+    state = PipelineStateManager().serialize()
     state = json.loads(state)
     value = resolve_pointer(state, patch['from'])
     remove_from_app({
@@ -355,7 +355,7 @@ def convert_move_app(patch):
         'op': 'add',
         'path': patch['path'],
         'value': value
-    })
+    }, ops_modified, modules_modified)
 
 def sync_state_to_app(src, dst):
     patch = diff(src, dst)
@@ -375,7 +375,7 @@ def sync_state_to_app(src, dst):
         elif patch_op == 'remove':
             remove_from_app(o)
         elif patch_op == 'move':
-            convert_move_app(o)
+            convert_move_app(o, ops_modified, modules_modified)
         else:
             raise Exception('Unexcepted op type: %s' % o['op'])
 
@@ -423,8 +423,10 @@ def add_ds_to_removed_cache(removed_cache, ds):
 
 def add_op_to_removed_cache(removed_cache, op):
     removed_cache['operators'][op.id]  = op
-    for ds in op.dataSources:
-        add_ds_to_removed_cache(removed_cache, ds)
+
+    if hasattr(op, 'dataSources')
+        for ds in op.dataSources:
+            add_ds_to_removed_cache(removed_cache, ds)
 
 def operator_remove_from_python(patch_op, removed_cache):
     # First get path to operator
@@ -582,7 +584,7 @@ def add_to_python(patch, remove_cache):
     elif is_operator_update(path):
         operator_update_python(patch, remove_cache)
     elif is_datasource_add(path):
-        datasource_add_to_python(patch)
+        datasource_add_to_python(patch, remove_cache)
     elif is_datasource_update(path):
         pass
 
