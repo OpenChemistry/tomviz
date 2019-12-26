@@ -96,23 +96,23 @@ def operator_update(patch_op):
 def module_update(patch_module):
     # First get path to module
     path = patch_module['path']
-    module_path = module_path(path)
+    mod_path = module_path(path)
 
     # Now get the current state of the module
-    module = find_module(module_path.split('/')[1:])
+    module = find_module(mod_path.split('/')[1:])
     current_state = PipelineStateManager().serialize_module(path, module.id)
     current_state_dct = json.loads(current_state)
 
     # Apply the update
     # Adjust the path
-    patch_module['path'] = path.replace(module_path, '')
+    patch_module['path'] = path.replace(mod_path, '')
     patch = jsonpatch.JsonPatch([patch_module])
     current_state_dct = patch.apply(current_state_dct)
 
     # Now update the module
-    PipelineStateManager().update_module(module_path, json.dumps(current_state_dct))
+    PipelineStateManager().update_module(mod_path, json.dumps(current_state_dct))
 
-    return module_path
+    return mod_path
 
 def datasource_update(patch_datasource):
     # First get path to datasource
@@ -320,7 +320,7 @@ def add_to_app(patch):
     elif is_operator_add(path):
         operator_add(patch)
     elif is_operator_update(path):
-        operator_update(path)
+        operator_update(patch)
     elif is_datasource_add(path):
         datasource_add(patch)
     elif is_datasource_update(path):
