@@ -387,7 +387,7 @@ def sync_state_to_app(src, dst):
 # Function for syncing state to Python
 #
 
-def operator_update_python(patch_op):
+def operator_update_python(patch_op, removed_cache):
      # First get path to operator
     path = patch_op['path']
     op_path = operator_path(path)
@@ -401,13 +401,30 @@ def operator_update_python(patch_op):
     patch_op['path'] = path.replace(op_path, '')
     patch = jsonpatch.JsonPatch([patch_op])
     current_op_state = patch.apply(current_op_state)
-    new_op = load_operator(current_op_state)
+    new_op = load_operator(current_op_state, removed_cache)
 
     # Finally update the object inplace
     update(new_op, op)
 
-def operator_remove_from_python(patch_op):
-     # First get path to operator
+def add_mod_to_removed_cache(removed_cache, mod):
+    removed_cache['modules'][mod.id]  = mod
+
+def add_ds_to_removed_cache(removed_cache, ds):
+    removed_cache['dataSources'][ds.id]  = ds
+
+    for op in ds.operators:
+        add_op_to_removed_cache(removed_cache, op)
+
+    for mod in ds.modules:
+        add_mod_to_removed_cache(removed_cache, mod)
+
+def add_op_to_removed_cache(removed_cache, op):
+    removed_cache['operators'][op.id]  = op
+    for ds in op.dataSources:
+        add_ds_to_removed_cache(removed_cache, ds)
+
+def operator_remove_from_python(patch_op, removed_cache):
+    # First get path to operator
     path = patch_op['path']
     op_path = operator_path(path)
 
@@ -420,10 +437,10 @@ def operator_remove_from_python(patch_op):
     # Remove from data source
     ds.operators.remove(op)
 
-    # Kill it
-    op._kill()
+    add_op_to_removed_cache(removed_cache, op)
 
-def operator_add_to_python(patch_op):
+
+def operator_add_to_python(patch_op, removed_cache):
     # First get path to operator
     path = patch_op['path']
     op_path = operator_path(path)
@@ -432,7 +449,7 @@ def operator_add_to_python(patch_op):
     ds = find_datasource(op_path.split('/')[1:])
 
     # Load the new op
-    op = load_operator(patch_op['value'])
+    op = load_operator(patch_op['value'], removed_cache)
 
     # add it
     ds.operators.append(op)
@@ -457,7 +474,7 @@ def module_update_python(patch_module):
     # Finally update the object inplace
     update(new_module, module)
 
-def module_remove_from_python(patch_op):
+def module_remove_from_python(patch_op, removed_cache):
      # First get path to module
     path = patch_op['path']
     mod_path = module_path(path)
@@ -471,10 +488,13 @@ def module_remove_from_python(patch_op):
     # Remove from data source
     ds.modules.remove(mod)
 
-    # Kill it
-    mod._kill()
+    # Add to cache, incase we need to resurrect it
+    add_mod_to_removed_cache(removed_cache, mod)
 
-def module_add_to_python(patch_module):
+    # Kill it
+    #mod._kill()
+
+def module_add_to_python(patch_module, removed_cache):
     # First get path to module
     path = patch_module['path']
     mod_path = module_path(path)
@@ -483,12 +503,12 @@ def module_add_to_python(patch_module):
     ds = find_datasource(mod_path.split('/')[1:])
 
     # Load the new module
-    mod = load_operator(patch_module['value'])
+    mod = load_module(patch_module['value'], removed_cache)
 
     # add it
-    ds.module.append(mod)
+    ds.modules.append(mod)
 
-def datasource_update_python(patch_ds):
+def datasource_update_python(patch_ds, removed_cache):
      # First get path to module
     path = patch_ds['path']
     ds_path = datasource_path(path)
@@ -503,12 +523,12 @@ def datasource_update_python(patch_ds):
     patch = jsonpatch.JsonPatch([patch_ds])
 
     current_ds_state = patch.apply(current_ds_state)
-    new_ds = load_datasource(current_ds_state)
+    new_ds = load_datasource(current_ds_state, removed_cache)
 
     # Finally update the object inplace
     update(new_ds, ds)
 
-def datasource_remove_from_python(patch_module):
+def datasource_remove_from_python(patch_module, removed_cache):
     from . import pipelines
 
      # First get path to datasource
@@ -532,57 +552,63 @@ def datasource_remove_from_python(patch_module):
 
     # Kill them!
     pipeline._kill()
-    ds._kill()
 
-def module_add_to_python(patch_datasource):
+    add_ds_to_removed_cache(removed_cache, ds)
+
+def datasource_add_to_python(patch_datasource, removed_cache):
     from . import pipelines
     # Load the new datasource
-    ds = load_datasource(patch_datasource['value'])
+    ds = load_datasource(patch_datasource['value'], removed_cache)
+
+    # See if this datasource ( as in the case of Output ) is being moved, if so resurrect
+    # the original.
+    if ds.id in removed_cache['dataSources']:
+        ds = update(ds, removed_cache['dataSources'].pop(mod.id))
 
     # add it
     pipelines.append(ds)
 
-def add_to_python(patch):
+def add_to_python(patch, remove_cache):
     path = patch['path']
 
     if is_module_add(path):
-        module_add_to_python(patch)
+        module_add_to_python(patch, remove_cache)
     elif is_module_update(path):
        module_update_python(patch)
     elif is_operator_add(path):
-        operator_add_to_python(patch)
+        operator_add_to_python(patch, remove_cache)
     elif is_operator_update(path):
-        operator_update_python(patch)
+        operator_update_python(patch, remove_cache)
     elif is_datasource_add(path):
         datasource_add_to_python(patch)
     elif is_datasource_update(path):
         pass
 
-def update_python(patch):
+def update_python(patch, remove_cache):
     path = patch['path']
     if is_operator_update(path):
-        operator_update_python(patch)
+        operator_update_python(patch, remove_cache)
     if is_module_update(path):
         module_update_python(patch)
     elif is_datasource_update(path):
         pass
 
-def remove_from_python(patch):
+def remove_from_python(patch, removed_cache):
     path = patch['path']
-    if is_module_update(path):
+    if is_module_remove(path):
+        module_remove_from_python(patch, removed_cache)
+    elif is_module_update(path):
         module_update_python(patch)
-    elif is_module_remove(path):
-        module_remove_from_python(patch)
-    elif is_operator_update(path):
-        operator_update_python(patch)
     elif is_operator_remove(path):
-        operator_remove_from_python(patch)
+        operator_remove_from_python(patch, removed_cache)
+    elif is_operator_update(path):
+        operator_update_python(patch, removed_cache)
     elif is_datasource_remove(path):
-        datasource_remove_from_python(patch)
+        datasource_remove_from_python(patch, removed_cache)
     elif is_datasource_update(path):
-        datasource_update_python(patch)
+        datasource_update_python(patch, removed_cache)
 
-def convert_move_python(patch):
+def convert_move_python(patch, removed_cache):
     from . import _current_state
     state = _current_state()
     # Just convert to a remove and add
@@ -590,25 +616,42 @@ def convert_move_python(patch):
     remove_from_python({
         'op': 'remove',
         'path': patch['from'],
-    })
+    }, removed_cache)
 
     update_python({
         'op': 'add',
         'path': patch['path'],
         'value': value
-    })
+    }, removed_cache)
 
 def sync_state_to_python(current_python_state, current_app_state):
     patch = diff(current_python_state, current_app_state)
+
+    removed_cache = {
+        'modules': {},
+        'operators': {},
+        'dataSources': {}
+    }
+
     for o in patch:
         patch_op = o['op']
         if patch_op == 'replace':
-           update_python(o)
+           update_python(o, removed_cache)
         elif patch_op == 'add':
-            add_to_python(o)
+            add_to_python(o, removed_cache)
         elif patch_op == 'remove':
-            remove_from_python(o)
+            remove_from_python(o, removed_cache)
         elif patch_op == 'move':
-            convert_move_python(o)
+            convert_move_python(o, removed_cache)
         else:
             raise Exception('Unexpected op type: %s' % o['op'])
+
+    # Now kill off any removed objects
+    for m in removed_cache['modules'].values():
+        m._kill()
+
+    for o in removed_cache['operators'].values():
+        o._kill()
+
+    for d in removed_cache['dataSources'].values():
+        d._kill()

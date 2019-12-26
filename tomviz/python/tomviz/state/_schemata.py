@@ -49,6 +49,7 @@ class OperatorField(fields.Field):
         return state
 
     def _deserialize(self, value, attr, data, **kwargs):
+        from ._jsonpatch import update
         try:
             description = json.loads(value['description'])
             name = description['name']
@@ -60,19 +61,30 @@ class OperatorField(fields.Field):
         if 'arguments' in value:
             args['arguments'] = to_namespaces(value['arguments'])
         if 'dataSources' in value:
-            s = DataSourceSchema()
+            s = DataSourceSchema(context=self.context)
             datasources = value['dataSources']
             datasources = [s.load(d) for d in datasources]
             args['dataSources']= datasources
         args['id'] = value['id']
 
-        return  cls(**args)
+        removed_cache = self.context.get('operators', {})
+        op = cls(**args)
+
+        # Do we a op that we can recurrect?
+        if op.id in removed_cache:
+            op = update(op, removed_cache.pop(op.id))
+
+        return  op
 
 class OperatorSchema(Schema):
     operator = OperatorField()
 
-def load_operator(operator):
-    return OperatorSchema().load({
+def load_operator(operator, removed_cache=None):
+    schema = OperatorSchema()
+    if removed_cache is not None:
+        schema.context = removed_cache
+
+    return schema.load({
         'operator': operator
     })['operator']
 
@@ -101,15 +113,26 @@ class ModuleField(fields.Field):
         return state
 
     def _deserialize(self, value, attr, data, **kwargs):
+        from ._jsonpatch import update
         cls = getattr(modules, value['type'])
 
-        return  cls(**value)
+        removed_cache = self.context.get('modules', {})
+        mod = cls(**value)
+
+        # Do we a module that we can recurrect?
+        if mod.id in removed_cache:
+            mod = update(mod, removed_cache.pop(mod.id))
+
+        return  mod
 
 class ModuleSchema(Schema):
     module = ModuleField()
 
-def load_module(module):
-    return ModuleSchema().load({
+def load_module(module, removed_cache=None):
+    schema = ModuleSchema()
+    if removed_cache is not None:
+        schema.context = removed_cache
+    return schema.load({
         'module': module
     })['module']
 
@@ -182,7 +205,16 @@ class DataSourceSchema(Schema):
 
     @post_load
     def make_datasource(self, data, **kwargs):
-        return DataSource(**data)
+        from ._jsonpatch import update
+
+        ds = DataSource(**data)
+        # Has this data source been removed, if so recurrent it,
+        # rather than creating a new one.
+        removed_cache = self.context.get('dataSources', {})
+        if ds.id in removed_cache:
+            update(ds, removed_cache.pop(ds.id))
+
+        return ds
 
     @post_dump
     def remove_empty(self, data, **kwargs):
@@ -195,7 +227,11 @@ class DataSourceSchema(Schema):
     class Meta:
         unknown = EXCLUDE
 
-def load_datasource(datasource):
+def load_datasource(datasource, removed_cache=None):
+    schema = DataSourceSchema()
+    if removed_cache is not None:
+        schema.context = removed_cache
+
     return DataSourceSchema().load(datasource)
 
 def dump_datasource(datasource):
