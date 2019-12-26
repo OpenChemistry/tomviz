@@ -220,7 +220,7 @@ const char* ModuleFactory::moduleType(const Module* module)
   if (qobject_cast<const ModuleMolecule*>(module)) {
     return "Molecule";
   }
-  if (qobject_cast<ModuleClip*>(module)) {
+  if (qobject_cast<const ModuleClip*>(module)) {
     return "Clip";
   }
   return nullptr;
