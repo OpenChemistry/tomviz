@@ -290,6 +290,7 @@ void ModuleManager::addModule(Module* module)
     if (strcmp(ModuleFactory::moduleType(module), "Clip") == 0) {
       connect(module, &Module::clipFilterUpdated, this, &ModuleManager::clip);
     }
+    connect(module, &Module::visibilityChanged, this, &ModuleManager::visibilityChanged);
   }
 }
 
@@ -949,79 +950,7 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
     auto dataSources = m_stateObject["dataSources"].toArray();
     foreach (auto ds, dataSources) {
       auto dsObject = ds.toObject();
-<<<<<<< HEAD
-      QJsonObject options;
-      options["defaultModules"] = false;
-      options["addToRecent"] = false;
-      options["child"] = false;
-      d->absoluteFilePaths(dsObject);
-
-      QStringList fileNames;
-      if (dsObject.contains("reader")) {
-        auto reader = dsObject["reader"].toObject();
-
-        if (reader.contains("fileNames")) {
-          foreach (const QJsonValue& value, reader["fileNames"].toArray()) {
-            // Verify the file exists before adding it to the list.
-            if (QFileInfo::exists(value.toString())) {
-              fileNames << value.toString();
-            } else {
-              // If the file cannot be found in the path relative to the state
-              // file, make another attempt to locate it in the same directory
-              QString altLocation =
-                d->dir.absoluteFilePath(QFileInfo(value.toString()).fileName());
-              if (QFileInfo::exists(altLocation)) {
-                fileNames << altLocation;
-              } else {
-                qCritical() << "File" << value.toString()
-                            << "not found, skipping.";
-              }
-            }
-          }
-          reader["fileNames"] = QJsonArray::fromStringList(fileNames);
-        } else {
-          qCritical() << "Unable to locate file name(s).";
-        }
-        options["reader"] = reader;
-      }
-
-      if (dsObject.contains("subsampleSettings")) {
-        // Make sure subsample settings get communicated to the readers
-        options["subsampleSettings"] = dsObject["subsampleSettings"];
-      }
-
-      DataSource* dataSource = nullptr;
-      if (dsObject.find("sourceInformation") != dsObject.end()) {
-        dataSource = PythonGeneratedDatasetReaction::createDataSource(
-          dsObject["sourceInformation"].toObject());
-        LoadDataReaction::dataSourceAdded(dataSource, false, false);
-      } else if (fileNames.size() > 0) {
-        dataSource = LoadDataReaction::loadData(fileNames, options);
-      } else {
-        qCritical() << "Files not found on disk for data source, check paths.";
-      }
-
-      if (dataSource) {
-        if (executePipelinesOnLoad() && dsObject.contains("operators") &&
-            dsObject["operators"].toArray().size() > 0) {
-          connect(dataSource->pipeline(), &Pipeline::finished, this,
-                  &ModuleManager::onPipelineFinished);
-          ++d->RemaningPipelinesToWaitFor;
-        }
-        dataSource->deserialize(dsObject);
-        if (fileNames.isEmpty()) {
-          dataSource->setPersistenceState(
-            DataSource::PersistenceState::Transient);
-        }
-      }
-      // FIXME: I think we need to collect the active objects and set them at
-      // the end, as the act of adding generally implies setting to active.
-      if (dsObject["active"].toBool()) {
-        ActiveObjects::instance().setActiveDataSource(dataSource);
-      }
-=======
       loadDataSource(dsObject);
->>>>>>> Refactor onPVStateLoaded(...) to expose loadDataSource logic
     }
   }
 

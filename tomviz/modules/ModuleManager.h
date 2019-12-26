@@ -156,6 +156,8 @@ signals:
   void clipChanged(vtkPlane* plane, bool newFilter);
   void enablePythonConsole(bool enable);
 
+   void visibilityChanged(bool);
+
 private:
   Q_DISABLE_COPY(ModuleManager)
   ModuleManager(QObject* parent = nullptr);

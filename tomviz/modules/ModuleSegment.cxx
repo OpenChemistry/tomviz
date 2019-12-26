@@ -165,6 +165,9 @@ bool ModuleSegment::setVisibility(bool val)
   Q_ASSERT(d->ContourRepresentation);
   vtkSMPropertyHelper(d->ContourRepresentation, "Visibility").Set(val ? 1 : 0);
   d->ContourRepresentation->UpdateVTKObjects();
+
+  Module::setVisibility(val);
+
   return true;
 }
 

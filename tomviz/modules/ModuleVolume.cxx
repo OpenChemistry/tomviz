@@ -188,6 +188,9 @@ bool ModuleVolume::finalize()
 bool ModuleVolume::setVisibility(bool val)
 {
   m_volume->SetVisibility(val ? 1 : 0);
+
+  Module::setVisibility(val);
+
   return true;
 }
 

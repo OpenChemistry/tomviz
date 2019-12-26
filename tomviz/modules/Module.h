@@ -125,7 +125,7 @@ signals:
 public slots:
   /// Set the visibility for this module. Subclasses should override this method
   /// show/hide all representations created for this module.
-  virtual bool setVisibility(bool val) = 0;
+  virtual bool setVisibility(bool val);
 
   bool show() { return setVisibility(true); }
   bool hide() { return setVisibility(false); }
@@ -175,6 +175,8 @@ signals:
   /// "Separate Color Map" box to be checked and disabled. In practice, this is
   ///  only useful to make Orthogonal and regular slices transparent.
   void opacityEnforced(bool);
+
+  void visibilityChanged(bool);
 
 private slots:
   void onColorMapChanged();

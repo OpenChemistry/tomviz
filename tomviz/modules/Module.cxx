@@ -329,4 +329,10 @@ vtkDataObject* Module::dataToExport()
   return nullptr;
 }
 
+bool Module::setVisibility(bool val) {
+  emit visibilityChanged(val);
+
+  return true;
+}
+
 } // end of namespace tomviz

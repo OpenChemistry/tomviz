@@ -282,6 +282,10 @@ PipelineStateManager::PipelineStateManager()
                    [this]() {
                      this->syncToPython();
                    });
+
+  QObject::connect(&ModuleManager::instance(), &ModuleManager::visibilityChanged, [this]() {
+    this->syncToPython();
+  });
 }
 
 void PipelineStateManager::syncToPython()
