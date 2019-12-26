@@ -121,6 +121,8 @@ def module_json_to_classes(module_json):
     for name, info in module_json.items():
         info['type'] = name
         del info['id']
+        # Default visibility to true
+        info['properties']['visibility'] = True
         if not hasattr(modules, name):
             cls = ModuleMeta(name, (Module,), info)
             setattr(modules, name, cls)
