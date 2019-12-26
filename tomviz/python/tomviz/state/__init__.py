@@ -68,6 +68,9 @@ def _sync_to_python(pipeline_state):
 
     sync_state_to_python(_state, json.loads(pipeline_state))
 
+    _state = schema.dump(t)
+
+
 def sync():
     global _state
 
