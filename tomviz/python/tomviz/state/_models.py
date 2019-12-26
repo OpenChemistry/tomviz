@@ -87,9 +87,6 @@ class DataSource(Base, Mortal):
         self.modules = [Outline(), Slice()]
         super(DataSource, self).__init__(**kwargs)
 
-    def add_module(self, module):
-        self.modules.append(module)
-
 class Operator(Base, Mortal):
     pass
 

@@ -243,12 +243,6 @@ Module* findModule(const QString& path, QString id = QString())
   return findModule(parts, id);
 }
 
-/*PipelineStateManager& PipelineStateManager::instance()
-{
-  static PipelineStateManager theInstance;
-  return theInstance;
-}*/
-
 PipelineStateManager::PipelineStateManager()
 {
   QObject::connect(&ModuleManager::instance(), &ModuleManager::dataSourceAdded,
