@@ -80,10 +80,11 @@ class Reader(Base, Mortal):
 
 class DataSource(Base, Mortal):
     def __init__(self, **kwargs):
+        from .modules import Outline, Slice
         self.reader = Reader(name=kwargs.pop('name', None),
                              fileNames=kwargs.pop('fileNames', []))
         self.operators = []
-        self.modules = []
+        self.modules = [Outline(), Slice()]
         super(DataSource, self).__init__(**kwargs)
 
     def add_module(self, module):
