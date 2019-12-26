@@ -381,6 +381,9 @@ def sync_state_to_app(src, dst):
 
     PipelineStateManager().enable_sync_to_python()
 
+    # Sync from app to ensure python as the updated state
+    sync_state_to_python()
+
     mark_modified(ops_modified, modules_modified)
 
 #
@@ -624,7 +627,15 @@ def convert_move_python(patch, removed_cache):
         'value': value
     }, removed_cache)
 
-def sync_state_to_python(current_python_state, current_app_state):
+def sync_state_to_python(current_python_state=None, current_app_state=None):
+    from . import _current_state
+
+    if current_python_state is None:
+        current_python_state = _current_state()
+
+    if current_app_state is None:
+        current_app_state = PipelineStateManager().serialize()
+
     patch = diff(current_python_state, current_app_state)
 
     removed_cache = {
