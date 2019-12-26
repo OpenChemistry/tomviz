@@ -75,6 +75,26 @@ class Pipeline(Mortal):
     def dataSource(self):
         return self._datasource
 
+    def _ds_path(self):
+        from . import _pipeline_index
+        pipeline_index = _pipeline_index(self._datasource)
+        if pipeline_index < 0:
+            raise Exception('Pipeline is not valid.')
+
+        return '/dataSources/%d' % pipeline_index
+
+    def pause(self):
+        PipelineStateManager().pause_pipeline(self._ds_path())
+
+    def resume(self):
+        PipelineStateManager().resume_pipeline(self._ds_path())
+
+    def execute(self):
+        PipelineStateManager().execute_pipeline(self._ds_path())
+
+    def paused(self):
+        return PipelineStateManager().pipeline_paused(self._ds_path())
+
 class Reader(Base, Mortal):
     pass
 

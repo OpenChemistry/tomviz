@@ -56,8 +56,12 @@ PYBIND11_PLUGIN(_wrapping)
     .def("remove_operator", &PipelineStateManager::removeOperator)
     .def("remove_module", &PipelineStateManager::removeModule)
     .def("remove_datasource", &PipelineStateManager::removeDataSource)
-    .def("enable_sync_to_python",  &PipelineStateManager::enableSyncToPython)
-    .def("disable_sync_to_python",  &PipelineStateManager::disableSyncToPython);
+    .def("enable_sync_to_python", &PipelineStateManager::enableSyncToPython)
+    .def("disable_sync_to_python", &PipelineStateManager::disableSyncToPython)
+    .def("pause_pipeline", &PipelineStateManager::pausePipeline)
+    .def("resume_pipeline", &PipelineStateManager::resumePipeline)
+    .def("execute_pipeline", &PipelineStateManager::executePipeline)
+    .def("pipeline_paused", &PipelineStateManager::pipelinePaused);
 
   return m.ptr();
 }

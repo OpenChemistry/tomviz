@@ -334,7 +334,7 @@ void PipelineStateManager::load(const std::string& state,
   emit(&ModuleManager::instance())->enablePythonConsole(false);
   // QEventLoop loop;
   QObject::connect(
-    &ModuleManager::instance(), &ModuleManager::stateDoneLoading, []() {
+    &ModuleManager::instance(), &ModuleManager::stateDoneLoading, [this]() {
       tomviz::Python python;
 
       auto stateModule = python.import("tomviz.state");
@@ -353,7 +353,12 @@ void PipelineStateManager::load(const std::string& state,
 
       emit(&ModuleManager::instance())->enablePythonConsole(true);
     });
+  this->disableSyncToPython();
+  auto origExecuteOnLoad = ModuleManager::instance().executePipelinesOnLoad();
+  ModuleManager::instance().executePipelinesOnLoad(false);
   ModuleManager::instance().deserialize(doc.object(), relDir);
+  ModuleManager::instance().executePipelinesOnLoad(origExecuteOnLoad);
+  this->enableSyncToPython();
   // loop.exec();
 }
 
@@ -595,7 +600,11 @@ std::string PipelineStateManager::addDataSource(const std::string& dataSourceSta
   auto json = QByteArray::fromStdString(dataSourceState);
   auto doc = QJsonDocument::fromJson(json);
   auto obj = doc.object();
+  auto origExecuteOnLoad = ModuleManager::instance().executePipelinesOnLoad();
+  ModuleManager::instance().executePipelinesOnLoad(false);
   auto ds = ModuleManager::instance().loadDataSource(obj);
+  ds->pipeline()->pause();
+  ModuleManager::instance().executePipelinesOnLoad(origExecuteOnLoad);
 
   QJsonDocument newDoc(ds->serialize());
   auto stateByteArray = newDoc.toJson(QJsonDocument::Compact);
@@ -685,4 +694,52 @@ void PipelineStateManager::enableSyncToPython() {
 
 void PipelineStateManager::disableSyncToPython() {
   m_syncToPython = false;
+}
+
+void PipelineStateManager::pausePipeline(const std::string& dataSourcePath)
+{
+  auto p = QString::fromStdString(dataSourcePath);
+  auto ds = findDataSource(p);
+  if (ds == nullptr) {
+    qCritical() << "Failed to find data source.";
+    return;
+  }
+
+  ds->pipeline()->pause();
+}
+
+void PipelineStateManager::resumePipeline(const std::string& dataSourcePath)
+{
+  auto p = QString::fromStdString(dataSourcePath);
+  auto ds = findDataSource(p);
+  if (ds == nullptr) {
+    qCritical() << "Failed to find data source.";
+    return;
+  }
+
+  ds->pipeline()->resume();
+}
+
+void PipelineStateManager::executePipeline(const std::string& dataSourcePath)
+{
+  auto p = QString::fromStdString(dataSourcePath);
+  auto ds = findDataSource(p);
+  if (ds == nullptr) {
+    qCritical() << "Failed to find data source.";
+    return;
+  }
+
+  ds->pipeline()->execute()->deleteWhenFinished();
+}
+
+bool PipelineStateManager::pipelinePaused(const std::string& dataSourcePath)
+{
+  auto p = QString::fromStdString(dataSourcePath);
+  auto ds = findDataSource(p);
+  if (ds == nullptr) {
+    qCritical() << "Failed to find data source.";
+    return false;
+  }
+
+  return ds->pipeline()->paused();
 }

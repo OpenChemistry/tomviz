@@ -139,6 +139,13 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   // shell.
   pqPythonShell::setPreamble(QStringList());
 
+  connect(m_ui->pythonConsole, &pqPythonShell::executing,
+          [this](bool executing) {
+            if (!executing) {
+              this->syncPythonToApp();
+            }
+          });
+
   // Hide these dock widgets when tomviz is first opened. If they are later
   // opened and remain open while tomviz is shut down, their visibility and
   // geometry state will be saved out to the settings file. The dock widgets
@@ -949,6 +956,24 @@ std::vector<OperatorDescription> MainWindow::findCustomOperators()
 void MainWindow::setEnabledPythonConsole(bool enabled)
 {
   m_ui->dockWidgetPythonConsole->setEnabled(enabled);
+}
+
+void MainWindow::syncPythonToApp()
+{
+  Python python;
+  auto tomvizState = python.import("tomviz.state");
+  if (!tomvizState.isValid()) {
+    qCritical() << "Failed to import tomviz.state";
+  }
+
+  auto sync = tomvizState.findFunction("sync");
+  if (!sync.isValid()) {
+    qCritical() << "Unable to locate sync.";
+  }
+
+  Python::Tuple args(0);
+  Python::Dict kwargs;
+  sync.call(args, kwargs);
 }
 
 } // namespace tomviz

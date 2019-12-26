@@ -112,6 +112,14 @@ def _current_state():
     schema  = TomvizSchema()
     return schema.dump(t)
 
+def _pipeline_index(ds):
+    for (i, p) in enumerate(pipelines):
+        if p.dataSource == ds:
+            return i
+            break
+
+    return -1
+
 init_modules()
 init_operators()
 _init()

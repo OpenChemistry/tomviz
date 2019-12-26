@@ -38,8 +38,13 @@ public:
   void modified(std::vector<std::string> opPaths,
                 std::vector<std::string> modulePaths);
   void syncToPython();
+  static void syncToApp();
   void enableSyncToPython();
   void disableSyncToPython();
+  void pausePipeline(const std::string& dataSourcePath);
+  void resumePipeline(const std::string& dataSourcePath);
+  void executePipeline(const std::string& dataSourcePath);
+  bool pipelinePaused(const std::string& dataSourcePath);
 
 private:
   bool m_syncToPython = true;
