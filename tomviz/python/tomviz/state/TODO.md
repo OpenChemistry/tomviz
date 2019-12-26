@@ -15,8 +15,8 @@
 - We want to make sure that the tomviz.state module is clean ( hidde all
   internal attributes).
 - ~~Split state/__init.py  into _schemata, _models and _utils?~~
-- Refactor model class (DataSource, Operator etc. ) to have common base class
-  that deals with attributes.
+- ~~Refactor model class (DataSource, Operator etc. ) to have common base class
+  that deals with attributes.~~
 - ~~Add support for updating~~
 - ~~Add support for adding DataSources.~~
 - ~~Add support for removing operators, modules and datasources.~~
@@ -39,5 +39,5 @@
 - Enable check modified all, improve logic to work out what should be marked
   as modified, especially when we have operators added as well as modified ...
 - Add syntatic sugar, such as state.pipeline[0].add_operator(op)
-- Deal with updates to id ( i.e. we want to ignore them as they are a delete and replace)
+- ~~Deal with updates to id ( i.e. we want to ignore them as they are a delete and replace)~~
 - Move wrapping into namespace

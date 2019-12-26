@@ -451,11 +451,12 @@ def operator_add_to_python(patch_op, removed_cache):
     # Find parent data source
     ds = find_datasource(op_path.split('/')[1:])
 
-    # Load the new op
-    op = load_operator(patch_op['value'], removed_cache)
-
-    # add it
-    ds.operators.append(op)
+    # Load the new ops
+    value = patch_op['value']
+    ops = value if isinstance(value, list) else [value]
+    for op in ops:
+        op = load_operator(op, removed_cache)
+        ds.operators.append(op)
 
 def module_update_python(patch_module):
      # First get path to module
@@ -505,11 +506,12 @@ def module_add_to_python(patch_module, removed_cache):
     # Find parent data source
     ds = find_datasource(mod_path.split('/')[1:])
 
-    # Load the new module
-    mod = load_module(patch_module['value'], removed_cache)
-
-    # add it
-    ds.modules.append(mod)
+    # Load the new modules
+    value = patch_module['value']
+    mods = value if isinstance(value, list) else [value]
+    for mod in mods:
+        mod = load_module(mod, removed_cache)
+        ds.modules.append(mod)
 
 def datasource_update_python(patch_ds, removed_cache):
      # First get path to module
@@ -560,16 +562,13 @@ def datasource_remove_from_python(patch_module, removed_cache):
 
 def datasource_add_to_python(patch_datasource, removed_cache):
     from . import pipelines
-    # Load the new datasource
-    ds = load_datasource(patch_datasource['value'], removed_cache)
+    # Load the new datasources
+    value = patch_datasource['value']
+    data_sources = value if isinstance(value, list) else [value]
 
-    # See if this datasource ( as in the case of Output ) is being moved, if so resurrect
-    # the original.
-    if ds.id in removed_cache['dataSources']:
-        ds = update(ds, removed_cache['dataSources'].pop(mod.id))
-
-    # add it
-    pipelines.append(ds)
+    for ds in data_sources:
+        ds = load_datasource(ds, removed_cache)
+        pipelines.append(Pipeline(ds))
 
 def add_to_python(patch, remove_cache):
     path = patch['path']
