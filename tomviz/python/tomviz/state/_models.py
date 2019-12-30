@@ -55,15 +55,6 @@ class ModuleMeta(type):
             '_props': dct
         }
 
-        # for k, v in dct.items():
-        #     def _set(self, value, key=k):
-        #         setattr(self, '_%s' % key, value)
-
-        #     def _get(self, key=k):
-        #         return getattr(self, '_%s' % key)
-        #     attrs[k] = property(_get, _set)
-        #     attrs['_%s' % k] = v
-
         return super(ModuleMeta, meta).__new__(meta, name, parents, attrs)
 
 

@@ -424,7 +424,7 @@ def add_ds_to_removed_cache(removed_cache, ds):
 def add_op_to_removed_cache(removed_cache, op):
     removed_cache['operators'][op.id]  = op
 
-    if hasattr(op, 'dataSources')
+    if hasattr(op, 'dataSources'):
         for ds in op.dataSources:
             add_ds_to_removed_cache(removed_cache, ds)
 
