@@ -964,11 +964,13 @@ void MainWindow::syncPythonToApp()
   auto tomvizState = python.import("tomviz.state");
   if (!tomvizState.isValid()) {
     qCritical() << "Failed to import tomviz.state";
+    return;
   }
 
   auto sync = tomvizState.findFunction("sync");
   if (!sync.isValid()) {
     qCritical() << "Unable to locate sync.";
+    return;
   }
 
   Python::Tuple args(0);
