@@ -45,6 +45,8 @@ public:
   void resumePipeline(const std::string& dataSourcePath);
   void executePipeline(const std::string& dataSourcePath);
   bool pipelinePaused(const std::string& dataSourcePath);
+  void saveScreenshot(const std::string& fileName, const std::string& palette, int xResolution, int yResolution);
+
 
 private:
   bool m_syncToPython = true;

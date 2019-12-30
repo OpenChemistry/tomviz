@@ -61,7 +61,8 @@ PYBIND11_PLUGIN(_wrapping)
     .def("pause_pipeline", &PipelineStateManager::pausePipeline)
     .def("resume_pipeline", &PipelineStateManager::resumePipeline)
     .def("execute_pipeline", &PipelineStateManager::executePipeline)
-    .def("pipeline_paused", &PipelineStateManager::pipelinePaused);
+    .def("pipeline_paused", &PipelineStateManager::pipelinePaused)
+    .def("save_screenshot", &PipelineStateManager::saveScreenshot);
 
   return m.ptr();
 }

@@ -13,7 +13,17 @@
 #include "PipelineManager.h"
 #include "PythonUtilities.h"
 
+#include <vtkSMProxyManager.h>
+#include <vtkSMSessionProxyManager.h>
+#include <vtkSMViewLayoutProxy.h>
+#include <vtkSMViewProxy.h>
+#include <vtkSMPropertyHelper.h>
+#include <vtkSMParaViewPipelineController.h>
+#include <pqActiveObjects.h>
+#include <vtkSMSaveScreenshotProxy.h>
+
 #include <QApplication>
+#include <QDesktopWidget>
 #include <QDebug>
 #include <QDir>
 #include <QEventLoop>
@@ -742,4 +752,83 @@ bool PipelineStateManager::pipelinePaused(const std::string& dataSourcePath)
   }
 
   return ds->pipeline()->paused();
+}
+
+
+void PipelineStateManager::saveScreenshot(const std::string& fileName, const std::string& p, int xResolution, int yResolution)
+{
+  auto palette = QString::fromStdString(p);
+  auto view = pqActiveObjects::instance().activeView();
+  if (!view) {
+    qDebug() << "Cannnot save image. No active view.";
+    return;
+  }
+
+  QSize viewSize = view->getSize();
+
+  if (xResolution < 0) {
+    xResolution = viewSize.width();
+  }
+
+  if (yResolution < 0) {
+    yResolution = viewSize.height();
+  }
+
+  // This is working around an issue on macOS, currently saved screenshots are
+  // twice the requested size on a retinal display. The device pixel ratio will
+  // be 1 apart from on a retinal display where it will be 2. This will need to
+  // be removed when this bug is resolved more correctly.
+  auto desktop = QApplication::desktop();
+  auto dpr = desktop->devicePixelRatio();
+  auto size = QSize(xResolution / dpr, yResolution / dpr);
+  auto pxm =
+    vtkSMProxyManager::GetProxyManager()->GetActiveSessionProxyManager();
+
+  bool makeTransparentBackground = false;
+  if (palette == "TransparentBackground") {
+    makeTransparentBackground = true;
+    palette = "";
+  }
+
+  auto colorPalette = pxm->GetProxy("global_properties", "ColorPalette");
+  vtkSmartPointer<vtkSMProxy> clone;
+  if (colorPalette && !palette.isEmpty()) {
+    // save current property values
+    clone.TakeReference(
+      pxm->NewProxy(colorPalette->GetXMLGroup(), colorPalette->GetXMLName()));
+    clone->Copy(colorPalette);
+
+    auto chosenPalette = pxm->NewProxy("palettes", palette.toLatin1().data());
+    colorPalette->Copy(chosenPalette);
+    chosenPalette->Delete();
+  }
+
+  vtkSMViewProxy* viewProxy = view->getViewProxy();
+  vtkSMViewLayoutProxy* layout = vtkSMViewLayoutProxy::FindLayout(viewProxy);
+
+  vtkSmartPointer<vtkSMProxy> proxy;
+  proxy.TakeReference(pxm->NewProxy("misc", "SaveScreenshot"));
+  vtkSMSaveScreenshotProxy* shProxy =
+    vtkSMSaveScreenshotProxy::SafeDownCast(proxy);
+  if (!shProxy) {
+    qCritical() << "Unable to find SaveScreenshot proxy!";
+    return;
+  }
+
+  vtkNew<vtkSMParaViewPipelineController> controller;
+  controller->PreInitializeProxy(shProxy);
+  vtkSMPropertyHelper(shProxy, "View").Set(viewProxy);
+  vtkSMPropertyHelper(shProxy, "Layout").Set(layout);
+  controller->PostInitializeProxy(shProxy);
+
+  int resolution[2];
+  resolution[0] = size.width();
+  resolution[1] = size.height();
+  vtkSMPropertyHelper(shProxy, "ImageResolution").Set(resolution, 2);
+  vtkSMPropertyHelper(shProxy, "OverrideColorPalette")
+    .Set(palette.toLocal8Bit().data());
+  vtkSMPropertyHelper(shProxy, "TransparentBackground")
+    .Set(makeTransparentBackground);
+
+  shProxy->WriteImage(fileName.c_str());
 }
