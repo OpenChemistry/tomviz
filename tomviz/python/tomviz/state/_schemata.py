@@ -1,14 +1,20 @@
 import json
 import types
 
-from marshmallow import fields, Schema, post_load, EXCLUDE, INCLUDE, pre_load, post_dump
+from marshmallow import (
+    fields,
+    Schema,
+    post_load,
+    EXCLUDE,
+    INCLUDE,
+    pre_load,
+    post_dump
+)
 
 from ._models import (
     Tomviz,
     Pipeline,
     DataSource,
-    Operator,
-    Module,
     Reader
 )
 
@@ -19,7 +25,6 @@ from ._utils import (
 )
 
 from tomviz import operators, modules
-from ._models import op_class_attrs
 
 
 class OperatorField(fields.Field):
@@ -33,10 +38,6 @@ class OperatorField(fields.Field):
                 continue
 
             v = getattr(value, a)
-            #if a in op_class_attrs:
-                #if a == 'description':
-                #    v = json.dumps(v)
-                #state[a] = v
             if a == 'dataSources':
                 s = DataSourceSchema()
                 v = [s.dump(d) for d in v]
@@ -64,7 +65,7 @@ class OperatorField(fields.Field):
             s = DataSourceSchema(context=self.context)
             datasources = value['dataSources']
             datasources = [s.load(d) for d in datasources]
-            args['dataSources']= datasources
+            args['dataSources'] = datasources
         args['id'] = value['id']
 
         removed_cache = self.context.get('operators', {})
@@ -74,10 +75,12 @@ class OperatorField(fields.Field):
         if op.id in removed_cache:
             op = update(op, removed_cache.pop(op.id))
 
-        return  op
+        return op
+
 
 class OperatorSchema(Schema):
     operator = OperatorField()
+
 
 def load_operator(operator, removed_cache=None):
     schema = OperatorSchema()
@@ -88,9 +91,11 @@ def load_operator(operator, removed_cache=None):
         'operator': operator
     })['operator']
 
+
 def dump_operator(op):
     ns = types.SimpleNamespace(operator=op)
     return OperatorSchema().dump(ns)['operator']
+
 
 class ModuleField(fields.Field):
     def _serialize(self, value, attr, obj, **kwargs):
@@ -123,10 +128,12 @@ class ModuleField(fields.Field):
         if mod.id in removed_cache:
             mod = update(mod, removed_cache.pop(mod.id))
 
-        return  mod
+        return mod
+
 
 class ModuleSchema(Schema):
     module = ModuleField()
+
 
 def load_module(module, removed_cache=None):
     schema = ModuleSchema()
@@ -136,9 +143,11 @@ def load_module(module, removed_cache=None):
         'module': module
     })['module']
 
+
 def dump_module(module):
     ns = types.SimpleNamespace(module=module)
     return ModuleSchema().dump(ns)['module']
+
 
 class ColorMap2DBoxSchema(Schema):
     x = fields.Float()
@@ -152,6 +161,7 @@ class ColorMap2DBoxSchema(Schema):
     class Meta:
         unknown = INCLUDE
 
+
 class ColorOpacityMap(Schema):
     colorSpace = fields.String()
     colors = fields.List(fields.Float)
@@ -164,6 +174,7 @@ class ColorOpacityMap(Schema):
     class Meta:
         unknown = INCLUDE
 
+
 class GradientOpacityMap(Schema):
     points = fields.List(fields.Float)
 
@@ -173,6 +184,7 @@ class GradientOpacityMap(Schema):
 
     class Meta:
         unknown = INCLUDE
+
 
 class ReaderSchema(Schema):
     fileNames = fields.List(fields.String)
@@ -188,6 +200,7 @@ class ReaderSchema(Schema):
             del data['name']
 
         return data
+
 
 class DataSourceSchema(Schema):
     operators = fields.List(OperatorField, missing=[])
@@ -221,11 +234,12 @@ class DataSourceSchema(Schema):
         remove_if_empty = ['operators', 'modules']
 
         return {
-            k:v for k,v in data.items() if k not in remove_if_empty or v != []
+            k: v for k, v in data.items() if k not in remove_if_empty or v != []
         }
 
     class Meta:
         unknown = EXCLUDE
+
 
 def load_datasource(datasource, removed_cache=None):
     schema = DataSourceSchema()
@@ -234,8 +248,10 @@ def load_datasource(datasource, removed_cache=None):
 
     return DataSourceSchema().load(datasource)
 
+
 def dump_datasource(datasource):
     return DataSourceSchema().dump(datasource)
+
 
 class PipelineSchema(Schema):
     dataSource = fields.Nested(DataSourceSchema)
@@ -271,7 +287,8 @@ class PipelineSchema(Schema):
 
 
 class TomvizSchema(Schema):
-    pipelines = fields.List(fields.Nested(PipelineSchema), data_key='dataSources')
+    pipelines = fields.List(fields.Nested(PipelineSchema),
+                            data_key='dataSources')
 
     @post_load
     def make_tomviz(self, data, **kwargs):

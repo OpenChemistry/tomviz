@@ -11,6 +11,7 @@ def iter_paths(tree, parent_path=()):
         else:
             yield current_path
 
+
 def to_namespaces(dct):
     root = SimpleNamespace()
     for path in iter_paths(dct):
@@ -34,6 +35,7 @@ def to_namespaces(dct):
 
     return root
 
+
 def from_namespace(namespace):
     d = {}
 
@@ -46,5 +48,8 @@ def from_namespace(namespace):
 
     return d
 
+
 def attrs(o):
-    return [x for x in dir(o) if not x.startswith('_') and not callable(getattr(o, x)) and not isinstance(o, (int, float, str, dict)) ]
+    return [x for x in dir(o) if not x.startswith('_') and
+            not callable(getattr(o, x)) and
+            not isinstance(o, (int, float, str, dict))]

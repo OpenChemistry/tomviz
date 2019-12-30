@@ -1,6 +1,7 @@
 from enum import Enum
 from tomviz.state._pipeline import PipelineStateManager
 
+
 class Palette(Enum):
     Current = ""
     TransparentBackground = "TransparentBackground"
@@ -17,8 +18,11 @@ class Palette(Enum):
 # can use a similar JSON patch syncing approach to support multiple views.
 #
 class View():
-    def save_screenshot(self, file_path, palette=Palette.Current, width=-1, height=-1):
-        PipelineStateManager().save_screenshot(file_path, palette.value, width, height)
+    def save_screenshot(self, file_path, palette=Palette.Current, width=-1,
+                        height=-1):
+        PipelineStateManager().save_screenshot(file_path, palette.value,
+                                               width, height)
+
 
 def active_view():
     return View()

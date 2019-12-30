@@ -1,7 +1,6 @@
 import jsonpatch
 import re
 import json
-import types
 
 from jsonpointer import resolve_pointer
 
@@ -28,6 +27,7 @@ from ._schemata import (
 
 from ._pipeline import PipelineStateManager
 
+
 def update_list(src, dst):
     same = len(src) == len(dst)
     if len(src) == len(dst):
@@ -53,7 +53,10 @@ def update_list(src, dst):
         for x in src:
             dst.append(x)
 
+
 built_in = (str, int, float, complex, dict)
+
+
 def update(src, dst):
     for attr, value in vars(src).items():
         if isinstance(value, list):
@@ -78,7 +81,7 @@ def operator_update(patch_op):
     op_path = operator_path(path)
 
     # Now get the current state of the operator
-    op = find_operator(op_path.split('/')[1:]);
+    op = find_operator(op_path.split('/')[1:])
     current_state = PipelineStateManager().serialize_op(path, op.id)
     current_state_dct = json.loads(current_state)
 
@@ -92,6 +95,7 @@ def operator_update(patch_op):
     PipelineStateManager().update_op(op_path, json.dumps(current_state_dct))
 
     return op_path
+
 
 def module_update(patch_module):
     # First get path to module
@@ -110,9 +114,11 @@ def module_update(patch_module):
     current_state_dct = patch.apply(current_state_dct)
 
     # Now update the module
-    PipelineStateManager().update_module(mod_path, json.dumps(current_state_dct))
+    PipelineStateManager().update_module(mod_path,
+                                         json.dumps(current_state_dct))
 
     return mod_path
+
 
 def datasource_update(patch_datasource):
     # First get path to datasource
@@ -121,7 +127,8 @@ def datasource_update(patch_datasource):
 
     # Now get the current state of the datasource
     datasource = find_datasource(datasource_path.split('/')[1:])
-    current_state = PipelineStateManager().serialize_datasource(path, datasource.id)
+    current_state = PipelineStateManager().serialize_datasource(path,
+                                                                datasource.id)
     current_state_dct = json.loads(current_state)
 
     # Apply the update
@@ -131,7 +138,8 @@ def datasource_update(patch_datasource):
     current_state_dct = patch.apply(current_state_dct)
 
     # Now update the datasource
-    PipelineStateManager().update_datasource(datasource_path, json.dumps(current_state_dct))
+    PipelineStateManager().update_datasource(datasource_path,
+                                             json.dumps(current_state_dct))
 
     return datasource_path
 
@@ -147,8 +155,10 @@ def module_add(patch_module):
     ds_path = datasource_path(path)
     data_source = find_datasource(ds_path.split('/')[1:])
 
-    state = PipelineStateManager().add_module(ds_path, data_source.id, module_json['type'])
-    # If we are adding our first module just find the datasource and the first module
+    state = PipelineStateManager().add_module(ds_path, data_source.id,
+                                              module_json['type'])
+    # If we are adding our first module just find the datasource and the first
+    #  module
     parts = path.split('/')[1:]
     if path.endswith('modules'):
         module = find_datasource(parts).modules[0]
@@ -167,6 +177,7 @@ def module_add(patch_module):
     new_module = load_module(json.loads(module_state))
     update(new_module, module)
 
+
 def operator_add(patch_op):
     if patch_op['value'] == []:
         return
@@ -178,11 +189,13 @@ def operator_add(patch_op):
     data_source = find_datasource(ds_path.split('/')[1:])
 
     for o in op_json if isinstance(op_json, list) else [op_json]:
-        op_state = PipelineStateManager().add_operator(ds_path, data_source.id, json.dumps(o))
+        op_state = PipelineStateManager().add_operator(ds_path, data_source.id,
+                                                       json.dumps(o))
 
         op = find_operator(path.split('/')[1:])
         new_op = load_operator(json.loads(op_state))
         update(new_op, op)
+
 
 def datasource_add(patch_datasource):
     if patch_datasource['value'] == []:
@@ -194,9 +207,11 @@ def datasource_add(patch_datasource):
     path = patch_datasource['path']
 
     datasource = find_datasource(path.split('/')[1:])
-    datasource_state = PipelineStateManager().add_datasource(json.dumps(datasource_json))
+    datasource_state = \
+        PipelineStateManager().add_datasource(json.dumps(datasource_json))
     new_datasource = load_datasource(json.loads(datasource_state))
     update(new_datasource, datasource)
+
 
 def operator_remove(patch_op):
     path = patch_op['path']
@@ -210,6 +225,7 @@ def operator_remove(patch_op):
 
     PipelineStateManager().remove_operator(path, data_source.id, op_id)
 
+
 def module_remove(patch_module):
     path = patch_module['path']
     ds_path = datasource_path(path)
@@ -222,6 +238,7 @@ def module_remove(patch_module):
 
     PipelineStateManager().remove_module(path, data_source.id, module_id)
 
+
 def datasource_remove(patch_datasource):
     path = patch_datasource['path']
 
@@ -230,62 +247,94 @@ def datasource_remove(patch_datasource):
     if not path.endswith('dataSources'):
         ds_id = find_removed_object_id(path)
 
-
     PipelineStateManager().remove_datasource(path, ds_id)
 
+
 _datasource_regx = re.compile(r'.*/dataSources/\d(.*)')
+
+
 def is_datasource_update(path):
     datasource_match = _datasource_regx.match(path)
 
-    return  (datasource_match and
-        (is_module_update(datasource_match.group(1)) is None) and
-        (is_operator_update(datasource_match.group(1)) is None))
+    return (datasource_match and
+            (is_module_update(datasource_match.group(1)) is None) and
+            (is_operator_update(datasource_match.group(1)) is None))
+
 
 _module_regx = re.compile(r'.*/modules/\d(.*)')
+
+
 def is_module_update(path):
     module_match = _module_regx.match(path)
 
-    return module_match and (is_datasource_update(module_match.group(1)) is None)
+    return (module_match and
+            (is_datasource_update(module_match.group(1)) is None))
+
 
 _op_regx = re.compile(r'.*/operators/\d(.*)')
+
+
 def is_operator_update(path):
     op_match = _op_regx.match(path)
 
     return op_match and (is_datasource_update(op_match.group(1)) is None)
 
+
 _module_add_regx = re.compile(r'.*/modules/?\d*$')
+
+
 def is_module_add(path):
     return _module_add_regx.match(path)
 
+
 _module_prop_add_regx = re.compile(r'.*/modules/\d*/.*$')
+
+
 def is_module_prop_add(path):
     return _module_prop_add_regx.match(path)
 
+
 _op_add_regx = re.compile(r'.*/operators/?\d*$')
+
+
 def is_operator_add(path):
     return _op_add_regx.match(path)
 
+
 _datasource_add_regx = re.compile(r'.*/dataSources/?\d*$')
+
+
 def is_datasource_add(path):
     return _datasource_add_regx.match(path)
 
+
 _op_remove_regx = re.compile(r'.*/operators/?\d*$')
+
+
 def is_operator_remove(path):
     return _op_remove_regx.match(path)
 
+
 _module_remove_regx = re.compile(r'.*/modules/?\d*$')
+
+
 def is_module_remove(path):
     return _module_remove_regx.match(path)
 
+
 _ds_remove_regx = re.compile(r'.*/dataSources/?\d*$')
+
+
 def is_datasource_remove(path):
     return _ds_remove_regx.match(path)
+
 
 def diff(src, dst):
     patch = jsonpatch.JsonPatch.from_diff(src, dst)
     patch = json.loads(patch.to_string())
 
     return patch
+
 
 def mark_modified(ops, modules):
     ops_to_mark = {}
@@ -298,6 +347,7 @@ def mark_modified(ops, modules):
 
     PipelineStateManager().modified(list(ops_to_mark.values()), list(modules))
 
+
 def update_app(patch, ops_modified, modules_modified):
     path = patch['path']
 
@@ -309,6 +359,7 @@ def update_app(patch, ops_modified, modules_modified):
         pass
         # TODO: Deal with changing file Names
         # datasources_modified.add(datasource_update(o))
+
 
 def add_to_app(patch):
     path = patch['path']
@@ -326,6 +377,7 @@ def add_to_app(patch):
     elif is_datasource_update(path):
         pass
 
+
 def remove_from_app(patch):
     path = patch['path']
     if is_operator_remove(path):
@@ -340,6 +392,7 @@ def remove_from_app(patch):
         datasource_remove(patch)
     elif is_datasource_update(path):
         pass
+
 
 def convert_move_app(patch, ops_modified, modules_modified):
     # Just convert to a remove and add
@@ -357,18 +410,18 @@ def convert_move_app(patch, ops_modified, modules_modified):
         'value': value
     }, ops_modified, modules_modified)
 
+
 def sync_state_to_app(src, dst):
     patch = diff(src, dst)
 
     ops_modified = set()
     modules_modified = set()
-    datasources_modified = set()
 
     PipelineStateManager().disable_sync_to_python()
 
     for o in patch:
         patch_op = o['op']
-        if  patch_op == 'replace':
+        if patch_op == 'replace':
             update_app(o, ops_modified, modules_modified)
         elif patch_op == 'add':
             add_to_app(o)
@@ -386,12 +439,14 @@ def sync_state_to_app(src, dst):
 
     mark_modified(ops_modified, modules_modified)
 
+
 #
 # Function for syncing state to Python
 #
 
+
 def operator_update_python(patch_op, removed_cache):
-     # First get path to operator
+    # First get path to operator
     path = patch_op['path']
     op_path = operator_path(path)
 
@@ -409,11 +464,13 @@ def operator_update_python(patch_op, removed_cache):
     # Finally update the object inplace
     update(new_op, op)
 
+
 def add_mod_to_removed_cache(removed_cache, mod):
-    removed_cache['modules'][mod.id]  = mod
+    removed_cache['modules'][mod.id] = mod
+
 
 def add_ds_to_removed_cache(removed_cache, ds):
-    removed_cache['dataSources'][ds.id]  = ds
+    removed_cache['dataSources'][ds.id] = ds
 
     for op in ds.operators:
         add_op_to_removed_cache(removed_cache, op)
@@ -421,12 +478,14 @@ def add_ds_to_removed_cache(removed_cache, ds):
     for mod in ds.modules:
         add_mod_to_removed_cache(removed_cache, mod)
 
+
 def add_op_to_removed_cache(removed_cache, op):
-    removed_cache['operators'][op.id]  = op
+    removed_cache['operators'][op.id] = op
 
     if hasattr(op, 'dataSources'):
         for ds in op.dataSources:
             add_ds_to_removed_cache(removed_cache, ds)
+
 
 def operator_remove_from_python(patch_op, removed_cache):
     # First get path to operator
@@ -460,8 +519,9 @@ def operator_add_to_python(patch_op, removed_cache):
         op = load_operator(op, removed_cache)
         ds.operators.append(op)
 
+
 def module_update_python(patch_module):
-     # First get path to module
+    # First get path to module
     path = patch_module['path']
     mod_path = module_path(path)
 
@@ -480,8 +540,9 @@ def module_update_python(patch_module):
     # Finally update the object inplace
     update(new_module, module)
 
+
 def module_remove_from_python(patch_op, removed_cache):
-     # First get path to module
+    # First get path to module
     path = patch_op['path']
     mod_path = module_path(path)
 
@@ -500,6 +561,7 @@ def module_remove_from_python(patch_op, removed_cache):
     # Kill it
     #mod._kill()
 
+
 def module_add_to_python(patch_module, removed_cache):
     # First get path to module
     path = patch_module['path']
@@ -515,8 +577,9 @@ def module_add_to_python(patch_module, removed_cache):
         mod = load_module(mod, removed_cache)
         ds.modules.append(mod)
 
+
 def datasource_update_python(patch_ds, removed_cache):
-     # First get path to module
+    # First get path to module
     path = patch_ds['path']
     ds_path = datasource_path(path)
 
@@ -535,10 +598,11 @@ def datasource_update_python(patch_ds, removed_cache):
     # Finally update the object inplace
     update(new_ds, ds)
 
+
 def datasource_remove_from_python(patch_module, removed_cache):
     from . import pipelines
 
-     # First get path to datasource
+    # First get path to datasource
     path = patch_module['path']
     ds_path = datasource_path(path)
 
@@ -562,6 +626,7 @@ def datasource_remove_from_python(patch_module, removed_cache):
 
     add_ds_to_removed_cache(removed_cache, ds)
 
+
 def datasource_add_to_python(patch_datasource, removed_cache):
     from . import pipelines
     # Load the new datasources
@@ -572,13 +637,14 @@ def datasource_add_to_python(patch_datasource, removed_cache):
         ds = load_datasource(ds, removed_cache)
         pipelines.append(Pipeline(ds))
 
+
 def add_to_python(patch, remove_cache):
     path = patch['path']
 
     if is_module_add(path):
         module_add_to_python(patch, remove_cache)
     elif is_module_update(path):
-       module_update_python(patch)
+        module_update_python(patch)
     elif is_operator_add(path):
         operator_add_to_python(patch, remove_cache)
     elif is_operator_update(path):
@@ -588,6 +654,7 @@ def add_to_python(patch, remove_cache):
     elif is_datasource_update(path):
         pass
 
+
 def update_python(patch, remove_cache):
     path = patch['path']
     if is_operator_update(path):
@@ -596,6 +663,7 @@ def update_python(patch, remove_cache):
         module_update_python(patch)
     elif is_datasource_update(path):
         pass
+
 
 def remove_from_python(patch, removed_cache):
     path = patch['path']
@@ -612,6 +680,7 @@ def remove_from_python(patch, removed_cache):
     elif is_datasource_update(path):
         datasource_update_python(patch, removed_cache)
 
+
 def convert_move_python(patch, removed_cache):
     from . import _current_state
     state = _current_state()
@@ -627,6 +696,7 @@ def convert_move_python(patch, removed_cache):
         'path': patch['path'],
         'value': value
     }, removed_cache)
+
 
 def sync_state_to_python(current_python_state=None, current_app_state=None):
     from . import _current_state
@@ -648,7 +718,7 @@ def sync_state_to_python(current_python_state=None, current_app_state=None):
     for o in patch:
         patch_op = o['op']
         if patch_op == 'replace':
-           update_python(o, removed_cache)
+            update_python(o, removed_cache)
         elif patch_op == 'add':
             add_to_python(o, removed_cache)
         elif patch_op == 'remove':
