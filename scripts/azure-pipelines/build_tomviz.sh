@@ -2,7 +2,7 @@
 
 if [[ $AGENT_OS == 'Darwin' ]]; then
   # CMake can't find Qt on mac os unless we do this
-  CMAKE_EXTRA_ARGS="-DCMAKE_PREFIX_PATH=/usr/local/opt/qt/"
+  CMAKE_EXTRA_ARGS="-DQt5_DIR:PATH=/usr/local/opt/qt/lib/cmake/Qt5 "
 elif [[ $AGENT_OS == 'Windows_NT' ]]; then
   export CC=cl
   export CXX=cl
