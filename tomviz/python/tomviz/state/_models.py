@@ -81,7 +81,14 @@ class Pipeline(Mortal):
         PipelineStateManager().resume_pipeline(self._ds_path())
 
     def execute(self):
+        paused = self.paused()
+        if paused:
+            self.resume()
+
         PipelineStateManager().execute_pipeline(self._ds_path())
+
+        if paused:
+            self.pause()
 
     def paused(self):
         return PipelineStateManager().pipeline_paused(self._ds_path())
