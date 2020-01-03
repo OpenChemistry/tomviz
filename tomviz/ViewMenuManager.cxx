@@ -9,16 +9,11 @@
 #include <vtkSMSessionProxyManager.h>
 #include <vtkSMViewProxy.h>
 
+#include <vtkColorTransferFunction.h>
 #include <vtkCommand.h>
 #include <vtkGridAxes3DActor.h>
-#include <vtkImageProperty.h>
-#include <vtkImageSlice.h>
-#include <vtkImageSliceMapper.h>
-#include <vtkInteractorStyleRubberBand2D.h>
+#include <vtkImageData.h>
 #include <vtkProperty.h>
-#include <vtkRenderWindow.h>
-#include <vtkRenderer.h>
-#include <vtkScalarsToColors.h>
 #include <vtkTextProperty.h>
 
 #include <QAction>
@@ -30,7 +25,7 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
-#include "QVTKGLWidget.h"
+#include "SliceViewDialog.h"
 #include "Utilities.h"
 
 namespace tomviz {
@@ -86,14 +81,10 @@ ViewMenuManager::ViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
 
   Menu->addSeparator();
 
-  m_showDarkDataAction = Menu->addAction("Show Dark Data");
-  m_showDarkDataAction->setEnabled(false);
-  connect(m_showDarkDataAction, &QAction::triggered, this,
-          &ViewMenuManager::showDarkData);
-  m_showWhiteDataAction = Menu->addAction("Show White Data");
-  m_showWhiteDataAction->setEnabled(false);
-  connect(m_showWhiteDataAction, &QAction::triggered, this,
-          &ViewMenuManager::showWhiteData);
+  m_showDarkWhiteDataAction = Menu->addAction("Show Dark/White Data");
+  m_showDarkWhiteDataAction->setEnabled(false);
+  connect(m_showDarkWhiteDataAction, &QAction::triggered, this,
+          &ViewMenuManager::showDarkWhiteData);
 
   Menu->addSeparator();
 }
@@ -234,118 +225,32 @@ void ViewMenuManager::updateDataSource(DataSource* s)
 
 void ViewMenuManager::updateDataSourceEnableStates()
 {
-  m_showDarkDataAction->setEnabled(m_dataSource && m_dataSource->darkData());
-  m_showWhiteDataAction->setEnabled(m_dataSource && m_dataSource->whiteData());
+  // Currently, both white and dark are required to use this
+  // We can change this in the future if needed...
+  m_showDarkWhiteDataAction->setEnabled(
+    m_dataSource && m_dataSource->darkData() && m_dataSource->whiteData());
 }
 
-void ViewMenuManager::showDarkData()
+void ViewMenuManager::showDarkWhiteData()
 {
-  if (!m_dataSource || !m_dataSource->darkData()) {
+  if (!m_dataSource || !m_dataSource->darkData() ||
+      !m_dataSource->whiteData()) {
     return;
   }
 
-  // Just for simpler reference
-  const auto& renderer = m_darkRenderer;
-  const auto& slice = m_darkImageSlice;
-  const auto& mapper = m_darkImageSliceMapper;
-
-  if (!m_darkDataDialog) {
-    m_darkDataDialog.reset(new QDialog);
-
-    // Pick a reasonable size. It is very tiny otherwise.
-    m_darkDataDialog->resize(500, 500);
-    m_darkDataDialog->setWindowTitle("Dark Data");
-
-    auto* layout = new QHBoxLayout(m_darkDataDialog.data());
-    m_darkDataDialog->setLayout(layout);
-    auto* widget = new QVTKGLWidget(m_darkDataDialog.data());
-    layout->addWidget(widget);
-
-    slice->SetMapper(mapper);
-    renderer->AddViewProp(slice);
-
-    widget->renderWindow()->AddRenderer(renderer);
-
-    vtkNew<vtkInteractorStyleRubberBand2D> interatorStyle;
-    interatorStyle->SetRenderOnMouseMove(true);
-    widget->interactor()->SetInteractorStyle(interatorStyle);
+  if (!m_sliceViewDialog) {
+    m_sliceViewDialog.reset(new SliceViewDialog);
   }
 
-  // Update the input
-  mapper->SetInputData(m_dataSource->darkData());
-  mapper->Update();
-
-  // Update the color map
-  vtkScalarsToColors* lut = vtkScalarsToColors::SafeDownCast(
+  auto* lut = vtkColorTransferFunction::SafeDownCast(
     m_dataSource->colorMap()->GetClientSideObject());
-  if (lut) {
-    slice->GetProperty()->SetLookupTable(lut);
-  }
 
-  // Re-render
-  auto* widget = qobject_cast<QVTKGLWidget*>(
-    m_darkDataDialog->layout()->itemAt(0)->widget());
+  m_sliceViewDialog->setLookupTable(lut);
+  m_sliceViewDialog->setDarkImage(m_dataSource->darkData());
+  m_sliceViewDialog->setWhiteImage(m_dataSource->whiteData());
+  m_sliceViewDialog->switchToDark();
 
-  widget->renderWindow()->Render();
-
-  tomviz::setupRenderer(renderer, mapper);
-
-  m_darkDataDialog->exec();
-}
-
-void ViewMenuManager::showWhiteData()
-{
-  if (!m_dataSource || !m_dataSource->whiteData()) {
-    return;
-  }
-
-  // Just for simpler reference
-  const auto& renderer = m_whiteRenderer;
-  const auto& slice = m_whiteImageSlice;
-  const auto& mapper = m_whiteImageSliceMapper;
-
-  if (!m_whiteDataDialog) {
-    m_whiteDataDialog.reset(new QDialog);
-
-    // Pick a reasonable size. It is very tiny otherwise.
-    m_whiteDataDialog->resize(500, 500);
-    m_whiteDataDialog->setWindowTitle("White Data");
-
-    auto* layout = new QHBoxLayout(m_whiteDataDialog.data());
-    m_whiteDataDialog->setLayout(layout);
-    auto* widget = new QVTKGLWidget(m_whiteDataDialog.data());
-    layout->addWidget(widget);
-
-    slice->SetMapper(mapper);
-    renderer->AddViewProp(slice);
-
-    widget->renderWindow()->AddRenderer(renderer);
-
-    vtkNew<vtkInteractorStyleRubberBand2D> interatorStyle;
-    interatorStyle->SetRenderOnMouseMove(true);
-    widget->interactor()->SetInteractorStyle(interatorStyle);
-  }
-
-  // Update the input
-  mapper->SetInputData(m_dataSource->whiteData());
-  mapper->Update();
-
-  // Update the color map
-  vtkScalarsToColors* lut = vtkScalarsToColors::SafeDownCast(
-    m_dataSource->colorMap()->GetClientSideObject());
-  if (lut) {
-    slice->GetProperty()->SetLookupTable(lut);
-  }
-
-  // Re-render
-  auto* widget = qobject_cast<QVTKGLWidget*>(
-    m_whiteDataDialog->layout()->itemAt(0)->widget());
-
-  widget->renderWindow()->Render();
-
-  tomviz::setupRenderer(renderer, mapper);
-
-  m_whiteDataDialog->exec();
+  m_sliceViewDialog->exec();
 }
 
 } // namespace tomviz

@@ -171,6 +171,8 @@ set(SOURCES
   SetDataTypeReaction.cxx
   SetTiltAnglesReaction.cxx
   SetTiltAnglesReaction.h
+  SliceViewDialog.cxx
+  SliceViewDialog.h
   SpinBox.cxx
   SpinBox.h
   TomographyReconstruction.h
