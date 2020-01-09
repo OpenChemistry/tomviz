@@ -25,6 +25,9 @@ public:
   ~PipelineSettingsDialog() override;
   void readSettings();
 
+public slots:
+  void done(int r) override;
+
 private slots:
   void writeSettings();
 
@@ -36,7 +39,9 @@ private:
   QScopedPointer<Ui::PipelineSettingsDialog> m_ui;
   QMetaEnum m_executorTypeMetaEnum;
   void checkEnableOk();
+  bool validatePythonEnvironment();
 };
+
 } // namespace tomviz
 
 #endif

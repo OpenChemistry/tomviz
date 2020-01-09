@@ -6,18 +6,18 @@
 
 #include <QObject>
 
+#include "Pipeline.h"
 #include "PipelineWorker.h"
 
 #include <QFile>
 #include <QFileSystemWatcher>
 #include <QLocalServer>
 #include <QLocalSocket>
+#include <QPointer>
 #include <QProcess>
 #include <QScopedPointer>
 #include <QSettings>
 #include <QTemporaryDir>
-#include <QThreadPool>
-#include <QTimer>
 
 #include <functional>
 
@@ -28,11 +28,6 @@ namespace tomviz {
 class DataSource;
 class Operator;
 class Pipeline;
-
-namespace docker {
-class DockerStopInvocation;
-class DockerRunInvocation;
-}
 
 class PipelineExecutor : public QObject
 {
@@ -47,74 +42,54 @@ public:
                                     QList<Operator*> operators, int start = 0,
                                     int end = -1) = 0;
   virtual void cancel(std::function<void()> canceled) = 0;
-  bool cancel(Operator* op);
+  virtual bool cancel(Operator* op);
   virtual bool isRunning() = 0;
 
 protected:
   Pipeline* pipeline();
 };
 
-class ThreadPipelineExecutor : public PipelineExecutor
-{
-  Q_OBJECT
-
-public:
-  ThreadPipelineExecutor(Pipeline* pipeline);
-  Pipeline::Future* execute(vtkDataObject* data, QList<Operator*> operators,
-                            int start = 0, int end = -1);
-  void cancel(std::function<void()> canceled);
-  bool cancel(Operator* op);
-  bool isRunning();
-
-private:
-  PipelineWorker* m_worker;
-  QPointer<PipelineWorker::Future> m_future;
-};
-
 class ProgressReader;
 
-class DockerPipelineExecutor : public PipelineExecutor
+class ExternalPipelineExecutor : public PipelineExecutor
 {
   Q_OBJECT
 
 public:
-  DockerPipelineExecutor(Pipeline* pipeline);
-  ~DockerPipelineExecutor();
+  ExternalPipelineExecutor(Pipeline* pipeline);
+  ~ExternalPipelineExecutor();
   Pipeline::Future* execute(vtkDataObject* data, QList<Operator*> operators,
-                            int start = 0, int end = -1);
-  void cancel(std::function<void()> canceled);
-  bool cancel(Operator* op);
-  bool isRunning();
+                            int start = 0, int end = -1) override;
 
-private slots:
-  void error(QProcess::ProcessError error);
-  docker::DockerRunInvocation* run(const QString& image,
-                                   const QStringList& args,
-                                   const QMap<QString, QString>& bindMounts);
-  void remove(const QString& containerId, bool force = false);
-  docker::DockerStopInvocation* stop(const QString& containerId);
-  void containerError(int exitCode);
+  static const char* ORIGINAL_FILENAME;
+  static const char* TRANSFORM_FILENAME;
+  static const char* STATE_FILENAME;
+  static const char* CONTAINER_MOUNT;
+  static const char* PROGRESS_PATH;
 
-private:
-  QScopedPointer<QTemporaryDir> m_temporaryDir;
-  bool m_pullImage = true;
-  QString m_containerId;
-  QScopedPointer<ProgressReader> m_progressReader;
-
-  QTimer* m_statusCheckTimer;
+protected:
+  // The working directory that tomviz will write and read data from
+  virtual QString workingDir();
+  // The working directory that will be passed to the executor
+  virtual QString executorWorkingDir() = 0;
+  virtual void operatorStarted(Operator* op);
+  virtual void operatorFinished(Operator* op);
+  virtual void operatorError(Operator* op, const QString& error);
+  virtual void operatorProgressMaximum(Operator* op, int max);
+  virtual void operatorProgressStep(Operator* op, int step);
+  virtual void operatorProgressMessage(Operator* op, const QString& msg);
+  virtual void operatorProgressData(Operator* op,
+                                    vtkSmartPointer<vtkDataObject> data);
+  virtual void pipelineStarted();
+  virtual void reset();
 
   QString originalFileName();
-  void checkContainerStatus();
-  void operatorStarted(Operator* op);
-  void operatorFinished(Operator* op);
-  void operatorError(Operator* op, const QString& error);
-  void operatorProgressMaximum(Operator* op, int max);
-  void operatorProgressStep(Operator* op, int step);
-  void operatorProgressMessage(Operator* op, const QString& msg);
-  void operatorProgressData(Operator* op, vtkSmartPointer<vtkDataObject> data);
-  void pipelineStarted();
-  void reset();
   void displayError(const QString& title, const QString& msg);
+  QStringList executorArgs(int start);
+
+  QScopedPointer<QTemporaryDir> m_temporaryDir;
+  QScopedPointer<ProgressReader> m_progressReader;
+  QString m_progressMode;
 };
 
 class ProgressReader : public QObject
