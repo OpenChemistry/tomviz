@@ -65,13 +65,16 @@ Pipeline::Future* ExternalPythonExecutor::execute(vtkDataObject* data,
     QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
     [this](int exitCode, QProcess::ExitStatus exitStatus) {
 
+      QString standardOut(this->m_process->readAllStandardOutput());
+      QString standardErr(this->m_process->readAllStandardError());
+
       if (exitStatus == QProcess::CrashExit) {
         displayError("External Python Error",
                      QString("The external python process crash: %1\n\n "
                              "stderr:\n%2 \n\n stdout:\n%3 \n")
                        .arg(commandLine(this->m_process.data()))
-                       .arg(QString(this->m_process->readAllStandardError()))
-                       .arg(QString(this->m_process->readAllStandardOutput())));
+                       .arg(standardErr)
+                       .arg(standardOut));
 
       } else if (exitCode != 0) {
         displayError(
@@ -80,9 +83,12 @@ Pipeline::Future* ExternalPythonExecutor::execute(vtkDataObject* data,
                   "command: %2 \n\n stderr:\n%3 \n\n stdout:\n%4 \n")
             .arg(exitCode)
             .arg(commandLine(this->m_process.data()))
-            .arg(QString(this->m_process->readAllStandardError()))
-            .arg(QString(this->m_process->readAllStandardOutput())));
+            .arg(standardErr)
+            .arg(standardOut));
       }
+
+      qDebug().noquote() << standardErr;
+      qDebug().noquote() << standardOut;
     });
 
   // We have to get the process environment and unset TOMVIZ_APPLICATION and
