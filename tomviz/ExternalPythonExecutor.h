@@ -16,6 +16,10 @@ class DataSource;
 class Operator;
 class Pipeline;
 
+///
+/// Executor that executes the pipeline in a specified external Python
+/// environment in order to enable GPU acceleration, custom packages, etc.
+///
 class ExternalPythonExecutor : public ExternalPipelineExecutor
 {
   Q_OBJECT

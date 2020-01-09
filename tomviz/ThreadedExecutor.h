@@ -13,6 +13,10 @@ class DataSource;
 class Operator;
 class Pipeline;
 
+///
+/// The default pipeline executor, providing execution of pipelines in a
+/// background thread in order to retain interactivity in the user interface.
+///
 class ThreadPipelineExecutor : public PipelineExecutor
 {
   Q_OBJECT

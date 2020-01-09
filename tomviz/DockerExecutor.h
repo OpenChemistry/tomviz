@@ -18,6 +18,11 @@ class DockerStopInvocation;
 class DockerRunInvocation;
 }
 
+
+///
+/// Executor that orchestrates the execution of pipelines in Docker containers,
+/// providing a pristine container-based pipeline environment.
+///
 class DockerPipelineExecutor : public ExternalPipelineExecutor
 {
   Q_OBJECT
