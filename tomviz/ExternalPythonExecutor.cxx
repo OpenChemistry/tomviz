@@ -49,7 +49,9 @@ Pipeline::Future* ExternalPythonExecutor::execute(vtkDataObject* data,
     displayError(
       "External Python Error",
       QString("Unable to find tomviz-pipeline executable, please ensure "
-              "tomviz package has been installed in python environment."));
+              "tomviz package has been installed in python environment."
+              "Click the Help button for more details on setting up your "
+              "Python environment."));
 
     return Pipeline::emptyFuture();
   }
