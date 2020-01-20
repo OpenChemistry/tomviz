@@ -56,6 +56,7 @@ SliceViewDialog::SliceViewDialog(QWidget* parent) : QDialog(parent)
 
   buttonLayout->addWidget(m_darkButton);
   buttonLayout->addWidget(m_whiteButton);
+  buttonLayout->addStretch(1);
 
   m_darkButton->setText("Dark");
   m_whiteButton->setText("White");
