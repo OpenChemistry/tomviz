@@ -12,6 +12,7 @@
 #include <vtkScalarsToColors.h>
 
 #include <QDialog>
+#include <QHBoxLayout>
 #include <QMainWindow>
 #include <QMenu>
 #include <QRadioButton>
@@ -29,10 +30,10 @@ SliceViewDialog::SliceViewDialog(QWidget* parent) : QDialog(parent)
 {
   // Pick a reasonable size. It is very tiny otherwise.
   resize(500, 500);
-  setLayout(new QVBoxLayout);
+  auto* vLayout = new QVBoxLayout(this);
 
   m_glWidget = new QVTKGLWidget(this);
-  layout()->addWidget(m_glWidget);
+  vLayout->addWidget(m_glWidget);
 
   m_slice->SetMapper(m_mapper);
   m_renderer->AddViewProp(m_slice);
@@ -47,8 +48,11 @@ SliceViewDialog::SliceViewDialog(QWidget* parent) : QDialog(parent)
   m_darkButton = new QRadioButton(this);
   m_whiteButton = new QRadioButton(this);
 
-  layout()->addWidget(m_darkButton);
-  layout()->addWidget(m_whiteButton);
+  auto* buttonLayout = new QHBoxLayout;
+  vLayout->addLayout(buttonLayout);
+
+  buttonLayout->addWidget(m_darkButton);
+  buttonLayout->addWidget(m_whiteButton);
 
   m_darkButton->setText("Dark");
   m_whiteButton->setText("White");
