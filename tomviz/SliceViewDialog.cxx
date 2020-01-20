@@ -32,6 +32,9 @@ SliceViewDialog::SliceViewDialog(QWidget* parent) : QDialog(parent)
   resize(500, 500);
   auto* vLayout = new QVBoxLayout(this);
 
+  // Set the margins to all be 0
+  vLayout->setContentsMargins(0, 0, 0, 0);
+
   m_glWidget = new QVTKGLWidget(this);
   vLayout->addWidget(m_glWidget);
 
