@@ -9,6 +9,7 @@
 #include <QPointer>
 
 #include <vtkNew.h>
+#include <vtkSmartPointer.h>
 #include <vtkWeakPointer.h>
 
 class QRadioButton;
@@ -54,6 +55,8 @@ private:
   vtkNew<vtkImageSlice> m_slice;
   vtkNew<vtkImageSliceMapper> m_mapper;
   vtkNew<vtkRenderer> m_renderer;
+
+  vtkSmartPointer<vtkScalarsToColors> m_lut;
 };
 } // namespace tomviz
 
