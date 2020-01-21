@@ -22,6 +22,8 @@
 #include <QStringList>
 #include <QVariant>
 
+#include <vector>
+
 class pqAnimationScene;
 
 class vtkDiscretizableColorTransferFunction;
@@ -222,6 +224,10 @@ void openUrl(const QUrl& url);
 /// Otherwise, prepends it with the remote help path.
 /// If empty, just opens up the doc home page.
 void openHelpUrl(const QString& path = "");
+
+/// Rescale the points to be in a new range
+bool vtkRescaleControlPoints(std::vector<vtkTuple<double, 4>>& cntrlPoints,
+                             double rangeMin, double rangeMax);
 
 } // namespace tomviz
 
