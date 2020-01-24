@@ -708,6 +708,7 @@ def sync_state_to_python(current_python_state=None, current_app_state=None):
 
     if current_app_state is None:
         current_app_state = PipelineStateManager().serialize()
+        current_app_state = json.loads(current_app_state)
 
     patch = diff(current_python_state, current_app_state)
 
