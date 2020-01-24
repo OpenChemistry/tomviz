@@ -25,6 +25,8 @@ from ._schemata import (
     dump_datasource
 )
 
+from ._models import Pipeline
+
 from ._pipeline import PipelineStateManager
 
 
