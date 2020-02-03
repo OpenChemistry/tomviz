@@ -110,8 +110,8 @@ void ProgressDialogManager::operatorAdded(Operator* op)
   // will have the same thread affinity.
   std::function<void()> connectTransformingStarted = [op, this]() {
     auto connectionType = Qt::BlockingQueuedConnection;
-    if (op->dataSource()->pipeline()->executionMode() ==
-        Pipeline::ExecutionMode::Docker) {
+    if (op->dataSource()->pipeline()->executionMode() !=
+        Pipeline::ExecutionMode::Threaded) {
       connectionType = Qt::DirectConnection;
     }
 

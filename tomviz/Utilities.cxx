@@ -43,6 +43,7 @@
 #include <vtkTable.h>
 #include <vtkTextProperty.h>
 #include <vtkTrivialProducer.h>
+#include <vtkTuple.h>
 #include <vtkVariantArray.h>
 
 #include <sstream>
@@ -1057,4 +1058,76 @@ void openHelpUrl(const QString& path)
 }
 
 double offWhite[3] = { 204.0 / 255, 204.0 / 255, 204.0 / 255 };
+
+class StrictWeakOrdering
+{
+  // This was obtained from StrictWeakOrdering in ParaView's
+  // vtkSMTransferFunctionProxy.cxx
+
+public:
+  bool operator()(const vtkTuple<double, 4>& x,
+                  const vtkTuple<double, 4>& y) const
+  {
+    return (x.GetData()[0] < y.GetData()[0]);
+  }
+};
+
+bool vtkNormalize(std::vector<vtkTuple<double, 4>>& cntrlPoints)
+{
+  // This was adapted from vtkNormalize() in
+  // ParaView's vtkSMTransferFunctionProxy.cxx
+  // The only difference is that we have removed the "log_space" option
+  // and the "originalRange" parameter
+
+  if (cntrlPoints.size() == 0) {
+    // nothing to do, but not an error, so return true.
+    return true;
+  }
+  if (cntrlPoints.size() == 1) {
+    // Only 1 control point in the property. We'll add 2 points, however.
+    cntrlPoints.resize(2);
+    cntrlPoints[1] = cntrlPoints[0];
+    cntrlPoints[0][0] = 0.0;
+    cntrlPoints[1][0] = 1.0;
+    return true;
+  }
+
+  // sort the points by x, just in case user didn't add them correctly.
+  std::sort(cntrlPoints.begin(), cntrlPoints.end(), StrictWeakOrdering());
+
+  // now simply normalize the cntrlPoints.
+  const double range[2] = { cntrlPoints.front()[0], cntrlPoints.back()[0] };
+  if (range[0] == 0.0 && range[1] == 1.0) {
+    // nothing to do.
+    return true;
+  }
+  const double denominator = (range[1] - range[0]);
+  assert(denominator > 0);
+  for (size_t cc = 0; cc < cntrlPoints.size(); ++cc) {
+    cntrlPoints[cc][0] = (cntrlPoints[cc][0] - range[0]) / denominator;
+  }
+  return true;
+}
+
+bool vtkRescaleControlPoints(std::vector<vtkTuple<double, 4>>& cntrlPoints,
+                             double rangeMin, double rangeMax)
+{
+  // This was adapted from vtkRescaleNormalizedControlPoints() in
+  // ParaView's vtkSMTransferFunctionProxy.cxx
+  // The only difference is that we have removed the log scale option
+  // Also, we call vtkNormalize ourselves
+
+  assert(cntrlPoints.size() >= 2);
+  assert(rangeMin < rangeMax);
+
+  vtkNormalize(cntrlPoints);
+
+  double scale = (rangeMax - rangeMin);
+  assert(scale > 0);
+  for (size_t cc = 0; cc < cntrlPoints.size(); ++cc) {
+    double& x = cntrlPoints[cc][0];
+    x = x * scale + rangeMin;
+  }
+  return true;
+}
 } // namespace tomviz

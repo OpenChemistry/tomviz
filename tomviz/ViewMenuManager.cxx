@@ -9,8 +9,10 @@
 #include <vtkSMSessionProxyManager.h>
 #include <vtkSMViewProxy.h>
 
+#include <vtkColorTransferFunction.h>
 #include <vtkCommand.h>
 #include <vtkGridAxes3DActor.h>
+#include <vtkImageData.h>
 #include <vtkProperty.h>
 #include <vtkTextProperty.h>
 
@@ -22,6 +24,8 @@
 #include <QMenu>
 
 #include "ActiveObjects.h"
+#include "DataSource.h"
+#include "SliceViewDialog.h"
 #include "Utilities.h"
 
 namespace tomviz {
@@ -38,6 +42,13 @@ ViewMenuManager::ViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
   }
   connect(&ActiveObjects::instance(), SIGNAL(viewChanged(vtkSMViewProxy*)),
           SLOT(onViewChanged()));
+
+  connect(&ActiveObjects::instance(), &ActiveObjects::dataSourceActivated, this,
+          &ViewMenuManager::updateDataSource);
+  connect(&ActiveObjects::instance(),
+          &ActiveObjects::transformedDataSourceActivated, this,
+          &ViewMenuManager::updateDataSource);
+
   Menu->addSeparator();
   // Projection modes
   QActionGroup* projectionGroup = new QActionGroup(this);
@@ -67,6 +78,13 @@ ViewMenuManager::ViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
   m_showOrientationAxesAction->setChecked(true);
   connect(m_showOrientationAxesAction, &QAction::triggered, this,
           &ViewMenuManager::setShowOrientationAxes);
+
+  Menu->addSeparator();
+
+  m_showDarkWhiteDataAction = Menu->addAction("Show Dark/White Data");
+  m_showDarkWhiteDataAction->setEnabled(false);
+  connect(m_showDarkWhiteDataAction, &QAction::triggered, this,
+          &ViewMenuManager::showDarkWhiteData);
 
   Menu->addSeparator();
 }
@@ -197,6 +215,42 @@ void ViewMenuManager::setShowOrientationAxes(bool show)
   if (view) {
     view->render();
   }
+}
+
+void ViewMenuManager::updateDataSource(DataSource* s)
+{
+  m_dataSource = s;
+  updateDataSourceEnableStates();
+}
+
+void ViewMenuManager::updateDataSourceEnableStates()
+{
+  // Currently, both white and dark are required to use this
+  // We can change this in the future if needed...
+  m_showDarkWhiteDataAction->setEnabled(
+    m_dataSource && m_dataSource->darkData() && m_dataSource->whiteData());
+}
+
+void ViewMenuManager::showDarkWhiteData()
+{
+  if (!m_dataSource || !m_dataSource->darkData() ||
+      !m_dataSource->whiteData()) {
+    return;
+  }
+
+  if (!m_sliceViewDialog) {
+    m_sliceViewDialog.reset(new SliceViewDialog);
+  }
+
+  auto* lut = vtkColorTransferFunction::SafeDownCast(
+    m_dataSource->colorMap()->GetClientSideObject());
+
+  m_sliceViewDialog->setLookupTable(lut);
+  m_sliceViewDialog->setDarkImage(m_dataSource->darkData());
+  m_sliceViewDialog->setWhiteImage(m_dataSource->whiteData());
+  m_sliceViewDialog->switchToDark();
+
+  m_sliceViewDialog->exec();
 }
 
 } // namespace tomviz

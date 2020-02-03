@@ -44,7 +44,8 @@ public:
   enum ExecutionMode
   {
     Threaded,
-    Docker
+    Docker,
+    ExternalPython
   };
   Q_ENUM(ExecutionMode)
 
@@ -187,12 +188,14 @@ public:
   QString dockerImage();
   bool dockerPull();
   bool dockerRemove();
+  QString externalPythonExecutablePath();
 
   void setExecutionMode(Pipeline::ExecutionMode executor);
   void setExecutionMode(const QString& executor);
   void setDockerImage(const QString& image);
   void setDockerPull(bool pull);
   void setDockerRemove(bool remove);
+  void setExternalPythonExecutablePath(const QString& executable);
 
 private:
   pqSettings* m_settings;

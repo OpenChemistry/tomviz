@@ -55,6 +55,8 @@ set(SOURCES
   DataTransformMenu.h
   DeleteDataReaction.cxx
   DeleteDataReaction.h
+  DockerExecutor.cxx
+  DockerExecutor.h
   DockerUtilities.cxx
   DockerUtilities.h
   DoubleSliderWidget.cxx
@@ -67,6 +69,8 @@ set(SOURCES
   EmdFormat.h
   ExportDataReaction.cxx
   ExportDataReaction.h
+  ExternalPythonExecutor.cxx
+  ExternalPythonExecutor.h
   FileFormatManager.cxx
   FileFormatManager.h
   FxiFormat.cxx
@@ -171,8 +175,12 @@ set(SOURCES
   SetDataTypeReaction.cxx
   SetTiltAnglesReaction.cxx
   SetTiltAnglesReaction.h
+  SliceViewDialog.cxx
+  SliceViewDialog.h
   SpinBox.cxx
   SpinBox.h
+  ThreadedExecutor.cxx
+  ThreadedExecutor.h
   TomographyReconstruction.h
   TomographyReconstruction.cxx
   TomographyTiltSeries.h

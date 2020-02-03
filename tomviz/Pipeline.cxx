@@ -5,11 +5,13 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
+#include "DockerExecutor.h"
 #include "DockerUtilities.h"
 #include "EmdFormat.h"
+#include "ExternalPythonExecutor.h"
 #include "ModuleManager.h"
 #include "Operator.h"
-#include "PipelineExecutor.h"
+#include "ThreadedExecutor.h"
 #include "Utilities.h"
 
 #include <QMetaEnum>
@@ -64,6 +66,11 @@ bool PipelineSettings::dockerRemove()
   return m_settings->value("pipeline/docker.remove", true).toBool();
 }
 
+QString PipelineSettings::externalPythonExecutablePath()
+{
+  return m_settings->value("pipeline/external.executable", true).toString();
+}
+
 void PipelineSettings::setDockerImage(const QString& image)
 {
   m_settings->setValue("pipeline/docker.image", image);
@@ -77,6 +84,12 @@ void PipelineSettings::setDockerPull(bool pull)
 void PipelineSettings::setDockerRemove(bool remove)
 {
   m_settings->setValue("pipeline/docker.remove", remove);
+}
+
+void PipelineSettings::setExternalPythonExecutablePath(
+  const QString& executable)
+{
+  m_settings->setValue("pipeline/external.executable", executable);
 }
 
 Pipeline::Pipeline(DataSource* dataSource, QObject* parent) : QObject(parent)
@@ -571,8 +584,12 @@ void Pipeline::setExecutionMode(ExecutionMode executor)
   m_executionMode = executor;
   if (executor == ExecutionMode::Docker) {
     m_executor.reset(new DockerPipelineExecutor(this));
-  } else {
+  } else if (executor == ExecutionMode::Threaded) {
     m_executor.reset(new ThreadPipelineExecutor(this));
+  } else if (executor == ExecutionMode::ExternalPython) {
+    m_executor.reset(new ExternalPythonExecutor(this));
+  } else {
+    qCritical() << "Unknown executor type: " << executor;
   }
 }
 
