@@ -60,4 +60,9 @@ Pipeline::ExecutionMode PipelineManager::executionMode()
   return m_executionMode;
 }
 
+QList<QPointer<Pipeline>>& PipelineManager::pipelines()
+{
+  return m_pipelines;
+}
+
 } // end of namespace tomviz

@@ -13,12 +13,22 @@
 #include "SnapshotOperator.h"
 #include "TranslateAlignOperator.h"
 #include "TransposeDataOperator.h"
+#include <QDebug>
+#include <QThread>
 
 namespace tomviz {
+
+// QList<PythonOperatorInfo> OperatorFactory::pythonOperators;
 
 OperatorFactory::OperatorFactory() = default;
 
 OperatorFactory::~OperatorFactory() = default;
+
+OperatorFactory& OperatorFactory::instance()
+{
+  static OperatorFactory theInstance;
+  return theInstance;
+}
 
 QList<QString> OperatorFactory::operatorTypes()
 {
@@ -109,4 +119,25 @@ const char* OperatorFactory::operatorType(const Operator* op)
   }
   return nullptr;
 }
+
+void OperatorFactory::registerPythonOperator(
+  const QString& label, const QString& source, bool requiresTiltSeries,
+  bool requiresVolume, bool requiresFib, const QString& json)
+{
+  PythonOperatorInfo info;
+  info.label = label;
+  info.source = source;
+  info.requiresTiltSeries = requiresTiltSeries;
+  info.requiresVolume = requiresVolume;
+  info.requiresFib = requiresFib;
+  info.json = json;
+
+  m_pythonOperators.append(info);
+}
+
+const QList<PythonOperatorInfo>& OperatorFactory::registeredPythonOperators()
+{
+  return m_pythonOperators;
+}
+
 } // namespace tomviz

@@ -123,6 +123,9 @@ bool ModuleThreshold::setVisibility(bool val)
   Q_ASSERT(m_thresholdRepresentation);
   vtkSMPropertyHelper(m_thresholdRepresentation, "Visibility").Set(val ? 1 : 0);
   m_thresholdRepresentation->UpdateVTKObjects();
+
+  Module::setVisibility(val);
+
   return true;
 }
 

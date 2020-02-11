@@ -215,6 +215,9 @@ bool ModuleSlice::setVisibility(bool val)
     m_widget->SetArrowVisibility(showProperty.GetAsInt());
     m_widget->SetInteraction(showProperty.GetAsInt());
   }
+
+  Module::setVisibility(val);
+
   return true;
 }
 

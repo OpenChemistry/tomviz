@@ -520,6 +520,8 @@ set(tomviz_python_modules
   itkutils.py
   utils.py
   web.py
+  modules.py
+  views.py
 )
 
 file(MAKE_DIRECTORY "${tomviz_python_binary_dir}/tomviz")
@@ -547,6 +549,15 @@ foreach(file ${tomviz_python_io_modules})
     "${tomviz_python_binary_dir}/tomviz/io/${file}")
 endforeach()
 
+
+file(GLOB tomviz_python_state_modules "${tomviz_SOURCE_DIR}/tomviz/python/tomviz/state/*.py")
+file(MAKE_DIRECTORY "${tomviz_python_binary_dir}/tomviz/state")
+foreach(file_ ${tomviz_python_state_modules})
+  get_filename_component(file ${file_} NAME)
+  execute_process(COMMAND ${CMAKE_COMMAND} -E ${script_cmd}
+    "${tomviz_SOURCE_DIR}/tomviz/python/tomviz/state/${file}"
+    "${tomviz_python_binary_dir}/tomviz/state/${file}")
+endforeach()
 
 # Autodiscover python reader/writers added to tomviz/python/tomviz/io/formats
 file(GLOB tomviz_python_io_formats "${tomviz_SOURCE_DIR}/tomviz/python/tomviz/io/formats/*.py")

@@ -34,6 +34,7 @@
 #include "ModuleManager.h"
 #include "ModuleMenu.h"
 #include "ModulePropertiesPanel.h"
+#include "OperatorFactory.h"
 #include "PassiveAcquisitionWidget.h"
 #include "Pipeline.h"
 #include "PipelineManager.h"
@@ -104,6 +105,9 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     qtSettings->setValue("pqOutputWidget.ShowFullMessages", true);
   }
 
+  connect(&ModuleManager::instance(), &ModuleManager::enablePythonConsole, this,
+          &MainWindow::setEnabledPythonConsole);
+
   // Update back light azimuth default on view.
   connect(pqApplicationCore::instance()->getServerManagerModel(),
           &pqServerManagerModel::viewAdded, [](pqView* view) {
@@ -134,6 +138,13 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   // don't think tomviz should import ParaView modules by default in Python
   // shell.
   pqPythonShell::setPreamble(QStringList());
+
+  connect(m_ui->pythonConsole, &pqPythonShell::executing,
+          [this](bool executing) {
+            if (!executing) {
+              this->syncPythonToApp();
+            }
+          });
 
   // Hide these dock widgets when tomviz is first opened. If they are later
   // opened and remain open while tomviz is shut down, their visibility and
@@ -508,6 +519,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
             delete pythonWatcher;
             statusBar()->showMessage("Initialization complete", 1500);
           });
+
   auto pythonFuture = QtConcurrent::run(initPython);
   pythonWatcher->setFuture(pythonFuture);
 }
@@ -529,6 +541,7 @@ std::vector<OperatorDescription> MainWindow::initPython()
   auto operators = findCustomOperators();
   FileFormatManager::instance().registerPythonReaders();
   FileFormatManager::instance().registerPythonWriters();
+
   return operators;
 }
 
@@ -938,6 +951,31 @@ std::vector<OperatorDescription> MainWindow::findCustomOperators()
             });
 
   return operators;
+}
+
+void MainWindow::setEnabledPythonConsole(bool enabled)
+{
+  m_ui->dockWidgetPythonConsole->setEnabled(enabled);
+}
+
+void MainWindow::syncPythonToApp()
+{
+  Python python;
+  auto tomvizState = python.import("tomviz.state");
+  if (!tomvizState.isValid()) {
+    qCritical() << "Failed to import tomviz.state";
+    return;
+  }
+
+  auto sync = tomvizState.findFunction("sync");
+  if (!sync.isValid()) {
+    qCritical() << "Unable to locate sync.";
+    return;
+  }
+
+  Python::Tuple args(0);
+  Python::Dict kwargs;
+  sync.call(args, kwargs);
 }
 
 } // namespace tomviz

@@ -142,6 +142,7 @@ bool ModuleOutline::setVisibility(bool val)
   if (!val || m_axesVisibility) {
     m_gridAxes->SetVisibility(val ? 1 : 0);
   }
+  Module::setVisibility(val);
   return true;
 }
 

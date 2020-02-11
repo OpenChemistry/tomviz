@@ -79,6 +79,8 @@ private slots:
   /// raise output widget on errors.
   void handleMessage(const QString&, int);
 
+  void setEnabledPythonConsole(bool enabled);
+
 private:
   Q_DISABLE_COPY(MainWindow)
 
@@ -86,6 +88,7 @@ private:
   static std::vector<OperatorDescription> findCustomOperators();
   void registerCustomOperators(std::vector<OperatorDescription> operators);
   static std::vector<OperatorDescription> initPython();
+  void syncPythonToApp();
 
   QScopedPointer<Ui::MainWindow> m_ui;
   QMenu* m_customTransformsMenu = nullptr;

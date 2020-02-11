@@ -139,6 +139,7 @@ bool ModuleContour::setVisibility(bool val)
   vtkSMPropertyHelper(m_activeRepresentation, "Visibility").Set(val ? 1 : 0);
   m_activeRepresentation->UpdateVTKObjects();
 
+  Module::setVisibility(val);
   return true;
 }
 

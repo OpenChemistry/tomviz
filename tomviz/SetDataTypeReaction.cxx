@@ -37,7 +37,7 @@ void SetDataTypeReaction::setDataType(QMainWindow* mw, DataSource* dsource,
   } else {
     // If it was a TiltSeries convert to volume
     // if (dsource->type() == DataSource::TiltSeries) {
-    Operator* op = OperatorFactory::createConvertToVolumeOperator(t);
+    Operator* op = OperatorFactory::instance().createConvertToVolumeOperator(t);
     dsource->addOperator(op);
     // dsource->setType(t);
     // }

@@ -7,6 +7,7 @@
 
 #include "DataSource.h"
 #include "Logger.h"
+#include "OperatorFactory.h"
 
 #include <vtkPythonInterpreter.h>
 #include <vtkPythonUtil.h>

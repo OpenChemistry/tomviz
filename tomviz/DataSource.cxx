@@ -466,14 +466,13 @@ QJsonObject DataSource::serialize() const
   QJsonArray jModules;
   foreach (Module* module, modules) {
     QJsonObject jModule = module->serialize();
-    jModule["type"] = ModuleFactory::moduleType(module);
-    jModule["viewId"] = static_cast<int>(module->view()->GetGlobalID());
-
     jModules.append(jModule);
   }
   if (!jModules.isEmpty()) {
     json["modules"] = jModules;
   }
+
+  json["id"] = QString().sprintf("%p", static_cast<const void*>(this));
 
   return json;
 }
@@ -516,6 +515,11 @@ bool DataSource::deserialize(const QJsonObject& state)
       auto moduleObj = moduleArray[i].toObject();
       auto viewId = moduleObj["viewId"].toInt();
       auto viewProxy = ModuleManager::instance().lookupView(viewId);
+
+      // If we can't find the view, just default the currently active view
+      if (viewProxy == nullptr) {
+        viewProxy = ActiveObjects::instance().activeView();
+      }
       auto type = moduleObj["type"].toString();
       auto m =
         ModuleManager::instance().createAndAddModule(type, this, viewProxy);
@@ -530,8 +534,8 @@ bool DataSource::deserialize(const QJsonObject& state)
     auto operatorArray = state["operators"].toArray();
     for (int i = 0; i < operatorArray.size(); ++i) {
       operatorObj = operatorArray[i].toObject();
-      op =
-        OperatorFactory::createOperator(operatorObj["type"].toString(), this);
+      op = OperatorFactory::instance().createOperator(
+        operatorObj["type"].toString(), this);
       if (op && op->deserialize(operatorObj)) {
         addOperator(op);
       }

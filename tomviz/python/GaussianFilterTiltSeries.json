@@ -1,5 +1,5 @@
 {
-  "name" : "GaussianFilter",
+  "name" : "GaussianFilterTiltSeries",
   "label" : "Gaussian Filter",
   "description" : "Apply a 2D isotropic Gaussian filter to each tilt image. The standard deviation (sigma) can be specified below:",
   "parameters" : [

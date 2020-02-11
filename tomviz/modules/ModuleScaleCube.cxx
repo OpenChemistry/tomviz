@@ -127,6 +127,9 @@ bool ModuleScaleCube::setVisibility(bool choice)
   if (!choice || m_annotationVisibility) {
     m_cubeRep->SetLabelVisibility(choice ? 1 : 0);
   }
+
+  Module::setVisibility(choice);
+
   return true;
 }
 QJsonObject ModuleScaleCube::serialize() const

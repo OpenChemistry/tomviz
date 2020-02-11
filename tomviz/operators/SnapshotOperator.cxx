@@ -50,8 +50,9 @@ QJsonObject SnapshotOperator::serialize() const
 {
   auto json = Operator::serialize();
 
-  if (hasChildDataSource() && childDataSource()->persistenceState() ==
-                                DataSource::PersistenceState::Saved) {
+  if (hasChildDataSource() && childDataSource() != nullptr &&
+      childDataSource()->persistenceState() ==
+        DataSource::PersistenceState::Saved) {
     json["update"] = false;
   }
 

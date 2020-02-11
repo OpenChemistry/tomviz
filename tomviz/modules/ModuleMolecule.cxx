@@ -93,6 +93,7 @@ bool ModuleMolecule::finalize()
 bool ModuleMolecule::setVisibility(bool val)
 {
   m_moleculeActor->SetVisibility(val);
+  Module::setVisibility(val);
   return true;
 }
 

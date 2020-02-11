@@ -160,7 +160,8 @@ QJsonObject Operator::serialize() const
     dataSources.append(ds->serialize());
     json["dataSources"] = dataSources;
   }
-  json["type"] = OperatorFactory::operatorType(this);
+  json["type"] = OperatorFactory::instance().operatorType(this);
+  json["id"] = QString().sprintf("%p", static_cast<const void*>(this));
 
   return json;
 }

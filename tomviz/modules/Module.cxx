@@ -5,6 +5,7 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
+#include "ModuleFactory.h"
 #include "MoleculeSource.h"
 #include "OperatorResult.h"
 #include "Utilities.h"
@@ -262,6 +263,10 @@ QJsonObject Module::serialize() const
   }
   json["properties"] = props;
   json["activeScalars"] = m_activeScalars;
+  json["id"] = QString().sprintf("%p", static_cast<const void*>(this));
+  json["type"] = ModuleFactory::moduleType(this);
+  json["viewId"] = static_cast<int>(this->view()->GetGlobalID());
+
   return json;
 }
 
@@ -322,6 +327,12 @@ Module::TransferMode Module::getTransferMode() const
 vtkDataObject* Module::dataToExport()
 {
   return nullptr;
+}
+
+bool Module::setVisibility(bool val) {
+  emit visibilityChanged(val);
+
+  return true;
 }
 
 } // end of namespace tomviz

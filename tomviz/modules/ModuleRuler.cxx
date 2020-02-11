@@ -143,6 +143,9 @@ bool ModuleRuler::setVisibility(bool val)
     m_widget->setWidgetVisible(val && m_showLine);
     m_showLine = oldValue;
   }
+
+  Module::setVisibility(val);
+
   return true;
 }
 

@@ -92,6 +92,7 @@ public:
 
   void executePipelinesOnLoad(bool execute);
   bool executePipelinesOnLoad() const;
+  DataSource* loadDataSource(QJsonObject& ds);
 
 public slots:
   void addModule(Module*);
@@ -133,7 +134,7 @@ private slots:
   void render();
 
   void onPipelineFinished();
-  
+
   void clip(vtkPlane* plane, bool newFilter);
 
 signals:
@@ -153,6 +154,9 @@ signals:
   void stateDoneLoading();
 
   void clipChanged(vtkPlane* plane, bool newFilter);
+  void enablePythonConsole(bool enable);
+
+   void visibilityChanged(bool);
 
 private:
   Q_DISABLE_COPY(ModuleManager)

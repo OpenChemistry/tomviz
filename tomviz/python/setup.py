@@ -21,6 +21,9 @@ setup(
     packages=find_packages(),
     install_requires=['tqdm', 'h5py', 'numpy==1.16.4', 'click', 'scipy',
                       'itk', 'pyfftw'],
+    extras_require={
+        'interactive': ['jsonpatch', 'marshmallow']
+    },
     entry_points={
         'console_scripts': [
             'tomviz-pipeline = tomviz.cli:main'
