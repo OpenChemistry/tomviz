@@ -516,7 +516,7 @@ bool DataSource::deserialize(const QJsonObject& state)
       auto viewId = moduleObj["viewId"].toInt();
       auto viewProxy = ModuleManager::instance().lookupView(viewId);
 
-      // If we can't find the view, just defaulf the currently active view
+      // If we can't find the view, just default the currently active view
       if (viewProxy == nullptr) {
         viewProxy = ActiveObjects::instance().activeView();
       }
