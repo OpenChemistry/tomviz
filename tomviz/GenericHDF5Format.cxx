@@ -11,9 +11,11 @@
 #include <h5cpp/h5readwrite.h>
 #include <h5cpp/h5vtktypemaps.h>
 
+#include <QCheckBox>
 #include <QDialog>
 #include <QDialogButtonBox>
-#include <QInputDialog>
+#include <QMessageBox>
+#include <QScrollArea>
 #include <QStringList>
 #include <QVBoxLayout>
 
@@ -25,6 +27,7 @@
 #include <vector>
 
 #include <iostream>
+#include <sstream>
 
 using std::cerr;
 using std::cout;
@@ -95,6 +98,31 @@ bool GenericHDF5Format::addScalarArray(h5::H5ReadWrite& reader,
   int vtkCounts[3];
   for (int i = 0; i < 3; ++i)
     vtkCounts[i] = counts[i];
+
+  // Make sure the dimensions match those of the image, or else
+  // we will probably experience a crash later...
+  int imageDims[3];
+  image->GetDimensions(imageDims);
+  for (int i = 0; i < 3; ++i) {
+    if (vtkCounts[i] != imageDims[i]) {
+      std::stringstream ss;
+      if (DataSource::wasSubsampled(image)) {
+        ss << "Subsampled dimensions of ";
+      } else {
+        ss << "Dimensions of ";
+      }
+      ss << path << " (" << vtkCounts[0] << ", " << vtkCounts[1] << ", "
+         << vtkCounts[2] << ") do not match the dimensions of the image ("
+         << imageDims[0] << ", " << imageDims[1] << ", " << imageDims[2]
+         << ")\nThe array cannot be added.";
+
+      std::cerr << "Error in GenericHDF5Format::addScalarArray():\n"
+                << ss.str() << std::endl;
+      QMessageBox::critical(nullptr, "Dimensions do not match",
+                            ss.str().c_str());
+      return false;
+    }
+  }
 
   vtkNew<vtkImageData> tmp;
   tmp->SetDimensions(&vtkCounts[0]);
@@ -324,24 +352,95 @@ bool GenericHDF5Format::read(const std::string& fileName, vtkImageData* image,
 
   std::string dataNode = datasets[0];
 
-  if (datasets.size() != 1) {
-    // If there is more than one dataset, have the user choose one
-    QStringList items;
-    for (auto& d : datasets)
-      items.append(QString::fromStdString(d));
-
-    bool ok;
-    QString res = QInputDialog::getItem(
-      nullptr, "Choose volume", "Choose volume to load:", items, 0, false, &ok);
-
-    // Check if user canceled
-    if (!ok)
-      return false;
-
-    dataNode = datasets[items.indexOf(res)];
+  if (datasets.size() == 1) {
+    // Only one volume. Load and return.
+    return readVolume(reader, dataNode, image);
   }
 
-  return readVolume(reader, dataNode, image);
+  // If there is more than one volume, have the user choose.
+  QStringList items;
+  for (auto& d : datasets)
+    items.append(QString::fromStdString(d));
+
+  // Choose the volumes to load
+  QDialog dialog;
+  dialog.setWindowTitle("Choose volumes");
+  QVBoxLayout layout;
+  dialog.setLayout(&layout);
+
+  // Use a scroll area in case there are a lot of options
+  QScrollArea scrollArea;
+  scrollArea.setWidgetResizable(true); // Necessary for some reason
+  layout.addWidget(&scrollArea);
+
+  QWidget scrollAreaWidget;
+  QVBoxLayout scrollAreaLayout;
+  scrollAreaWidget.setLayout(&scrollAreaLayout);
+  scrollArea.setWidget(&scrollAreaWidget);
+
+  // Add the checkboxes
+  QList<QCheckBox*> checkboxes;
+  for (const auto& item : items) {
+    checkboxes.append(new QCheckBox(item, &scrollAreaWidget));
+    scrollAreaLayout.addWidget(checkboxes.back());
+  }
+
+  // Setup Ok and Cancel buttons
+  QDialogButtonBox buttons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+  layout.addWidget(&buttons);
+  QObject::connect(&buttons, &QDialogButtonBox::accepted, &dialog,
+                   &QDialog::accept);
+  QObject::connect(&buttons, &QDialogButtonBox::rejected, &dialog,
+                   &QDialog::reject);
+
+  if (!dialog.exec()) {
+    // User canceled, just return
+    return false;
+  }
+
+  // Find the checked checkboxes
+  std::vector<std::string> selectedDatasets;
+  for (const auto& cb : checkboxes) {
+    if (cb->isChecked()) {
+      // Take advantage of the fact that the text is the name exactly
+      selectedDatasets.push_back(cb->text().toStdString());
+    }
+  }
+
+  if (selectedDatasets.empty()) {
+    QString msg = "At least one volume must be selected";
+    std::cerr << msg.toStdString() << std::endl;
+    QMessageBox::critical(nullptr, "Invalid Selection", msg);
+    return false;
+  }
+
+  // Read the first dataset with readVolume(). This might ask for
+  // subsampling options, which will be applied to the rest of the
+  // datasets.
+  if (!readVolume(reader, selectedDatasets[0], image)) {
+    auto msg =
+      QString("Failed to read the data at: ") + selectedDatasets[0].c_str();
+    std::cerr << msg.toStdString() << std::endl;
+    QMessageBox::critical(nullptr, "Read Failed", msg);
+    return false;
+  }
+
+  // Set the name of the first array
+  image->GetPointData()->GetScalars()->SetName(selectedDatasets[0].c_str());
+
+  // Add any more datasets with addScalarArray()
+  for (size_t i = 1; i < selectedDatasets.size(); ++i) {
+    const auto& path = selectedDatasets[i];
+    if (!addScalarArray(reader, path, image, path)) {
+      auto msg = QString("Failed to read or add the data of: ") + path.c_str();
+      std::cerr << msg.toStdString() << std::endl;
+      QMessageBox::critical(nullptr, "Failure", msg);
+      return false;
+    }
+  }
+
+  // Made it to the end...
+  return true;
 }
 
 bool GenericHDF5Format::writeVolume(h5::H5ReadWrite& writer,
