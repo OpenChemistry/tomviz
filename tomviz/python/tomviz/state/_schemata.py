@@ -196,7 +196,7 @@ class ReaderSchema(Schema):
 
     @post_dump
     def remove_empty(self, data, **kwargs):
-        if data['name'] is None:
+        if 'name' in data and data['name'] is None:
             del data['name']
 
         return data
