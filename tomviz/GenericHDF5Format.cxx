@@ -283,6 +283,9 @@ bool GenericHDF5Format::readVolume(h5::H5ReadWrite& reader,
       bs[i * 2] = 0;
       bs[i * 2 + 1] = dims[i];
     }
+
+    // Update the volume bounds that were used
+    DataSource::setSubsampleVolumeBounds(image, bs);
   }
 
   // Set up the strides and counts
