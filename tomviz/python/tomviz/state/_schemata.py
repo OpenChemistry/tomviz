@@ -189,6 +189,7 @@ class GradientOpacityMap(Schema):
 class ReaderSchema(Schema):
     fileNames = fields.List(fields.String)
     name = fields.String()
+    subsampleSettings = fields.Dict(values=fields.List(fields.Int()))
 
     @post_load
     def make_reader(self, data, **kwargs):

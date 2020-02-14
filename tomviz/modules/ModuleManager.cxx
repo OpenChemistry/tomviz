@@ -1112,15 +1112,20 @@ DataSource* ModuleManager::loadDataSource(QJsonObject& dsObject)
     if (reader.contains("name")) {
       options["reader"] = reader;
     }
+    if (reader.contains("subsampleSettings")) {
+      options["subsampleSettings"] = reader["subsampleSettings"];
+    }
   }
 
-  if (dsObject.contains("subsampleSettings")) {
-    // Make sure subsample settings get communicated to the readers
-    options["subsampleSettings"] = dsObject["subsampleSettings"];
-  } else {
-    // Never prompt the user for subsample setting when loading state
-    // files. This will prevent the prompt from happening.
-    options["subsampleSettings"] = QJsonObject();
+  if (!options.contains("subsampleSettings")) {
+    if (dsObject.contains("subsampleSettings")) {
+      // Make sure subsample settings get communicated to the readers
+      options["subsampleSettings"] = dsObject["subsampleSettings"];
+    } else {
+      // Never prompt the user for subsample setting when loading state
+      // files. This will prevent the prompt from happening.
+      options["subsampleSettings"] = QJsonObject();
+    }
   }
 
   DataSource* dataSource = nullptr;
