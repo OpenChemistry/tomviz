@@ -96,6 +96,9 @@ Pipeline::Future* ExternalPythonExecutor::execute(vtkDataObject* data,
   // python package will think its running in the applicaton.
   auto processEnv = QProcessEnvironment::systemEnvironment();
   processEnv.remove("TOMVIZ_APPLICATION");
+  // Remove vars related to python environment
+  processEnv.remove("PYTHONHOME");
+  processEnv.remove("PYTHONPATH");
   m_process->setProcessEnvironment(processEnv);
 
   m_process->start(tomvizPipelineExecutable.filePath(), args);
