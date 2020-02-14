@@ -7,6 +7,26 @@ build Tomviz. There is a superbuild that automates most of this when building
 binaries. We recommend using these binaries where available if you wish to
 test, and nightly binaries are made available in addition to releases.
 
+To develop Tomviz we recommend using our developer [superbuild][super]. That
+repository will clone this one, and several others such as the correct ParaView
+version and optionally the ITK release needed. It will build them all with the
+correct flags, and ensure they link to the correct versions of projects. Going
+forward this is our preferred development build environment, enabling a quick
+and easy set up. The use of git submodules ensures you will not lose any changes
+and will have full access to the source code. You should commit changes from the
+Tomviz repository contained there.
+
+Advanced Build Instructions
+---------------------------
+
+These are retained for historical reasons and for the brave. Most of these steps
+are contained and automated in the `tomvizsuper` repository, and that also tries
+to ensure that the same Qt, Python, etc are used in the contained projects. This
+is how you pass the flags circa late 2019, and in early 2020 we decided to
+remove some automated build consistency checks that mean developers must work
+harder to ensure build consistency with respect to Qt, Python and other third
+party libraries.
+
 If you wish to develop Tomviz, the following sequence of commands will build
 a suitable ParaView, ITK, and a Tomviz that uses these builds. You should use
 your package manager/installers/upstream build instructions to install the
@@ -131,3 +151,6 @@ trees and rebuild the latest version of each:
     git pull && git submodule update
     cd ../tomviz-build
     cmake --build .
+
+
+[super]: https://github.com/OpenChemistry/tomvizsuper
