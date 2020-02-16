@@ -114,14 +114,24 @@ Pipeline::Future* ExternalPipelineExecutor::execute(vtkDataObject* data,
   stateFile.write(QJsonDocument(state).toJson());
   stateFile.close();
 
-  // Write data to EMD
+  // Write data to EMD or DataExchange
   auto dataFilePath = QDir(workingDir()).filePath(origFileName);
-  EmdFormat emdFile;
-  auto imageData = vtkImageData::SafeDownCast(data);
-  if (!emdFile.write(dataFilePath.toLatin1().data(), imageData)) {
-    displayError("Write Error",
-                 QString("Unable to write data at: %1").arg(dataFilePath));
-    return Pipeline::emptyFuture();
+  if (origFileName.endsWith("emd")) {
+    EmdFormat emdFile;
+    auto imageData = vtkImageData::SafeDownCast(data);
+    if (!emdFile.write(dataFilePath.toLatin1().data(), imageData)) {
+      displayError("Write Error",
+                   QString("Unable to write data at: %1").arg(dataFilePath));
+      return Pipeline::emptyFuture();
+    }
+  } else {
+    DataExchangeFormat dxfFile;
+    if (!dxfFile.write(dataFilePath.toLatin1().data(),
+        pipeline()->dataSource())) {
+      displayError("Write Error",
+                   QString("Unable to write data at: %1").arg(dataFilePath));
+      return Pipeline::emptyFuture();
+    }
   }
 
   // Start reading progress updates
