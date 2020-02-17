@@ -290,6 +290,10 @@ void ModuleManager::addModule(Module* module)
     if (strcmp(ModuleFactory::moduleType(module), "Clip") == 0) {
       connect(module, &Module::clipFilterUpdated, this, &ModuleManager::clip);
     }
+    if (strcmp(ModuleFactory::moduleType(module), "Slice") == 0) {
+      connect(module, &Module::mouseOverVoxel, this,
+              &ModuleManager::mouseOverVoxel);
+    }
     connect(module, &Module::visibilityChanged, this, &ModuleManager::visibilityChanged);
   }
 }

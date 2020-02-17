@@ -34,6 +34,7 @@
 #include <vtkNew.h>
 #include <vtkPeriodicTable.h>
 #include <vtkPiecewiseFunction.h>
+#include <vtkPointData.h>
 #include <vtkPoints.h>
 #include <vtkProperty.h>
 #include <vtkRenderer.h>
@@ -1130,4 +1131,40 @@ bool vtkRescaleControlPoints(std::vector<vtkTuple<double, 4>>& cntrlPoints,
   }
   return true;
 }
+
+bool getVoxelValue(vtkImageData* data, double point[3], int indices[3],
+                   double& scalar)
+{
+  auto pointId = data->FindPoint(point);
+  if (pointId < 0) {
+    return false;
+  }
+
+  double position[3];
+  data->GetPoint(pointId, position);
+
+  double bounds[6];
+  data->GetBounds(bounds);
+
+  double spacing[3];
+  data->GetSpacing(spacing);
+
+  for (int i = 0; i < 3; ++i) {
+    indices[i] = round((position[i] - bounds[i * 2]) / spacing[i]);
+  }
+
+  auto activeScalars = data->GetPointData()->GetScalars()->GetName();
+  int activeScalarsIdx;
+  for (int i = 0; i < data->GetPointData()->GetNumberOfComponents(); ++i) {
+    if (data->GetPointData()->GetArrayName(i) == activeScalars) {
+      activeScalarsIdx = i;
+      break;
+    }
+  }
+
+  scalar = data->GetScalarComponentAsDouble(indices[0], indices[1], indices[2],
+                                            activeScalarsIdx);
+  return true;
+}
+
 } // namespace tomviz

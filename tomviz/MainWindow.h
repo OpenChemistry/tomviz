@@ -81,6 +81,8 @@ private slots:
 
   void setEnabledPythonConsole(bool enabled);
 
+  void onMouseOverVoxel(int i, int j, int k, double v);
+
 private:
   Q_DISABLE_COPY(MainWindow)
 

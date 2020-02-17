@@ -108,6 +108,9 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   connect(&ModuleManager::instance(), &ModuleManager::enablePythonConsole, this,
           &MainWindow::setEnabledPythonConsole);
 
+  connect(&ModuleManager::instance(), &ModuleManager::mouseOverVoxel, this,
+          &MainWindow::onMouseOverVoxel);
+
   // Update back light azimuth default on view.
   connect(pqApplicationCore::instance()->getServerManagerModel(),
           &pqServerManagerModel::viewAdded, [](pqView* view) {
@@ -956,6 +959,13 @@ std::vector<OperatorDescription> MainWindow::findCustomOperators()
 void MainWindow::setEnabledPythonConsole(bool enabled)
 {
   m_ui->dockWidgetPythonConsole->setEnabled(enabled);
+}
+
+void MainWindow::onMouseOverVoxel(int i, int j, int k, double v)
+{
+
+  statusBar()->showMessage(
+    QString("(%1, %2, %3) : %4").arg(i).arg(j).arg(k).arg(v), 5000);
 }
 
 void MainWindow::syncPythonToApp()
