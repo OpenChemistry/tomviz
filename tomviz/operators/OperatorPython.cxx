@@ -283,6 +283,10 @@ void OperatorPython::setJSONDescription(const QString& str)
     }
   }
 
+  if (root.contains("preferred_ordering")) {
+    m_preferCOrdering = (root["preferred_ordering"].toString() == "C");
+  }
+
   setHelpFromJson(root);
 }
 
@@ -612,6 +616,10 @@ bool OperatorPython::deserialize(const QJsonObject& json)
         m_arguments[key] = castJsonArg(args[key], type);
       }
     }
+  }
+
+  if (json.contains("preferred_ordering")) {
+    m_preferCOrdering = (json["preferred_ordering"].toString() == "C");
   }
 
   setHelpFromJson(json);

@@ -43,6 +43,8 @@ public:
   void setScript(const QString& str);
   const QString& script() const { return m_script; }
 
+  bool preferCOrdering() const { return m_preferCOrdering; }
+
   EditOperatorWidget* getEditorContents(QWidget* parent) override;
   EditOperatorWidget* getEditorContentsWithData(
     QWidget* parent,
@@ -111,6 +113,7 @@ private:
   QList<QString> m_resultNames;
   QString m_childDataSourceName = "output";
   QString m_childDataSourceLabel = "Output";
+  bool m_preferCOrdering = false;
 
   QMap<QString, QVariant> m_arguments;
   int m_numberOfParameters = 0;
