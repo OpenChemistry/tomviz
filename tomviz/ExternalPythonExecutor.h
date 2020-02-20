@@ -37,6 +37,8 @@ protected:
   QString executorWorkingDir() override;
 
 private slots:
+  void onStdOutReceived();
+  void onStdErrReceived();
   void error(QProcess::ProcessError error);
 
 private:
@@ -45,6 +47,8 @@ private:
   QString commandLine(QProcess* process);
 
   QScopedPointer<QProcess> m_process;
+  QString m_receivedStdOut;
+  QString m_receivedStdErr;
 };
 
 } // namespace tomviz

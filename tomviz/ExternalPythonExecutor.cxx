@@ -22,6 +22,8 @@ Pipeline::Future* ExternalPythonExecutor::execute(vtkDataObject* data,
                                                   QList<Operator*> operators,
                                                   int start, int end)
 {
+  m_receivedStdOut.clear();
+  m_receivedStdErr.clear();
 
   auto future = ExternalPipelineExecutor::execute(data, operators, start, end);
 
@@ -58,23 +60,24 @@ Pipeline::Future* ExternalPythonExecutor::execute(vtkDataObject* data,
 
   m_process.reset(new QProcess(this));
 
+  connect(m_process.data(), &QProcess::readyReadStandardOutput, this,
+          &ExternalPythonExecutor::onStdOutReceived);
+  connect(m_process.data(), &QProcess::readyReadStandardError, this,
+          &ExternalPythonExecutor::onStdErrReceived);
+
   connect(m_process.data(), &QProcess::errorOccurred, this,
           &ExternalPythonExecutor::error);
   connect(
     m_process.data(),
     QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
     [this](int exitCode, QProcess::ExitStatus exitStatus) {
-
-      QString standardOut(this->m_process->readAllStandardOutput());
-      QString standardErr(this->m_process->readAllStandardError());
-
       if (exitStatus == QProcess::CrashExit) {
         displayError("External Python Error",
                      QString("The external python process crash: %1\n\n "
                              "stderr:\n%2 \n\n stdout:\n%3 \n")
                        .arg(commandLine(this->m_process.data()))
-                       .arg(standardErr)
-                       .arg(standardOut));
+                       .arg(m_receivedStdErr)
+                       .arg(m_receivedStdOut));
 
       } else if (exitCode != 0) {
         displayError(
@@ -83,12 +86,9 @@ Pipeline::Future* ExternalPythonExecutor::execute(vtkDataObject* data,
                   "command: %2 \n\n stderr:\n%3 \n\n stdout:\n%4 \n")
             .arg(exitCode)
             .arg(commandLine(this->m_process.data()))
-            .arg(standardErr)
-            .arg(standardOut));
+            .arg(m_receivedStdErr)
+            .arg(m_receivedStdOut));
       }
-
-      qDebug().noquote() << standardErr;
-      qDebug().noquote() << standardOut;
     });
 
   // We have to get the process environment and unset TOMVIZ_APPLICATION and
@@ -99,6 +99,13 @@ Pipeline::Future* ExternalPythonExecutor::execute(vtkDataObject* data,
   // Remove vars related to python environment
   processEnv.remove("PYTHONHOME");
   processEnv.remove("PYTHONPATH");
+
+  // Normally, python uses a buffer for stdout and stderr. However,
+  // we want everything printed from python to immediately appear in the
+  // tomviz messages box (rather than waiting until the program is finished).
+  // Unbuffer the python output so the messages get printed immediately.
+  processEnv.insert("PYTHONUNBUFFERED", "ON");
+
   m_process->setProcessEnvironment(processEnv);
 
   m_process->start(tomvizPipelineExecutable.filePath(), args);
@@ -172,6 +179,30 @@ QString ExternalPythonExecutor::commandLine(QProcess* process)
   return QString("%1 %2")
     .arg(process->program())
     .arg(process->arguments().join(" "));
+}
+
+void ExternalPythonExecutor::onStdOutReceived()
+{
+  QString s = m_process->readAllStandardOutput();
+  m_receivedStdOut += s;
+  // Since qDebug() will already print a newline, chop off the newline
+  // from the string if it is there.
+  if (!s.isEmpty() && s[s.size() - 1].isSpace()) {
+    s.chop(1);
+  }
+  qDebug().noquote() << s;
+}
+
+void ExternalPythonExecutor::onStdErrReceived()
+{
+  QString s = m_process->readAllStandardError();
+  m_receivedStdErr += s;
+  // Since qDebug() will already print a newline, chop off the newline
+  // from the string if it is there.
+  if (!s.isEmpty() && s[s.size() - 1].isSpace()) {
+    s.chop(1);
+  }
+  qDebug().noquote() << s;
 }
 
 } // namespace tomviz
