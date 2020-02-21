@@ -1,6 +1,8 @@
 /* This source file is part of the Tomviz project, https://tomviz.org/.
    It is released under the 3-Clause BSD License, see "LICENSE". */
 
+#include <QRegularExpression>
+
 #include "ExternalPythonExecutor.h"
 #include "DataSource.h"
 #include "EmdFormat.h"
@@ -185,11 +187,11 @@ void ExternalPythonExecutor::onStdOutReceived()
 {
   QString s = m_process->readAllStandardOutput();
   m_receivedStdOut += s;
-  // Since qDebug() will already print a newline, chop off the newline
-  // from the string if it is there.
-  if (!s.isEmpty() && s[s.size() - 1].isSpace()) {
-    s.chop(1);
-  }
+
+  // Since qDebug() will already print a newline, get rid of the
+  // newline from the string if it is there.
+  auto regexp = QRegularExpression("(?:\r\n|\n)$");
+  s = s.remove(regexp);
   qDebug().noquote() << s;
 }
 
@@ -197,11 +199,11 @@ void ExternalPythonExecutor::onStdErrReceived()
 {
   QString s = m_process->readAllStandardError();
   m_receivedStdErr += s;
-  // Since qDebug() will already print a newline, chop off the newline
-  // from the string if it is there.
-  if (!s.isEmpty() && s[s.size() - 1].isSpace()) {
-    s.chop(1);
-  }
+
+  // Since qDebug() will already print a newline, get rid of the
+  // newline from the string if it is there.
+  auto regexp = QRegularExpression("(?:\r\n|\n)$");
+  s = s.remove(regexp);
   qDebug().noquote() << s;
 }
 
