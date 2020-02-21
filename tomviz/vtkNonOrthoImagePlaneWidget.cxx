@@ -31,7 +31,6 @@
 #include "vtkPolyDataMapper.h"
 #include "vtkPolygonalSurfacePointPlacer.h"
 #include "vtkProperty.h"
-#include <vtkPropPicker.h>
 #include "vtkRenderWindowInteractor.h"
 #include "vtkRenderer.h"
 #include "vtkScalarsToColors.h"
@@ -42,6 +41,7 @@
 #include "vtkTextProperty.h"
 #include "vtkTexture.h"
 #include "vtkTransform.h"
+#include <vtkPropPicker.h>
 
 #include "Utilities.h"
 
@@ -1846,12 +1846,14 @@ void vtkNonOrthoImagePlaneWidget::SetThickSliceMode(int mode)
   this->Reslice->SetSlabMode(mode);
 }
 
-bool vtkNonOrthoImagePlaneWidget::PickPointOnSlice(int displayPos[2],
-                                                   double worldPos[3])
+vtkVector3d vtkNonOrthoImagePlaneWidget::PickPointOnSlice(
+  const vtkVector2i& displayPos, bool& onSlice)
 {
+  vtkVector3d worldPos;
+  onSlice = false;
   auto renderer = this->CurrentRenderer;
   if (!renderer) {
-    return false;
+    return worldPos;
   }
 
   vtkNew<vtkPropPicker> picker;
@@ -1859,37 +1861,36 @@ bool vtkNonOrthoImagePlaneWidget::PickPointOnSlice(int displayPos[2],
   auto pickedProp = picker->GetViewProp();
 
   if (pickedProp != this->TexturePlaneActor) {
-    return false;
+    return worldPos;
   }
 
-  picker->GetPickPosition(worldPos);
-  return true;
+  picker->GetPickPosition(worldPos.GetData());
+  onSlice = true;
+  return worldPos;
 }
 
 void vtkNonOrthoImagePlaneWidget::SetVoxelValueFn(
-  std::function<void(int, int, int, double)> fn)
+  std::function<void(const vtkVector3i&, double)> fn)
 {
   this->VoxelValueFn = fn;
 }
 
-void vtkNonOrthoImagePlaneWidget::VoxelTimerFired(vtkObject* object,
-                                                  unsigned long event,
-                                                  void* clientdata,
-                                                  void* calldata)
+void vtkNonOrthoImagePlaneWidget::VoxelTimerFired(vtkObject*, unsigned long,
+                                                  void* clientdata, void*)
 {
   vtkNonOrthoImagePlaneWidget* self =
     reinterpret_cast<vtkNonOrthoImagePlaneWidget*>(clientdata);
 
   if (self->VoxelValueFn) {
-    double pickPoint[3];
-    bool onSlice =
-      self->PickPointOnSlice(self->Interactor->GetEventPosition(), pickPoint);
+    bool onSlice;
+    vtkVector2i displayPos(self->Interactor->GetEventPosition());
+    auto pickPoint = self->PickPointOnSlice(displayPos, onSlice);
     auto data = vtkImageData::SafeDownCast(self->Reslice->GetInput());
     if (onSlice && data) {
-      double scalar;
-      int ijk[3];
-      if (tomviz::getVoxelValue(data, pickPoint, ijk, scalar)) {
-        self->VoxelValueFn(ijk[0], ijk[1], ijk[2], scalar);
+      vtkVector3i ijk;
+      double scalar = tomviz::getVoxelValue(data, pickPoint, ijk, onSlice);
+      if (onSlice) {
+        self->VoxelValueFn(ijk, scalar);
       }
     }
   }

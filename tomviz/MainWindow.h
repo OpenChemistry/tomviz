@@ -11,6 +11,7 @@
 #include <QScopedPointer>
 
 class QMenu;
+class vtkVector3i;
 
 namespace Ui {
 class MainWindow;
@@ -81,7 +82,7 @@ private slots:
 
   void setEnabledPythonConsole(bool enabled);
 
-  void onMouseOverVoxel(int i, int j, int k, double v);
+  void onMouseOverVoxel(const vtkVector3i& ijk, double v);
 
 private:
   Q_DISABLE_COPY(MainWindow)

@@ -75,6 +75,7 @@
 #include <functional>
 
 #include <vtkNew.h>
+#include <vtkVector.h>
 
 class vtkAbstractPropPicker;
 class vtkActor;
@@ -220,7 +221,7 @@ public:
   // Description:
   // Set the callback that is called every time the mouse is moving over the
   // slice.
-  void SetVoxelValueFn(std::function<void(int, int, int, double)> fn);
+  void SetVoxelValueFn(std::function<void(const vtkVector3i&, double)> fn);
 
   // Description:
   // Specify whether to interpolate the texture or not. When off, the
@@ -409,7 +410,7 @@ protected:
                               void* clientdata, void* calldata);
   vtkNew<vtkCallbackCommand> VoxelTimerCommand;
   int VoxelTimerId = -1;
-  std::function<void(int, int, int, double)> VoxelValueFn = 0;
+  std::function<void(const vtkVector3i&, double)> VoxelValueFn = 0;
 
   // internal utility method that adds observers to the RenderWindowInteractor
   // so that our ProcessEvents is eventually called.  this method is called
@@ -516,9 +517,8 @@ protected:
   void GenerateArrow(); // generate the default arrow
   void UpdateArrowSize(); // update the arrow to be visible based on camera pos
 
-  bool PickPointOnSlice(
-    int displayPos[2],
-    double worldPos[3]); // Check whether a display point is on the slice
+  // Check whether a display point is on the slice
+  vtkVector3d PickPointOnSlice(const vtkVector2i& displayPos, bool& onSlice);
 
 private:
   vtkNonOrthoImagePlaneWidget(

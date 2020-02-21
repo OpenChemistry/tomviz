@@ -15,6 +15,7 @@
 #include <vtkSMPropertyHelper.h>
 #include <vtkSMSettings.h>
 #include <vtkSMViewProxy.h>
+#include <vtkVector.h>
 
 #include "AboutDialog.h"
 #include "AcquisitionWidget.h"
@@ -961,11 +962,12 @@ void MainWindow::setEnabledPythonConsole(bool enabled)
   m_ui->dockWidgetPythonConsole->setEnabled(enabled);
 }
 
-void MainWindow::onMouseOverVoxel(int i, int j, int k, double v)
+void MainWindow::onMouseOverVoxel(const vtkVector3i& ijk, double v)
 {
 
   statusBar()->showMessage(
-    QString("(%1, %2, %3) : %4").arg(i).arg(j).arg(k).arg(v), 5000);
+    QString("(%1, %2, %3) : %4").arg(ijk[0]).arg(ijk[1]).arg(ijk[2]).arg(v),
+    5000);
 }
 
 void MainWindow::syncPythonToApp()

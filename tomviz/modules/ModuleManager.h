@@ -158,7 +158,7 @@ signals:
 
    void visibilityChanged(bool);
 
-   void mouseOverVoxel(int, int, int, double);
+   void mouseOverVoxel(const vtkVector3i& ijk, double v);
 
  private:
    Q_DISABLE_COPY(ModuleManager)

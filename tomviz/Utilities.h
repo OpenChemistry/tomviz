@@ -231,8 +231,8 @@ bool vtkRescaleControlPoints(std::vector<vtkTuple<double, 4>>& cntrlPoints,
                              double rangeMin, double rangeMax);
 
 /// Get the value of a voxel at the given world coordinates
-bool getVoxelValue(vtkImageData* data, double point[3], int ijk[3],
-                   double& value);
+double getVoxelValue(vtkImageData* data, const vtkVector3d& point,
+                     vtkVector3i& ijk, bool& ok);
 
 } // namespace tomviz
 

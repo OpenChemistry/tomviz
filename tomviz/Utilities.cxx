@@ -1132,29 +1132,31 @@ bool vtkRescaleControlPoints(std::vector<vtkTuple<double, 4>>& cntrlPoints,
   return true;
 }
 
-bool getVoxelValue(vtkImageData* data, double point[3], int indices[3],
-                   double& scalar)
+double getVoxelValue(vtkImageData* data, const vtkVector3d& point,
+                     vtkVector3i& indices, bool& ok)
 {
-  auto pointId = data->FindPoint(point);
+  vtkVector3d p(point.GetData());
+  auto pointId = data->FindPoint(p.GetData());
   if (pointId < 0) {
-    return false;
+    ok = false;
+    return 0;
   }
 
-  double position[3];
-  data->GetPoint(pointId, position);
+  vtkVector3d position;
+  data->GetPoint(pointId, position.GetData());
 
-  double bounds[6];
-  data->GetBounds(bounds);
+  vtkVector3d origin;
+  data->GetOrigin(origin.GetData());
 
-  double spacing[3];
-  data->GetSpacing(spacing);
+  vtkVector3d spacing;
+  data->GetSpacing(spacing.GetData());
 
   for (int i = 0; i < 3; ++i) {
-    indices[i] = round((position[i] - bounds[i * 2]) / spacing[i]);
+    indices[i] = round((position[i] - origin[i]) / spacing[i]);
   }
 
   auto activeScalars = data->GetPointData()->GetScalars()->GetName();
-  int activeScalarsIdx;
+  int activeScalarsIdx = 0;
   for (int i = 0; i < data->GetPointData()->GetNumberOfComponents(); ++i) {
     if (data->GetPointData()->GetArrayName(i) == activeScalars) {
       activeScalarsIdx = i;
@@ -1162,9 +1164,10 @@ bool getVoxelValue(vtkImageData* data, double point[3], int indices[3],
     }
   }
 
-  scalar = data->GetScalarComponentAsDouble(indices[0], indices[1], indices[2],
-                                            activeScalarsIdx);
-  return true;
+  double scalar = data->GetScalarComponentAsDouble(
+    indices[0], indices[1], indices[2], activeScalarsIdx);
+  ok = true;
+  return scalar;
 }
 
 } // namespace tomviz

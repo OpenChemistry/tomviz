@@ -171,7 +171,7 @@ signals:
   void updateClipFilter(vtkPlane* plane, bool newFilter);
 
   /// Emitted when the mouse is over a voxel
-  void mouseOverVoxel(int, int, int, double);
+  void mouseOverVoxel(const vtkVector3i& ijk, double v);
 
   /// Emitted when the module explicitly requires the opacity of the color map
   /// to be enforced. This will cause the colormap to be detached, and the
