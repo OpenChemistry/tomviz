@@ -33,7 +33,7 @@ elif [[ $AGENT_OS == 'Darwin' ]]; then
 
   # Install gtest
   cd $PIPELINE_WORKSPACE
-  git clone https://github.com/google/googletest
+  git clone --branch release-1.8.1 --depth 1 https://github.com/google/googletest
   cd googletest
   cmake .
   sudo make install
