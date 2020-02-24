@@ -247,6 +247,7 @@ void ModuleSlice::addToPanel(QWidget* panel)
   formLayout->addRow("Opacity", m_opacitySlider);
 
   m_interpolateCheckBox = new QCheckBox("Interpolate Texture");
+  m_interpolateCheckBox->setChecked(m_interpolate);
   formLayout->addRow(m_interpolateCheckBox);
 
   m_showArrowCheckBox = new QCheckBox("Show Arrow");
