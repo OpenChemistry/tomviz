@@ -8,7 +8,6 @@
 #include "IntSliderWidget.h"
 #include "Utilities.h"
 
-#include <vtkAlgorithm.h>
 #include <vtkCommand.h>
 #include <vtkDataObject.h>
 #include <vtkImageData.h>
@@ -23,9 +22,6 @@
 #include <pqCoreUtilities.h>
 #include <pqLineEdit.h>
 #include <vtkPVDiscretizableColorTransferFunction.h>
-#include <vtkSMParaViewPipelineControllerWithRendering.h>
-#include <vtkSMPropertyHelper.h>
-#include <vtkSMSessionProxyManager.h>
 #include <vtkSMViewProxy.h>
 
 #include <QCheckBox>
@@ -59,26 +55,6 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     return false;
   }
 
-  vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
-  auto producer = data->proxy();
-  auto pxm = producer->GetSessionProxyManager();
-
-  // Create the pass through filter.
-  vtkSmartPointer<vtkSMProxy> proxy;
-  proxy.TakeReference(pxm->NewProxy("filters", "PassThrough"));
-
-  m_passThrough = vtkSMSourceProxy::SafeDownCast(proxy);
-  Q_ASSERT(m_passThrough);
-  controller->PreInitializeProxy(m_passThrough);
-  vtkSMPropertyHelper(m_passThrough, "Input").Set(producer);
-  controller->PostInitializeProxy(m_passThrough);
-  controller->RegisterPipelineProxy(m_passThrough);
-
-  // Give the proxy a friendly name for the GUI/Python world.
-  if (auto p = convert<pqProxy*>(proxy)) {
-    p->rename(label());
-  }
-
   const bool widgetSetup = setupWidget(vtkView);
 
   if (widgetSetup) {
@@ -96,15 +72,11 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   return widgetSetup;
 }
 
-//  Should only be called from initialize after the PassThrough has been setup
 bool ModuleSlice::setupWidget(vtkSMViewProxy* vtkView)
 {
-  vtkAlgorithm* passThroughAlg =
-    vtkAlgorithm::SafeDownCast(m_passThrough->GetClientSideObject());
-
   vtkRenderWindowInteractor* rwi = vtkView->GetRenderWindow()->GetInteractor();
 
-  if (!rwi || !passThroughAlg) {
+  if (!rwi) {
     return false;
   }
 
@@ -134,10 +106,9 @@ bool ModuleSlice::setupWidget(vtkSMViewProxy* vtkView)
   m_widget->SetLookupTable(stc);
 
   // Lastly we set up the input connection.
-  m_widget->SetInputConnection(passThroughAlg->GetOutputPort());
+  m_widget->SetInputConnection(dataSource()->producer()->GetOutputPort());
 
   Q_ASSERT(rwi);
-  Q_ASSERT(passThroughAlg);
   onPlaneChanged();
   return true;
 }
@@ -173,11 +144,6 @@ void ModuleSlice::updateSliceWidget()
 
 bool ModuleSlice::finalize()
 {
-  vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
-  controller->UnRegisterProxy(m_passThrough);
-
-  m_passThrough = nullptr;
-
   if (m_widget != nullptr) {
     m_widget->Off();
   }

@@ -7,13 +7,11 @@
 #include "Module.h"
 
 #include <vtkSmartPointer.h>
-#include <vtkWeakPointer.h>
 
 class QCheckBox;
 class QComboBox;
 class QSpinBox;
 class pqLineEdit;
-class vtkSMSourceProxy;
 class vtkNonOrthoImagePlaneWidget;
 
 namespace tomviz {
@@ -99,12 +97,10 @@ private slots:
   void onTextureInterpolateChanged(bool flag);
 
 private:
-  // Should only be called from initialize after the PassThrough has been setup.
   bool setupWidget(vtkSMViewProxy* view);
 
   Q_DISABLE_COPY(ModuleSlice)
 
-  vtkWeakPointer<vtkSMSourceProxy> m_passThrough;
   vtkSmartPointer<vtkNonOrthoImagePlaneWidget> m_widget;
   bool m_ignoreSignals = false;
 
