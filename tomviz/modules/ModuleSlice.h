@@ -9,13 +9,10 @@
 #include <vtkSmartPointer.h>
 #include <vtkWeakPointer.h>
 
-#include <pqPropertyLinks.h>
-
 class QCheckBox;
 class QComboBox;
 class QSpinBox;
 class pqLineEdit;
-class vtkSMProxy;
 class vtkSMSourceProxy;
 class vtkNonOrthoImagePlaneWidget;
 
@@ -70,18 +67,26 @@ public:
   };
   Q_ENUM(Mode)
 
+  bool showArrow() const;
+
 protected:
   void updateColorMap() override;
   void updateSliceWidget();
+  void updateInteractionState();
   static Direction stringToDirection(const QString& name);
   static Direction modeToDirection(int sliceMode);
   vtkImageData* imageData() const;
 
 private slots:
-  void onPropertyChanged();
   void onPlaneChanged();
 
   void dataUpdated();
+
+  void setMapScalars(bool b);
+  void setShowArrow(bool b);
+
+  void updatePointOnPlane();
+  void updatePlaneNormal();
 
   void onDirectionChanged(Direction direction);
   void onSliceChanged(int slice);
@@ -100,11 +105,8 @@ private:
   Q_DISABLE_COPY(ModuleSlice)
 
   vtkWeakPointer<vtkSMSourceProxy> m_passThrough;
-  vtkSmartPointer<vtkSMProxy> m_propsPanelProxy;
   vtkSmartPointer<vtkNonOrthoImagePlaneWidget> m_widget;
   bool m_ignoreSignals = false;
-
-  pqPropertyLinks m_Links;
 
   QPointer<QCheckBox> m_opacityCheckBox;
   bool m_mapOpacity = false;

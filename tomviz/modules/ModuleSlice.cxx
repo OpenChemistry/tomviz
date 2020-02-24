@@ -21,21 +21,11 @@
 #include <vtkTrivialProducer.h>
 
 #include <pqCoreUtilities.h>
-#include <pqDoubleVectorPropertyWidget.h>
 #include <pqLineEdit.h>
-#include <pqProxiesWidget.h>
-#include <vtkPVArrayInformation.h>
-#include <vtkPVDataInformation.h>
-#include <vtkPVDataSetAttributesInformation.h>
 #include <vtkPVDiscretizableColorTransferFunction.h>
-#include <vtkSMPVRepresentationProxy.h>
 #include <vtkSMParaViewPipelineControllerWithRendering.h>
 #include <vtkSMPropertyHelper.h>
-#include <vtkSMRenderViewProxy.h>
 #include <vtkSMSessionProxyManager.h>
-#include <vtkSMSourceProxy.h>
-#include <vtkSMTransferFunctionManager.h>
-#include <vtkSMTransferFunctionProxy.h>
 #include <vtkSMViewProxy.h>
 
 #include <QCheckBox>
@@ -76,13 +66,6 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   // Create the pass through filter.
   vtkSmartPointer<vtkSMProxy> proxy;
   proxy.TakeReference(pxm->NewProxy("filters", "PassThrough"));
-
-  // Create the Properties panel proxy
-  m_propsPanelProxy.TakeReference(
-    pxm->NewProxy("tomviz_proxies", "NonOrthogonalSlice"));
-
-  pqCoreUtilities::connect(m_propsPanelProxy, vtkCommand::PropertyModifiedEvent,
-                           this, SLOT(onPropertyChanged()));
 
   m_passThrough = vtkSMSourceProxy::SafeDownCast(proxy);
   Q_ASSERT(m_passThrough);
@@ -206,28 +189,15 @@ bool ModuleSlice::setVisibility(bool val)
 {
   Q_ASSERT(m_widget);
   m_widget->SetEnabled(val ? 1 : 0);
-  // update the state of the arrow as well since it cannot update when the
-  // widget is not enabled
-  if (val) {
-    vtkSMPropertyHelper showProperty(m_propsPanelProxy, "ShowArrow");
-    // Not this: it hides the plane as well as the arrow...
-    // Widget->SetEnabled(showProperty.GetAsInt());
-    m_widget->SetArrowVisibility(showProperty.GetAsInt());
-    m_widget->SetInteraction(showProperty.GetAsInt());
-  }
-
   Module::setVisibility(val);
+  updateInteractionState();
 
   return true;
 }
 
 bool ModuleSlice::visibility() const
 {
-  if (m_widget) {
-    return m_widget->GetEnabled() != 0;
-  } else {
-    return false;
-  }
+  return m_widget->GetEnabled() != 0;
 }
 
 void ModuleSlice::addToPanel(QWidget* panel)
@@ -248,7 +218,10 @@ void ModuleSlice::addToPanel(QWidget* panel)
   formLayout->addRow(m_opacityCheckBox);
 
   QCheckBox* mapScalarsCheckBox = new QCheckBox("Color Map Data");
+  mapScalarsCheckBox->setChecked(areScalarsMapped());
   formLayout->addRow(mapScalarsCheckBox);
+  connect(mapScalarsCheckBox, &QCheckBox::toggled, this,
+          &ModuleSlice::setMapScalars);
 
   auto line = new QFrame;
   line->setFrameShape(QFrame::HLine);
@@ -310,13 +283,11 @@ void ModuleSlice::addToPanel(QWidget* panel)
   m_interpolateCheckBox = new QCheckBox("Interpolate Texture");
   formLayout->addRow(m_interpolateCheckBox);
 
-  QCheckBox* showArrow = new QCheckBox("Show Arrow");
-  formLayout->addRow(showArrow);
-
-  m_Links.addPropertyLink(showArrow, "checked", SIGNAL(toggled(bool)),
-                          m_propsPanelProxy,
-                          m_propsPanelProxy->GetProperty("ShowArrow"), 0);
-  connect(showArrow, &QCheckBox::toggled, this, &ModuleSlice::dataUpdated);
+  QCheckBox* showArrowCheckBox = new QCheckBox("Show Arrow");
+  showArrowCheckBox->setChecked(showArrow());
+  formLayout->addRow(showArrowCheckBox);
+  connect(showArrowCheckBox, &QCheckBox::toggled, this,
+          &ModuleSlice::setShowArrow);
 
   QLabel* label = new QLabel("Point on Plane");
   layout->addWidget(label);
@@ -328,11 +299,8 @@ void ModuleSlice::addToPanel(QWidget* panel)
     pqLineEdit* inputBox = new pqLineEdit;
     inputBox->setEnabled(!isOrtho);
     inputBox->setValidator(new QDoubleValidator(inputBox));
-    m_Links.addPropertyLink(
-      inputBox, "text2", SIGNAL(textChanged(const QString&)), m_propsPanelProxy,
-      m_propsPanelProxy->GetProperty("PointOnPlane"), i);
     connect(inputBox, &pqLineEdit::textChangedAndEditingFinished, this,
-            &ModuleSlice::dataUpdated);
+            &ModuleSlice::updatePointOnPlane);
     row->addWidget(inputBox);
     m_pointInputs[i] = inputBox;
   }
@@ -347,20 +315,15 @@ void ModuleSlice::addToPanel(QWidget* panel)
     pqLineEdit* inputBox = new pqLineEdit;
     inputBox->setEnabled(!isOrtho);
     inputBox->setValidator(new QDoubleValidator(inputBox));
-    m_Links.addPropertyLink(
-      inputBox, "text2", SIGNAL(textChanged(const QString&)), m_propsPanelProxy,
-      m_propsPanelProxy->GetProperty("PlaneNormal"), i);
     connect(inputBox, &pqLineEdit::textChangedAndEditingFinished, this,
-            &ModuleSlice::dataUpdated);
+            &ModuleSlice::updatePlaneNormal);
     row->addWidget(inputBox);
     m_normalInputs[i] = inputBox;
   }
   layout->addItem(row);
 
-  m_Links.addPropertyLink(mapScalarsCheckBox, "checked", SIGNAL(toggled(bool)),
-                          m_propsPanelProxy,
-                          m_propsPanelProxy->GetProperty("MapScalars"), 0);
-  connect(mapScalarsCheckBox, SIGNAL(toggled(bool)), this, SLOT(dataUpdated()));
+  // Update the Qt widget values
+  onPlaneChanged();
 
   layout->addStretch();
 
@@ -409,12 +372,69 @@ void ModuleSlice::addToPanel(QWidget* panel)
 
 void ModuleSlice::dataUpdated()
 {
-  m_Links.accept();
   // In case there are new slices, update min and max
   updateSliceWidget();
-  m_widget->SetMapScalars(
-    vtkSMPropertyHelper(m_propsPanelProxy->GetProperty("MapScalars"), 1)
-      .GetAsInt());
+  m_widget->UpdatePlacement();
+  emit renderNeeded();
+}
+
+void ModuleSlice::setMapScalars(bool b)
+{
+  if (b != areScalarsMapped()) {
+    m_widget->SetMapScalars(b);
+    emit renderNeeded();
+  }
+}
+
+void ModuleSlice::setShowArrow(bool b)
+{
+  if (b != showArrow()) {
+    m_widget->SetArrowVisibility(b);
+    updateInteractionState();
+    emit renderNeeded();
+  }
+}
+
+bool ModuleSlice::showArrow() const
+{
+  return m_widget->GetArrowVisibility() != 0;
+}
+
+void ModuleSlice::updateInteractionState()
+{
+  // We can only update the interaction if the widget is visible
+  if (visibility())
+    m_widget->SetInteraction(showArrow());
+}
+
+void ModuleSlice::updatePointOnPlane()
+{
+  double point[3] = { 0, 0, 0 };
+
+  for (int i = 0; i < 3; ++i) {
+    const auto input = m_pointInputs[i];
+    if (input->text().isEmpty())
+      continue;
+
+    point[i] = input->text().toDouble();
+  }
+  m_widget->SetCenter(point);
+  m_widget->UpdatePlacement();
+  emit renderNeeded();
+}
+
+void ModuleSlice::updatePlaneNormal()
+{
+  double normal[3] = { 0, 0, 0 };
+
+  for (int i = 0; i < 3; ++i) {
+    const auto input = m_normalInputs[i];
+    if (input->text().isEmpty())
+      continue;
+
+    normal[i] = input->text().toDouble();
+  }
+  m_widget->SetNormal(normal);
   m_widget->UpdatePlacement();
   emit renderNeeded();
 }
@@ -424,8 +444,7 @@ QJsonObject ModuleSlice::serialize() const
   auto json = Module::serialize();
   auto props = json["properties"].toObject();
 
-  vtkSMPropertyHelper showProperty(m_propsPanelProxy, "ShowArrow");
-  props["showArrow"] = showProperty.GetAsInt() != 0;
+  props["showArrow"] = showArrow();
 
   // Serialize the plane
   double point[3];
@@ -439,7 +458,7 @@ QJsonObject ModuleSlice::serialize() const
   props["origin"] = origin;
   props["point1"] = point1;
   props["point2"] = point2;
-  props["mapScalars"] = m_widget->GetMapScalars() != 0;
+  props["mapScalars"] = areScalarsMapped();
   props["mapOpacity"] = m_mapOpacity;
 
   props["slice"] = m_slice;
@@ -462,8 +481,7 @@ bool ModuleSlice::deserialize(const QJsonObject& json)
   }
   if (json["properties"].isObject()) {
     auto props = json["properties"].toObject();
-    vtkSMPropertyHelper showProperty(m_propsPanelProxy, "ShowArrow");
-    showProperty.Set(props["showArrow"].toBool() ? 1 : 0);
+    setShowArrow(props["showArrow"].toBool());
     if (props.contains("origin") && props.contains("point1") &&
         props.contains("point2")) {
       auto o = props["origin"].toArray();
@@ -478,7 +496,7 @@ bool ModuleSlice::deserialize(const QJsonObject& json)
       m_widget->SetPoint1(point1);
       m_widget->SetPoint2(point2);
     }
-    m_widget->SetMapScalars(props["mapScalars"].toBool() ? 1 : 0);
+    setMapScalars(props["mapScalars"].toBool());
     if (props.contains("mapOpacity")) {
       m_mapOpacity = props["mapOpacity"].toBool();
       if (m_opacityCheckBox) {
@@ -525,30 +543,6 @@ bool ModuleSlice::deserialize(const QJsonObject& json)
   return false;
 }
 
-void ModuleSlice::onPropertyChanged()
-{
-  // Avoid recursive clobbering of the plane position
-  if (m_ignoreSignals) {
-    return;
-  }
-  m_ignoreSignals = true;
-  vtkSMPropertyHelper showProperty(m_propsPanelProxy, "ShowArrow");
-  if (m_widget->GetEnabled()) {
-    // Not this: it hides the plane as well as the arrow...
-    // Widget->SetEnabled(showProperty.GetAsInt());
-    m_widget->SetArrowVisibility(showProperty.GetAsInt());
-    m_widget->SetInteraction(showProperty.GetAsInt());
-  }
-  vtkSMPropertyHelper pointProperty(m_propsPanelProxy, "PointOnPlane");
-  std::vector<double> centerPoint = pointProperty.GetDoubleArray();
-  m_widget->SetCenter(&centerPoint[0]);
-  vtkSMPropertyHelper normalProperty(m_propsPanelProxy, "PlaneNormal");
-  std::vector<double> normalVector = normalProperty.GetDoubleArray();
-  m_widget->SetNormal(&normalVector[0]);
-  m_widget->UpdatePlacement();
-  m_ignoreSignals = false;
-}
-
 void ModuleSlice::onPlaneChanged()
 {
   // Avoid recursive clobbering of the plane position
@@ -556,15 +550,19 @@ void ModuleSlice::onPlaneChanged()
     return;
   }
   m_ignoreSignals = true;
-  vtkSMPropertyHelper pointProperty(m_propsPanelProxy, "PointOnPlane");
+
   double* centerPoint = m_widget->GetCenter();
-  pointProperty.Set(centerPoint, 3);
-  vtkSMPropertyHelper normalProperty(m_propsPanelProxy, "PlaneNormal");
   double* normalVector = m_widget->GetNormal();
-  normalProperty.Set(normalVector, 3);
-  vtkSMPropertyHelper mapScalarsProperty(m_propsPanelProxy, "MapScalars");
-  int mapScalars = m_widget->GetMapScalars();
-  mapScalarsProperty.Set(mapScalars);
+  for (int i = 0; i < 3; ++i) {
+    if (m_pointInputs[i]) {
+      QSignalBlocker b(m_pointInputs[i]);
+      m_pointInputs[i]->setText(QString::number(centerPoint[i]));
+    }
+    if (m_normalInputs[i]) {
+      QSignalBlocker b(m_normalInputs[i]);
+      m_normalInputs[i]->setText(QString::number(normalVector[i]));
+    }
+  }
 
   // Adjust the slice slider if the slice has changed from dragging the arrow
   onSliceChanged(centerPoint);
@@ -585,8 +583,7 @@ vtkDataObject* ModuleSlice::dataToExport()
 
 bool ModuleSlice::areScalarsMapped() const
 {
-  vtkSMPropertyHelper mapScalars(m_propsPanelProxy->GetProperty("MapScalars"));
-  return mapScalars.GetAsInt() != 0;
+  return m_widget->GetMapScalars() != 0;
 }
 
 vtkImageData* ModuleSlice::imageData() const
