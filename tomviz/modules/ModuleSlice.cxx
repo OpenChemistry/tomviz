@@ -183,10 +183,10 @@ void ModuleSlice::addToPanel(QWidget* panel)
   m_opacityCheckBox = new QCheckBox("Map Opacity");
   formLayout->addRow(m_opacityCheckBox);
 
-  QCheckBox* mapScalarsCheckBox = new QCheckBox("Color Map Data");
-  mapScalarsCheckBox->setChecked(areScalarsMapped());
-  formLayout->addRow(mapScalarsCheckBox);
-  connect(mapScalarsCheckBox, &QCheckBox::toggled, this,
+  m_mapScalarsCheckBox = new QCheckBox("Color Map Data");
+  m_mapScalarsCheckBox->setChecked(areScalarsMapped());
+  formLayout->addRow(m_mapScalarsCheckBox);
+  connect(m_mapScalarsCheckBox, &QCheckBox::toggled, this,
           &ModuleSlice::setMapScalars);
 
   auto line = new QFrame;
@@ -249,10 +249,10 @@ void ModuleSlice::addToPanel(QWidget* panel)
   m_interpolateCheckBox = new QCheckBox("Interpolate Texture");
   formLayout->addRow(m_interpolateCheckBox);
 
-  QCheckBox* showArrowCheckBox = new QCheckBox("Show Arrow");
-  showArrowCheckBox->setChecked(showArrow());
-  formLayout->addRow(showArrowCheckBox);
-  connect(showArrowCheckBox, &QCheckBox::toggled, this,
+  m_showArrowCheckBox = new QCheckBox("Show Arrow");
+  m_showArrowCheckBox->setChecked(showArrow());
+  formLayout->addRow(m_showArrowCheckBox);
+  connect(m_showArrowCheckBox, &QCheckBox::toggled, this,
           &ModuleSlice::setShowArrow);
 
   QLabel* label = new QLabel("Point on Plane");
@@ -448,6 +448,9 @@ bool ModuleSlice::deserialize(const QJsonObject& json)
   if (json["properties"].isObject()) {
     auto props = json["properties"].toObject();
     setShowArrow(props["showArrow"].toBool());
+    if (m_showArrowCheckBox) {
+      m_showArrowCheckBox->setChecked(showArrow());
+    }
     if (props.contains("origin") && props.contains("point1") &&
         props.contains("point2")) {
       auto o = props["origin"].toArray();
@@ -463,6 +466,9 @@ bool ModuleSlice::deserialize(const QJsonObject& json)
       m_widget->SetPoint2(point2);
     }
     setMapScalars(props["mapScalars"].toBool());
+    if (m_mapScalarsCheckBox) {
+      m_mapScalarsCheckBox->setChecked(areScalarsMapped());
+    }
     if (props.contains("mapOpacity")) {
       m_mapOpacity = props["mapOpacity"].toBool();
       if (m_opacityCheckBox) {
@@ -495,6 +501,9 @@ bool ModuleSlice::deserialize(const QJsonObject& json)
     if (props.contains("opacity")) {
       m_opacity = props["opacity"].toDouble();
       onOpacityChanged(m_opacity);
+      if (m_opacitySlider) {
+        m_opacitySlider->setValue(m_opacity);
+      }
     }
     if (props.contains("interpolate")) {
       m_interpolate = props["interpolate"].toBool();

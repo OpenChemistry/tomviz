@@ -107,6 +107,7 @@ private:
   QPointer<QCheckBox> m_opacityCheckBox;
   bool m_mapOpacity = false;
 
+  QPointer<QCheckBox> m_mapScalarsCheckBox;
   QPointer<QComboBox> m_directionCombo;
   QPointer<QComboBox> m_sliceCombo;
   QPointer<IntSliderWidget> m_sliceSlider;
@@ -118,6 +119,8 @@ private:
 
   QPointer<QCheckBox> m_interpolateCheckBox;
   bool m_interpolate = false;
+
+  QPointer<QCheckBox> m_showArrowCheckBox;
 
   QPointer<DoubleSliderWidget> m_opacitySlider;
   double m_opacity = 1;
