@@ -158,15 +158,17 @@ signals:
 
    void visibilityChanged(bool);
 
-private:
-  Q_DISABLE_COPY(ModuleManager)
-  ModuleManager(QObject* parent = nullptr);
-  ~ModuleManager();
+   void mouseOverVoxel(const vtkVector3i& ijk, double v);
 
-  class MMInternals;
-  QScopedPointer<MMInternals> d;
+ private:
+   Q_DISABLE_COPY(ModuleManager)
+   ModuleManager(QObject* parent = nullptr);
+   ~ModuleManager();
 
-  QJsonObject m_stateObject;
+   class MMInternals;
+   QScopedPointer<MMInternals> d;
+
+   QJsonObject m_stateObject;
 };
 } // namespace tomviz
 

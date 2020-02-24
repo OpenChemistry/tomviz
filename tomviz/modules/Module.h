@@ -170,6 +170,9 @@ signals:
   void clipFilterUpdated(vtkPlane* plane, bool newFilter);
   void updateClipFilter(vtkPlane* plane, bool newFilter);
 
+  /// Emitted when the mouse is over a voxel
+  void mouseOverVoxel(const vtkVector3i& ijk, double v);
+
   /// Emitted when the module explicitly requires the opacity of the color map
   /// to be enforced. This will cause the colormap to be detached, and the
   /// "Separate Color Map" box to be checked and disabled. In practice, this is

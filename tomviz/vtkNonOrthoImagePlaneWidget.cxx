@@ -41,6 +41,7 @@
 #include "vtkTextProperty.h"
 #include "vtkTexture.h"
 #include "vtkTransform.h"
+#include <vtkPropPicker.h>
 
 #include "Utilities.h"
 
@@ -176,6 +177,10 @@ vtkNonOrthoImagePlaneWidget::vtkNonOrthoImagePlaneWidget()
   this->ConeActor2->SetUserTransform(this->DisplayTransform);
   this->LineActor2->SetUserTransform(this->DisplayTransform);
   this->SphereActor->SetUserTransform(this->DisplayTransform);
+
+  // Set up mouse move callback
+  this->VoxelTimerCommand->SetClientData(this);
+  this->VoxelTimerCommand->SetCallback(this->VoxelTimerFired);
 }
 
 vtkNonOrthoImagePlaneWidget::~vtkNonOrthoImagePlaneWidget()
@@ -730,8 +735,10 @@ void vtkNonOrthoImagePlaneWidget::StartSliceMotion()
 
 void vtkNonOrthoImagePlaneWidget::StopSliceMotion()
 {
+
   if (this->State == vtkNonOrthoImagePlaneWidget::Outside ||
       this->State == vtkNonOrthoImagePlaneWidget::Start) {
+    this->State = vtkNonOrthoImagePlaneWidget::Start;
     return;
   }
 
@@ -749,8 +756,21 @@ void vtkNonOrthoImagePlaneWidget::OnMouseMove()
 {
   // See whether we're active
   //
-  if (this->State == vtkNonOrthoImagePlaneWidget::Outside ||
-      this->State == vtkNonOrthoImagePlaneWidget::Start) {
+  if (this->State == vtkNonOrthoImagePlaneWidget::Outside) {
+    return;
+  }
+
+  if (this->State == vtkNonOrthoImagePlaneWidget::Start) {
+    if (this->VoxelTimerId == -1) {
+      this->Interactor->AddObserver(vtkCommand::TimerEvent,
+                                    this->VoxelTimerCommand);
+      this->VoxelTimerId = this->Interactor->CreateOneShotTimer(100);
+    }
+    // Uncomment else block if event should only emitted after the mouse is done
+    // moving
+    // else {
+    //   this->Interactor->ResetTimer(this->VoxelTimerId);
+    // }
     return;
   }
 
@@ -1824,4 +1844,58 @@ void vtkNonOrthoImagePlaneWidget::SetThickSliceMode(int mode)
     return;
   }
   this->Reslice->SetSlabMode(mode);
+}
+
+vtkVector3d vtkNonOrthoImagePlaneWidget::PickPointOnSlice(
+  const vtkVector2i& displayPos, bool& onSlice)
+{
+  vtkVector3d worldPos;
+  onSlice = false;
+  auto renderer = this->CurrentRenderer;
+  if (!renderer) {
+    return worldPos;
+  }
+
+  vtkNew<vtkPropPicker> picker;
+  picker->PickProp(displayPos[0], displayPos[1], renderer);
+  auto pickedProp = picker->GetViewProp();
+
+  if (pickedProp != this->TexturePlaneActor) {
+    return worldPos;
+  }
+
+  picker->GetPickPosition(worldPos.GetData());
+  onSlice = true;
+  return worldPos;
+}
+
+void vtkNonOrthoImagePlaneWidget::SetVoxelValueFn(
+  std::function<void(const vtkVector3i&, double)> fn)
+{
+  this->VoxelValueFn = fn;
+}
+
+void vtkNonOrthoImagePlaneWidget::VoxelTimerFired(vtkObject*, unsigned long,
+                                                  void* clientdata, void*)
+{
+  vtkNonOrthoImagePlaneWidget* self =
+    reinterpret_cast<vtkNonOrthoImagePlaneWidget*>(clientdata);
+
+  if (self->VoxelValueFn) {
+    bool onSlice;
+    vtkVector2i displayPos(self->Interactor->GetEventPosition());
+    auto pickPoint = self->PickPointOnSlice(displayPos, onSlice);
+    auto data = vtkImageData::SafeDownCast(self->Reslice->GetInput());
+    if (onSlice && data) {
+      vtkVector3i ijk;
+      double scalar = tomviz::getVoxelValue(data, pickPoint, ijk, onSlice);
+      if (onSlice) {
+        self->VoxelValueFn(ijk, scalar);
+      }
+    }
+  }
+
+  self->Interactor->RemoveObserver(self->VoxelTimerCommand);
+  self->Interactor->Render();
+  self->VoxelTimerId = -1;
 }

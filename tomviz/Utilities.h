@@ -29,6 +29,7 @@ class pqAnimationScene;
 class vtkDiscretizableColorTransferFunction;
 class vtkImageSliceMapper;
 class vtkCubeAxesActor;
+class vtkImageData;
 class vtkMolecule;
 class vtkRenderer;
 class vtkSMProxyLocator;
@@ -228,6 +229,10 @@ void openHelpUrl(const QString& path = "");
 /// Rescale the points to be in a new range
 bool vtkRescaleControlPoints(std::vector<vtkTuple<double, 4>>& cntrlPoints,
                              double rangeMin, double rangeMax);
+
+/// Get the value of a voxel at the given world coordinates
+double getVoxelValue(vtkImageData* data, const vtkVector3d& point,
+                     vtkVector3i& ijk, bool& ok);
 
 } // namespace tomviz
 

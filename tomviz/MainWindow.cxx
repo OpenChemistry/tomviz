@@ -15,6 +15,7 @@
 #include <vtkSMPropertyHelper.h>
 #include <vtkSMSettings.h>
 #include <vtkSMViewProxy.h>
+#include <vtkVector.h>
 
 #include "AboutDialog.h"
 #include "AcquisitionWidget.h"
@@ -107,6 +108,9 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
 
   connect(&ModuleManager::instance(), &ModuleManager::enablePythonConsole, this,
           &MainWindow::setEnabledPythonConsole);
+
+  connect(&ModuleManager::instance(), &ModuleManager::mouseOverVoxel, this,
+          &MainWindow::onMouseOverVoxel);
 
   // Update back light azimuth default on view.
   connect(pqApplicationCore::instance()->getServerManagerModel(),
@@ -956,6 +960,14 @@ std::vector<OperatorDescription> MainWindow::findCustomOperators()
 void MainWindow::setEnabledPythonConsole(bool enabled)
 {
   m_ui->dockWidgetPythonConsole->setEnabled(enabled);
+}
+
+void MainWindow::onMouseOverVoxel(const vtkVector3i& ijk, double v)
+{
+
+  statusBar()->showMessage(
+    QString("(%1, %2, %3) : %4").arg(ijk[0]).arg(ijk[1]).arg(ijk[2]).arg(v),
+    5000);
 }
 
 void MainWindow::syncPythonToApp()

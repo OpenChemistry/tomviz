@@ -126,6 +126,8 @@ bool ModuleSlice::setupWidget(vtkSMViewProxy* vtkView)
   }
 
   m_widget = vtkSmartPointer<vtkNonOrthoImagePlaneWidget>::New();
+  m_widget->SetVoxelValueFn(
+    [this](const vtkVector3i& ijk, double v) { emit mouseOverVoxel(ijk, v); });
 
   // Set the interactor on the widget to be what the current
   // render window is using.
