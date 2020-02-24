@@ -7,16 +7,11 @@
 #include "Module.h"
 
 #include <vtkSmartPointer.h>
-#include <vtkWeakPointer.h>
-
-#include <pqPropertyLinks.h>
 
 class QCheckBox;
 class QComboBox;
 class QSpinBox;
 class pqLineEdit;
-class vtkSMProxy;
-class vtkSMSourceProxy;
 class vtkNonOrthoImagePlaneWidget;
 
 namespace tomviz {
@@ -70,18 +65,26 @@ public:
   };
   Q_ENUM(Mode)
 
+  bool showArrow() const;
+
 protected:
   void updateColorMap() override;
   void updateSliceWidget();
+  void updateInteractionState();
   static Direction stringToDirection(const QString& name);
   static Direction modeToDirection(int sliceMode);
   vtkImageData* imageData() const;
 
 private slots:
-  void onPropertyChanged();
   void onPlaneChanged();
 
   void dataUpdated();
+
+  void setMapScalars(bool b);
+  void setShowArrow(bool b);
+
+  void updatePointOnPlane();
+  void updatePlaneNormal();
 
   void onDirectionChanged(Direction direction);
   void onSliceChanged(int slice);
@@ -94,21 +97,17 @@ private slots:
   void onTextureInterpolateChanged(bool flag);
 
 private:
-  // Should only be called from initialize after the PassThrough has been setup.
   bool setupWidget(vtkSMViewProxy* view);
 
   Q_DISABLE_COPY(ModuleSlice)
 
-  vtkWeakPointer<vtkSMSourceProxy> m_passThrough;
-  vtkSmartPointer<vtkSMProxy> m_propsPanelProxy;
   vtkSmartPointer<vtkNonOrthoImagePlaneWidget> m_widget;
   bool m_ignoreSignals = false;
-
-  pqPropertyLinks m_Links;
 
   QPointer<QCheckBox> m_opacityCheckBox;
   bool m_mapOpacity = false;
 
+  QPointer<QCheckBox> m_mapScalarsCheckBox;
   QPointer<QComboBox> m_directionCombo;
   QPointer<QComboBox> m_sliceCombo;
   QPointer<IntSliderWidget> m_sliceSlider;
@@ -120,6 +119,8 @@ private:
 
   QPointer<QCheckBox> m_interpolateCheckBox;
   bool m_interpolate = false;
+
+  QPointer<QCheckBox> m_showArrowCheckBox;
 
   QPointer<DoubleSliderWidget> m_opacitySlider;
   double m_opacity = 1;
