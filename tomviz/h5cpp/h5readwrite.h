@@ -122,7 +122,8 @@ public:
 
   /**
    * Get the paths to all of the data sets in the file, or under a
-   * specified path.
+   * specified path. Note that all soft/external links are currently
+   * ignored.
    * @param path The path for which to get the data sets. Defaults
    *             to getting the paths for the whole file.
    * @return A vector of strings of the paths to the data sets.
@@ -261,9 +262,25 @@ public:
   /**
    * Create a group.
    * @param path The path to the group that will be created.
-   * @return True on success, false on failure
+   * @return True on success, false on failure.
    */
   bool createGroup(const std::string& path);
+
+  /**
+   * Create a soft link.
+   * @param target The target object that the new soft link will point to.
+   * @param path The location of the new soft link.
+   * @return True on success, false on failure.
+   */
+  bool createSoftLink(const std::string& target, const std::string& path);
+
+  /**
+   * Check if a path is a soft link.
+   * @param path The path to the object that will be checked.
+   * @return True if the path is a soft link, false if it is not, or
+   *         if an error occurred.
+   */
+  bool isSoftLink(const std::string& path);
 
 private:
   class H5ReadWriteImpl;
