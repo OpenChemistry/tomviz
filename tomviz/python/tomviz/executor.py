@@ -413,9 +413,18 @@ def _read_emd(path, options=None):
         # See if we have any additional channels
         tomviz_scalars = tomography.get('tomviz_scalars')
         if isinstance(tomviz_scalars, h5py.Group):
+            # Only get hard linked datasets, since there is likely a
+            # soft link pointing to "/data/tomography/data".
+            def is_hard_link(name):
+                link = tomviz_scalars.get(name, getlink=True)
+                return isinstance(link, h5py.HardLink)
+
+            keys = list(filter(is_hard_link, tomviz_scalars.keys()))
             # Get the datasets
-            channel_datasets = [(name, _read_dataset(dataset, options))
-                                for (name, dataset) in tomviz_scalars.items()]
+            channel_datasets = [
+                (key, _read_dataset(tomviz_scalars[key], options))
+                for key in keys
+            ]
             arrays += channel_datasets
 
         # If this is a tilt series, swap the X and Z axes
@@ -539,10 +548,14 @@ def _write_emd(path, dataset, dims=None):
             d[:] = dim.values
 
         # If we have extra scalars add them under tomviz_scalars
+        tomviz_scalars = tomography_group.create_group('tomviz_scalars')
         if extra_arrays:
-            tomviz_scalars = tomography_group.create_group('tomviz_scalars')
             for (name, array) in extra_arrays.items():
                 tomviz_scalars.create_dataset(name, data=array)
+
+        # Create a soft link to the active array
+        active_name = dataset.active_name
+        tomviz_scalars[active_name] = h5py.SoftLink('/data/tomography/data')
 
 
 def _read_data_exchange(path, options=None):
