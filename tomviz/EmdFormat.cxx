@@ -265,9 +265,17 @@ static void readExtraScalars(h5::H5ReadWrite& reader,
     return;
   }
 
+  // Note: the following function does not include soft/external links
   auto datasets = reader.allDataSets(scalarsPath);
   for (const auto& name : datasets) {
     auto path = scalarsPath + "/" + name;
+    if (reader.isSoftLink(path)) {
+      // Skip over soft links. Although reader.allDataSets() should not
+      // return soft links, we add this check here in case it does in
+      // the future.
+      continue;
+    }
+
     GenericHDF5Format::addScalarArray(reader, path, image, name);
   }
 }
@@ -279,16 +287,19 @@ static bool writeExtraScalars(h5::H5ReadWrite& writer, vtkImageData* image)
 
   vtkPointData* pointData = image->GetPointData();
 
-  // Skip over the one we have already written
+  // Make a soft link to the one we have already written
   std::string activeName(pointData->GetScalars()->GetName());
 
   // Write out all other scalars
   int numArrays = pointData->GetNumberOfArrays();
   for (int i = 0; i < numArrays; i++) {
     auto arrayName = pointData->GetArrayName(i);
-    // Skip over the one we have already written
-    if (arrayName == activeName)
+    if (arrayName == activeName) {
+      // Make a soft link to the one we have already written
+      writer.createSoftLink("/data/tomography/data",
+                            path + "/" + arrayName);
       continue;
+    }
 
     // Make it active and write it
     pointData->SetActiveScalars(arrayName);
