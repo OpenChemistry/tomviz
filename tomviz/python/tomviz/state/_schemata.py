@@ -186,10 +186,17 @@ class GradientOpacityMap(Schema):
         unknown = INCLUDE
 
 
+class SubsampleSettingsSchema(Schema):
+    # TODO: maybe we can force 'strides' to be of length 3,
+    # and volumeBounds to be of length 6?
+    strides = fields.List(fields.Int())
+    volumeBounds = fields.List(fields.Int())
+
+
 class ReaderSchema(Schema):
     fileNames = fields.List(fields.String)
     name = fields.String()
-    subsampleSettings = fields.Dict(values=fields.List(fields.Int()))
+    subsampleSettings = fields.Nested(SubsampleSettingsSchema())
 
     @post_load
     def make_reader(self, data, **kwargs):
