@@ -42,6 +42,7 @@ public:
   static herr_t operation(hid_t /*o_id*/, const char* name,
                           const H5O_info_t* object_info, void* op_data)
   {
+    // Note: H5Ovisit does not visit soft or external links
     // If this object isn't a dataset, continue
     if (object_info->type != H5O_TYPE_DATASET)
       return 0;
@@ -376,6 +377,7 @@ public:
     }
 
     ListAllDataSetsVisitor visitor;
+    // Note: H5Ovisit does not visit soft or external links
     herr_t code = H5Ovisit(objectId, H5_INDEX_NAME, H5_ITER_INC,
                            &visitor.operation, &visitor);
 
@@ -383,6 +385,28 @@ public:
       return vector<string>();
 
     return visitor.dataSets;
+  }
+
+  bool createSoftLink(const string& target, const string& path)
+  {
+    if (!fileIsValid())
+      return false;
+
+    return H5Lcreate_soft(target.c_str(), fileId(), path.c_str(), H5P_DEFAULT,
+                          H5P_DEFAULT) >= 0;
+  }
+
+  bool isSoftLink(const string& path)
+  {
+    if (!fileIsValid())
+      return false;
+
+    H5L_info_t info;
+    herr_t code = H5Lget_info(fileId(), path.c_str(), &info, H5P_DEFAULT);
+    if (code < 0)
+      return false;
+
+    return info.type == H5L_TYPE_SOFT;
   }
 
   DataType getH5ToDataType(hid_t h5type)
@@ -860,6 +884,16 @@ bool H5ReadWrite::createGroup(const string& path)
 
   H5Gclose(id);
   return true;
+}
+
+bool H5ReadWrite::createSoftLink(const string& target, const string& path)
+{
+  return m_impl->createSoftLink(target, path);
+}
+
+bool H5ReadWrite::isSoftLink(const string& path)
+{
+  return m_impl->isSoftLink(path);
 }
 
 string H5ReadWrite::dataTypeToString(const DataType& type)
