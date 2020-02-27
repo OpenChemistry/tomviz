@@ -551,6 +551,23 @@ bool GenericHDF5Format::read(const std::string& fileName, vtkImageData* image,
     }
   }
 
+  // Look for some common places where there are angles, and
+  // load in the angles if we find them.
+  QVector<double> angles;
+  std::vector<std::string> placesToSearch = { "angle" };
+  for (const auto& path : placesToSearch) {
+    if (reader.isDataSet(path)) {
+      angles = readAngles(reader, path, options);
+      break;
+    }
+  }
+
+  if (!angles.isEmpty()) {
+    swapXAndZAxes(image);
+    DataSource::setTiltAngles(image, angles);
+    DataSource::setType(image, DataSource::TiltSeries);
+  }
+
   // Made it to the end...
   return true;
 }
