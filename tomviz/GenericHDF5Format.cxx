@@ -276,13 +276,24 @@ bool GenericHDF5Format::readVolume(h5::H5ReadWrite& reader,
     DataSource::setSubsampleVolumeBounds(image, bs);
   }
 
-  // Do one final check to make sure none of the bounds are less than 0
-  if (std::any_of(std::begin(bs), std::end(bs), [](int i) { return i < 0; })) {
-    // Set them to their defaults so we don't seg fault
-    for (int i = 0; i < 3; ++i) {
-      bs[i * 2] = 0;
+  // Do one final check to make sure all bounds are valid
+  bool changed = false;
+  for (int i = 0; i < 3; ++i) {
+    if (bs[i * 2 + 1] < 0 || bs[i * 2 + 1] > dims[i]) {
+      // Upper bound is not valid. Reset it.
       bs[i * 2 + 1] = dims[i];
+      changed = true;
     }
+    if (bs[i * 2] < 0 || bs[i * 2] > bs[i * 2 + 1]) {
+      // Lower bound is not valid. Reset it.
+      bs[i * 2] = 0;
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    // Update the volume bounds that were used
+    DataSource::setSubsampleVolumeBounds(image, bs);
   }
 
   // Set up the strides and counts

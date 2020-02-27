@@ -106,8 +106,11 @@ class Reader(Base, Mortal):
 
 class DataSource(Base, Mortal):
     def __init__(self, **kwargs):
-        self.reader = Reader(name=kwargs.pop('name', None),
-                             fileNames=kwargs.pop('fileNames', []))
+        self.reader = Reader(
+            name=kwargs.pop('name', None),
+            fileNames=kwargs.pop('fileNames', []),
+            subsampleSettings=kwargs.pop('subsampleSettings', {}))
+
         self.operators = []
         self.modules = [modules.Outline(), modules.Slice()]
         super(DataSource, self).__init__(**kwargs)
