@@ -1155,17 +1155,8 @@ double getVoxelValue(vtkImageData* data, const vtkVector3d& point,
     indices[i] = round((position[i] - origin[i]) / spacing[i]);
   }
 
-  auto activeScalars = data->GetPointData()->GetScalars()->GetName();
-  int activeScalarsIdx = 0;
-  for (int i = 0; i < data->GetPointData()->GetNumberOfComponents(); ++i) {
-    if (data->GetPointData()->GetArrayName(i) == activeScalars) {
-      activeScalarsIdx = i;
-      break;
-    }
-  }
-
   double scalar = data->GetScalarComponentAsDouble(
-    indices[0], indices[1], indices[2], activeScalarsIdx);
+    indices[0], indices[1], indices[2], 0);
   ok = true;
   return scalar;
 }
