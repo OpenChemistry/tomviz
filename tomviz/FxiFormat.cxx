@@ -11,7 +11,6 @@
 
 #include <vtkDataArray.h>
 #include <vtkImageData.h>
-#include <vtkImagePermute.h>
 #include <vtkNew.h>
 #include <vtkPointData.h>
 #include <vtkTrivialProducer.h>
@@ -42,18 +41,6 @@ bool FxiFormat::read(const std::string& fileName, vtkImageData* image,
 {
   std::string path = "/img_tomo";
   return readDataSet(fileName, path, image, options);
-}
-
-static void swapXAndZ(vtkImageData* image)
-{
-  if (!image)
-    return;
-
-  vtkNew<vtkImagePermute> permute;
-  permute->SetFilteredAxes(2, 1, 0);
-  permute->SetInputData(image);
-  permute->Update();
-  image->ShallowCopy(permute->GetOutput());
 }
 
 bool FxiFormat::read(const std::string& fileName,
@@ -95,9 +82,9 @@ bool FxiFormat::read(const std::string& fileName,
 
   if (angles.size() != 0) {
     // This is a tilt series, swap x and z
-    swapXAndZ(image);
-    swapXAndZ(dataSource->darkData());
-    swapXAndZ(dataSource->whiteData());
+    GenericHDF5Format::swapXAndZAxes(image);
+    GenericHDF5Format::swapXAndZAxes(dataSource->darkData());
+    GenericHDF5Format::swapXAndZAxes(dataSource->whiteData());
 
     dataSource->setTiltAngles(angles);
     dataSource->setType(DataSource::TiltSeries);
@@ -125,62 +112,30 @@ bool FxiFormat::readWhite(const std::string& fileName,
   return readDataSet(fileName, path, image, options);
 }
 
-template <typename T>
-void readAngleArray(vtkDataArray* array, QVector<double>& angles)
-{
-  auto* data = static_cast<T*>(array->GetVoidPointer(0));
-  for (int i = 0; i < array->GetNumberOfTuples(); ++i)
-    angles.append(data[i]);
-}
-
 QVector<double> FxiFormat::readTheta(const std::string& fileName,
-                                              const QVariantMap& options)
+                                     const QVariantMap& options)
 {
-  Q_UNUSED(options)
-
   using h5::H5ReadWrite;
   H5ReadWrite::OpenMode mode = H5ReadWrite::OpenMode::ReadOnly;
   H5ReadWrite reader(fileName.c_str(), mode);
 
-  QVector<double> angles;
-  std::string thetaNode = "/angle";
-  if (!reader.isDataSet(thetaNode)) {
-    std::cerr << "No dataset at: " + thetaNode + "\n";
-    return angles;
+  std::string path = "/angle";
+  if (!reader.isDataSet(path)) {
+    // No angles. Just return.
+    return {};
   }
 
-  // Get the type of the data
-  h5::H5ReadWrite::DataType type = reader.dataType(thetaNode);
-  int vtkDataType = h5::H5VtkTypeMaps::dataTypeToVtk(type);
-
-  // This should really only be one dimension
-  std::vector<int> dims = reader.getDimensions(thetaNode);
-
-  auto* array = vtkDataArray::CreateDataArray(vtkDataType);
-  array->SetNumberOfTuples(dims[0]);
-  if (!reader.readData(thetaNode, type, array->GetVoidPointer(0))) {
-    std::cerr << "Failed to read the angles\n";
-    return angles;
-  }
-
-  switch (array->GetDataType()) {
-    // This is done so we can ensure we read the type correctly...
-    vtkTemplateMacro(readAngleArray<VTK_TT>(array, angles));
-  }
-
-  return angles;
+  return GenericHDF5Format::readAngles(reader, path, options);
 }
 
 static bool writeData(h5::H5ReadWrite& writer, vtkImageData* image)
 {
   // If this is a tilt series, swap the X and Z axes
-  vtkImageData* permutedImage = image;
-  vtkNew<vtkImagePermute> permute;
+  vtkSmartPointer<vtkImageData> permutedImage = image;
   if (DataSource::hasTiltAngles(image)) {
-    permute->SetFilteredAxes(2, 1, 0);
-    permute->SetInputData(image);
-    permute->Update();
-    permutedImage = permute->GetOutput();
+    permutedImage = vtkImageData::New();
+    permutedImage->ShallowCopy(image);
+    GenericHDF5Format::swapXAndZAxes(permutedImage);
   }
 
   // Assume /exchange already exists
@@ -192,13 +147,11 @@ static bool writeDark(h5::H5ReadWrite& writer, vtkImageData* image,
                       bool swapAxes = false)
 {
   // If this is a tilt series, swap the X and Z axes
-  vtkImageData* permutedImage = image;
-  vtkNew<vtkImagePermute> permute;
+  vtkSmartPointer<vtkImageData> permutedImage = image;
   if (swapAxes) {
-    permute->SetFilteredAxes(2, 1, 0);
-    permute->SetInputData(image);
-    permute->Update();
-    permutedImage = permute->GetOutput();
+    permutedImage = vtkImageData::New();
+    permutedImage->ShallowCopy(image);
+    GenericHDF5Format::swapXAndZAxes(permutedImage);
   }
 
   // Assume /exchange already exists
@@ -210,13 +163,11 @@ static bool writeWhite(h5::H5ReadWrite& writer, vtkImageData* image,
                        bool swapAxes = false)
 {
   // If this is a tilt series, swap the X and Z axes
-  vtkImageData* permutedImage = image;
-  vtkNew<vtkImagePermute> permute;
+  vtkSmartPointer<vtkImageData> permutedImage = image;
   if (swapAxes) {
-    permute->SetFilteredAxes(2, 1, 0);
-    permute->SetInputData(image);
-    permute->Update();
-    permutedImage = permute->GetOutput();
+    permutedImage = vtkImageData::New();
+    permutedImage->ShallowCopy(image);
+    GenericHDF5Format::swapXAndZAxes(permutedImage);
   }
 
   // Assume /exchange already exists

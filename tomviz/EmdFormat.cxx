@@ -11,7 +11,6 @@
 
 #include <vtkDataArray.h>
 #include <vtkImageData.h>
-#include <vtkImagePermute.h>
 #include <vtkNew.h>
 #include <vtkPointData.h>
 #include <vtkTrivialProducer.h>
@@ -131,19 +130,15 @@ bool EmdFormat::read(const std::string& fileName, vtkImageData* image,
     }
   }
 
+  // Now read in any extra scalars
+  readExtraScalars(reader, emdNode, image);
+
   // If this is a tilt series, swap the X and Z axes
   if (!angles.isEmpty()) {
-    vtkNew<vtkImagePermute> permute;
-    permute->SetFilteredAxes(2, 1, 0);
-    permute->SetInputData(image);
-    permute->Update();
-    image->ShallowCopy(permute->GetOutput());
+    GenericHDF5Format::swapXAndZAxes(image);
     DataSource::setTiltAngles(image, angles);
     DataSource::setType(image, DataSource::TiltSeries);
   }
-
-  // Now read in any extra scalars
-  readExtraScalars(reader, emdNode, image);
 
   return true;
 }
@@ -177,13 +172,11 @@ bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
   auto hasTiltAngles = DataSource::hasTiltAngles(image);
 
   // If this is a tilt series, swap the X and Z axes
-  vtkImageData* permutedImage = image;
-  vtkNew<vtkImagePermute> permute;
+  vtkSmartPointer<vtkImageData> permutedImage = image;
   if (DataSource::hasTiltAngles(image)) {
-    permute->SetFilteredAxes(2, 1, 0);
-    permute->SetInputData(image);
-    permute->Update();
-    permutedImage = permute->GetOutput();
+    permutedImage = vtkImageData::New();
+    permutedImage->ShallowCopy(image);
+    GenericHDF5Format::swapXAndZAxes(permutedImage);
   }
 
   GenericHDF5Format::writeVolume(writer, "/data/tomography", "data",
