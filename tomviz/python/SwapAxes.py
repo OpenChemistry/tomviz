@@ -1,5 +1,8 @@
 def transform(dataset, axis1, axis2):
     """Swap two axes in a dataset"""
 
+    import numpy as np
+
     data_py = dataset.active_scalars
-    dataset.active_scalars = data_py.swapaxes(axis1, axis2)
+    swapped = data_py.swapaxes(axis1, axis2)
+    dataset.active_scalars = np.asfortranarray(swapped)
