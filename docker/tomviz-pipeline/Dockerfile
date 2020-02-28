@@ -2,6 +2,7 @@ FROM library/python:3.7-slim
 MAINTAINER Chris Harris <chris.harris@kitware.com>
 ENV LC_ALL=C.UTF-8
 ENV LANG=C.UTF-8
+ENV PYTHONUNBUFFERED=ON
 
 COPY tomviz/python/ /tmp/python/
 

@@ -29,6 +29,11 @@ DockerInvocation* DockerInvocation::run()
 {
   m_process = new QProcess(this);
 
+  connect(m_process, &QProcess::readyReadStandardOutput, this,
+          &DockerInvocation::onStdOutReceived);
+  connect(m_process, &QProcess::readyReadStandardError, this,
+          &DockerInvocation::onStdErrReceived);
+
   // We emit the signals rather than connect signal to signal so we get the
   // right sender.
   connect(m_process, &QProcess::errorOccurred,
@@ -53,30 +58,20 @@ DockerInvocation* DockerInvocation::run()
   return this;
 }
 
-QString DockerInvocation::stdOut()
+void DockerInvocation::onStdOutReceived()
 {
-  if (m_process->state() == QProcess::NotRunning) {
-    if (m_stdOut.isNull()) {
-      m_stdOut = m_process->readAllStandardOutput();
-    }
+  QString s = m_process->readAllStandardOutput();
+  m_stdOutReceived += s;
 
-    return m_stdOut;
-  }
-
-  return QString();
+  emit stdOutReceived(s);
 }
 
-QString DockerInvocation::stdErr()
+void DockerInvocation::onStdErrReceived()
 {
-  if (m_process->state() == QProcess::NotRunning) {
-    if (m_stdErr.isNull()) {
-      m_stdErr = m_process->readAllStandardError();
-    }
+  QString s = m_process->readAllStandardError();
+  m_stdErrReceived += s;
 
-    return m_stdErr;
-  }
-
-  return QString();
+  emit stdErrReceived(s);
 }
 
 void DockerInvocation::init(const QString& command, const QStringList& args)
@@ -137,11 +132,15 @@ DockerPullInvocation* DockerPullInvocation::run()
   return qobject_cast<DockerPullInvocation*>(DockerInvocation::run());
 }
 
-DockerLogsInvocation::DockerLogsInvocation(const QString& containerId)
+DockerLogsInvocation::DockerLogsInvocation(const QString& containerId,
+                                           bool follow)
   : m_containerId(containerId)
 {
   QStringList args;
   args.append(containerId);
+
+  if (follow)
+    args.append("-f");
 
   init("logs", args);
 }
@@ -266,9 +265,9 @@ DockerRemoveInvocation* remove(const QString& containerId, bool force)
   return invocation->run();
 }
 
-DockerLogsInvocation* logs(const QString& containerId)
+DockerLogsInvocation* logs(const QString& containerId, bool follow)
 {
-  auto invocation = new DockerLogsInvocation(containerId);
+  auto invocation = new DockerLogsInvocation(containerId, follow);
   return invocation->run();
 }
 

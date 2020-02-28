@@ -7,6 +7,8 @@
 #include "ProgressDialog.h"
 #include "Utilities.h"
 
+#include <QRegularExpression>
+
 namespace tomviz {
 
 DockerPipelineExecutor::DockerPipelineExecutor(Pipeline* pipeline)
@@ -38,6 +40,8 @@ docker::DockerRunInvocation* DockerPipelineExecutor::run(
               m_containerId = runInvocation->containerId();
               // Start to monitor the status of the container
               m_statusCheckTimer->start();
+              // Print out stdout and stderr as it appears
+              followLogs();
             }
             runInvocation->deleteLater();
           });
@@ -299,6 +303,41 @@ void DockerPipelineExecutor::reset()
 QString DockerPipelineExecutor::executorWorkingDir()
 {
   return CONTAINER_MOUNT;
+}
+
+void DockerPipelineExecutor::followLogs()
+{
+  if (m_containerId.isEmpty()) {
+    // Nothing to do
+    return;
+  }
+
+  auto logsInvocation = docker::logs(m_containerId, true);
+  connect(logsInvocation, &docker::DockerLogsInvocation::error, this,
+          &DockerPipelineExecutor::error);
+  connect(
+    logsInvocation, &docker::DockerLogsInvocation::finished, logsInvocation,
+    [this, logsInvocation](int exitCode, QProcess::ExitStatus exitStatus) {
+      Q_UNUSED(exitStatus)
+      if (exitCode) {
+        displayError("Docker Error",
+                     QString("Docker logs failed with: %1\n\n%2")
+                       .arg(exitCode)
+                       .arg(logsInvocation->stdErr()));
+      }
+      logsInvocation->deleteLater();
+    });
+
+  auto printFunc = [](QString s) {
+    // Since qDebug() will already print a newline, get rid of the
+    // newline from the string if it is there.
+    auto regexp = QRegularExpression("(?:\r\n|\n)$");
+    s = s.remove(regexp);
+    qDebug().noquote() << s;
+  };
+
+  connect(logsInvocation, &docker::DockerInvocation::stdOutReceived, printFunc);
+  connect(logsInvocation, &docker::DockerInvocation::stdErrReceived, printFunc);
 }
 
 } // namespace tomviz
