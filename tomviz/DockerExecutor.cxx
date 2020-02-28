@@ -34,7 +34,6 @@ docker::DockerRunInvocation* DockerPipelineExecutor::run(
                            QString("Docker run failed with: %1\n\n%2")
                              .arg(exitCode)
                              .arg(runInvocation->stdErr()));
-              return;
             } else {
               m_containerId = runInvocation->containerId();
               // Start to monitor the status of the container
@@ -228,6 +227,7 @@ void DockerPipelineExecutor::containerError(int containerExitCode)
                            QString("Docker logs failed with: %1\n\n%2")
                              .arg(exitCode)
                              .arg(logsInvocation->stdErr()));
+              logsInvocation->deleteLater();
               return;
             } else {
               auto logs = logsInvocation->logs();
@@ -260,7 +260,6 @@ void DockerPipelineExecutor::checkContainerStatus()
                            QString("Docker inspect failed with: %1\n\n%2")
                              .arg(exitCode)
                              .arg(inspectInvocation->stdErr()));
-              return;
             } else {
               // Check we haven't exited with an error.
               auto status = inspectInvocation->status();
