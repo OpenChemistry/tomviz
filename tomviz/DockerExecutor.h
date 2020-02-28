@@ -57,6 +57,7 @@ private:
   QTimer* m_statusCheckTimer;
 
   void checkContainerStatus();
+  void followLogs();
 };
 
 } // namespace tomviz

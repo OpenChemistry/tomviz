@@ -26,21 +26,28 @@ public:
 
   QString commandLine() const;
   DockerInvocation* run();
-  QString stdOut();
-  QString stdErr();
+  QString stdOut() { return m_stdOutReceived; }
+  QString stdErr() { return m_stdErrReceived; }
 
 signals:
   void error(QProcess::ProcessError error);
   void finished(int exitCode, QProcess::ExitStatus exitStatus);
 
+  void stdOutReceived(const QString& s);
+  void stdErrReceived(const QString& s);
+
 protected:
   void init(const QString& command, const QStringList& args);
+
+private slots:
+  void onStdOutReceived();
+  void onStdErrReceived();
 
 private:
   QString m_command;
   QStringList m_args;
-  QString m_stdErr;
-  QString m_stdOut;
+  QString m_stdOutReceived;
+  QString m_stdErrReceived;
   QProcess* m_process;
 };
 
@@ -78,7 +85,7 @@ class DockerLogsInvocation : public DockerInvocation
 {
   Q_OBJECT
 public:
-  DockerLogsInvocation(const QString& containerId);
+  DockerLogsInvocation(const QString& containerId, bool follow = false);
 
   DockerLogsInvocation* run();
   QString logs();
@@ -138,7 +145,7 @@ DockerRunInvocation* run(
 DockerPullInvocation* pull(const QString& image);
 DockerStopInvocation* stop(const QString& containerId, int wait = 10);
 DockerRemoveInvocation* remove(const QString& containerId, bool force = false);
-DockerLogsInvocation* logs(const QString& containerId);
+DockerLogsInvocation* logs(const QString& containerId, bool follow = false);
 DockerInspectInvocation* inspect(const QString& containerId);
 
 } // namespace docker
