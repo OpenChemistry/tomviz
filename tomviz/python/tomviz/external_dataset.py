@@ -31,6 +31,9 @@ class Dataset:
 
     @active_scalars.setter
     def active_scalars(self, array):
+        if self.active_name is None:
+            self.active_name = 'Scalars'
+
         self.arrays[self.active_name] = array
 
     @property
@@ -56,12 +59,13 @@ class Dataset:
         self._spacing = v
 
     def create_child_dataset(self):
-        child = copy.deepcopy(self)
-        # Set tilt angles to None to be consistent with internal dataset
-        child.tilt_angles = None
-        # If the parent had tilt angles, set the spacing of the tilt
-        # axis to match that of x, as is done in the internal dataset
-        if self.tilt_angles is not None and self.spacing is not None:
-            s = self.spacing
-            child.spacing = [s[0], s[1], s[0]]
+        # Create an empty dataset with the same spacing as the parent
+        child = Dataset({})
+
+        if self.spacing is not None:
+            child.spacing = copy.deepcopy(self.spacing)
+            if self.tilt_angles is not None and self.tilt_axis is not None:
+                # Ignore the tilt angle spacing. Set it to another spacing.
+                child.spacing[self.tilt_axis] = child.spacing[1]
+
         return child
