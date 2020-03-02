@@ -23,6 +23,9 @@ class Dataset:
     def scalars(self, name=None):
         return utils.get_array(self._data_object, name)
 
+    def set_scalars(self, name, array):
+        utils.set_array(self._data_object, array, name=name)
+
     @property
     def spacing(self):
         return utils.get_spacing(self._data_object)
@@ -59,8 +62,8 @@ class Dataset:
             return None
         return utils.get_array(self._data_source.white_data)
 
-    def create_child_dataset(self):
-        new_data = utils.make_child_dataset(self._data_object)
+    def create_child_dataset(self, volume=True):
+        new_data = utils.make_child_dataset(self._data_object, volume)
         return Dataset(new_data, self._data_source)
 
 

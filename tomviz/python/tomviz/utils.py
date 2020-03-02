@@ -91,10 +91,7 @@ def arrays(dataobject):
 
 
 @with_vtk_dataobject
-def set_array(dataobject, newarray, minextent=None, isFortran=True):
-    # Set the extent if needed, i.e. if the minextent is not the same as
-    # the data object starting index, or if the newarray shape is not the same
-    # as the size of the dataobject.
+def set_array(dataobject, newarray, isFortran=True, name=None):
     # isFortran indicates whether the NumPy array has Fortran-order indexing,
     # i.e. i,j,k indexing. If isFortran is False, then the NumPy array uses
     # C-order indexing, i.e. k,j,i indexing.
@@ -119,28 +116,37 @@ def set_array(dataobject, newarray, minextent=None, isFortran=True):
     if not is_numpy_vtk_type(arr):
         arr = arr.astype(np.float32)
 
-    if minextent is None:
-        minextent = dataobject.GetExtent()[::2]
-    sameindex = list(minextent) == list(dataobject.GetExtent()[::2])
-    sameshape = list(vtkshape) == list(dataobject.GetDimensions())
-    if not sameindex or not sameshape:
-        extent = 6*[0]
-        extent[::2] = minextent
-        extent[1::2] = \
-            [x + y - 1 for (x, y) in zip(minextent, vtkshape)]
-        dataobject.SetExtent(extent)
-
     # Now replace the scalars array with the new array.
     vtkarray = np_s.numpy_to_vtk(arr)
     vtkarray.Association = dsa.ArrayAssociation.POINT
     do = dsa.WrapDataObject(dataobject)
-    oldscalars = do.PointData.GetScalars()
-    arrayname = "Scalars"
-    if oldscalars is not None:
-        arrayname = oldscalars.GetName()
-    del oldscalars
-    do.PointData.append(arr, arrayname)
-    do.PointData.SetActiveScalars(arrayname)
+    pd = do.PointData
+
+    if name is None:
+        oldscalars = pd.GetScalars()
+        if oldscalars is not None:
+            name = oldscalars.GetName()
+        else:
+            name = 'Scalars'
+
+    if list(vtkshape) != list(dataobject.GetDimensions()):
+        old_dims = tuple(dataobject.GetDimensions())
+        # Find the arrays to remove
+        num_arrays = pd.GetNumberOfArrays()
+        arr_names = [pd.GetArray(i).GetName() for i in range(num_arrays)]
+        arr_names = [x for x in arr_names if x != name]
+        for n in arr_names:
+            print('Warning: deleting array', n, 'because its shape',
+                  old_dims, 'does not match the shape of the new array',
+                  vtkshape)
+            pd.RemoveArray(n)
+
+        # Now set the new dimensions
+        dataobject.SetDimensions(vtkshape)
+
+    pd.append(arr, name)
+    if pd.GetNumberOfArrays() == 1:
+        pd.SetActiveScalars(name)
 
 
 @with_vtk_dataobject
@@ -192,15 +198,22 @@ def get_coordinate_arrays(dataobject):
 
 
 @with_vtk_dataobject
-def make_child_dataset(dataobject):
+def make_child_dataset(dataobject, volume=True):
     """Creates a child dataset with the same size as the reference_dataset.
     """
     from vtk import vtkImageData
     new_child = vtkImageData()
     new_child.CopyStructure(dataobject)
-    input_spacing = dataobject.GetSpacing()
-    # For a reconstruction we copy the X spacing from the input dataset
-    child_spacing = (input_spacing[0], input_spacing[1], input_spacing[0])
+    child_spacing = list(dataobject.GetSpacing())
+    tilt_angles = get_tilt_angles(dataobject)
+
+    if tilt_angles is not None:
+        if volume:
+            # For a reconstruction we copy the X spacing from the input dataset
+            child_spacing[2] = child_spacing[0]
+        else:
+            set_tilt_angles(new_child, tilt_angles)
+
     new_child.SetSpacing(child_spacing)
 
     return new_child
