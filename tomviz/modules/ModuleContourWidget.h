@@ -20,10 +20,6 @@ class ModuleContourWidget;
 class LightingParametersForm;
 } // namespace Ui
 
-class pqPropertyLinks;
-class vtkSMProxy;
-class vtkSMSourceProxy;
-
 namespace tomviz {
 
 class ModuleContourWidget : public QWidget
@@ -34,34 +30,41 @@ public:
   ModuleContourWidget(QWidget* parent_ = nullptr);
   ~ModuleContourWidget() override;
 
+  void setIsoRange(double range[2]);
+
   //@{
   /**
    * UI update methods. The actual model state is stored in ModuleContour for
    * these parameters, so the UI needs to be updated if the state changes or
    * when constructing the UI.
    */
-  void setUseSolidColor(const bool useSolid);
+  void setColorMapData(const bool state);
+  void setAmbient(const double value);
+  void setDiffuse(const double value);
+  void setSpecular(const double value);
+  void setSpecularPower(const double value);
+  void setIso(const double value);
+  void setRepresentation(const QString& representation);
+  void setOpacity(const double value);
+  void setColor(const QColor& color);
+  void setUseSolidColor(const bool state);
   //@}
-
-  /**
-   * Link proxy properties to UI.
-   */
-  void addPropertyLinks(pqPropertyLinks& links, vtkSMProxy* representation,
-                        vtkSMSourceProxy* contourFilter);
-  void addCategoricalPropertyLinks(pqPropertyLinks& links,
-                                   vtkSMProxy* representation);
 
 signals:
   //@{
   /**
    * Forwarded signals.
    */
+  void colorMapDataToggled(const bool state);
+  void ambientChanged(const double value);
+  void diffuseChanged(const double value);
+  void specularChanged(const double value);
   void specularPowerChanged(const double value);
-  void useSolidColor(const bool value);
-  /**
-   * All proxy properties should use this signal.
-   */
-  void propertyChanged();
+  void isoChanged(const double value);
+  void representationChanged(const QString& representation);
+  void opacityChanged(const double value);
+  void colorChanged(const QColor& color);
+  void useSolidColorToggled(const bool state);
   //@}
 
 private:
