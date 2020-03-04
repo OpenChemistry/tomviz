@@ -521,10 +521,10 @@ bool GenericHDF5Format::read(const std::string& fileName, vtkImageData* image,
 
   // Find the checked checkboxes
   std::vector<std::string> selectedDatasets;
-  for (const auto& cb : checkboxes) {
-    if (cb->isChecked()) {
-      // Take advantage of the fact that the text is the name exactly
-      selectedDatasets.push_back(cb->text().toStdString());
+  for (int i = 0; i < checkboxes.size(); ++i) {
+    if (checkboxes[i]->isChecked()) {
+      // Take advantage of the fact that the ordering is the same
+      selectedDatasets.push_back(datasets[i]);
     }
   }
 
