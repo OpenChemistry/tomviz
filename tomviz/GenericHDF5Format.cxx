@@ -21,6 +21,7 @@
 
 #include <vtkDataArray.h>
 #include <vtkImageData.h>
+#include <vtkImagePermute.h>
 #include <vtkPointData.h>
 
 #include <string>
@@ -59,6 +60,105 @@ void ReorderArrayF(T* in, T* out, int dim[3])
       }
     }
   }
+}
+
+template <typename T>
+void readAngleArray(vtkDataArray* array, QVector<double>& angles)
+{
+  auto* data = static_cast<T*>(array->GetVoidPointer(0));
+  for (int i = 0; i < array->GetNumberOfTuples(); ++i)
+    angles.append(data[i]);
+}
+
+QVector<double> GenericHDF5Format::readAngles(h5::H5ReadWrite& reader,
+                                              const std::string& path,
+                                              const QVariantMap& options)
+{
+  Q_UNUSED(options)
+
+  QVector<double> angles;
+  if (!reader.isDataSet(path)) {
+    std::cerr << "No angles at: " + path + "\n";
+    return angles;
+  }
+
+  // Get the type of the data
+  h5::H5ReadWrite::DataType type = reader.dataType(path);
+  int vtkDataType = h5::H5VtkTypeMaps::dataTypeToVtk(type);
+
+  // This should only be one dimension
+  std::vector<int> dims = reader.getDimensions(path);
+  if (dims.size() != 1) {
+    std::cerr << "Exactly one dimension is required to read angles.\n";
+    return angles;
+  }
+
+  vtkSmartPointer<vtkDataArray> array =
+    vtkDataArray::CreateDataArray(vtkDataType);
+  array->SetNumberOfTuples(dims[0]);
+  if (!reader.readData(path, type, array->GetVoidPointer(0))) {
+    std::cerr << "Failed to read the angles\n";
+    return angles;
+  }
+
+  switch (array->GetDataType()) {
+    // This is done so we can ensure we read the type correctly...
+    vtkTemplateMacro(readAngleArray<VTK_TT>(array, angles));
+  }
+
+  return angles;
+}
+
+void GenericHDF5Format::swapXAndZAxes(vtkImageData* image)
+{
+  // TODO: vtkImagePermute currently only swaps the axes of the active
+  // scalars. This can cause some big problems for the other scalars,
+  // since the dimensions of the image also change.
+  // Until this gets fixed in VTK, we have a complicated work-around
+  // that involves swapping the scalars one-by-one and then setting
+  // them back on the original image.
+  auto* pd = image->GetPointData();
+  std::string activeName = pd->GetScalars()->GetName();
+
+  int dim[3];
+  double spacing[3], origin[3];
+  image->GetDimensions(dim);
+  image->GetSpacing(spacing);
+  image->GetOrigin(origin);
+
+  vtkNew<vtkImagePermute> permute;
+  permute->SetFilteredAxes(2, 1, 0);
+
+  // Extract all of the arrays from the image data,
+  // and swap each of their axes.
+  std::vector<vtkSmartPointer<vtkDataArray>> arrays;
+  while (pd->GetNumberOfArrays() != 0) {
+    auto* name = pd->GetArrayName(0);
+    vtkSmartPointer<vtkDataArray> array = pd->GetScalars(name);
+    pd->RemoveArray(name);
+
+    vtkNew<vtkImageData> tmp;
+    tmp->SetDimensions(dim);
+    tmp->GetPointData()->SetScalars(array);
+
+    permute->SetInputData(tmp);
+    permute->Update();
+    arrays.push_back(permute->GetOutput()->GetPointData()->GetScalars());
+  }
+
+  // There should be no data left in the image. Go ahead and
+  // swap the dimensions before adding the data back in.
+  image->SetDimensions(dim[2], dim[1], dim[0]);
+  image->SetSpacing(spacing[2], spacing[1], spacing[0]);
+  image->SetOrigin(origin[2], origin[1], origin[0]);
+
+  // Add them back into the image
+  while (arrays.size() != 0) {
+    pd->AddArray(arrays.back());
+    arrays.pop_back();
+  }
+
+  pd->SetActiveScalars(activeName.c_str());
 }
 
 bool GenericHDF5Format::addScalarArray(h5::H5ReadWrite& reader,
@@ -188,6 +288,12 @@ bool GenericHDF5Format::readVolume(h5::H5ReadWrite& reader,
 
   // Get the dimensions
   std::vector<int> dims = reader.getDimensions(path);
+
+  if (dims.size() != 3) {
+    std::cerr << "Error: " << path
+              << " does not have three dimensions." << std::endl;
+    return false;
+  }
 
   int bs[6] = { -1, -1, -1, -1, -1, -1 };
   int strides[3] = { 1, 1, 1 };
@@ -396,6 +502,10 @@ bool GenericHDF5Format::read(const std::string& fileName, vtkImageData* image,
     scrollAreaLayout.addWidget(checkboxes.back());
   }
 
+  // Check the first checkbox
+  if (!checkboxes.empty())
+    checkboxes[0]->setChecked(true);
+
   // Setup Ok and Cancel buttons
   QDialogButtonBox buttons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
   layout.addWidget(&buttons);
@@ -411,10 +521,10 @@ bool GenericHDF5Format::read(const std::string& fileName, vtkImageData* image,
 
   // Find the checked checkboxes
   std::vector<std::string> selectedDatasets;
-  for (const auto& cb : checkboxes) {
-    if (cb->isChecked()) {
-      // Take advantage of the fact that the text is the name exactly
-      selectedDatasets.push_back(cb->text().toStdString());
+  for (int i = 0; i < checkboxes.size(); ++i) {
+    if (checkboxes[i]->isChecked()) {
+      // Take advantage of the fact that the ordering is the same
+      selectedDatasets.push_back(datasets[i]);
     }
   }
 
@@ -437,7 +547,8 @@ bool GenericHDF5Format::read(const std::string& fileName, vtkImageData* image,
   }
 
   // Set the name of the first array
-  image->GetPointData()->GetScalars()->SetName(selectedDatasets[0].c_str());
+  auto activeName = selectedDatasets[0];
+  image->GetPointData()->GetScalars()->SetName(activeName.c_str());
 
   // Add any more datasets with addScalarArray()
   for (size_t i = 1; i < selectedDatasets.size(); ++i) {
@@ -448,6 +559,23 @@ bool GenericHDF5Format::read(const std::string& fileName, vtkImageData* image,
       QMessageBox::critical(nullptr, "Failure", msg);
       return false;
     }
+  }
+
+  // Look for some common places where there are angles, and
+  // load in the angles if we find them.
+  QVector<double> angles;
+  std::vector<std::string> placesToSearch = { "angle", "angles" };
+  for (const auto& path : placesToSearch) {
+    if (reader.isDataSet(path)) {
+      angles = readAngles(reader, path, options);
+      break;
+    }
+  }
+
+  if (!angles.isEmpty()) {
+    swapXAndZAxes(image);
+    DataSource::setTiltAngles(image, angles);
+    DataSource::setType(image, DataSource::TiltSeries);
   }
 
   // Made it to the end...

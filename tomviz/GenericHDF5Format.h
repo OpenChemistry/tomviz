@@ -7,6 +7,7 @@
 #include <string>
 
 #include <QVariantMap>
+#include <QVector>
 
 class vtkImageData;
 
@@ -21,12 +22,25 @@ class GenericHDF5Format
 public:
   // Check to see if the file looks like a data exchange file
   static bool isDataExchange(const std::string& fileName);
-  
+
   // Check if the file looks like an FXI data set
   static bool isFxi(const std::string& fileName);
 
   static bool read(const std::string& fileName, vtkImageData* data,
                    const QVariantMap& options = QVariantMap());
+
+  /**
+   * Read angles from a path and return the angles. The dataset to be
+   * read must have exactly one dimension.
+   *
+   * @param reader A reader that has already opened the file of interest.
+   * @param path The path to the angles dataset in the HDF5 file.
+   * @param options The options for reading the angles.
+   * @return The angles, or an empty vector if an error occurred.
+   */
+  static QVector<double> readAngles(h5::H5ReadWrite& reader,
+                                    const std::string& path,
+                                    const QVariantMap& options = QVariantMap());
 
   /**
    * Read a volume and write it to a vtkImageData object. This assumes
@@ -72,6 +86,11 @@ public:
    */
   static bool writeVolume(h5::H5ReadWrite& writer, const std::string& path,
                           const std::string& name, vtkImageData* image);
+
+  /**
+   * Swap the X and Z axes for all scalars in the vtkImageData.
+   */
+  static void swapXAndZAxes(vtkImageData* image);
 };
 } // namespace tomviz
 
