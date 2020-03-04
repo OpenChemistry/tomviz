@@ -502,6 +502,10 @@ bool GenericHDF5Format::read(const std::string& fileName, vtkImageData* image,
     scrollAreaLayout.addWidget(checkboxes.back());
   }
 
+  // Check the first checkbox
+  if (!checkboxes.empty())
+    checkboxes[0]->setChecked(true);
+
   // Setup Ok and Cancel buttons
   QDialogButtonBox buttons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
   layout.addWidget(&buttons);
