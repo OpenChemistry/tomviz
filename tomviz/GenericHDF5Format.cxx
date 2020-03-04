@@ -289,6 +289,12 @@ bool GenericHDF5Format::readVolume(h5::H5ReadWrite& reader,
   // Get the dimensions
   std::vector<int> dims = reader.getDimensions(path);
 
+  if (dims.size() != 3) {
+    std::cerr << "Error: " << path
+              << " does not have three dimensions." << std::endl;
+    return false;
+  }
+
   int bs[6] = { -1, -1, -1, -1, -1, -1 };
   int strides[3] = { 1, 1, 1 };
   if (options.contains("subsampleVolumeBounds")) {
