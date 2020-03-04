@@ -554,7 +554,7 @@ bool GenericHDF5Format::read(const std::string& fileName, vtkImageData* image,
   // Look for some common places where there are angles, and
   // load in the angles if we find them.
   QVector<double> angles;
-  std::vector<std::string> placesToSearch = { "angle" };
+  std::vector<std::string> placesToSearch = { "angle", "angles" };
   for (const auto& path : placesToSearch) {
     if (reader.isDataSet(path)) {
       angles = readAngles(reader, path, options);
