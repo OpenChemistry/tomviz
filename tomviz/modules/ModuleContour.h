@@ -6,8 +6,13 @@
 
 #include "Module.h"
 
-class vtkSMProxy;
-class vtkSMSourceProxy;
+#include <vtkNew.h>
+
+class vtkActor;
+class vtkPolyDataMapper;
+class vtkFlyingEdges3D;
+class vtkProperty;
+class vtkPVRenderView;
 
 namespace tomviz {
 
@@ -36,21 +41,33 @@ public:
   void dataSourceMoved(double newX, double newY, double newZ) override;
 
   void setIsoValue(double value);
-  double getIsoValue() const;
-
-  DataSource* colorMapDataSource() const override;
+  void resetIsoValue();
 
   QString exportDataTypeString() override { return "Mesh"; }
 
   vtkDataObject* dataToExport() override;
 
-protected:
-  void updateColorMap() override;
-  QList<DataSource*> getChildDataSources();
-  void updateScalarColoring();
+  bool colorMapData() const;
+  double ambient() const;
+  double diffuse() const;
+  double specular() const;
+  double specularPower() const;
+  double iso() const;
+  QString representation() const;
+  double opacity() const;
+  QColor color() const;
+  bool useSolidColor() const;
 
-  vtkWeakPointer<vtkSMSourceProxy> m_contourFilter;
-  vtkWeakPointer<vtkSMProxy> m_activeRepresentation;
+protected:
+  void updatePanel();
+  void updateColorMap() override;
+  void updateIsoRange();
+
+  vtkNew<vtkActor> m_actor;
+  vtkNew<vtkFlyingEdges3D> m_flyingEdges;
+  vtkNew<vtkPolyDataMapper> m_mapper;
+  vtkNew<vtkProperty> m_property;
+  vtkWeakPointer<vtkPVRenderView> m_view;
 
   class Private;
   Private* d;
@@ -60,12 +77,17 @@ protected:
   QString m_representation;
 
 private slots:
-  /// invoked whenever a property widget changes
-  void onPropertyChanged();
-
-  void onScalarArrayChanged();
-
-  void setUseSolidColor(const bool useSolidColor);
+  void onActiveScalarsChanged();
+  void onColorMapDataToggled(const bool state);
+  void onAmbientChanged(const double value);
+  void onDiffuseChanged(const double value);
+  void onSpecularChanged(const double value);
+  void onSpecularPowerChanged(const double value);
+  void onIsoChanged(const double value);
+  void onRepresentationChanged(const QString& representation);
+  void onOpacityChanged(const double value);
+  void onColorChanged(const QColor& color);
+  void onUseSolidColorToggled(const bool state);
 
 private:
   Q_DISABLE_COPY(ModuleContour)
