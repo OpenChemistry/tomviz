@@ -19,6 +19,15 @@ from ._jsonpatch import (
 
 from ._pipeline import PipelineStateManager
 
+from ._views import (
+    View
+)
+
+from paraview.simple import (
+    GetViews,
+    GetActiveView,
+)
+
 t = None
 pipelines = None
 _state = None
@@ -99,6 +108,14 @@ def _pipeline_index(ds):
             break
 
     return -1
+
+
+def active_view():
+    return View(GetActiveView())
+
+
+def views():
+    return [View(v) for v in GetViews()]
 
 
 init_modules()
