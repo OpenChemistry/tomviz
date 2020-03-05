@@ -593,7 +593,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 configure_file(tomvizConfig.h.in tomvizConfig.h @ONLY)
 configure_file(tomvizPythonConfig.h.in tomvizPythonConfig.h @ONLY)
 
-add_library(tomvizlib STATIC ${SOURCES} ${accel_srcs})
+add_library(tomvizlib ${SOURCES} ${accel_srcs})
 set_target_properties(tomvizlib PROPERTIES OUTPUT_NAME tomviz)
 
 set_property(TARGET tomvizlib PROPERTY POSITION_INDEPENDENT_CODE TRUE)
@@ -623,6 +623,10 @@ if(APPLE)
 else()
   install(TARGETS tomviz DESTINATION bin COMPONENT runtime)
 endif()
+install(TARGETS tomvizlib
+  RUNTIME DESTINATION "${INSTALL_RUNTIME_DIR}"
+  LIBRARY DESTINATION "${INSTALL_LIBRARY_DIR}"
+  ARCHIVE DESTINATION "${INSTALL_ARCHIVE_DIR}")
 
 if(tomviz_data_DIR)
   add_definitions(-DTOMVIZ_DATA)
