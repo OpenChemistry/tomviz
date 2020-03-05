@@ -653,6 +653,10 @@ void OperatorPython::updateChildDataSource(vtkSmartPointer<vtkDataObject> data)
 
   // Now deep copy the new data to the child source data if needed
   dataSource->copyData(data);
+
+  if (dataSource->hasTiltAngles())
+    dataSource->setType(DataSource::TiltSeries);
+
   emit dataSource->dataChanged();
   emit dataSource->dataPropertiesChanged();
   ActiveObjects::instance().renderAllViews();
