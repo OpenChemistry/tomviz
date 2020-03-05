@@ -738,6 +738,9 @@ def execute(operators, start_at, data_file_path, output_file_path,
     if dims is not None:
         # Convert to native type, as is required by itk
         data.spacing = [float(d.values[1] - d.values[0]) for d in dims]
+        if data.tilt_angles is not None and data.tilt_axis is not None:
+            # Spacing for tilt axis should just be 1.0
+            data.spacing[data.tilt_axis] = 1.0
 
     operators = operators[start_at:]
     transforms = _load_transform_functions(operators)

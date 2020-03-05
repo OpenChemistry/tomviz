@@ -156,6 +156,11 @@ bool EmdFormat::readNode(h5::H5ReadWrite& reader, const std::string& emdNode,
     GenericHDF5Format::relabelXAndZAxes(image);
     DataSource::setTiltAngles(image, angles);
     DataSource::setType(image, DataSource::TiltSeries);
+
+    // Spacing of the tilt axis should be 1.0
+    double spacing[3];
+    image->GetSpacing(spacing);
+    image->SetSpacing(spacing[0], spacing[1], 1.0);
   }
 
   return true;
