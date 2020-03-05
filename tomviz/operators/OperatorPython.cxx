@@ -657,6 +657,11 @@ void OperatorPython::updateChildDataSource(vtkSmartPointer<vtkDataObject> data)
   if (dataSource->hasTiltAngles())
     dataSource->setType(DataSource::TiltSeries);
 
+  // Keep the same active scalars that the parent had if possible
+  QString prevActiveScalars = this->dataSource()->activeScalars();
+  if (dataSource->listScalars().contains(prevActiveScalars))
+    dataSource->setActiveScalars(prevActiveScalars);
+
   emit dataSource->dataChanged();
   emit dataSource->dataPropertiesChanged();
   ActiveObjects::instance().renderAllViews();
