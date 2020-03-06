@@ -35,19 +35,6 @@ jobs:
       versionSpec: 3.8
     displayName: Enable Python 3.8
 
-  - bash: |
-      paraview_sha1=$(git ls-remote https://github.com/openchemistry/paraview | head -1 | cut -f 1)
-      echo "##vso[task.setvariable variable=paraview_sha1]$paraview_sha1"
-    displayName: Get ParaView SHA1
-
-  - task: CacheBeta@0
-    inputs:
-      # Change the "v*" at the end to force a re-build
-      key: paraview | $(Agent.OS) | $(paraview_sha1) | v5
-      path: $(PARAVIEW_BUILD_FOLDER)
-      cacheHitVar: PARAVIEW_BUILD_RESTORED
-    displayName: Restore ParaView Build
-
   - bash: scripts/azure-pipelines/install.sh
     displayName: Install Dependencies
 
@@ -68,6 +55,19 @@ jobs:
       modifyEnvironment: True
     condition: eq(variables['Agent.OS'], 'Windows_NT')
     displayName: Setup MSVC Environment
+
+  # Creates a "deps_md5sum" variable that, when this has changed,
+  # automatically re-build paraview.
+  - bash: scripts/azure-pipelines/create_deps_md5sum.sh
+    displayName: Create Dependency md5sum
+
+  - task: Cache@2
+    inputs:
+      # Change the "v*" at the end to force a re-build
+      key: paraview | $(Agent.OS) | $(deps_md5sum) | v1
+      path: $(PARAVIEW_BUILD_FOLDER)
+      cacheHitVar: PARAVIEW_BUILD_RESTORED
+    displayName: Restore ParaView Build
 
   - bash: scripts/azure-pipelines/build_paraview.sh
     condition: ne(variables.PARAVIEW_BUILD_RESTORED, 'true')
