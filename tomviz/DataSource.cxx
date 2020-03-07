@@ -1217,6 +1217,11 @@ vtkDataObject* DataSource::dataObject() const
   return alg->GetOutputDataObject(0);
 }
 
+vtkImageData* DataSource::imageData() const
+{
+  return vtkImageData::SafeDownCast(dataObject());
+}
+
 Pipeline* DataSource::pipeline() const
 {
   return qobject_cast<Pipeline*>(parent());

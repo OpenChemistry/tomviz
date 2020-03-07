@@ -82,6 +82,9 @@ public:
   /// Returns the output data object associated with the proxy.
   vtkDataObject* dataObject() const;
 
+  /// Returns the image data associated with the proxy.
+  vtkImageData* imageData() const;
+
   /// Returns a list of operators added to the DataSource.
   const QList<Operator*>& operators() const;
 
