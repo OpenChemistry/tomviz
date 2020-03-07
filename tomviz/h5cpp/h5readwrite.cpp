@@ -60,8 +60,8 @@ public:
 
   H5ReadWriteImpl(const string& file, OpenMode mode)
   {
-    if (mode == OpenMode::ReadOnly) {
-      if (!openFile(file))
+    if (mode == OpenMode::ReadOnly || mode == OpenMode::ReadWrite) {
+      if (!openFile(file, mode == OpenMode::ReadOnly))
         cerr << "Warning: failed to open file " << file << "\n";
     } else if (mode == OpenMode::WriteOnly) {
       if (!createFile(file))
@@ -73,9 +73,10 @@ public:
 
   ~H5ReadWriteImpl() { clear(); }
 
-  bool openFile(const string& file)
+  bool openFile(const string& file, bool readOnly = true)
   {
-    m_fileId = H5Fopen(file.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+    auto accessFlag = readOnly ? H5F_ACC_RDONLY : H5F_ACC_RDWR;
+    m_fileId = H5Fopen(file.c_str(), accessFlag, H5P_DEFAULT);
     return fileIsValid();
   }
 

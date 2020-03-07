@@ -19,7 +19,8 @@ public:
   enum class OpenMode
   {
     ReadOnly,
-    WriteOnly
+    WriteOnly,
+    ReadWrite
   };
 
   /**
