@@ -297,14 +297,14 @@ PipelineStateManager::PipelineStateManager()
   auto appCore = pqApplicationCore::instance();
   auto model = appCore->getServerManagerModel();
   QObject::connect(model, &pqServerManagerModel::viewAdded,
-                   [this]() { this->syncViewsToPython(); });
+                   &PipelineStateManager::syncViewsToPython);
 
   QObject::connect(model, &pqServerManagerModel::viewRemoved,
-                   [this]() { this->syncViewsToPython(); });
+                   &PipelineStateManager::syncViewsToPython);
 
   QObject::connect(&ActiveObjects::instance(),
                    QOverload<vtkSMViewProxy*>::of(&ActiveObjects::viewChanged),
-                   [this]() { this->syncViewsToPython(); });
+                   PipelineStateManager::syncViewsToPython);
 }
 
 void PipelineStateManager::syncToPython()
