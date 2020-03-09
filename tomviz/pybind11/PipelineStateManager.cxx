@@ -22,6 +22,9 @@
 #include <pqActiveObjects.h>
 #include <vtkSMSaveScreenshotProxy.h>
 
+#include <pqApplicationCore.h>
+#include <pqServerManagerModel.h>
+
 #include <QApplication>
 #include <QDesktopWidget>
 #include <QDebug>
@@ -290,6 +293,18 @@ PipelineStateManager::PipelineStateManager()
   QObject::connect(&ModuleManager::instance(), &ModuleManager::visibilityChanged, [this]() {
     this->syncToPython();
   });
+
+  auto appCore = pqApplicationCore::instance();
+  auto model = appCore->getServerManagerModel();
+  QObject::connect(model, &pqServerManagerModel::viewAdded,
+                   &PipelineStateManager::syncViewsToPython);
+
+  QObject::connect(model, &pqServerManagerModel::viewRemoved,
+                   &PipelineStateManager::syncViewsToPython);
+
+  QObject::connect(&ActiveObjects::instance(),
+                   QOverload<vtkSMViewProxy*>::of(&ActiveObjects::viewChanged),
+                   PipelineStateManager::syncViewsToPython);
 }
 
 void PipelineStateManager::syncToPython()
@@ -316,6 +331,21 @@ void PipelineStateManager::syncToPython()
   args.set(0, pyState);
   Python::Dict kwargs;
   sync.call(args, kwargs);
+}
+
+void PipelineStateManager::syncViewsToPython()
+{
+  Python python;
+  auto tomvizState = python.import("tomviz.state");
+  if (!tomvizState.isValid()) {
+    qCritical() << "Failed to import tomviz.state";
+  }
+
+  auto sync = tomvizState.findFunction("_sync_views");
+  if (!sync.isValid()) {
+    qCritical() << "Unable to locate _sync_view.";
+  }
+  sync.call();
 }
 
 std::string PipelineStateManager::serialize()
