@@ -38,6 +38,7 @@ public:
   void modified(std::vector<std::string> opPaths,
                 std::vector<std::string> modulePaths);
   void syncToPython();
+  void syncViewsToPython();
   static void syncToApp();
   void enableSyncToPython();
   void disableSyncToPython();

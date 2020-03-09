@@ -30,6 +30,8 @@ from paraview.simple import (
 
 t = None
 pipelines = None
+views = []
+active_view = None
 _state = None
 
 
@@ -53,6 +55,41 @@ def _sync_to_python(pipeline_state):
     sync_state_to_python(_state, json.loads(pipeline_state))
 
     _state = schema.dump(t)
+
+
+def _current_state():
+    global t
+    schema = TomvizSchema()
+    return schema.dump(t)
+
+
+def _pipeline_index(ds):
+    for (i, p) in enumerate(pipelines):
+        if p.dataSource == ds:
+            return i
+            break
+
+    return -1
+
+
+def _active_view():
+    return View(GetActiveView())
+
+
+def _views():
+    return [View(v) for v in GetViews()]
+
+
+views = _views()
+active_view = _active_view()
+
+
+def _sync_views():
+    global views
+    global active_view
+
+    views = _views()
+    active_view = _active_view()
 
 
 def sync():
@@ -93,29 +130,6 @@ def load(state, state_dir=None):
                         "associated with state file.")
 
     PipelineStateManager().load(state, state_dir)
-
-
-def _current_state():
-    global t
-    schema = TomvizSchema()
-    return schema.dump(t)
-
-
-def _pipeline_index(ds):
-    for (i, p) in enumerate(pipelines):
-        if p.dataSource == ds:
-            return i
-            break
-
-    return -1
-
-
-def active_view():
-    return View(GetActiveView())
-
-
-def views():
-    return [View(v) for v in GetViews()]
 
 
 init_modules()
