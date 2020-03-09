@@ -3,8 +3,12 @@
 
 #include "EmdFormat.h"
 
+#include "ActiveObjects.h"
 #include "DataSource.h"
 #include "GenericHDF5Format.h"
+#include "LoadDataReaction.h"
+#include "ModuleManager.h"
+#include "Pipeline.h"
 
 #include <h5cpp/h5readwrite.h>
 #include <h5cpp/h5vtktypemaps.h>
@@ -18,6 +22,12 @@
 
 #include <vtkSMSourceProxy.h>
 
+#include <QDir>
+#include <QFileInfo>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+
 #include <cassert>
 #include <string>
 #include <vector>
@@ -27,7 +37,9 @@
 namespace tomviz {
 
 // Forward declarations
-static bool writeExtraScalars(h5::H5ReadWrite& writer, vtkImageData* image);
+static bool writeExtraScalars(h5::H5ReadWrite& writer,
+                              const std::string& groupPath,
+                              vtkImageData* image);
 static void readExtraScalars(h5::H5ReadWrite& reader,
                              const std::string& emdNode, vtkImageData* image);
 
@@ -74,13 +86,19 @@ bool EmdFormat::read(const std::string& fileName, vtkImageData* image,
   }
 
   std::string emdNode = firstEmdNode(reader);
-  std::string emdDataNode = emdNode + "/data";
-
   if (emdNode.length() == 0) {
     // We couldn't find a valid EMD node, exit early.
     return false;
   }
 
+  return readNode(reader, emdNode, image, options);
+}
+
+bool EmdFormat::readNode(h5::H5ReadWrite& reader, const std::string& emdNode,
+                         vtkImageData* image, const QVariantMap& options)
+{
+  bool ok;
+  std::string emdDataNode = emdNode + "/data";
   // If it isn't a data set, we are done
   if (!reader.isDataSet(emdDataNode))
     return false;
@@ -145,10 +163,7 @@ bool EmdFormat::read(const std::string& fileName, vtkImageData* image,
 
 bool EmdFormat::write(const std::string& fileName, DataSource* source)
 {
-  // Now create the tomography data store!
-  auto t = source->producer();
-  auto image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
-  return this->write(fileName, image);
+  return this->write(fileName, source->imageData());
 }
 
 bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
@@ -165,8 +180,14 @@ bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
   writer.createGroup("/data");
   writer.createGroup("/data/tomography");
 
-  // Now create the emd_group_type attribute.
-  writer.setAttribute("/data/tomography", "emd_group_type", 1u);
+  return writeNode(writer, "/data/tomography", image);
+}
+
+bool EmdFormat::writeNode(h5::H5ReadWrite& writer, const std::string& path,
+                          vtkImageData* image)
+{
+  // Create the emd_group_type attribute.
+  writer.setAttribute(path, "emd_group_type", 1u);
 
   // See if we have tilt angles
   auto hasTiltAngles = DataSource::hasTiltAngles(image);
@@ -179,14 +200,13 @@ bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
     GenericHDF5Format::swapXAndZAxes(permutedImage);
   }
 
-  GenericHDF5Format::writeVolume(writer, "/data/tomography", "data",
-                                 permutedImage);
+  GenericHDF5Format::writeVolume(writer, path, "data", permutedImage);
 
   // Set a "name" attribute on the data so we can remember the
   // scalar name that the user gave it.
   std::string activeName =
     permutedImage->GetPointData()->GetScalars()->GetName();
-  writer.setAttribute("/data/tomography/data", "name", activeName.c_str());
+  writer.setAttribute(path + "/data", "name", activeName.c_str());
 
   // Use constant spacing, with zero offset, so just populate the first two.
   double spacing[3];
@@ -219,32 +239,32 @@ bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
   // Create the 3 dim sets too...
   std::vector<int> side(1);
   side[0] = imageDimDataX.size();
-  writer.writeData("/data/tomography", "dim1", side, imageDimDataX);
+  writer.writeData(path, "dim1", side, imageDimDataX);
   if (hasTiltAngles) {
-    writer.setAttribute("/data/tomography/dim1", "name", "angles");
-    writer.setAttribute("/data/tomography/dim1", "units", "[deg]");
+    writer.setAttribute(path + "/dim1", "name", "angles");
+    writer.setAttribute(path + "/dim1", "units", "[deg]");
   } else {
-    writer.setAttribute("/data/tomography/dim1", "name", "x");
-    writer.setAttribute("/data/tomography/dim1", "units", "[n_m]");
+    writer.setAttribute(path + "/dim1", "name", "x");
+    writer.setAttribute(path + "/dim1", "units", "[n_m]");
   }
 
   side[0] = imageDimDataY.size();
-  writer.writeData("/data/tomography", "dim2", side, imageDimDataY);
-  writer.setAttribute("/data/tomography/dim2", "name", "y");
-  writer.setAttribute("/data/tomography/dim2", "units", "[n_m]");
+  writer.writeData(path, "dim2", side, imageDimDataY);
+  writer.setAttribute(path + "/dim2", "name", "y");
+  writer.setAttribute(path + "/dim2", "units", "[n_m]");
 
   side[0] = imageDimDataZ.size();
-  writer.writeData("/data/tomography", "dim3", side, imageDimDataZ);
+  writer.writeData(path, "dim3", side, imageDimDataZ);
   if (hasTiltAngles) {
-    writer.setAttribute("/data/tomography/dim3", "name", "x");
-    writer.setAttribute("/data/tomography/dim3", "units", "[n_m]");
+    writer.setAttribute(path + "/dim3", "name", "x");
+    writer.setAttribute(path + "/dim3", "units", "[n_m]");
   } else {
-    writer.setAttribute("/data/tomography/dim3", "name", "z");
-    writer.setAttribute("/data/tomography/dim3", "units", "[n_m]");
+    writer.setAttribute(path + "/dim3", "name", "z");
+    writer.setAttribute(path + "/dim3", "units", "[n_m]");
   }
 
   // Write any extra scalars we might have
-  writeExtraScalars(writer, permutedImage);
+  writeExtraScalars(writer, path, permutedImage);
 
   return true;
 }
@@ -273,9 +293,11 @@ static void readExtraScalars(h5::H5ReadWrite& reader,
   }
 }
 
-static bool writeExtraScalars(h5::H5ReadWrite& writer, vtkImageData* image)
+static bool writeExtraScalars(h5::H5ReadWrite& writer,
+                              const std::string& groupPath,
+                              vtkImageData* image)
 {
-  std::string path = "/data/tomography/tomviz_scalars";
+  std::string path = groupPath + "/tomviz_scalars";
   writer.createGroup(path);
 
   vtkPointData* pointData = image->GetPointData();
@@ -289,8 +311,7 @@ static bool writeExtraScalars(h5::H5ReadWrite& writer, vtkImageData* image)
     auto arrayName = pointData->GetArrayName(i);
     if (arrayName == activeName) {
       // Make a soft link to the one we have already written
-      writer.createSoftLink("/data/tomography/data",
-                            path + "/" + arrayName);
+      writer.createSoftLink(groupPath + "/data", path + "/" + arrayName);
       continue;
     }
 
@@ -301,6 +322,193 @@ static bool writeExtraScalars(h5::H5ReadWrite& writer, vtkImageData* image)
 
   // Make the original one active again
   pointData->SetActiveScalars(activeName.c_str());
+  return true;
+}
+
+bool EmdFormat::writeFullState(const std::string& fileName)
+{
+  // First, write the standard EMD file
+  DataSource* source = ActiveObjects::instance().activeDataSource();
+  write(fileName, source);
+
+  // We will create a soft link to the active id later
+  auto activeId = source->id().toStdString();
+
+  // Now, write the state file string to a dataset
+  QFileInfo info(fileName.c_str());
+  QJsonObject stateObject;
+  auto success = ModuleManager::instance().serialize(stateObject,
+                                                     info.dir(), false);
+  if (!success) {
+    std::cerr << "Failed to serialize the state of Tomviz" << std::endl;
+    return false;
+  }
+
+  QByteArray state = QJsonDocument(stateObject).toJson();
+
+  // Write the state file to "tomviz_state"
+  using h5::H5ReadWrite;
+  H5ReadWrite::OpenMode mode = H5ReadWrite::OpenMode::ReadWrite;
+  H5ReadWrite writer(fileName, mode);
+
+  if (!writer.writeData("/", "tomviz_state", { state.size() }, state.data())) {
+    std::cerr << "Failed to write tomviz_state" << std::endl;
+    return false;
+  }
+
+  // Now, write all the data sources
+  writer.createGroup("/tomviz_datasources");
+  auto sources = ModuleManager::instance().allDataSources();
+  for (auto* ds: sources) {
+    // Name the group after its id
+    auto id = ds->id().toStdString();
+
+    if (id == activeId) {
+      // Make a soft link rather than writing the data again
+      writer.createSoftLink("/data/tomography", "/tomviz_datasources/" + id);
+      continue;
+    }
+
+    std::string group = "/tomviz_datasources/" + id;
+    writer.createGroup(group);
+
+    // Write the data here
+    if (!writeNode(writer, group, ds->imageData())) {
+      std::cerr << "Failed to write data source: " << id << std::endl;
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool EmdFormat::readFullState(const std::string& fileName)
+{
+  // Read the state from "tomviz_state"
+  using h5::H5ReadWrite;
+  H5ReadWrite::OpenMode mode = H5ReadWrite::OpenMode::ReadOnly;
+  H5ReadWrite reader(fileName, mode);
+
+  auto stateVec = reader.readData<char>("tomviz_state");
+  QString stateStr = std::string(stateVec.begin(), stateVec.end()).c_str();
+
+  auto doc = QJsonDocument::fromJson(stateStr.toUtf8());
+  if (doc.isNull()) {
+    std::cerr << "Failed to read state from: " << fileName << std::endl;
+    return false;
+  }
+
+  QJsonObject state = doc.object();
+  QFileInfo info(fileName.c_str());
+  auto success = ModuleManager::instance().deserialize(state, info.dir(),
+                                                       false);
+
+  if (!success) {
+    std::cerr << "Failed to deserialize state from: " << fileName << std::endl;
+    return false;
+  }
+
+  // Turn off automatic execution of pipelines
+  bool prev = ModuleManager::instance().executePipelinesOnLoad();
+  ModuleManager::instance().executePipelinesOnLoad(false);
+
+  // Now load in the data sources
+  if (state["dataSources"].isArray()) {
+    auto dataSources = state["dataSources"].toArray();
+    foreach (auto ds, dataSources) {
+      loadDataSource(reader, ds.toObject());
+    }
+  }
+
+  ModuleManager::instance().executePipelinesOnLoad(prev);
+
+  // Loading the modules most likely modified the view. Restore
+  // the view to the state given in the state file.
+  ModuleManager::instance().setViews(state["views"].toArray());
+
+  return true;
+}
+
+bool EmdFormat::loadDataSource(h5::H5ReadWrite& reader,
+                               const QJsonObject& dsObject,
+                               Operator* parent)
+{
+  auto id = dsObject.value("id").toString().toStdString();
+  if (id.empty()) {
+    std::cerr << "Failed to obtain id from data source object" << std::endl;
+    return false;
+  }
+
+  // First, create the image data
+  std::string path = "/tomviz_datasources/" + id;
+  vtkNew<vtkImageData> image;
+  QVariantMap options = { { "askForSubsample", false } };
+  if (!readNode(reader, path, image, options)) {
+    std::cerr << "Failed to read data at: " << path << std::endl;
+    return false;
+  }
+
+  // Next, create the data source
+  DataSource::DataSourceType type = DataSource::hasTiltAngles(image)
+                                      ? DataSource::TiltSeries
+                                      : DataSource::Volume;
+
+  auto* pipeline = parent ? parent->dataSource()->pipeline() : nullptr;
+  auto* dataSource = new DataSource(image, type, pipeline,
+                                    DataSource::PersistenceState::Transient);
+  if (parent) {
+    // This is a child data source. Hook it up to the operator parent.
+    parent->setChildDataSource(dataSource);
+    parent->setHasChildDataSource(true);
+    parent->newChildDataSource(dataSource);
+    // If it has a parent, it will be deserialized later.
+  }
+  else {
+    // This is a root data source
+    LoadDataReaction::dataSourceAdded(dataSource, false, false);
+    dataSource->deserialize(dsObject);
+  }
+
+  // If there is no label, try to make one from the reader file name
+  if (dataSource->label().isEmpty() && dsObject.contains("reader")) {
+    auto fileNames = dsObject["reader"].toObject()["fileNames"].toArray();
+    if (!fileNames.empty()) {
+      dataSource->setLabel(QFileInfo(fileNames[0].toString()).baseName());
+    }
+  }
+
+  // Set the active data source
+  if (dsObject.value("active").toBool()) {
+    ActiveObjects::instance().setActiveDataSource(dataSource);
+  }
+
+  // If there are operators, load child data sources too
+  if (dsObject["operators"].isArray()) {
+    auto opPtrs = dataSource->operators();
+    auto operators = dsObject["operators"].toArray();
+    for (int i = 0; i < operators.size() && i < opPtrs.size(); ++i) {
+      auto op = operators.at(i).toObject();
+      if (op["dataSources"].isArray()) {
+        auto sources = op["dataSources"].toArray();
+        foreach (auto s, sources) {
+          loadDataSource(reader, s.toObject(), opPtrs[i]);
+        }
+      }
+    }
+  }
+
+  // Mark all parent operators as complete
+  for (auto* op: dataSource->operators())
+    op->setComplete();
+
+  if (pipeline) {
+    // Make sure the pipeline is not paused in case the user wishes to
+    // re-run some operators.
+    pipeline->resume();
+    // This will deserialize all children.
+    pipeline->finished();
+  }
+
   return true;
 }
 
