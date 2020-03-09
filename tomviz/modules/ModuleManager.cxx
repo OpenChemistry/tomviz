@@ -190,6 +190,27 @@ bool ModuleManager::hasRunningOperators()
   return false;
 }
 
+QList<DataSource*> ModuleManager::dataSources()
+{
+  QList<DataSource*> ret;
+  std::copy(d->DataSources.begin(), d->DataSources.end(),
+            std::back_inserter(ret));
+  return ret;
+}
+
+QList<DataSource*> ModuleManager::childDataSources()
+{
+  QList<DataSource*> ret;
+  std::copy(d->ChildDataSources.begin(), d->ChildDataSources.end(),
+            std::back_inserter(ret));
+  return ret;
+}
+
+QList<DataSource*> ModuleManager::allDataSources()
+{
+  return dataSources() + childDataSources();
+}
+
 void ModuleManager::addDataSource(DataSource* dataSource)
 {
   if (dataSource && !d->DataSources.contains(dataSource)) {

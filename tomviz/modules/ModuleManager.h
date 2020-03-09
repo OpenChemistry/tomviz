@@ -57,6 +57,10 @@ public:
     return modulesT;
   }
 
+  QList<DataSource*> dataSources();
+  QList<DataSource*> childDataSources();
+  QList<DataSource*> allDataSources();
+
   QList<Module*> findModulesGeneric(const DataSource* dataSource,
                                     const vtkSMViewProxy* view);
 
