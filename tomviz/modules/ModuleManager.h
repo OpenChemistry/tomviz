@@ -71,7 +71,8 @@ public:
   /// paths.
   bool serialize(QJsonObject& doc, const QDir& stateDir,
                  bool interative = true) const;
-  bool deserialize(const QJsonObject& doc, const QDir& stateDir);
+  bool deserialize(const QJsonObject& doc, const QDir& stateDir,
+                   bool loadDataSources = true);
 
   /// Test if any data source has running operators
   bool hasRunningOperators();
@@ -173,6 +174,7 @@ signals:
    QScopedPointer<MMInternals> d;
 
    QJsonObject m_stateObject;
+   bool m_loadDataSources = true;
 };
 } // namespace tomviz
 

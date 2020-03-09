@@ -730,7 +730,8 @@ void createXmlLayout(pugi::xml_node& n, QJsonArray arr)
   }
 }
 
-bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir)
+bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir,
+                                bool loadDataSources)
 {
   // Get back to a known state.
   reset();
@@ -853,6 +854,7 @@ bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir)
 
   d->dir = stateDir;
   m_stateObject = doc;
+  m_loadDataSources = loadDataSources;
   connect(pqApplicationCore::instance(),
           SIGNAL(stateLoaded(vtkPVXMLElement*, vtkSMProxyLocator*)),
           SLOT(onPVStateLoaded(vtkPVXMLElement*, vtkSMProxyLocator*)));
@@ -971,7 +973,7 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
   }
 
   // Load up all of the data sources.
-  if (m_stateObject["dataSources"].isArray()) {
+  if (m_loadDataSources && m_stateObject["dataSources"].isArray()) {
     auto dataSources = m_stateObject["dataSources"].toArray();
     foreach (auto ds, dataSources) {
       auto dsObject = ds.toObject();
