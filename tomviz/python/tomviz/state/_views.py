@@ -17,8 +17,9 @@ class Palette(Enum):
 
 
 class Camera(object):
-    def __init__(self, camera):
-        self._camera = camera
+    def __init__(self, render_view):
+        self._render_view = render_view
+        self._camera = render_view.GetActiveCamera()
 
     def _validate_vec3(self, pos, name):
         if not isinstance(pos, (tuple, list)):
@@ -33,7 +34,7 @@ class Camera(object):
         value
         """
         self._camera.Dolly(value)
-        Render()
+        Render(self._render_view)
 
     @property
     def roll(self):
@@ -45,14 +46,14 @@ class Camera(object):
     @roll.setter
     def roll(self, angle):
         self._camera.SetRoll(angle)
-        Render()
+        Render(self._render_view)
 
     def azimuth(self, angle):
         """
         Rotate the camera about the view up vector centered at the focal point.
         """
         self._camera.Azimuth(angle)
-        Render()
+        Render(self._render_view)
 
     def yaw(self, angle):
         """
@@ -60,7 +61,7 @@ class Camera(object):
         position as the center of rotation.
         """
         self._camera.Yaw(angle)
-        Render()
+        Render(self._render_view)
 
     def elevation(self, angle):
         """
@@ -69,7 +70,7 @@ class Camera(object):
         the center of rotation.
         """
         self._camera.Elevation(angle)
-        Render()
+        Render(self._render_view)
 
     def pitch(self, angle):
         """
@@ -78,7 +79,7 @@ class Camera(object):
         of rotation.
         """
         self._camera.Pitch(angle)
-        Render()
+        Render(self._render_view)
 
     @property
     def position(self):
@@ -92,7 +93,7 @@ class Camera(object):
         self._validate_vec3(pos, 'Position')
         [x, y, z] = pos
         self._camera.SetPosition(x, y, z)
-        Render()
+        Render(self._render_view)
 
     @property
     def focal_point(self):
@@ -106,7 +107,7 @@ class Camera(object):
         self._validate_vec3(point, 'Point')
         [x, y, z] = point
         self._camera.SetFocalPoint(x, y, z)
-        Render()
+        Render(self._render_view)
 
     @property
     def view_up(self):
@@ -120,23 +121,20 @@ class Camera(object):
         self._validate_vec3(direction, 'Direction')
         [vx, vy, vz] = direction
         self._camera.SetViewUp(vx, vy, vz)
-        Render()
+        Render(self._render_view)
 
     @property
     def distance(self):
         """
-        Move the focal point so that it is the specified disdef active_view():
-    return View(GetActiveView())
-
-def views():
-    return [View(v) for v in GetViews()]tance from the camera position
+        Move the focal point so that it is the specified distance from the
+        camera position
         """
         return self._camera.GetDistance()
 
     @distance.setter
     def distance(self, distance):
         self._camera.SetDistance(distance)
-        Render()
+        Render(self._render_view)
 
     def zoom(self, factor):
         """
@@ -144,7 +142,7 @@ def views():
         is a zoom-in, a value less than 1 is a zoom-out.
         """
         self._camera.Zoom(factor)
-        Render()
+        Render(self._render_view)
 
 
 class View(object):
@@ -171,4 +169,4 @@ class View(object):
 
     @property
     def camera(self):
-        return Camera(self._render_view.GetActiveCamera())
+        return Camera(self._render_view)
