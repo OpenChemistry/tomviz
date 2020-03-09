@@ -2,8 +2,9 @@ trigger:
 - master
 
 variables:
-  PARAVIEW_SOURCE_FOLDER: $(Pipeline.Workspace)/paraview_source
-  PARAVIEW_BUILD_FOLDER: $(Pipeline.Workspace)/paraview_build
+  # It's important to put these in a path that won't change
+  PARAVIEW_SOURCE_FOLDER: /tmp/paraview_source
+  PARAVIEW_BUILD_FOLDER: /tmp/paraview_build
 
 jobs:
 - job: Build
@@ -64,7 +65,7 @@ jobs:
   - task: Cache@2
     inputs:
       # Change the "v*" at the end to force a re-build
-      key: paraview | $(Agent.OS) | $(deps_md5sum) | v1
+      key: paraview | $(Agent.OS) | $(deps_md5sum) | v2
       path: $(PARAVIEW_BUILD_FOLDER)
       cacheHitVar: PARAVIEW_BUILD_RESTORED
     displayName: Restore ParaView Build
