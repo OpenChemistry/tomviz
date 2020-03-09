@@ -96,6 +96,9 @@ public:
   /// Creates a new clone from this DataSource.
   DataSource* clone() const;
 
+  /// Get the unique id for this DataSource.
+  QString id() const;
+
   /// Save the state out.
   QJsonObject serialize() const;
   bool deserialize(const QJsonObject& state);

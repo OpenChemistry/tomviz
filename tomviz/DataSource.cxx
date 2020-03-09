@@ -405,6 +405,11 @@ QString DataSource::label() const
   }
 }
 
+QString DataSource::id() const
+{
+  return QString().sprintf("%p", static_cast<const void*>(this));
+}
+
 QJsonObject DataSource::serialize() const
 {
   QJsonObject json = m_json;
@@ -472,7 +477,7 @@ QJsonObject DataSource::serialize() const
     json["modules"] = jModules;
   }
 
-  json["id"] = QString().sprintf("%p", static_cast<const void*>(this));
+  json["id"] = id();
 
   return json;
 }
