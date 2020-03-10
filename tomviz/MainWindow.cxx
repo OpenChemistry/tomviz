@@ -49,6 +49,7 @@
 #include "ResetReaction.h"
 #include "SaveDataReaction.h"
 #include "SaveLoadStateReaction.h"
+#include "SaveLoadTemplateReaction.h"
 #include "SaveScreenshotReaction.h"
 #include "SaveWebReaction.h"
 #include "SetDataTypeReaction.h"
