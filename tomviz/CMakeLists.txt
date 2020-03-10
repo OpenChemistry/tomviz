@@ -514,6 +514,22 @@ foreach(file ${resource_files})
     COMPONENT runtime)
 endforeach()
 
+set(template_files
+  Back_Projection_Reconstruction.tvsm
+)
+
+# Install templates
+file(MAKE_DIRECTORY "${tomviz_BINARY_DIR}/share/tomviz/Templates")
+foreach(file ${template_files})
+  list(APPEND SOURCES "templates/${file}")
+  execute_process(COMMAND ${CMAKE_COMMAND} -E ${script_cmd}
+    "${tomviz_SOURCE_DIR}/tomviz/templates/${file}"
+    "${tomviz_BINARY_DIR}/share/tomviz/Templates/${file}")
+  install(FILES "templates/${file}"
+    DESTINATION "${tomviz_data_install_dir}"
+    COMPONENT runtime)
+endforeach()
+
 set(tomviz_python_modules
   __init__.py
   _internal.py
@@ -633,6 +649,14 @@ install(TARGETS tomvizlib
 if(tomviz_data_DIR)
   add_definitions(-DTOMVIZ_DATA)
   install(DIRECTORY "${tomviz_data_DIR}"
+    DESTINATION "${tomviz_data_install_dir}"
+    USE_SOURCE_PERMISSIONS
+    COMPONENT runtime)
+endif()
+
+if(tomviz_templates_DIR)
+  add_definitions(-DTOMVIZ_TEMPLATES)
+  install(DIRECTORY "${tomviz_templates_DIR}"
     DESTINATION "${tomviz_data_install_dir}"
     USE_SOURCE_PERMISSIONS
     COMPONENT runtime)
