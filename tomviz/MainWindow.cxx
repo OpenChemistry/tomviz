@@ -244,6 +244,13 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   m_ui->menubar->insertMenu(m_ui->menuModules->menuAction(),
                             m_customTransformsMenu);
 
+  // Create the pipeline templates menu
+  m_pipelineTemplates = new QMenu("Pipeline Templates", this);
+  m_ui->menubar->insertMenu(m_ui->menuModules->menuAction(),
+                            m_pipelineTemplates);
+  // Populate the menu with templates
+  findPipelineTemplates();
+  
   // Build Tomography menu
   // ################################################################
   QAction* setVolumeDataTypeAction =
@@ -655,6 +662,9 @@ void MainWindow::dataSourceChanged(DataSource* dataSource)
     m_ui->menuSegmentation->setEnabled(canAdd);
     m_ui->menuTomography->setEnabled(canAdd);
     m_customTransformsMenu->setEnabled(canAdd);
+    foreach(QAction* action, m_pipelineTemplates->actions()) {
+      action->setEnabled(canAdd);
+    }
   }
 }
 
@@ -989,6 +999,27 @@ void MainWindow::syncPythonToApp()
   Python::Tuple args(0);
   Python::Dict kwargs;
   sync.call(args, kwargs);
+}
+
+void MainWindow::findPipelineTemplates() {
+  m_pipelineTemplates->clear();
+
+  QDir dir = QApplication::applicationDirPath() + "/../share/tomviz/Templates/";
+  foreach (QString file, dir.entryList()) {
+    QString fileName = file.split(".")[0];
+    QString menuName = file.split(".")[0].replace("_", " ");
+    if (!fileName.isEmpty()) {
+      QAction* action = m_pipelineTemplates->addAction(menuName);
+      new SaveLoadTemplateReaction(action, true, fileName);
+      if (!ModuleManager::instance().hasDataSources()) {
+        action->setEnabled(false);
+      }
+    }
+  }
+  m_pipelineTemplates->addSeparator();
+  QAction* actionSaveTemplate = m_pipelineTemplates->addAction("Save Template");
+  new SaveLoadTemplateReaction(actionSaveTemplate);
+  connect(actionSaveTemplate, SIGNAL(triggered()), SLOT(findPipelineTemplates()));
 }
 
 } // namespace tomviz
