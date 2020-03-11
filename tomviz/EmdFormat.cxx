@@ -329,7 +329,11 @@ bool EmdFormat::writeFullState(const std::string& fileName)
 {
   // First, write the standard EMD file
   DataSource* source = ActiveObjects::instance().activeDataSource();
-  write(fileName, source);
+
+  if (!write(fileName, source)) {
+    std::cerr << "Failed to write the standard EMD node" << std::endl;
+    return false;
+  }
 
   // We will create a soft link to the active id later
   auto activeId = source->id().toStdString();
@@ -467,14 +471,6 @@ bool EmdFormat::loadDataSource(h5::H5ReadWrite& reader,
     // This is a root data source
     LoadDataReaction::dataSourceAdded(dataSource, false, false);
     dataSource->deserialize(dsObject);
-  }
-
-  // If there is no label, try to make one from the reader file name
-  if (dataSource->label().isEmpty() && dsObject.contains("reader")) {
-    auto fileNames = dsObject["reader"].toObject()["fileNames"].toArray();
-    if (!fileNames.empty()) {
-      dataSource->setLabel(QFileInfo(fileNames[0].toString()).baseName());
-    }
   }
 
   // Set the active data source
