@@ -571,7 +571,7 @@ void MainWindow::openFiles(int argc, char** argv)
   }
 
   if (info.isFile()) {
-    if (info.suffix() == "tvsm") {
+    if (info.suffix() == "tvsm" || info.suffix() == "tvh5") {
       SaveLoadStateReaction::loadState(info.canonicalFilePath());
     } else {
       LoadDataReaction::loadData(info.canonicalFilePath());

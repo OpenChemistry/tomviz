@@ -22,6 +22,9 @@ public:
   static bool loadState();
   static bool loadState(const QString& filename);
 
+  static bool saveTvsm(const QString& filename, bool interactive = true);
+  static bool saveTvh5(const QString& filename);
+
 protected:
   void onTriggered() override;
   static bool automaticallyExecutePipelines();

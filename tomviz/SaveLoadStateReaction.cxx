@@ -3,6 +3,7 @@
 
 #include "SaveLoadStateReaction.h"
 
+#include "EmdFormat.h"
 #include "ModuleManager.h"
 #include "RecentFilesMenu.h"
 #include "Utilities.h"
@@ -43,17 +44,25 @@ void SaveLoadStateReaction::onTriggered()
 
 bool SaveLoadStateReaction::saveState()
 {
-  QFileDialog fileDialog(tomviz::mainWidget(), tr("Save State File"), QString(),
-                         "Tomviz state files (*.tvsm);;All files (*)");
+  QString tvsmFilter = "Tomvis state files (*.tvsm)";
+  QString tvh5Filter = "Tomviz full state files (*.tvh5)";
+  QStringList filters;
+  filters << tvsmFilter
+          << tvh5Filter
+          << "All files (*)";
+
+  QFileDialog fileDialog(tomviz::mainWidget(), tr("Save State File"),
+                         QString(), filters.join(";;"));
   fileDialog.setObjectName("SaveStateDialog");
   fileDialog.setAcceptMode(QFileDialog::AcceptSave);
   fileDialog.setFileMode(QFileDialog::AnyFile);
   if (fileDialog.exec() == QDialog::Accepted) {
     QString filename = fileDialog.selectedFiles()[0];
     QString format = fileDialog.selectedNameFilter();
-    if (!filename.endsWith(".tvsm") &&
-        format == "Tomviz state files (*.tvsm)") {
+    if (format == tvsmFilter && !filename.endsWith(".tvsm")) {
       filename = QString("%1%2").arg(filename, ".tvsm");
+    } else if (format == tvh5Filter && !filename.endsWith(".tvh5")) {
+      filename = QString("%1%2").arg(filename, ".tvh5");
     }
     return SaveLoadStateReaction::saveState(filename);
   }
@@ -62,8 +71,12 @@ bool SaveLoadStateReaction::saveState()
 
 bool SaveLoadStateReaction::loadState()
 {
-  QFileDialog fileDialog(tomviz::mainWidget(), tr("Load State File"), QString(),
-                         "Tomviz state files (*.tvsm);;All files (*)");
+  QStringList filters;
+  filters << "Tomvis state files (*.tvsm *.tvh5)"
+          << "All files (*)";
+
+  QFileDialog fileDialog(tomviz::mainWidget(), tr("Load State File"),
+                         QString(), filters.join(";;"));
   fileDialog.setObjectName("LoadStateDialog");
   fileDialog.setFileMode(QFileDialog::ExistingFile);
   if (fileDialog.exec() == QDialog::Accepted) {
@@ -84,6 +97,12 @@ bool SaveLoadStateReaction::loadState(const QString& filename)
       return false;
     }
   }
+
+  if (filename.endsWith(".tvh5")) {
+    // It's the full state file format. Read it in.
+    return EmdFormat().readFullState(filename.toStdString());
+  }
+
   QFile openFile(filename);
   if (!openFile.open(QIODevice::ReadOnly)) {
     qWarning("Couldn't open state file.");
@@ -143,6 +162,18 @@ bool SaveLoadStateReaction::loadState(const QString& filename)
 
 bool SaveLoadStateReaction::saveState(const QString& fileName, bool interactive)
 {
+  if (fileName.endsWith(".tvsm")) {
+    return saveTvsm(fileName, interactive);
+  } else if (fileName.endsWith(".tvh5")) {
+    return saveTvh5(fileName);
+  }
+
+  qCritical() << "Unknown format for saveState(): " << fileName;
+  return false;
+}
+
+bool SaveLoadStateReaction::saveTvsm(const QString& fileName, bool interactive)
+{
   QFileInfo info(fileName);
   QFile saveFile(fileName);
   if (!saveFile.open(QIODevice::WriteOnly)) {
@@ -156,6 +187,11 @@ bool SaveLoadStateReaction::saveState(const QString& fileName, bool interactive)
   QJsonDocument doc(state);
   auto writeSuccess = saveFile.write(doc.toJson());
   return success && writeSuccess != -1;
+}
+
+bool SaveLoadStateReaction::saveTvh5(const QString& fileName)
+{
+  return EmdFormat().writeFullState(fileName.toStdString());
 }
 
 QString SaveLoadStateReaction::extractLegacyStateFileVersion(
