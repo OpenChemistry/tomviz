@@ -245,7 +245,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
                             m_customTransformsMenu);
 
   // Create the pipeline templates menu
-  m_pipelineTemplates = new QMenu("Pipeline Templates", this);
+  m_pipelineTemplates = new QMenu("Pipeline templates", this);
   m_ui->menubar->insertMenu(m_ui->menuModules->menuAction(),
                             m_pipelineTemplates);
   // Populate the menu with templates
@@ -1004,7 +1004,7 @@ void MainWindow::syncPythonToApp()
 void MainWindow::findPipelineTemplates() {
   m_pipelineTemplates->clear();
 
-  QDir dir = QApplication::applicationDirPath() + "/../share/tomviz/Templates/";
+  QDir dir = QApplication::applicationDirPath() + "/../share/tomviz/templates/";
   foreach (QString file, dir.entryList()) {
     QString fileName = file.split(".")[0];
     QString menuName = file.split(".")[0].replace("_", " ");

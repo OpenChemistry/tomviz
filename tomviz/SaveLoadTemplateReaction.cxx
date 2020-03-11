@@ -40,7 +40,7 @@ bool SaveLoadTemplateReaction::saveTemplate()
   QString fileName = text.replace(" ", "_");
   if (ok && !text.isEmpty()) {
     QString path = QApplication::applicationDirPath() +
-                    "/../share/tomviz/Templates/" + fileName + ".tvsm";
+                    "/../share/tomviz/templates/" + fileName + ".tvsm";
     return SaveLoadTemplateReaction::saveTemplate(path);
   }
   return false;
@@ -49,7 +49,7 @@ bool SaveLoadTemplateReaction::saveTemplate()
 bool SaveLoadTemplateReaction::loadTemplate(const QString& fileName)
 {
   QString path = QApplication::applicationDirPath() +
-                 "/../share/tomviz/Templates/" + fileName + ".tvsm";
+                 "/../share/tomviz/templates/" + fileName + ".tvsm";
   QFile openFile(path);
   openFile.open(QIODevice::ReadOnly);
   QJsonParseError error;

@@ -519,12 +519,12 @@ set(template_files
 )
 
 # Install templates
-file(MAKE_DIRECTORY "${tomviz_BINARY_DIR}/share/tomviz/Templates")
+file(MAKE_DIRECTORY "${tomviz_BINARY_DIR}/share/tomviz/templates")
 foreach(file ${template_files})
   list(APPEND SOURCES "templates/${file}")
   execute_process(COMMAND ${CMAKE_COMMAND} -E ${script_cmd}
     "${tomviz_SOURCE_DIR}/tomviz/templates/${file}"
-    "${tomviz_BINARY_DIR}/share/tomviz/Templates/${file}")
+    "${tomviz_BINARY_DIR}/share/tomviz/templates/${file}")
   install(FILES "templates/${file}"
     DESTINATION "${tomviz_data_install_dir}"
     COMPONENT runtime)
