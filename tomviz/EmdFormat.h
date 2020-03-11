@@ -42,8 +42,9 @@ private:
                  vtkImageData* image);
 
   // Load a data source from data in an EMD file
+  // If the active data source is found, it is set to @param active
   bool loadDataSource(h5::H5ReadWrite& reader, const QJsonObject& dsObject,
-                      Operator* parent = nullptr);
+                      DataSource** active, Operator* parent = nullptr);
 };
 } // namespace tomviz
 

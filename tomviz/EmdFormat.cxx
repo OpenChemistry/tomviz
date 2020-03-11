@@ -416,15 +416,25 @@ bool EmdFormat::readFullState(const std::string& fileName)
   bool prev = ModuleManager::instance().executePipelinesOnLoad();
   ModuleManager::instance().executePipelinesOnLoad(false);
 
+  // Get the active data source
+  DataSource* active = nullptr;
+
   // Now load in the data sources
   if (state["dataSources"].isArray()) {
     auto dataSources = state["dataSources"].toArray();
     foreach (auto ds, dataSources) {
-      loadDataSource(reader, ds.toObject());
+      loadDataSource(reader, ds.toObject(), &active);
     }
   }
-
   ModuleManager::instance().executePipelinesOnLoad(prev);
+
+  if (active) {
+    // Set the active data source if one was flagged as active
+    // We have to use "setSelectedDataSource" instead of
+    // "setActiveDataSource" or else the Histogram color map won't
+    // match.
+    ActiveObjects::instance().setSelectedDataSource(active);
+  }
 
   // Loading the modules most likely modified the view. Restore
   // the view to the state given in the state file.
@@ -435,6 +445,7 @@ bool EmdFormat::readFullState(const std::string& fileName)
 
 bool EmdFormat::loadDataSource(h5::H5ReadWrite& reader,
                                const QJsonObject& dsObject,
+                               DataSource** active,
                                Operator* parent)
 {
   auto id = dsObject.value("id").toString().toStdString();
@@ -475,7 +486,7 @@ bool EmdFormat::loadDataSource(h5::H5ReadWrite& reader,
 
   // Set the active data source
   if (dsObject.value("active").toBool()) {
-    ActiveObjects::instance().setActiveDataSource(dataSource);
+    *active = dataSource;
   }
 
   // If there are operators, load child data sources too
@@ -487,7 +498,7 @@ bool EmdFormat::loadDataSource(h5::H5ReadWrite& reader,
       if (op["dataSources"].isArray()) {
         auto sources = op["dataSources"].toArray();
         foreach (auto s, sources) {
-          loadDataSource(reader, s.toObject(), opPtrs[i]);
+          loadDataSource(reader, s.toObject(), active, opPtrs[i]);
         }
       }
     }
