@@ -413,6 +413,7 @@ QString DataSource::id() const
 QJsonObject DataSource::serialize() const
 {
   QJsonObject json = m_json;
+  json["label"] = label();
 
   // If the data was subsampled, save the subsampling settings
   if (wasSubsampled()) {
@@ -484,6 +485,8 @@ QJsonObject DataSource::serialize() const
 
 bool DataSource::deserialize(const QJsonObject& state)
 {
+  setLabel(state["label"].toString());
+
   if (state.contains("colorOpacityMap")) {
     tomviz::deserialize(colorMap(), state["colorOpacityMap"].toObject());
   }
