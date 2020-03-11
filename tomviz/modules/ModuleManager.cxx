@@ -881,7 +881,21 @@ bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir,
   d->dir = QDir();
   m_stateObject = QJsonObject();
 
-  // Now to restore all of our cameras...
+  // Restore the views to their state before the modules were added
+  setViews(views);
+
+  d->LastStateLoadSuccess = true;
+
+  if (d->RemaningPipelinesToWaitFor == 0) {
+    emit stateDoneLoading();
+  }
+  return true;
+}
+
+void ModuleManager::setViews(const QJsonArray& views)
+{
+  // This sets all views according to their settings in the view proxy.
+  // It should be called after the views have been deserialized.
   for (int i = 0; i < views.size(); ++i) {
     auto view = views[i].toObject();
     auto viewProxy =
@@ -940,13 +954,6 @@ bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir,
   // force the view menu to update its state based on the settings we have
   // restored to the view
   ActiveObjects::instance().viewChanged(ActiveObjects::instance().activeView());
-
-  d->LastStateLoadSuccess = true;
-
-  if (d->RemaningPipelinesToWaitFor == 0) {
-    emit stateDoneLoading();
-  }
-  return true;
 }
 
 bool ModuleManager::lastLoadStateSucceeded()

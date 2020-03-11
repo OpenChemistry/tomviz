@@ -74,6 +74,10 @@ public:
   bool deserialize(const QJsonObject& doc, const QDir& stateDir,
                    bool loadDataSources = true);
 
+  /// Set the views from the provided state.
+  /// Usually, this should be done after ModuleManager::deserialize().
+  void setViews(const QJsonArray& views);
+
   /// Test if any data source has running operators
   bool hasRunningOperators();
 
