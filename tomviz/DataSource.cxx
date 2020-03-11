@@ -480,6 +480,11 @@ QJsonObject DataSource::serialize() const
 
   json["id"] = id();
 
+  if (this == ActiveObjects::instance().activeDataSource()) {
+    // Label itself as the active data source
+    json["active"] = true;
+  }
+
   return json;
 }
 

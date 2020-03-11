@@ -510,12 +510,7 @@ bool ModuleManager::serialize(QJsonObject& doc, const QDir& stateDir,
   QJsonArray jDataSources;
   foreach (DataSource* ds, d->DataSources) {
     auto jDataSource = ds->serialize();
-    if (ds == ActiveObjects::instance().activeDataSource()) {
-      jDataSource["active"] = true;
-    }
-
     d->relativeFilePaths(ds, stateDir, jDataSource);
-
     jDataSources.append(jDataSource);
   }
   doc["dataSources"] = jDataSources;
