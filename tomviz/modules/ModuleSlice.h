@@ -6,16 +6,19 @@
 
 #include "Module.h"
 
+#include <vtkNew.h>
 #include <vtkSmartPointer.h>
 
 class QCheckBox;
 class QComboBox;
 class QSpinBox;
 class pqLineEdit;
+class vtkActiveScalarsProducer;
 class vtkNonOrthoImagePlaneWidget;
 
 namespace tomviz {
 
+class ScalarsComboBox;
 class DoubleSliderWidget;
 class IntSliderWidget;
 
@@ -80,6 +83,8 @@ private slots:
 
   void dataUpdated();
 
+  void onScalarArrayChanged();
+
   void setMapScalars(bool b);
   void setShowArrow(bool b);
 
@@ -112,6 +117,7 @@ private:
   QPointer<QComboBox> m_sliceCombo;
   QPointer<IntSliderWidget> m_sliceSlider;
   QPointer<QSpinBox> m_thicknessSpin;
+  QPointer<ScalarsComboBox> m_scalarsCombo;
   Direction m_direction = Direction::XY;
   int m_slice = 0;
   int m_sliceThickness = 1;
@@ -127,6 +133,8 @@ private:
 
   QPointer<pqLineEdit> m_pointInputs[3];
   QPointer<pqLineEdit> m_normalInputs[3];
+
+  vtkNew<vtkActiveScalarsProducer> m_producer;
 };
 } // namespace tomviz
 
