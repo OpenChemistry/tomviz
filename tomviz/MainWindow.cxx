@@ -720,18 +720,9 @@ void MainWindow::importCustomTransform()
                                .arg(QDir::separator())
                                .arg(fileBaseName);
 
-    // Ensure the tomviz directory exists
-    QStringList locations =
-      QStandardPaths::standardLocations(QStandardPaths::HomeLocation);
-    QString home = locations[0];
-    QString path = QString("%1%2tomviz").arg(home).arg(QDir::separator());
-    QDir dir(path);
-    // dir.mkpath() returns true if the path already exists or if it was
-    // successfully created.
-    if (!dir.mkpath(path)) {
-      QMessageBox::warning(
-        this, "Could not create tomviz directory",
-        QString("Could not create tomviz directory '%1'.").arg(path));
+    // Get the path to Tomviz
+    QString path = tomviz::getApplicationPath();
+    if (path.isEmpty()) {
       return;
     }
 

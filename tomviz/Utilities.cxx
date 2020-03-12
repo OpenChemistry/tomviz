@@ -1161,4 +1161,22 @@ double getVoxelValue(vtkImageData* data, const vtkVector3d& point,
   return scalar;
 }
 
+QString getApplicationPath() {
+  // Ensure the tomviz directory exists
+  QStringList locations =
+      QStandardPaths::standardLocations(QStandardPaths::HomeLocation);
+  QString home = locations[0];
+  QString path = QString("%1%2tomviz").arg(home).arg(QDir::separator());
+  QDir dir(path);
+  // dir.mkpath() returns true if the path already exists or if it was
+  // successfully created.
+  if (!dir.mkpath(path)) {
+    QMessageBox::warning(
+      tomviz::mainWidget(), "Could not create tomviz directory",
+      QString("Could not create tomviz directory '%1'.").arg(path));
+    return QString();
+  }
+  return path;
+}
+
 } // namespace tomviz

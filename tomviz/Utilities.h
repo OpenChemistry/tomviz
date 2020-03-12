@@ -178,6 +178,9 @@ QString readInPythonScript(const QString& scriptName);
 // of the built-in tomviz python operator scripts.
 QString readInJSONDescription(const QString& scriptName);
 
+// Get the path for the Tomviz directory
+QString getApplicationPath();
+
 // Create a camera orbit animation for the given renderview around the given
 // object
 void createCameraOrbit(vtkSMSourceProxy* data,
