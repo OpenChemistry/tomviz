@@ -63,7 +63,6 @@ bool SaveLoadTemplateReaction::loadTemplate(const QString& fileName)
   // Get the parent data source, as well as the active (i.e. data and output)
   auto activeParent = ActiveObjects::instance().activeParentDataSource();
   auto activeData = ActiveObjects::instance().activeDataSource();
-  ModuleManager::instance().removeAllModules(activeData);
   
   // Read in the template file and apply it to the current data source
   activeParent->deserialize(doc.object());
