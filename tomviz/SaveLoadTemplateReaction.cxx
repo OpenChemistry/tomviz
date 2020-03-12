@@ -51,7 +51,11 @@ bool SaveLoadTemplateReaction::loadTemplate(const QString& fileName)
   QString path = QApplication::applicationDirPath() +
                  "/../share/tomviz/templates/" + fileName + ".tvsm";
   QFile openFile(path);
-  openFile.open(QIODevice::ReadOnly);
+  if (!openFile.open(QIODevice::ReadOnly)) {
+    qWarning("Could not open template.");
+    return false;
+  }
+
   QJsonParseError error;
   auto contents = openFile.readAll();
   auto doc = QJsonDocument::fromJson(contents, &error);
