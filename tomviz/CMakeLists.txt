@@ -593,7 +593,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 configure_file(tomvizConfig.h.in tomvizConfig.h @ONLY)
 configure_file(tomvizPythonConfig.h.in tomvizPythonConfig.h @ONLY)
 
-add_library(tomvizlib ${SOURCES} ${accel_srcs})
+add_library(tomvizlib SHARED ${SOURCES} ${accel_srcs})
 set_target_properties(tomvizlib PROPERTIES OUTPUT_NAME tomviz)
 
 set_property(TARGET tomvizlib PROPERTY POSITION_INDEPENDENT_CODE TRUE)
