@@ -33,6 +33,9 @@ public:
   /** Closes the file and destroys the H5ReadWrite */
   ~H5ReadWrite();
 
+  /** Get the currently opened file */
+  std::string fileName() const;
+
   /** Explicitly close the file if one is open */
   void close();
 
