@@ -77,6 +77,9 @@ private slots:
 
   void autosave();
 
+  /// Save the state file to its most recent location
+  void saveState();
+
   /// raise output widget on errors.
   void handleMessage(const QString&, int);
 
@@ -92,6 +95,8 @@ private:
   void registerCustomOperators(std::vector<OperatorDescription> operators);
   static std::vector<OperatorDescription> initPython();
   void syncPythonToApp();
+  void updateSaveStateEnableState();
+  QString mostRecentStateFile() const;
 
   QScopedPointer<Ui::MainWindow> m_ui;
   QMenu* m_customTransformsMenu = nullptr;

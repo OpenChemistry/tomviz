@@ -103,6 +103,10 @@ public:
   bool executePipelinesOnLoad() const;
   DataSource* loadDataSource(QJsonObject& ds);
 
+  /// Used to keep track of the most recent state file
+  void setMostRecentStateFile(const QString& s);
+  QString mostRecentStateFile() const { return m_mostRecentStateFile; }
+
 public slots:
   void addModule(Module*);
 
@@ -165,20 +169,23 @@ signals:
   void clipChanged(vtkPlane* plane, bool newFilter);
   void enablePythonConsole(bool enable);
 
-   void visibilityChanged(bool);
+  void mostRecentStateFileChanged(const QString& s);
 
-   void mouseOverVoxel(const vtkVector3i& ijk, double v);
+  void visibilityChanged(bool);
 
- private:
-   Q_DISABLE_COPY(ModuleManager)
-   ModuleManager(QObject* parent = nullptr);
-   ~ModuleManager();
+  void mouseOverVoxel(const vtkVector3i& ijk, double v);
 
-   class MMInternals;
-   QScopedPointer<MMInternals> d;
+private:
+  Q_DISABLE_COPY(ModuleManager)
+  ModuleManager(QObject* parent = nullptr);
+  ~ModuleManager();
 
-   QJsonObject m_stateObject;
-   bool m_loadDataSources = true;
+  class MMInternals;
+  QScopedPointer<MMInternals> d;
+
+  QString m_mostRecentStateFile = "";
+  QJsonObject m_stateObject;
+  bool m_loadDataSources = true;
 };
 } // namespace tomviz
 

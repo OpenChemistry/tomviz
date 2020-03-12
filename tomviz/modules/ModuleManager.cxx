@@ -1185,4 +1185,10 @@ DataSource* ModuleManager::loadDataSource(QJsonObject& dsObject)
   return dataSource;
 }
 
+void ModuleManager::setMostRecentStateFile(const QString& s)
+{
+  m_mostRecentStateFile = s;
+  emit mostRecentStateFileChanged(m_mostRecentStateFile);
+}
+
 } // namespace tomviz

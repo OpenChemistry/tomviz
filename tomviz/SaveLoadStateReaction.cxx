@@ -64,7 +64,13 @@ bool SaveLoadStateReaction::saveState()
     } else if (format == tvsmFilter && !filename.endsWith(".tvsm")) {
       filename = QString("%1%2").arg(filename, ".tvsm");
     }
-    return SaveLoadStateReaction::saveState(filename);
+    bool success = SaveLoadStateReaction::saveState(filename);
+    if (success) {
+      // Only set the most recent state file if the user picked a file
+      // to save via a file dialog, and the save was successful.
+      ModuleManager::instance().setMostRecentStateFile(filename);
+    }
+    return success;
   }
   return false;
 }
@@ -98,11 +104,33 @@ bool SaveLoadStateReaction::loadState(const QString& filename)
     }
   }
 
+  bool success = false;
   if (filename.endsWith(".tvh5")) {
-    // It's the full state file format. Read it in.
-    return EmdFormat().readFullState(filename.toStdString());
+    success = loadTvh5(filename);
+  } else if (filename.endsWith(".tvsm")) {
+    success = loadTvsm(filename);
+  } else {
+    qCritical() << "Unknown state format for file: " << filename;
+    return false;
   }
 
+  if (success) {
+    RecentFilesMenu::pushStateFile(filename);
+    // Set the most recent state file if we successfully loaded a
+    // state, whether it was done programmatically or via file dialog
+    ModuleManager::instance().setMostRecentStateFile(filename);
+  }
+
+  return success;
+}
+
+bool SaveLoadStateReaction::loadTvh5(const QString& filename)
+{
+  return EmdFormat().readFullState(filename.toStdString());
+}
+
+bool SaveLoadStateReaction::loadTvsm(const QString& filename)
+{
   QFile openFile(filename);
   if (!openFile.open(QIODevice::ReadOnly)) {
     qWarning("Couldn't open state file.");
@@ -133,10 +161,8 @@ bool SaveLoadStateReaction::loadState(const QString& filename)
     // and execed.  Otherwise we miss singals fired from within deserialize.
     // So put it on a timer.
     QTimer::singleShot(0, [doc, filename]() {
-      if (ModuleManager::instance().deserialize(doc.object(),
-                                                QFileInfo(filename).dir())) {
-        RecentFilesMenu::pushStateFile(filename);
-      }
+      ModuleManager::instance().deserialize(doc.object(),
+                                            QFileInfo(filename).dir());
     });
     QDialog dialog(tomviz::mainWidget(), Qt::WindowStaysOnTopHint);
     QHBoxLayout* layout = new QHBoxLayout();
