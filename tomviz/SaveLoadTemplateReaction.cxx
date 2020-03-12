@@ -92,7 +92,6 @@ bool SaveLoadTemplateReaction::loadTemplate(const QString& fileName)
   bool noModules = ModuleManager::instance().findModulesGeneric(activeData, nullptr).isEmpty();
   if (noModules && activeData != activeParent) {
     activeParent->pipeline()->addDefaultModules(activeData);
-    std::cout << "Default mods problem" << std::endl;
   }
   
   return true;
@@ -120,10 +119,8 @@ bool SaveLoadTemplateReaction::saveTemplate(const QString& fileName)
     foreach (QJsonValue val, state["operators"].toArray()) {
       QJsonObject temp;
       foreach (QString key, val.toObject().keys()) {
-        qDebug() << "Key: " << key << endl;
         // Save the operators
         if (key != QString("dataSources")) {
-          qDebug() << "Not dataSources: " << key << endl;
           temp.insert(key, val.toObject().value(key));
         } else {
           // If there are modules loaded on the child data source, save those as well
