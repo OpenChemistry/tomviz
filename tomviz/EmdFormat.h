@@ -27,6 +27,9 @@ public:
   static bool write(const std::string& fileName, vtkImageData* image);
 
   // Read EMD data from a specified node in the HDF5 file
+  static bool readNode(const std::string& fileName, const std::string& path,
+                       vtkImageData* image,
+                       const QVariantMap& options = QVariantMap());
   static bool readNode(h5::H5ReadWrite& reader, const std::string& path,
                        vtkImageData* image,
                        const QVariantMap& options = QVariantMap());

@@ -81,6 +81,17 @@ bool EmdFormat::read(const std::string& fileName, vtkImageData* image,
   return readNode(reader, emdNode, image, options);
 }
 
+bool EmdFormat::readNode(const std::string& fileName,
+                         const std::string& emdNode, vtkImageData* image,
+                         const QVariantMap& options)
+{
+  using h5::H5ReadWrite;
+  H5ReadWrite::OpenMode mode = H5ReadWrite::OpenMode::ReadOnly;
+  H5ReadWrite reader(fileName.c_str(), mode);
+
+  return readNode(reader, emdNode, image, options);
+}
+
 bool EmdFormat::readNode(h5::H5ReadWrite& reader, const std::string& emdNode,
                          vtkImageData* image, const QVariantMap& options)
 {
