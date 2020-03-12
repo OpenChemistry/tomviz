@@ -107,9 +107,9 @@ find_package(ITK 4.9)
 find_package(Python3 COMPONENTS Interpreter Development)
 
 # Just add these to the cache so we can check them more easily...
-set(PYTHON_INCLUDE_DIR ${PYTHON3_INCLUDE_DIR} CACHE PATH "Tomviz")
-set(PYTHON_LIBRARY ${PYTHON3_LIBRARY} CACHE PATH "Tomviz")
-set(PYTHON_EXECUTABLE ${PYTHON3_EXECUTABLE} CACHE PATH "Tomviz")
+set(PYTHON_INCLUDE_DIR ${Python3_INCLUDE_DIR} CACHE PATH "Tomviz")
+set(PYTHON_LIBRARY ${Python3_LIBRARY} CACHE PATH "Tomviz")
+set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE} CACHE PATH "Tomviz")
 
 set(PYBIND11_CPP_STANDARD "-std=c++11" CACHE STRING "")
 add_subdirectory(${PROJECT_SOURCE_DIR}/thirdparty/pybind11)
