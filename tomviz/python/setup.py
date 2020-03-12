@@ -21,7 +21,7 @@ setup(
     packages=find_packages(),
     install_requires=['tqdm', 'h5py', 'numpy==1.16.4', 'click', 'scipy'],
     extras_require={
-        'interactive': ['jsonpatch', 'marshmallow'],
+        'interactive': ['jsonpatch@https://github.com/cjh1/python-json-patch/archive/tomviz.zip', 'marshmallow'],
         'itk': ['itk'],
         'pyfftw': ['pyfftw']
     },
