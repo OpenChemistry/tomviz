@@ -531,6 +531,7 @@ bool ModuleSlice::deserialize(const QJsonObject& json)
         m_interpolateCheckBox->setChecked(m_interpolate);
       }
     }
+    onScalarArrayChanged();
     onPlaneChanged();
     return true;
   }
