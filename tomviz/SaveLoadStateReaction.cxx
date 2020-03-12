@@ -3,9 +3,9 @@
 
 #include "SaveLoadStateReaction.h"
 
-#include "EmdFormat.h"
 #include "ModuleManager.h"
 #include "RecentFilesMenu.h"
+#include "Tvh5Format.h"
 #include "Utilities.h"
 
 #include <pqSettings.h>
@@ -126,7 +126,7 @@ bool SaveLoadStateReaction::loadState(const QString& filename)
 
 bool SaveLoadStateReaction::loadTvh5(const QString& filename)
 {
-  return EmdFormat().readFullState(filename.toStdString());
+  return Tvh5Format::read(filename.toStdString());
 }
 
 bool SaveLoadStateReaction::loadTvsm(const QString& filename)
@@ -217,7 +217,7 @@ bool SaveLoadStateReaction::saveTvsm(const QString& fileName, bool interactive)
 
 bool SaveLoadStateReaction::saveTvh5(const QString& fileName)
 {
-  return EmdFormat().writeFullState(fileName.toStdString());
+  return Tvh5Format::write(fileName.toStdString());
 }
 
 QString SaveLoadStateReaction::extractLegacyStateFileVersion(

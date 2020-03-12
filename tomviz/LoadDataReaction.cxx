@@ -197,7 +197,6 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
   if (info.suffix().toLower() == "emd") {
     // Load the file using our simple EMD class.
     loadWithParaview = false;
-    EmdFormat emdFile;
     QVariantMap emdOptions;
     vtkNew<vtkImageData> imageData;
     if (options.contains("subsampleSettings")) {
@@ -208,7 +207,7 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
         options["subsampleSettings"].toObject()["volumeBounds"].toVariant();
       emdOptions["askForSubsample"] = false;
     }
-    if (emdFile.read(fileName.toLatin1().data(), imageData, emdOptions)) {
+    if (EmdFormat::read(fileName.toLatin1().data(), imageData, emdOptions)) {
       DataSource::DataSourceType type = DataSource::hasTiltAngles(imageData)
                                           ? DataSource::TiltSeries
                                           : DataSource::Volume;
