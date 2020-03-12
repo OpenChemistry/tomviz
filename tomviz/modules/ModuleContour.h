@@ -9,8 +9,9 @@
 #include <vtkNew.h>
 
 class vtkActor;
-class vtkPolyDataMapper;
+class vtkDataSetMapper;
 class vtkFlyingEdges3D;
+class vtkProbeFilter;
 class vtkProperty;
 class vtkPVRenderView;
 
@@ -57,16 +58,23 @@ public:
   double opacity() const;
   QColor color() const;
   bool useSolidColor() const;
+  bool colorByArray() const;
+  QString colorByArrayName() const;
 
 protected:
   void updatePanel();
   void updateColorMap() override;
+  void updateColorArray();
+  void updateColorArrayDataSet();
+  void clearColorArrayDataSet();
   void updateIsoRange();
+  void updateColorByArrayOptions();
 
   vtkNew<vtkActor> m_actor;
-  vtkNew<vtkFlyingEdges3D> m_flyingEdges;
-  vtkNew<vtkPolyDataMapper> m_mapper;
+  vtkNew<vtkDataSetMapper> m_mapper;
   vtkNew<vtkProperty> m_property;
+  vtkNew<vtkFlyingEdges3D> m_flyingEdges;
+  vtkNew<vtkProbeFilter> m_probeFilter;
   vtkWeakPointer<vtkPVRenderView> m_view;
 
   class Private;
@@ -78,6 +86,7 @@ protected:
 
 private slots:
   void onActiveScalarsChanged();
+  void onDataPropertiesChanged();
   void onColorMapDataToggled(const bool state);
   void onAmbientChanged(const double value);
   void onDiffuseChanged(const double value);
@@ -88,6 +97,8 @@ private slots:
   void onOpacityChanged(const double value);
   void onColorChanged(const QColor& color);
   void onUseSolidColorToggled(const bool state);
+  void onColorByArrayToggled(const bool state);
+  void onColorByArrayNameChanged(const QString& name);
 
 private:
   Q_DISABLE_COPY(ModuleContour)

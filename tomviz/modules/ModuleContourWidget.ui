@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>266</width>
-    <height>191</height>
+    <width>246</width>
+    <height>192</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -62,6 +62,24 @@
     </layout>
    </item>
    <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_3">
+     <item>
+      <widget class="QCheckBox" name="cbColorByArray">
+       <property name="text">
+        <string>Color by Array</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="comboColorByArray">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
     <layout class="QFormLayout" name="formLayout">
      <item row="1" column="0">
       <widget class="QLabel" name="label_2">
@@ -112,5 +130,54 @@
   </customwidget>
  </customwidgets>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>cbColorByArray</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>comboColorByArray</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>71</x>
+     <y>84</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>187</x>
+     <y>84</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cbColorByArray</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>cbSelectColor</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>71</x>
+     <y>84</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>63</x>
+     <y>52</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cbColorByArray</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>colorChooser</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>71</x>
+     <y>84</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>122</x>
+     <y>52</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

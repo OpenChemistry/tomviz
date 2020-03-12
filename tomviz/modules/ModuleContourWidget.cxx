@@ -57,6 +57,10 @@ ModuleContourWidget::ModuleContourWidget(QWidget* parent_)
           &ModuleContourWidget::colorChanged);
   connect(m_ui->cbSelectColor, &QCheckBox::toggled, this,
           &ModuleContourWidget::useSolidColorToggled);
+  connect(m_ui->cbColorByArray, &QCheckBox::toggled, this,
+          &ModuleContourWidget::colorByArrayToggled);
+  connect(m_ui->comboColorByArray, &QComboBox::currentTextChanged, this,
+          &ModuleContourWidget::colorByArrayNameChanged);
 }
 
 ModuleContourWidget::~ModuleContourWidget() = default;
@@ -65,6 +69,12 @@ void ModuleContourWidget::setIsoRange(double range[2])
 {
   m_ui->sliValue->setMinimum(range[0]);
   m_ui->sliValue->setMaximum(range[1]);
+}
+
+void ModuleContourWidget::setColorByArrayOptions(const QStringList& options)
+{
+  m_ui->comboColorByArray->clear();
+  m_ui->comboColorByArray->addItems(options);
 }
 
 void ModuleContourWidget::setColorMapData(const bool state)
@@ -115,6 +125,16 @@ void ModuleContourWidget::setColor(const QColor& color)
 void ModuleContourWidget::setUseSolidColor(const bool state)
 {
   m_ui->cbSelectColor->setChecked(state);
+}
+
+void ModuleContourWidget::setColorByArray(const bool state)
+{
+  m_ui->cbColorByArray->setChecked(state);
+}
+
+void ModuleContourWidget::setColorByArrayName(const QString& name)
+{
+  m_ui->comboColorByArray->setCurrentText(name);
 }
 
 } // namespace tomviz
