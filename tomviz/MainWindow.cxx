@@ -1005,12 +1005,11 @@ void MainWindow::findPipelineTemplates() {
   m_pipelineTemplates->clear();
 
   QDir dir = QApplication::applicationDirPath() + "/../share/tomviz/templates/";
-  foreach (QString file, dir.entryList()) {
-    QString fileName = file.split(".")[0];
-    QString menuName = file.split(".")[0].replace("_", " ");
-    if (!fileName.isEmpty()) {
+  foreach (QFileInfo file, dir.entryInfoList()) {
+    QString menuName = file.completeBaseName().replace("_", " ");
+    if (file.isFile()) {
       QAction* action = m_pipelineTemplates->addAction(menuName);
-      new SaveLoadTemplateReaction(action, true, fileName);
+      new SaveLoadTemplateReaction(action, true, file.completeBaseName());
       if (!ModuleManager::instance().hasDataSources()) {
         action->setEnabled(false);
       }
