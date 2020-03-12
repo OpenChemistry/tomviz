@@ -995,17 +995,23 @@ void MainWindow::syncPythonToApp()
 void MainWindow::findPipelineTemplates() {
   m_pipelineTemplates->clear();
 
-  QDir dir = QApplication::applicationDirPath() + "/../share/tomviz/templates/";
-  foreach (QFileInfo file, dir.entryInfoList()) {
-    QString menuName = file.completeBaseName().replace("_", " ");
-    if (file.isFile()) {
-      QAction* action = m_pipelineTemplates->addAction(menuName);
-      new SaveLoadTemplateReaction(action, true, file.completeBaseName());
-      if (!ModuleManager::instance().hasDataSources()) {
-        action->setEnabled(false);
+  // Look in 'share' directory for default templates
+  QDir provided (QApplication::applicationDirPath() + "/../share/tomviz/templates/");
+  // Look for user created templates
+  QDir created (tomviz::getApplicationPath() + "/templates");
+
+  QList<QDir> locations = { provided, created };
+  foreach (QDir dir, locations) {  
+    foreach (QFileInfo file, dir.entryInfoList()) {
+      QString menuName = file.completeBaseName().replace("_", " ");
+      if (file.isFile()) {
+        QAction* action = m_pipelineTemplates->addAction(menuName);
+        new SaveLoadTemplateReaction(action, true, file.completeBaseName());
+        if (!ModuleManager::instance().hasDataSources()) {
+          action->setEnabled(false);
+        }
       }
-    }
-  }
+    }}
   m_pipelineTemplates->addSeparator();
   QAction* actionSaveTemplate = m_pipelineTemplates->addAction("Save Template");
   new SaveLoadTemplateReaction(actionSaveTemplate);

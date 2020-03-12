@@ -15,6 +15,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QMessageBox>
 #include <QString>
 
 namespace tomviz {
@@ -39,17 +40,38 @@ bool SaveLoadTemplateReaction::saveTemplate()
                                          tr("Template Name:"), QLineEdit::Normal, QString(), &ok);
   QString fileName = text.replace(" ", "_");
   if (ok && !text.isEmpty()) {
-    QString path = QApplication::applicationDirPath() +
-                    "/../share/tomviz/templates/" + fileName + ".tvsm";
-    return SaveLoadTemplateReaction::saveTemplate(path);
+    QString path;
+    // Save the template to the tomviz/templates directory if it exists
+    if (!tomviz::getApplicationPath().isEmpty()) {
+      path = tomviz::getApplicationPath() + "/templates";
+      QDir dir(path);
+      if (!dir.mkdir(path)) {
+        QMessageBox::warning(
+          tomviz::mainWidget(), "Could not create tomviz directory",
+          QString("Could not create tomviz directory '%1'.").arg(path));
+        return false;
+      }
+    }
+    QString destination =
+      QString("%1%2%3.tvsm").arg(path).arg(QDir::separator()).arg(fileName);
+    return SaveLoadTemplateReaction::saveTemplate(destination);
   }
   return false;
 }
 
 bool SaveLoadTemplateReaction::loadTemplate(const QString& fileName)
 {
-  QString path = QApplication::applicationDirPath() +
-                 "/../share/tomviz/templates/" + fileName + ".tvsm";
+  if (tomviz::getApplicationPath().isEmpty()) {
+    return false;
+  }
+
+  QString location = tomviz::getApplicationPath() + "/templates";
+  QString path = QString("%1%2%3.tvsm").arg(location).arg(QDir::separator()).arg(fileName);
+  if (!QFile(path).exists()) {
+    location = QApplication::applicationDirPath() + "/../share/tomviz/templates";
+    path = QString("%1%2%3.tvsm").arg(location).arg(QDir::separator()).arg(fileName);
+  }
+
   QFile openFile(path);
   if (!openFile.open(QIODevice::ReadOnly)) {
     qWarning("Could not open template.");
