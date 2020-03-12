@@ -279,6 +279,18 @@ void DataSource::setFileNames(const QStringList fileNames)
   m_json["reader"] = reader;
 }
 
+void DataSource::setTvh5NodePath(const QString& path)
+{
+  auto reader = m_json.value("reader").toObject();
+  reader["tvh5NodePath"] = path;
+  m_json["reader"] = reader;
+}
+
+QString DataSource::tvh5NodePath() const
+{
+  return m_json.value("reader").toObject().value("tvh5NodePath").toString();
+}
+
 QStringList DataSource::fileNames() const
 {
   auto reader = m_json.value("reader").toObject(QJsonObject());

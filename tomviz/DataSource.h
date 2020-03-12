@@ -115,6 +115,12 @@ public:
   /// Returns the list of files used to load the volume (if a stack was used).
   QStringList fileNames() const;
 
+  /// For a Tvh5 file, set the path to the node to read for this data source
+  void setTvh5NodePath(const QString& path);
+
+  /// For a Tvh5 file, get the path to the node to read for this data source
+  QString tvh5NodePath() const;
+
   /// Return true is data source is an image stack, false otherwise.
   bool isImageStack() const;
 

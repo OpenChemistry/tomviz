@@ -1140,6 +1140,9 @@ DataSource* ModuleManager::loadDataSource(QJsonObject& dsObject)
     if (reader.contains("subsampleSettings")) {
       options["subsampleSettings"] = reader["subsampleSettings"];
     }
+    if (reader.contains("tvh5NodePath")) {
+      options["tvh5NodePath"] = reader["tvh5NodePath"];
+    }
   }
 
   if (!options.contains("subsampleSettings")) {

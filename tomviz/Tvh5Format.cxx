@@ -171,8 +171,12 @@ bool Tvh5Format::loadDataSource(h5::H5ReadWrite& reader,
                                       : DataSource::Volume;
 
   auto* pipeline = parent ? parent->dataSource()->pipeline() : nullptr;
-  auto* dataSource = new DataSource(image, type, pipeline,
-                                    DataSource::PersistenceState::Transient);
+  auto* dataSource = new DataSource(image, type, pipeline);
+
+  // Save this info in case we write the data source in the future
+  dataSource->setFileName(reader.fileName().c_str());
+  dataSource->setTvh5NodePath(path.c_str());
+
   if (parent) {
     // This is a child data source. Hook it up to the operator parent.
     parent->setChildDataSource(dataSource);
