@@ -1,5 +1,8 @@
 from setuptools import setup, find_packages
 
+jsonpatch_uri \
+    = 'jsonpatch@https://github.com/cjh1/python-json-patch/archive/tomviz.zip'
+
 setup(
     name='tomviz-pipeline',
     version='0.0.1',
@@ -21,7 +24,8 @@ setup(
     packages=find_packages(),
     install_requires=['tqdm', 'h5py', 'numpy==1.16.4', 'click', 'scipy'],
     extras_require={
-        'interactive': ['jsonpatch@https://github.com/cjh1/python-json-patch/archive/tomviz.zip', 'marshmallow'],
+        'interactive': [
+            jsonpatch_uri, 'marshmallow'],
         'itk': ['itk'],
         'pyfftw': ['pyfftw']
     },
