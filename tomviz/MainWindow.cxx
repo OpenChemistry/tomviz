@@ -112,6 +112,10 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   connect(&ModuleManager::instance(), &ModuleManager::mouseOverVoxel, this,
           &MainWindow::onMouseOverVoxel);
 
+  connect(&ModuleManager::instance(),
+          &ModuleManager::mostRecentStateFileChanged, this,
+          &MainWindow::updateSaveStateEnableState);
+
   // Update back light azimuth default on view.
   connect(pqApplicationCore::instance()->getServerManagerModel(),
           &pqServerManagerModel::viewAdded, [](pqView* view) {
@@ -424,8 +428,10 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   new pqSaveAnimationReaction(m_ui->actionSaveMovie);
   new SaveWebReaction(m_ui->actionSaveWeb, this);
 
-  new SaveLoadStateReaction(m_ui->actionSaveState);
   new SaveLoadStateReaction(m_ui->actionLoadState, /*load*/ true);
+  new SaveLoadStateReaction(m_ui->actionSaveStateAs);
+  connect(m_ui->actionSaveState, &QAction::triggered, this,
+          &MainWindow::saveState);
 
   auto reaction = new ResetReaction(m_ui->actionReset);
   connect(m_ui->menu_File, &QMenu::aboutToShow, reaction,
@@ -571,7 +577,7 @@ void MainWindow::openFiles(int argc, char** argv)
   }
 
   if (info.isFile()) {
-    if (info.suffix() == "tvsm") {
+    if (info.suffix() == "tvsm" || info.suffix() == "tvh5") {
       SaveLoadStateReaction::loadState(info.canonicalFilePath());
     } else {
       LoadDataReaction::loadData(info.canonicalFilePath());
@@ -840,6 +846,85 @@ void MainWindow::onFirstWindowShow()
 void MainWindow::autosave()
 {
   SaveLoadStateReaction::saveState(getAutosaveFile(), false);
+}
+
+QString MainWindow::mostRecentStateFile() const
+{
+  return ModuleManager::instance().mostRecentStateFile();
+}
+
+void MainWindow::updateSaveStateEnableState()
+{
+  m_ui->actionSaveState->setEnabled(!mostRecentStateFile().isEmpty());
+}
+
+void MainWindow::saveState()
+{
+  QString mostRecentFile = mostRecentStateFile();
+  // Make sure there is a recent state file
+  if (mostRecentFile.isEmpty()) {
+    QString msg = "No recent state file to save to";
+    qCritical() << msg;
+    QMessageBox::critical(this, "Tomviz", msg);
+    return;
+  }
+
+  // Write to a temporary file, or directly to the recent state
+  // file if it does not exist for some reason.
+  QString writeFile = mostRecentFile;
+  if (QFile::exists(writeFile)) {
+    // This will almost certainly be true
+    // We need to keep the extension
+    QFileInfo info(writeFile);
+    QString ext = info.suffix();
+    writeFile.chop(ext.size());
+    writeFile += "tmp." + ext;
+  }
+
+  // Write the state file
+  if (!SaveLoadStateReaction::saveState(writeFile, false)) {
+    // Clean-up and return
+    if (QFile::exists(writeFile))
+      QFile::remove(writeFile);
+
+    QString msg = "Failed to save the state file";
+    qCritical() << msg;
+    QMessageBox::critical(this, "Tomviz", msg);
+    return;
+  }
+
+  if (writeFile == mostRecentFile) {
+    // We wrote directly to the state file. We are done!
+    return;
+  }
+
+  // Otherwise, move the most recent state file to back it up,
+  // then move the tmp file into its place before removing it.
+  QString oldFile = mostRecentFile;
+  QFileInfo info(mostRecentFile);
+  QString ext = info.suffix();
+  oldFile.chop(ext.size());
+  oldFile += "old." + ext;
+  if (!QFile::rename(mostRecentFile, oldFile)) {
+    QString msg = "Failed to move " + mostRecentFile + " to " + oldFile;
+    qCritical() << msg;
+    QMessageBox::critical(this, "Tomviz", msg);
+    return;
+  }
+
+  if (!QFile::rename(writeFile, mostRecentFile)) {
+    QString msg = "Failed to move " + writeFile + " to " + mostRecentFile;
+    qCritical() << msg;
+    QMessageBox::critical(this, "Tomviz", msg);
+    return;
+  }
+
+  if (!QFile::remove(oldFile)) {
+    QString msg = "Failed to remove " + oldFile;
+    qCritical() << msg;
+    QMessageBox::critical(this, "Tomviz", msg);
+    return;
+  }
 }
 
 void MainWindow::handleMessage(const QString&, int type)

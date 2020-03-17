@@ -7,27 +7,26 @@
 #include "GenericHDF5Format.h"
 
 #include <h5cpp/h5readwrite.h>
-#include <h5cpp/h5vtktypemaps.h>
 
 #include <vtkDataArray.h>
 #include <vtkImageData.h>
-#include <vtkNew.h>
 #include <vtkPointData.h>
-#include <vtkTrivialProducer.h>
-#include <vtkTypeInt8Array.h>
 
-#include <vtkSMSourceProxy.h>
-
-#include <cassert>
 #include <string>
 #include <vector>
 
 #include <iostream>
 
+using std::cerr;
+using std::cout;
+using std::endl;
+
 namespace tomviz {
 
 // Forward declarations
-static bool writeExtraScalars(h5::H5ReadWrite& writer, vtkImageData* image);
+static bool writeExtraScalars(h5::H5ReadWrite& writer,
+                              const std::string& groupPath,
+                              vtkImageData* image);
 static void readExtraScalars(h5::H5ReadWrite& reader,
                              const std::string& emdNode, vtkImageData* image);
 
@@ -74,19 +73,36 @@ bool EmdFormat::read(const std::string& fileName, vtkImageData* image,
   }
 
   std::string emdNode = firstEmdNode(reader);
-  std::string emdDataNode = emdNode + "/data";
-
   if (emdNode.length() == 0) {
     // We couldn't find a valid EMD node, exit early.
     return false;
   }
 
+  return readNode(reader, emdNode, image, options);
+}
+
+bool EmdFormat::readNode(const std::string& fileName,
+                         const std::string& emdNode, vtkImageData* image,
+                         const QVariantMap& options)
+{
+  using h5::H5ReadWrite;
+  H5ReadWrite::OpenMode mode = H5ReadWrite::OpenMode::ReadOnly;
+  H5ReadWrite reader(fileName.c_str(), mode);
+
+  return readNode(reader, emdNode, image, options);
+}
+
+bool EmdFormat::readNode(h5::H5ReadWrite& reader, const std::string& emdNode,
+                         vtkImageData* image, const QVariantMap& options)
+{
+  bool ok;
+  std::string emdDataNode = emdNode + "/data";
   // If it isn't a data set, we are done
   if (!reader.isDataSet(emdDataNode))
     return false;
 
   if (!GenericHDF5Format::readVolume(reader, emdDataNode, image, options)) {
-    std::cerr << "Failed to read the volume at " << emdDataNode << "\n";
+    cerr << "Failed to read the volume at " << emdDataNode << "\n";
     return false;
   }
 
@@ -145,10 +161,7 @@ bool EmdFormat::read(const std::string& fileName, vtkImageData* image,
 
 bool EmdFormat::write(const std::string& fileName, DataSource* source)
 {
-  // Now create the tomography data store!
-  auto t = source->producer();
-  auto image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
-  return this->write(fileName, image);
+  return write(fileName, source->imageData());
 }
 
 bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
@@ -165,8 +178,14 @@ bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
   writer.createGroup("/data");
   writer.createGroup("/data/tomography");
 
-  // Now create the emd_group_type attribute.
-  writer.setAttribute("/data/tomography", "emd_group_type", 1u);
+  return writeNode(writer, "/data/tomography", image);
+}
+
+bool EmdFormat::writeNode(h5::H5ReadWrite& writer, const std::string& path,
+                          vtkImageData* image)
+{
+  // Create the emd_group_type attribute.
+  writer.setAttribute(path, "emd_group_type", 1u);
 
   // See if we have tilt angles
   auto hasTiltAngles = DataSource::hasTiltAngles(image);
@@ -179,14 +198,13 @@ bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
     GenericHDF5Format::swapXAndZAxes(permutedImage);
   }
 
-  GenericHDF5Format::writeVolume(writer, "/data/tomography", "data",
-                                 permutedImage);
+  GenericHDF5Format::writeVolume(writer, path, "data", permutedImage);
 
   // Set a "name" attribute on the data so we can remember the
   // scalar name that the user gave it.
   std::string activeName =
     permutedImage->GetPointData()->GetScalars()->GetName();
-  writer.setAttribute("/data/tomography/data", "name", activeName.c_str());
+  writer.setAttribute(path + "/data", "name", activeName.c_str());
 
   // Use constant spacing, with zero offset, so just populate the first two.
   double spacing[3];
@@ -219,32 +237,32 @@ bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
   // Create the 3 dim sets too...
   std::vector<int> side(1);
   side[0] = imageDimDataX.size();
-  writer.writeData("/data/tomography", "dim1", side, imageDimDataX);
+  writer.writeData(path, "dim1", side, imageDimDataX);
   if (hasTiltAngles) {
-    writer.setAttribute("/data/tomography/dim1", "name", "angles");
-    writer.setAttribute("/data/tomography/dim1", "units", "[deg]");
+    writer.setAttribute(path + "/dim1", "name", "angles");
+    writer.setAttribute(path + "/dim1", "units", "[deg]");
   } else {
-    writer.setAttribute("/data/tomography/dim1", "name", "x");
-    writer.setAttribute("/data/tomography/dim1", "units", "[n_m]");
+    writer.setAttribute(path + "/dim1", "name", "x");
+    writer.setAttribute(path + "/dim1", "units", "[n_m]");
   }
 
   side[0] = imageDimDataY.size();
-  writer.writeData("/data/tomography", "dim2", side, imageDimDataY);
-  writer.setAttribute("/data/tomography/dim2", "name", "y");
-  writer.setAttribute("/data/tomography/dim2", "units", "[n_m]");
+  writer.writeData(path, "dim2", side, imageDimDataY);
+  writer.setAttribute(path + "/dim2", "name", "y");
+  writer.setAttribute(path + "/dim2", "units", "[n_m]");
 
   side[0] = imageDimDataZ.size();
-  writer.writeData("/data/tomography", "dim3", side, imageDimDataZ);
+  writer.writeData(path, "dim3", side, imageDimDataZ);
   if (hasTiltAngles) {
-    writer.setAttribute("/data/tomography/dim3", "name", "x");
-    writer.setAttribute("/data/tomography/dim3", "units", "[n_m]");
+    writer.setAttribute(path + "/dim3", "name", "x");
+    writer.setAttribute(path + "/dim3", "units", "[n_m]");
   } else {
-    writer.setAttribute("/data/tomography/dim3", "name", "z");
-    writer.setAttribute("/data/tomography/dim3", "units", "[n_m]");
+    writer.setAttribute(path + "/dim3", "name", "z");
+    writer.setAttribute(path + "/dim3", "units", "[n_m]");
   }
 
   // Write any extra scalars we might have
-  writeExtraScalars(writer, permutedImage);
+  writeExtraScalars(writer, path, permutedImage);
 
   return true;
 }
@@ -273,9 +291,11 @@ static void readExtraScalars(h5::H5ReadWrite& reader,
   }
 }
 
-static bool writeExtraScalars(h5::H5ReadWrite& writer, vtkImageData* image)
+static bool writeExtraScalars(h5::H5ReadWrite& writer,
+                              const std::string& groupPath,
+                              vtkImageData* image)
 {
-  std::string path = "/data/tomography/tomviz_scalars";
+  std::string path = groupPath + "/tomviz_scalars";
   writer.createGroup(path);
 
   vtkPointData* pointData = image->GetPointData();
@@ -289,8 +309,7 @@ static bool writeExtraScalars(h5::H5ReadWrite& writer, vtkImageData* image)
     auto arrayName = pointData->GetArrayName(i);
     if (arrayName == activeName) {
       // Make a soft link to the one we have already written
-      writer.createSoftLink("/data/tomography/data",
-                            path + "/" + arrayName);
+      writer.createSoftLink(groupPath + "/data", path + "/" + arrayName);
       continue;
     }
 

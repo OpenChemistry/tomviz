@@ -189,9 +189,8 @@ bool ExportDataReaction::exportData(const QString& filename)
 
   QFileInfo info(filename);
   if (info.suffix() == "emd") {
-    EmdFormat writer;
     auto image = vtkImageData::SafeDownCast(data);
-    if (!image || !writer.write(filename.toLatin1().data(), image)) {
+    if (!image || !EmdFormat::write(filename.toLatin1().data(), image)) {
       qCritical() << "Failed to write out data.";
       return false;
     } else {

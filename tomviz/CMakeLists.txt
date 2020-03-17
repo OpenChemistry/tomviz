@@ -187,6 +187,8 @@ set(SOURCES
   TomographyTiltSeries.cxx
   TransposeDataReaction.h
   TransposeDataReaction.cxx
+  Tvh5Format.cxx
+  Tvh5Format.h
   Utilities.cxx
   Utilities.h
   Variant.cxx

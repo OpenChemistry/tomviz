@@ -190,6 +190,27 @@ bool ModuleManager::hasRunningOperators()
   return false;
 }
 
+QList<DataSource*> ModuleManager::dataSources()
+{
+  QList<DataSource*> ret;
+  std::copy(d->DataSources.begin(), d->DataSources.end(),
+            std::back_inserter(ret));
+  return ret;
+}
+
+QList<DataSource*> ModuleManager::childDataSources()
+{
+  QList<DataSource*> ret;
+  std::copy(d->ChildDataSources.begin(), d->ChildDataSources.end(),
+            std::back_inserter(ret));
+  return ret;
+}
+
+QList<DataSource*> ModuleManager::allDataSources()
+{
+  return dataSources() + childDataSources();
+}
+
 void ModuleManager::addDataSource(DataSource* dataSource)
 {
   if (dataSource && !d->DataSources.contains(dataSource)) {
@@ -489,12 +510,7 @@ bool ModuleManager::serialize(QJsonObject& doc, const QDir& stateDir,
   QJsonArray jDataSources;
   foreach (DataSource* ds, d->DataSources) {
     auto jDataSource = ds->serialize();
-    if (ds == ActiveObjects::instance().activeDataSource()) {
-      jDataSource["active"] = true;
-    }
-
     d->relativeFilePaths(ds, stateDir, jDataSource);
-
     jDataSources.append(jDataSource);
   }
   doc["dataSources"] = jDataSources;
@@ -709,7 +725,8 @@ void createXmlLayout(pugi::xml_node& n, QJsonArray arr)
   }
 }
 
-bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir)
+bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir,
+                                bool loadDataSources)
 {
   // Get back to a known state.
   reset();
@@ -832,6 +849,7 @@ bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir)
 
   d->dir = stateDir;
   m_stateObject = doc;
+  m_loadDataSources = loadDataSources;
   connect(pqApplicationCore::instance(),
           SIGNAL(stateLoaded(vtkPVXMLElement*, vtkSMProxyLocator*)),
           SLOT(onPVStateLoaded(vtkPVXMLElement*, vtkSMProxyLocator*)));
@@ -858,7 +876,21 @@ bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir)
   d->dir = QDir();
   m_stateObject = QJsonObject();
 
-  // Now to restore all of our cameras...
+  // Restore the views to their state before the modules were added
+  setViews(views);
+
+  d->LastStateLoadSuccess = true;
+
+  if (d->RemaningPipelinesToWaitFor == 0) {
+    emit stateDoneLoading();
+  }
+  return true;
+}
+
+void ModuleManager::setViews(const QJsonArray& views)
+{
+  // This sets all views according to their settings in the view proxy.
+  // It should be called after the views have been deserialized.
   for (int i = 0; i < views.size(); ++i) {
     auto view = views[i].toObject();
     auto viewProxy =
@@ -917,13 +949,6 @@ bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir)
   // force the view menu to update its state based on the settings we have
   // restored to the view
   ActiveObjects::instance().viewChanged(ActiveObjects::instance().activeView());
-
-  d->LastStateLoadSuccess = true;
-
-  if (d->RemaningPipelinesToWaitFor == 0) {
-    emit stateDoneLoading();
-  }
-  return true;
 }
 
 bool ModuleManager::lastLoadStateSucceeded()
@@ -950,7 +975,7 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
   }
 
   // Load up all of the data sources.
-  if (m_stateObject["dataSources"].isArray()) {
+  if (m_loadDataSources && m_stateObject["dataSources"].isArray()) {
     auto dataSources = m_stateObject["dataSources"].toArray();
     foreach (auto ds, dataSources) {
       auto dsObject = ds.toObject();
@@ -1115,6 +1140,9 @@ DataSource* ModuleManager::loadDataSource(QJsonObject& dsObject)
     if (reader.contains("subsampleSettings")) {
       options["subsampleSettings"] = reader["subsampleSettings"];
     }
+    if (reader.contains("tvh5NodePath")) {
+      options["tvh5NodePath"] = reader["tvh5NodePath"];
+    }
   }
 
   if (!options.contains("subsampleSettings")) {
@@ -1158,6 +1186,12 @@ DataSource* ModuleManager::loadDataSource(QJsonObject& dsObject)
   }
 
   return dataSource;
+}
+
+void ModuleManager::setMostRecentStateFile(const QString& s)
+{
+  m_mostRecentStateFile = s;
+  emit mostRecentStateFileChanged(m_mostRecentStateFile);
 }
 
 } // namespace tomviz

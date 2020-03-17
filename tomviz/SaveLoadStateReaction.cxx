@@ -5,6 +5,7 @@
 
 #include "ModuleManager.h"
 #include "RecentFilesMenu.h"
+#include "Tvh5Format.h"
 #include "Utilities.h"
 
 #include <pqSettings.h>
@@ -43,27 +44,45 @@ void SaveLoadStateReaction::onTriggered()
 
 bool SaveLoadStateReaction::saveState()
 {
-  QFileDialog fileDialog(tomviz::mainWidget(), tr("Save State File"), QString(),
-                         "Tomviz state files (*.tvsm);;All files (*)");
+  QString tvh5Filter = "Tomviz full state files (*.tvh5)";
+  QString tvsmFilter = "Tomvis state files (*.tvsm)";
+  QStringList filters;
+  filters << tvh5Filter
+          << tvsmFilter
+          << "All files (*)";
+
+  QFileDialog fileDialog(tomviz::mainWidget(), tr("Save State File"),
+                         QString(), filters.join(";;"));
   fileDialog.setObjectName("SaveStateDialog");
   fileDialog.setAcceptMode(QFileDialog::AcceptSave);
   fileDialog.setFileMode(QFileDialog::AnyFile);
   if (fileDialog.exec() == QDialog::Accepted) {
     QString filename = fileDialog.selectedFiles()[0];
     QString format = fileDialog.selectedNameFilter();
-    if (!filename.endsWith(".tvsm") &&
-        format == "Tomviz state files (*.tvsm)") {
+    if (format == tvh5Filter && !filename.endsWith(".tvh5")) {
+      filename = QString("%1%2").arg(filename, ".tvh5");
+    } else if (format == tvsmFilter && !filename.endsWith(".tvsm")) {
       filename = QString("%1%2").arg(filename, ".tvsm");
     }
-    return SaveLoadStateReaction::saveState(filename);
+    bool success = SaveLoadStateReaction::saveState(filename);
+    if (success) {
+      // Only set the most recent state file if the user picked a file
+      // to save via a file dialog, and the save was successful.
+      ModuleManager::instance().setMostRecentStateFile(filename);
+    }
+    return success;
   }
   return false;
 }
 
 bool SaveLoadStateReaction::loadState()
 {
-  QFileDialog fileDialog(tomviz::mainWidget(), tr("Load State File"), QString(),
-                         "Tomviz state files (*.tvsm);;All files (*)");
+  QStringList filters;
+  filters << "Tomvis state files (*.tvsm *.tvh5)"
+          << "All files (*)";
+
+  QFileDialog fileDialog(tomviz::mainWidget(), tr("Load State File"),
+                         QString(), filters.join(";;"));
   fileDialog.setObjectName("LoadStateDialog");
   fileDialog.setFileMode(QFileDialog::ExistingFile);
   if (fileDialog.exec() == QDialog::Accepted) {
@@ -84,6 +103,34 @@ bool SaveLoadStateReaction::loadState(const QString& filename)
       return false;
     }
   }
+
+  bool success = false;
+  if (filename.endsWith(".tvh5")) {
+    success = loadTvh5(filename);
+  } else if (filename.endsWith(".tvsm")) {
+    success = loadTvsm(filename);
+  } else {
+    qCritical() << "Unknown state format for file: " << filename;
+    return false;
+  }
+
+  if (success) {
+    RecentFilesMenu::pushStateFile(filename);
+    // Set the most recent state file if we successfully loaded a
+    // state, whether it was done programmatically or via file dialog
+    ModuleManager::instance().setMostRecentStateFile(filename);
+  }
+
+  return success;
+}
+
+bool SaveLoadStateReaction::loadTvh5(const QString& filename)
+{
+  return Tvh5Format::read(filename.toStdString());
+}
+
+bool SaveLoadStateReaction::loadTvsm(const QString& filename)
+{
   QFile openFile(filename);
   if (!openFile.open(QIODevice::ReadOnly)) {
     qWarning("Couldn't open state file.");
@@ -114,10 +161,8 @@ bool SaveLoadStateReaction::loadState(const QString& filename)
     // and execed.  Otherwise we miss singals fired from within deserialize.
     // So put it on a timer.
     QTimer::singleShot(0, [doc, filename]() {
-      if (ModuleManager::instance().deserialize(doc.object(),
-                                                QFileInfo(filename).dir())) {
-        RecentFilesMenu::pushStateFile(filename);
-      }
+      ModuleManager::instance().deserialize(doc.object(),
+                                            QFileInfo(filename).dir());
     });
     QDialog dialog(tomviz::mainWidget(), Qt::WindowStaysOnTopHint);
     QHBoxLayout* layout = new QHBoxLayout();
@@ -143,6 +188,18 @@ bool SaveLoadStateReaction::loadState(const QString& filename)
 
 bool SaveLoadStateReaction::saveState(const QString& fileName, bool interactive)
 {
+  if (fileName.endsWith(".tvsm")) {
+    return saveTvsm(fileName, interactive);
+  } else if (fileName.endsWith(".tvh5")) {
+    return saveTvh5(fileName);
+  }
+
+  qCritical() << "Unknown format for saveState(): " << fileName;
+  return false;
+}
+
+bool SaveLoadStateReaction::saveTvsm(const QString& fileName, bool interactive)
+{
   QFileInfo info(fileName);
   QFile saveFile(fileName);
   if (!saveFile.open(QIODevice::WriteOnly)) {
@@ -156,6 +213,11 @@ bool SaveLoadStateReaction::saveState(const QString& fileName, bool interactive)
   QJsonDocument doc(state);
   auto writeSuccess = saveFile.write(doc.toJson());
   return success && writeSuccess != -1;
+}
+
+bool SaveLoadStateReaction::saveTvh5(const QString& fileName)
+{
+  return Tvh5Format::write(fileName.toStdString());
 }
 
 QString SaveLoadStateReaction::extractLegacyStateFileVersion(

@@ -60,8 +60,8 @@ public:
 
   H5ReadWriteImpl(const string& file, OpenMode mode)
   {
-    if (mode == OpenMode::ReadOnly) {
-      if (!openFile(file))
+    if (mode == OpenMode::ReadOnly || mode == OpenMode::ReadWrite) {
+      if (!openFile(file, mode == OpenMode::ReadOnly))
         cerr << "Warning: failed to open file " << file << "\n";
     } else if (mode == OpenMode::WriteOnly) {
       if (!createFile(file))
@@ -73,9 +73,10 @@ public:
 
   ~H5ReadWriteImpl() { clear(); }
 
-  bool openFile(const string& file)
+  bool openFile(const string& file, bool readOnly = true)
   {
-    m_fileId = H5Fopen(file.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+    auto accessFlag = readOnly ? H5F_ACC_RDONLY : H5F_ACC_RDWR;
+    m_fileId = H5Fopen(file.c_str(), accessFlag, H5P_DEFAULT);
     return fileIsValid();
   }
 
@@ -450,7 +451,7 @@ public:
     m_errorHandlingIsOff = false;
   }
 
-  bool fileIsValid() { return m_fileId >= 0; }
+  bool fileIsValid() const { return m_fileId >= 0; }
 
   void clear()
   {
@@ -458,6 +459,23 @@ public:
       H5Fclose(m_fileId);
       m_fileId = H5I_INVALID_HID;
     }
+  }
+
+  string fileName() const
+  {
+    if (!fileIsValid())
+      return "";
+
+    // Have to get the size first
+    ssize_t size = H5Fget_name(m_fileId, nullptr, 0);
+    if (size <= 0)
+      return "";
+
+    char* name = new char[size + 1];
+    H5Fget_name(m_fileId, name, size + 1);
+    string ret(name);
+    delete[] name;
+    return ret;
   }
 
   hid_t fileId() const { return m_fileId; }
@@ -476,6 +494,11 @@ H5ReadWrite::H5ReadWrite(const string& file, OpenMode mode)
 {}
 
 H5ReadWrite::~H5ReadWrite() = default;
+
+string H5ReadWrite::fileName() const
+{
+  return m_impl->fileName();
+}
 
 void H5ReadWrite::close()
 {

@@ -82,6 +82,9 @@ public:
   /// Returns the output data object associated with the proxy.
   vtkDataObject* dataObject() const;
 
+  /// Returns the image data associated with the proxy.
+  vtkImageData* imageData() const;
+
   /// Returns a list of operators added to the DataSource.
   const QList<Operator*>& operators() const;
 
@@ -92,6 +95,9 @@ public:
 
   /// Creates a new clone from this DataSource.
   DataSource* clone() const;
+
+  /// Get the unique id for this DataSource.
+  QString id() const;
 
   /// Save the state out.
   QJsonObject serialize() const;
@@ -108,6 +114,12 @@ public:
 
   /// Returns the list of files used to load the volume (if a stack was used).
   QStringList fileNames() const;
+
+  /// For a Tvh5 file, set the path to the node to read for this data source
+  void setTvh5NodePath(const QString& path);
+
+  /// For a Tvh5 file, get the path to the node to read for this data source
+  QString tvh5NodePath() const;
 
   /// Return true is data source is an image stack, false otherwise.
   bool isImageStack() const;

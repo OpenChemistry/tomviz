@@ -57,6 +57,10 @@ public:
     return modulesT;
   }
 
+  QList<DataSource*> dataSources();
+  QList<DataSource*> childDataSources();
+  QList<DataSource*> allDataSources();
+
   QList<Module*> findModulesGeneric(const DataSource* dataSource,
                                     const vtkSMViewProxy* view);
 
@@ -67,7 +71,12 @@ public:
   /// paths.
   bool serialize(QJsonObject& doc, const QDir& stateDir,
                  bool interative = true) const;
-  bool deserialize(const QJsonObject& doc, const QDir& stateDir);
+  bool deserialize(const QJsonObject& doc, const QDir& stateDir,
+                   bool loadDataSources = true);
+
+  /// Set the views from the provided state.
+  /// Usually, this should be done after ModuleManager::deserialize().
+  void setViews(const QJsonArray& views);
 
   /// Test if any data source has running operators
   bool hasRunningOperators();
@@ -93,6 +102,10 @@ public:
   void executePipelinesOnLoad(bool execute);
   bool executePipelinesOnLoad() const;
   DataSource* loadDataSource(QJsonObject& ds);
+
+  /// Used to keep track of the most recent state file
+  void setMostRecentStateFile(const QString& s);
+  QString mostRecentStateFile() const { return m_mostRecentStateFile; }
 
 public slots:
   void addModule(Module*);
@@ -156,19 +169,23 @@ signals:
   void clipChanged(vtkPlane* plane, bool newFilter);
   void enablePythonConsole(bool enable);
 
-   void visibilityChanged(bool);
+  void mostRecentStateFileChanged(const QString& s);
 
-   void mouseOverVoxel(const vtkVector3i& ijk, double v);
+  void visibilityChanged(bool);
 
- private:
-   Q_DISABLE_COPY(ModuleManager)
-   ModuleManager(QObject* parent = nullptr);
-   ~ModuleManager();
+  void mouseOverVoxel(const vtkVector3i& ijk, double v);
 
-   class MMInternals;
-   QScopedPointer<MMInternals> d;
+private:
+  Q_DISABLE_COPY(ModuleManager)
+  ModuleManager(QObject* parent = nullptr);
+  ~ModuleManager();
 
-   QJsonObject m_stateObject;
+  class MMInternals;
+  QScopedPointer<MMInternals> d;
+
+  QString m_mostRecentStateFile = "";
+  QJsonObject m_stateObject;
+  bool m_loadDataSources = true;
 };
 } // namespace tomviz
 

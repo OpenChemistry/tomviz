@@ -32,6 +32,12 @@ private:
 
   static bool checkForLegacyStateFileFormat(const QByteArray state);
   static QString extractLegacyStateFileVersion(const QByteArray state);
+
+  static bool saveTvsm(const QString& filename, bool interactive = true);
+  static bool saveTvh5(const QString& filename);
+
+  static bool loadTvsm(const QString& filename);
+  static bool loadTvh5(const QString& filename);
 };
 } // namespace tomviz
 

@@ -117,9 +117,8 @@ Pipeline::Future* ExternalPipelineExecutor::execute(vtkDataObject* data,
   // Write data to EMD or DataExchange
   auto dataFilePath = QDir(workingDir()).filePath(origFileName);
   if (origFileName.endsWith("emd")) {
-    EmdFormat emdFile;
     auto imageData = vtkImageData::SafeDownCast(data);
-    if (!emdFile.write(dataFilePath.toLatin1().data(), imageData)) {
+    if (!EmdFormat::write(dataFilePath.toLatin1().data(), imageData)) {
       displayError("Write Error",
                    QString("Unable to write data at: %1").arg(dataFilePath));
       return Pipeline::emptyFuture();
@@ -172,15 +171,14 @@ Pipeline::Future* ExternalPipelineExecutor::execute(vtkDataObject* data,
           [this, future]() {
             auto transformedFilePath =
               QDir(workingDir()).filePath(TRANSFORM_FILENAME);
-            EmdFormat transformedEmdFile;
             vtkSmartPointer<vtkDataObject> transformedData =
               vtkImageData::New();
             vtkImageData* transformedImageData =
               vtkImageData::SafeDownCast(transformedData.Get());
             // Make sure we don't ask the user about subsampling
             QVariantMap options = { { "askForSubsample", false } };
-            if (transformedEmdFile.read(transformedFilePath.toLatin1().data(),
-                                        transformedImageData, options)) {
+            if (EmdFormat::read(transformedFilePath.toLatin1().data(),
+                                transformedImageData, options)) {
               future->setResult(transformedImageData);
             } else {
               displayError("Read Error",
@@ -273,12 +271,11 @@ void ExternalPipelineExecutor::operatorFinished(Operator* op)
              operatorPath.entryInfoList(QDir::Files)) {
 
       auto name = fileInfo.baseName();
-      EmdFormat emdFile;
       vtkNew<vtkImageData> childData;
       // Make sure we don't ask the user about subsampling
       QVariantMap options = { { "askForSubsample", false } };
-      if (emdFile.read(fileInfo.filePath().toLatin1().data(), childData,
-                       options)) {
+      if (EmdFormat::read(fileInfo.filePath().toLatin1().data(), childData,
+                          options)) {
         childOutput[name] = childData;
         emit pipeline()->finished();
       } else {
@@ -418,14 +415,13 @@ void ProgressReader::progressReady(const QString& progressMessage)
 vtkSmartPointer<vtkDataObject> ProgressReader::readProgressData(
   const QString& path)
 {
-  EmdFormat emdFile;
   auto data = vtkSmartPointer<vtkImageData>::New();
 
   auto hostPath = QFileInfo(m_path).absoluteDir().filePath(path);
 
   // Make sure we don't ask the user about subsampling
   QVariantMap options = { { "askForSubsample", false } };
-  if (!emdFile.read(hostPath.toLatin1().data(), data, options)) {
+  if (!EmdFormat::read(hostPath.toLatin1().data(), data, options)) {
     qCritical() << QString("Unable to load progress data at: %1").arg(path);
   }
 

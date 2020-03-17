@@ -279,6 +279,18 @@ void DataSource::setFileNames(const QStringList fileNames)
   m_json["reader"] = reader;
 }
 
+void DataSource::setTvh5NodePath(const QString& path)
+{
+  auto reader = m_json.value("reader").toObject();
+  reader["tvh5NodePath"] = path;
+  m_json["reader"] = reader;
+}
+
+QString DataSource::tvh5NodePath() const
+{
+  return m_json.value("reader").toObject().value("tvh5NodePath").toString();
+}
+
 QStringList DataSource::fileNames() const
 {
   auto reader = m_json.value("reader").toObject(QJsonObject());
@@ -405,9 +417,15 @@ QString DataSource::label() const
   }
 }
 
+QString DataSource::id() const
+{
+  return QString().sprintf("%p", static_cast<const void*>(this));
+}
+
 QJsonObject DataSource::serialize() const
 {
   QJsonObject json = m_json;
+  json["label"] = label();
 
   // If the data was subsampled, save the subsampling settings
   if (wasSubsampled()) {
@@ -472,13 +490,20 @@ QJsonObject DataSource::serialize() const
     json["modules"] = jModules;
   }
 
-  json["id"] = QString().sprintf("%p", static_cast<const void*>(this));
+  json["id"] = id();
+
+  if (this == ActiveObjects::instance().activeDataSource()) {
+    // Label itself as the active data source
+    json["active"] = true;
+  }
 
   return json;
 }
 
 bool DataSource::deserialize(const QJsonObject& state)
 {
+  setLabel(state["label"].toString());
+
   if (state.contains("colorOpacityMap")) {
     tomviz::deserialize(colorMap(), state["colorOpacityMap"].toObject());
   }
@@ -1215,6 +1240,11 @@ vtkDataObject* DataSource::dataObject() const
   auto alg = algorithm();
   Q_ASSERT(alg);
   return alg->GetOutputDataObject(0);
+}
+
+vtkImageData* DataSource::imageData() const
+{
+  return vtkImageData::SafeDownCast(dataObject());
 }
 
 Pipeline* DataSource::pipeline() const

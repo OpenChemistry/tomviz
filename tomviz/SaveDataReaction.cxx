@@ -128,8 +128,7 @@ bool SaveDataReaction::saveData(const QString& filename)
 
   QFileInfo info(filename);
   if (info.suffix() == "emd") {
-    EmdFormat writer;
-    if (!writer.write(filename.toLatin1().data(), source)) {
+    if (!EmdFormat::write(filename.toLatin1().data(), source)) {
       qCritical() << "Failed to write out data.";
       return false;
     } else {

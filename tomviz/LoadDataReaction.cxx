@@ -194,10 +194,31 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     fileName = fileNames[0];
   }
   QFileInfo info(fileName);
-  if (info.suffix().toLower() == "emd") {
+  if (info.suffix().toLower() == "tvh5") {
+    // Need to specify a path inside the tvh5 file to load
+    QString path = options["tvh5NodePath"].toString();
+    if (path.isEmpty()) {
+      qCritical() << "A path is required to read tvh5 as a data file";
+      return nullptr;
+    }
+
+    loadWithParaview = false;
+    // Do not prompt the user for subsample settings
+    QVariantMap emdOptions = { { "askForSubsample", false } };
+    vtkNew<vtkImageData> image;
+    if (EmdFormat::readNode(fileName.toStdString(), path.toStdString(), image,
+                            emdOptions)) {
+      DataSource::DataSourceType type = DataSource::hasTiltAngles(image)
+                                          ? DataSource::TiltSeries
+                                          : DataSource::Volume;
+      dataSource = new DataSource(image, type);
+      // Save the node path in case we write the data again in the future
+      dataSource->setTvh5NodePath(path);
+      LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
+    }
+  } else if (info.suffix().toLower() == "emd") {
     // Load the file using our simple EMD class.
     loadWithParaview = false;
-    EmdFormat emdFile;
     QVariantMap emdOptions;
     vtkNew<vtkImageData> imageData;
     if (options.contains("subsampleSettings")) {
@@ -208,7 +229,7 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
         options["subsampleSettings"].toObject()["volumeBounds"].toVariant();
       emdOptions["askForSubsample"] = false;
     }
-    if (emdFile.read(fileName.toLatin1().data(), imageData, emdOptions)) {
+    if (EmdFormat::read(fileName.toLatin1().data(), imageData, emdOptions)) {
       DataSource::DataSourceType type = DataSource::hasTiltAngles(imageData)
                                           ? DataSource::TiltSeries
                                           : DataSource::Volume;
