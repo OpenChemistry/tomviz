@@ -98,67 +98,18 @@ if(NOT PARAVIEW_ENABLE_PYTHON)
     "Please rebuild ParaView with PARAVIEW_ENABLE_PYTHON set to TRUE.")
 endif()
 
-# Get the ParaView Python variables
-load_cache(${ParaView_DIR}
-  READ_WITH_PREFIX pv_
-  Python3_EXECUTABLE Python3_INCLUDE_DIR Python3_LIBRARY_RELEASE
-)
-
-if(NOT DEFINED pv_Python3_EXECUTABLE)
-  message(FATAL_ERROR "Failed to get Python3_EXECUTABLE from ParaView build.")
-endif()
-
-set(ParaView_PYTHON_EXECUTABLE
-    "${pv_Python3_EXECUTABLE}")
-set(ParaView_PYTHON_INCLUDE_DIR
-    "${pv_Python3_INCLUDE_DIR}")
-set(ParaView_PYTHON_LIBRARY
-    "${pv_Python3_LIBRARY_RELEASE}")
-
-# Most of the time we don't want to skip these checks, default to off.
-option(SKIP_PARAVIEW_ITK_PYTHON_CHECKS
-  "Run checks to ensure ParaView and ITK are build against the same Python"
-  OFF)
-mark_as_advanced(SKIP_PARAVIEW_ITK_PYTHON_CHECKS)
-
 find_package(ITK 4.9)
-if(ITK_FOUND AND NOT SKIP_PARAVIEW_ITK_PYTHON_CHECKS)
-  message(STATUS "Checking ParaView and ITK were built against the same Python")
-  if(NOT ITK_WRAP_PYTHON)
-    message(FATAL_ERROR
-      "Tomviz requires ITK_WRAP_PYTHON to be enabled. "
-      "Please rebuild ITK with ITK_WRAP_PYTHON set to TRUE.")
-  endif()
 
-  # Verify that the ITK build is using the same Python as the ParaView build
-  load_cache(${ITK_DIR}
-    READ_WITH_PREFIX ITK_
-    PYTHON_INCLUDE_DIR PYTHON_LIBRARY
-  )
+# Many things changed in the find Python logic and ParaView's willingness to
+# share what version of Python it built against. In the end it wasn't worth
+# trying to support doing this automatically - try to feed everything the same
+# version of Python, using a superbuild will make this easier for you.
+find_package(Python3 COMPONENTS Interpreter Development)
 
-  if (NOT ITK_PYTHON_INCLUDE_DIR STREQUAL ParaView_PYTHON_INCLUDE_DIR)
-    message(FATAL_ERROR
-      "The Python include directory is not the same for both ParaView and ITK. "
-      "Please ensure ParaView and ITK are being built against the same Python. "
-      "ParaView Python include directory: ${ParaView_PYTHON_INCLUDE_DIR}, "
-      "ITK Python include directory: ${ITK_PYTHON_INCLUDE_DIR}"
-    )
-  endif()
-
-  if (NOT ITK_PYTHON_LIBRARY STREQUAL ParaView_PYTHON_LIBRARY)
-    message(FATAL_ERROR
-      "The Python library is not the same for both ParaView and ITK. "
-      "Please ensure ParaView and ITK are being built against the same Python. "
-      "ParaView Python library: ${ParaView_PYTHON_LIBRARY}, "
-      "ITK Python include directory: ${ITK_PYTHON_LIBRARY}"
-    )
-  endif()
-endif()
-
-# Ensure we use the same Python as ParaView
-set(PYTHON_INCLUDE_DIR ${ParaView_PYTHON_INCLUDE_DIR} CACHE PATH "Tomviz")
-set(PYTHON_LIBRARY ${ParaView_PYTHON_LIBRARY} CACHE PATH "Tomviz")
-set(PYTHON_EXECUTABLE ${ParaView_PYTHON_EXECUTABLE} CACHE PATH "Tomviz")
+# Just add these to the cache so we can check them more easily...
+set(PYTHON_INCLUDE_DIR ${Python3_INCLUDE_DIR} CACHE PATH "Tomviz")
+set(PYTHON_LIBRARY ${Python3_LIBRARY} CACHE PATH "Tomviz")
+set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE} CACHE PATH "Tomviz")
 
 set(PYBIND11_CPP_STANDARD "-std=c++11" CACHE STRING "")
 add_subdirectory(${PROJECT_SOURCE_DIR}/thirdparty/pybind11)

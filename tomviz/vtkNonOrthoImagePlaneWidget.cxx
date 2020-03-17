@@ -185,6 +185,9 @@ vtkNonOrthoImagePlaneWidget::vtkNonOrthoImagePlaneWidget()
 
 vtkNonOrthoImagePlaneWidget::~vtkNonOrthoImagePlaneWidget()
 {
+  this->Interactor->RemoveObserver(this->VoxelTimerCommand);
+  this->Interactor->DestroyTimer(this->VoxelTimerId);
+
   this->PlaneOutlineActor->Delete();
   this->PlaneOutlinePolyData->Delete();
   this->PlaneSource->Delete();
@@ -1876,10 +1879,17 @@ void vtkNonOrthoImagePlaneWidget::SetVoxelValueFn(
 }
 
 void vtkNonOrthoImagePlaneWidget::VoxelTimerFired(vtkObject*, unsigned long,
-                                                  void* clientdata, void*)
+                                                  void* clientdata,
+                                                  void* calldata)
 {
   vtkNonOrthoImagePlaneWidget* self =
     reinterpret_cast<vtkNonOrthoImagePlaneWidget*>(clientdata);
+
+  auto timerId = *reinterpret_cast<int*>(calldata);
+
+  if (timerId != self->VoxelTimerId) {
+    return;
+  }
 
   if (self->VoxelValueFn) {
     bool onSlice;

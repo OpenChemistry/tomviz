@@ -8,25 +8,32 @@
 
 #include "vtkActor.h"
 #include "vtkColorTransferFunction.h"
-#include "vtkPolyDataMapper.h"
+#include "vtkDataSetMapper.h"
 #include "vtkFlyingEdges3D.h"
+#include "vtkImageData.h"
 #include "vtkPVRenderView.h"
+#include "vtkPointData.h"
+#include "vtkProbeFilter.h"
 #include "vtkProperty.h"
 #include "vtkSMViewProxy.h"
 #include "vtkTrivialProducer.h"
 
-#include <string>
-
 #include <QJsonObject>
 #include <QLayout>
+#include <QStringList>
+
+#include <string>
 
 namespace tomviz {
 
 class ModuleContour::Private
 {
 public:
-  std::string ColorArrayName;
+  bool ColorByArray = false;
   bool UseSolidColor = false;
+  QString ColorArrayName;
+  vtkNew<vtkTrivialProducer> ColorArrayProducer;
+  vtkNew<vtkImageData> ColorArrayDataSet;
 };
 
 ModuleContour::ModuleContour(QObject* parentObject) : Module(parentObject)
@@ -53,7 +60,8 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     return false;
   }
 
-  d->ColorArrayName = data->activeScalars().toStdString();
+  d->ColorArrayName = data->activeScalars();
+  d->ColorArrayProducer->SetOutput(d->ColorArrayDataSet);
 
   m_flyingEdges->SetInputConnection(data->producer()->GetOutputPort());
   resetIsoValue();
@@ -73,6 +81,8 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 
   connect(data, &DataSource::activeScalarsChanged, this,
           &ModuleContour::onActiveScalarsChanged);
+  connect(data, &DataSource::dataPropertiesChanged, this,
+          &ModuleContour::onDataPropertiesChanged);
 
   emit renderNeeded();
   return true;
@@ -88,10 +98,40 @@ bool ModuleContour::finalize()
 
 void ModuleContour::onActiveScalarsChanged()
 {
-  d->ColorArrayName = dataSource()->activeScalars().toStdString();
   updateIsoRange();
   resetIsoValue();
   updateColorMap();
+}
+
+void ModuleContour::onDataPropertiesChanged()
+{
+  updateColorArrayDataSet();
+  updateColorByArrayOptions();
+}
+
+void ModuleContour::updateColorArrayDataSet()
+{
+  if (!d->ColorByArray) {
+    clearColorArrayDataSet();
+    return;
+  }
+
+  auto* source = dataSource();
+  auto* image =
+    vtkImageData::SafeDownCast(source->producer()->GetOutputDataObject(0));
+  d->ColorArrayDataSet->SetDimensions(image->GetDimensions());
+  d->ColorArrayDataSet->SetSpacing(image->GetSpacing());
+  d->ColorArrayDataSet->SetOrigin(image->GetOrigin());
+
+  auto* pd = d->ColorArrayDataSet->GetPointData();
+  pd->SetScalars(source->getScalarsArray(colorByArrayName()));
+}
+
+void ModuleContour::clearColorArrayDataSet()
+{
+  auto* pd = d->ColorArrayDataSet->GetPointData();
+  while (pd->GetNumberOfArrays() != 0)
+    pd->RemoveArray(0);
 }
 
 void ModuleContour::updateColorMap()
@@ -100,13 +140,23 @@ void ModuleContour::updateColorMap()
     vtkColorTransferFunction::SafeDownCast(colorMap()->GetClientSideObject());
   m_mapper->SetLookupTable(lut);
 
-  if (d->UseSolidColor) {
+  updateColorArray();
+}
+
+void ModuleContour::updateColorArray()
+{
+  std::string name;
+  if (d->ColorByArray) {
+    name = d->ColorArrayName.toStdString();
+  } else if (d->UseSolidColor) {
     // Have to set the color array to "" to use a solid color
     // Diffuse color should already be set on the property
-    m_mapper->SelectColorArray("");
+    name = "";
   } else {
-    m_mapper->SelectColorArray(d->ColorArrayName.c_str());
+    name = dataSource()->activeScalars().toStdString();
   }
+
+  m_mapper->SelectColorArray(name.c_str());
 }
 
 bool ModuleContour::setVisibility(bool val)
@@ -155,6 +205,10 @@ void ModuleContour::addToPanel(QWidget* panel)
           &ModuleContour::onColorChanged);
   connect(m_controllers, &ModuleContourWidget::useSolidColorToggled, this,
           &ModuleContour::onUseSolidColorToggled);
+  connect(m_controllers, &ModuleContourWidget::colorByArrayToggled, this,
+          &ModuleContour::onColorByArrayToggled);
+  connect(m_controllers, &ModuleContourWidget::colorByArrayNameChanged, this,
+          &ModuleContour::onColorByArrayNameChanged);
 }
 
 void ModuleContour::updatePanel()
@@ -165,6 +219,7 @@ void ModuleContour::updatePanel()
   QSignalBlocker blocker(m_controllers);
 
   updateIsoRange();
+  updateColorByArrayOptions();
 
   m_controllers->setColorMapData(colorMapData());
   m_controllers->setAmbient(ambient());
@@ -176,6 +231,8 @@ void ModuleContour::updatePanel()
   m_controllers->setOpacity(opacity());
   m_controllers->setColor(color());
   m_controllers->setUseSolidColor(useSolidColor());
+  m_controllers->setColorByArray(colorByArray());
+  m_controllers->setColorByArrayName(colorByArrayName());
 }
 
 void ModuleContour::updateIsoRange()
@@ -186,6 +243,21 @@ void ModuleContour::updateIsoRange()
   double range[2];
   dataSource()->getRange(range);
   m_controllers->setIsoRange(range);
+}
+
+void ModuleContour::updateColorByArrayOptions()
+{
+  if (!m_controllers)
+    return;
+
+  QSignalBlocker blocker(m_controllers);
+  QStringList options = dataSource()->listScalars();
+  m_controllers->setColorByArrayOptions(options);
+
+  if (!options.contains(colorByArrayName()))
+    onColorByArrayNameChanged(dataSource()->activeScalars());
+
+  m_controllers->setColorByArrayName(colorByArrayName());
 }
 
 void ModuleContour::resetIsoValue()
@@ -217,6 +289,8 @@ QJsonObject ModuleContour::serialize() const
   props["representation"] = representation();
   props["opacity"] = opacity();
   props["mapScalars"] = colorMapData();
+  props["colorByArray"] = colorByArray();
+  props["colorByArrayName"] = colorByArrayName();
 
   json["properties"] = props;
 
@@ -246,6 +320,8 @@ bool ModuleContour::deserialize(const QJsonObject& json)
   onRepresentationChanged(props["representation"].toString());
   onOpacityChanged(props["opacity"].toDouble());
   onColorMapDataToggled(props["mapScalars"].toBool());
+  onColorByArrayToggled(props["colorByArray"].toBool());
+  onColorByArrayNameChanged(props["colorByArrayName"].toString());
 
   updatePanel();
 
@@ -266,8 +342,10 @@ vtkDataObject* ModuleContour::dataToExport()
 void ModuleContour::setIsoValue(double value)
 {
   onIsoChanged(value);
-  if (m_controllers)
+  if (m_controllers) {
+    QSignalBlocker blocker(m_controllers);
     m_controllers->setIso(value);
+  }
 }
 
 bool ModuleContour::colorMapData() const
@@ -322,6 +400,16 @@ QColor ModuleContour::color() const
 bool ModuleContour::useSolidColor() const
 {
   return d->UseSolidColor;
+}
+
+bool ModuleContour::colorByArray() const
+{
+  return d->ColorByArray;
+}
+
+QString ModuleContour::colorByArrayName() const
+{
+  return d->ColorArrayName;
 }
 
 void ModuleContour::onColorMapDataToggled(const bool state)
@@ -389,6 +477,31 @@ void ModuleContour::onColorChanged(const QColor& c)
 void ModuleContour::onUseSolidColorToggled(const bool state)
 {
   d->UseSolidColor = state;
+  updateColorMap();
+  emit renderNeeded();
+}
+
+void ModuleContour::onColorByArrayToggled(const bool state)
+{
+  d->ColorByArray = state;
+  if (state) {
+    updateColorArrayDataSet();
+    m_probeFilter->SetInputConnection(m_flyingEdges->GetOutputPort());
+    m_probeFilter->SetSourceConnection(d->ColorArrayProducer->GetOutputPort());
+    m_mapper->SetInputConnection(m_probeFilter->GetOutputPort());
+  } else {
+    clearColorArrayDataSet();
+    m_probeFilter->RemoveAllInputs();
+    m_mapper->SetInputConnection(m_flyingEdges->GetOutputPort());
+  }
+  updateColorMap();
+  emit renderNeeded();
+}
+
+void ModuleContour::onColorByArrayNameChanged(const QString& name)
+{
+  d->ColorArrayName = name;
+  updateColorArrayDataSet();
   updateColorMap();
   emit renderNeeded();
 }
