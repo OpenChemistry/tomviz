@@ -42,8 +42,8 @@ bool SaveLoadTemplateReaction::saveTemplate()
   if (ok && !text.isEmpty()) {
     QString path;
     // Save the template to the tomviz/templates directory if it exists
-    if (!tomviz::getApplicationPath().isEmpty()) {
-      path = tomviz::getApplicationPath() + "/templates";
+    if (!tomviz::userDataPath().isEmpty()) {
+      path = tomviz::userDataPath() + "/templates";
       QDir dir(path);
       if (!dir.mkdir(path)) {
         QMessageBox::warning(
@@ -61,11 +61,11 @@ bool SaveLoadTemplateReaction::saveTemplate()
 
 bool SaveLoadTemplateReaction::loadTemplate(const QString& fileName)
 {
-  if (tomviz::getApplicationPath().isEmpty()) {
+  if (tomviz::userDataPath().isEmpty()) {
     return false;
   }
 
-  QString location = tomviz::getApplicationPath() + "/templates";
+  QString location = tomviz::userDataPath() + "/templates";
   QString path = QString("%1%2%3.tvsm").arg(location).arg(QDir::separator()).arg(fileName);
   if (!QFile(path).exists()) {
     location = QApplication::applicationDirPath() + "/../share/tomviz/templates";

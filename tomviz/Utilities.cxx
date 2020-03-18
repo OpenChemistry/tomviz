@@ -1161,7 +1161,7 @@ double getVoxelValue(vtkImageData* data, const vtkVector3d& point,
   return scalar;
 }
 
-QString getApplicationPath() {
+QString userDataPath() {
   // Ensure the tomviz directory exists
   QStringList locations =
       QStandardPaths::standardLocations(QStandardPaths::HomeLocation);

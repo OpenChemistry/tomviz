@@ -721,7 +721,7 @@ void MainWindow::importCustomTransform()
                                .arg(fileBaseName);
 
     // Get the path to Tomviz
-    QString path = tomviz::getApplicationPath();
+    QString path = tomviz::userDataPath();
     if (path.isEmpty()) {
       return;
     }
@@ -998,7 +998,7 @@ void MainWindow::findPipelineTemplates() {
   // Look in 'share' directory for default templates
   QDir provided (QApplication::applicationDirPath() + "/../share/tomviz/templates/");
   // Look for user created templates
-  QDir created (tomviz::getApplicationPath() + "/templates");
+  QDir created (tomviz::userDataPath() + "/templates");
 
   QList<QDir> locations = { provided, created };
   foreach (QDir dir, locations) {  
