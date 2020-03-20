@@ -87,6 +87,9 @@ private slots:
 
   void onMouseOverVoxel(const vtkVector3i& ijk, double v);
 
+  /// Load a custom pipeline template
+  void findPipelineTemplates();
+
 private:
   Q_DISABLE_COPY(MainWindow)
 
@@ -100,6 +103,7 @@ private:
 
   QScopedPointer<Ui::MainWindow> m_ui;
   QMenu* m_customTransformsMenu = nullptr;
+  QMenu* m_pipelineTemplates = nullptr;
   QTimer* m_timer = nullptr;
   bool m_isFirstShow = true;
 

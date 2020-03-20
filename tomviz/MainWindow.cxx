@@ -49,6 +49,7 @@
 #include "ResetReaction.h"
 #include "SaveDataReaction.h"
 #include "SaveLoadStateReaction.h"
+#include "SaveLoadTemplateReaction.h"
 #include "SaveScreenshotReaction.h"
 #include "SaveWebReaction.h"
 #include "SetDataTypeReaction.h"
@@ -247,6 +248,13 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   m_ui->menubar->insertMenu(m_ui->menuModules->menuAction(),
                             m_customTransformsMenu);
 
+  // Create the pipeline templates menu
+  m_pipelineTemplates = new QMenu("Pipeline templates", this);
+  m_ui->menubar->insertMenu(m_ui->menuModules->menuAction(),
+                            m_pipelineTemplates);
+  // Populate the menu with templates
+  findPipelineTemplates();
+  
   // Build Tomography menu
   // ################################################################
   QAction* setVolumeDataTypeAction =
@@ -660,6 +668,9 @@ void MainWindow::dataSourceChanged(DataSource* dataSource)
     m_ui->menuSegmentation->setEnabled(canAdd);
     m_ui->menuTomography->setEnabled(canAdd);
     m_customTransformsMenu->setEnabled(canAdd);
+    foreach(QAction* action, m_pipelineTemplates->actions()) {
+      action->setEnabled(canAdd);
+    }
   }
 }
 
@@ -715,18 +726,9 @@ void MainWindow::importCustomTransform()
                                .arg(QDir::separator())
                                .arg(fileBaseName);
 
-    // Ensure the tomviz directory exists
-    QStringList locations =
-      QStandardPaths::standardLocations(QStandardPaths::HomeLocation);
-    QString home = locations[0];
-    QString path = QString("%1%2tomviz").arg(home).arg(QDir::separator());
-    QDir dir(path);
-    // dir.mkpath() returns true if the path already exists or if it was
-    // successfully created.
-    if (!dir.mkpath(path)) {
-      QMessageBox::warning(
-        this, "Could not create tomviz directory",
-        QString("Could not create tomviz directory '%1'.").arg(path));
+    // Get the path to Tomviz
+    QString path = tomviz::userDataPath();
+    if (path.isEmpty()) {
       return;
     }
 
@@ -1073,6 +1075,32 @@ void MainWindow::syncPythonToApp()
   Python::Tuple args(0);
   Python::Dict kwargs;
   sync.call(args, kwargs);
+}
+
+void MainWindow::findPipelineTemplates() {
+  m_pipelineTemplates->clear();
+
+  // Look in 'share' directory for default templates
+  QDir provided (QApplication::applicationDirPath() + "/../share/tomviz/templates/");
+  // Look for user created templates
+  QDir created (tomviz::userDataPath() + "/templates");
+
+  QList<QDir> locations = { provided, created };
+  foreach (QDir dir, locations) {  
+    foreach (QFileInfo file, dir.entryInfoList()) {
+      QString menuName = file.completeBaseName().replace("_", " ");
+      if (file.isFile()) {
+        QAction* action = m_pipelineTemplates->addAction(menuName);
+        new SaveLoadTemplateReaction(action, true, file.completeBaseName());
+        if (!ModuleManager::instance().hasDataSources()) {
+          action->setEnabled(false);
+        }
+      }
+    }}
+  m_pipelineTemplates->addSeparator();
+  QAction* actionSaveTemplate = m_pipelineTemplates->addAction("Save Template");
+  new SaveLoadTemplateReaction(actionSaveTemplate);
+  connect(actionSaveTemplate, SIGNAL(triggered()), SLOT(findPipelineTemplates()));
 }
 
 } // namespace tomviz
