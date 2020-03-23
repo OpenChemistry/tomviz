@@ -1,3 +1,6 @@
+/* This source file is part of the Tomviz project, https://tomviz.org/.
+   It is released under the 3-Clause BSD License, see "LICENSE". */
+
 #include "vtkActiveScalarsProducer.h"
 
 #include <vtkExecutive.h>
@@ -10,8 +13,6 @@ vtkStandardNewMacro(vtkActiveScalarsProducer);
 
 vtkActiveScalarsProducer::vtkActiveScalarsProducer()
 {
-  this->OriginalOutput = nullptr;
-  this->Output = nullptr;
 }
 
 vtkActiveScalarsProducer::~vtkActiveScalarsProducer()
@@ -22,7 +23,7 @@ vtkActiveScalarsProducer::~vtkActiveScalarsProducer()
 //----------------------------------------------------------------------------
 void vtkActiveScalarsProducer::SetOutput(vtkDataObject* newOutput)
 {
-  vtkDataObject* oldOutput = this->OriginalOutput;
+  auto oldOutput = this->OriginalOutput;
   if (newOutput != oldOutput) {
     if (newOutput) {
       newOutput->Register(this);
@@ -45,7 +46,7 @@ void vtkActiveScalarsProducer::SetOutput(vtkDataObject* newOutput)
 
 void vtkActiveScalarsProducer::SetActiveScalars(char* name)
 {
-  vtkImageData* data = vtkImageData::SafeDownCast(this->Output);
+  auto data = vtkImageData::SafeDownCast(this->Output);
   if (data) {
     data->GetPointData()->SetActiveScalars(name);
     data->Modified();
@@ -54,15 +55,15 @@ void vtkActiveScalarsProducer::SetActiveScalars(char* name)
 
 vtkMTimeType vtkActiveScalarsProducer::GetMTime()
 {
-  vtkMTimeType mtime = this->Superclass::GetMTime();
+  auto mtime = this->Superclass::GetMTime();
   if (this->OriginalOutput) {
-    vtkMTimeType omtime = this->OriginalOutput->GetMTime();
+    auto omtime = this->OriginalOutput->GetMTime();
     if (omtime > mtime) {
       mtime = omtime;
     }
   }
   if (this->Output) {
-    vtkMTimeType omtime = this->Output->GetMTime();
+    auto omtime = this->Output->GetMTime();
     if (omtime > mtime) {
       mtime = omtime;
     }

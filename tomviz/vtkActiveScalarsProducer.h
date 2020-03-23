@@ -1,3 +1,6 @@
+/* This source file is part of the Tomviz project, https://tomviz.org/.
+   It is released under the 3-Clause BSD License, see "LICENSE". */
+
 #ifndef vtkActiveScalarsProducer_h
 #define vtkActiveScalarsProducer_h
 
@@ -21,7 +24,7 @@ protected:
   vtkActiveScalarsProducer();
   ~vtkActiveScalarsProducer() override;
 
-  vtkDataObject* OriginalOutput;
+  vtkDataObject* OriginalOutput = nullptr;
 
   void ReportReferences(vtkGarbageCollector*) override;
 
