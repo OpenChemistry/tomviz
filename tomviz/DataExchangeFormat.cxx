@@ -73,25 +73,32 @@ bool DataExchangeFormat::read(const std::string& fileName,
   // Read in the dark and white image data as well
   vtkNew<vtkImageData> darkImage, whiteImage;
   readDark(fileName, darkImage, darkWhiteOptions);
-  dataSource->setDarkData(std::move(darkImage));
+  if (darkImage->GetPointData()->GetNumberOfArrays() != 0)
+    dataSource->setDarkData(std::move(darkImage));
 
   readWhite(fileName, whiteImage, darkWhiteOptions);
-  dataSource->setWhiteData(std::move(whiteImage));
+  if (whiteImage->GetPointData()->GetNumberOfArrays() != 0)
+    dataSource->setWhiteData(std::move(whiteImage));
 
   QVector<double> angles = readTheta(fileName, options);
 
-  if (angles.size() != 0) {
-    // This is a tilt series, swap x and z
-    GenericHDF5Format::swapXAndZAxes(image);
-    GenericHDF5Format::swapXAndZAxes(dataSource->darkData());
-    GenericHDF5Format::swapXAndZAxes(dataSource->whiteData());
-
+  if (angles.isEmpty()) {
+    // Re-order the data to Fortran ordering
+    GenericHDF5Format::reorderData(image, ReorderMode::CToFortran);
+    GenericHDF5Format::reorderData(dataSource->darkData(),
+                                   ReorderMode::CToFortran);
+    GenericHDF5Format::reorderData(dataSource->whiteData(),
+                                   ReorderMode::CToFortran);
+  } else {
+    // No re-order needed. Just re-label the axes.
+    GenericHDF5Format::relabelXAndZAxes(image);
+    GenericHDF5Format::relabelXAndZAxes(dataSource->darkData());
+    GenericHDF5Format::relabelXAndZAxes(dataSource->whiteData());
     dataSource->setTiltAngles(angles);
     dataSource->setType(DataSource::TiltSeries);
-
-    // Need to emit dataModified() so the data source updates its dims
-    dataSource->dataModified();
   }
+
+  dataSource->dataModified();
 
   return true;
 }
@@ -128,14 +135,19 @@ QVector<double> DataExchangeFormat::readTheta(const std::string& fileName,
   return GenericHDF5Format::readAngles(reader, path, options);
 }
 
-static bool writeData(h5::H5ReadWrite& writer, vtkImageData* image)
+namespace {
+
+bool writeData(h5::H5ReadWrite& writer, vtkImageData* image)
 {
-  // If this is a tilt series, swap the X and Z axes
-  vtkSmartPointer<vtkImageData> permutedImage = image;
+  vtkNew<vtkImageData> permutedImage;
   if (DataSource::hasTiltAngles(image)) {
-    permutedImage = vtkImageData::New();
+    // No deep copies of data needed. Just re-label the axes.
     permutedImage->ShallowCopy(image);
-    GenericHDF5Format::swapXAndZAxes(permutedImage);
+    GenericHDF5Format::relabelXAndZAxes(permutedImage);
+  } else {
+    // Need to re-order to C ordering before writing
+    GenericHDF5Format::reorderData(image, permutedImage,
+                                   ReorderMode::FortranToC);
   }
 
   // Assume /exchange already exists
@@ -143,39 +155,37 @@ static bool writeData(h5::H5ReadWrite& writer, vtkImageData* image)
                                         permutedImage);
 }
 
-static bool writeDark(h5::H5ReadWrite& writer, vtkImageData* image,
-                      bool swapAxes = false)
+bool writeExtraData(h5::H5ReadWrite& writer, vtkImageData* image,
+                    const std::string& path, const std::string& name,
+                    bool isTiltSeries = false)
 {
-  // If this is a tilt series, swap the X and Z axes
-  vtkSmartPointer<vtkImageData> permutedImage = image;
-  if (swapAxes) {
-    permutedImage = vtkImageData::New();
+  vtkNew<vtkImageData> permutedImage;
+  if (isTiltSeries) {
+    // No deep copying needed. Just re-label the axes.
     permutedImage->ShallowCopy(image);
-    GenericHDF5Format::swapXAndZAxes(permutedImage);
+    GenericHDF5Format::relabelXAndZAxes(permutedImage);
+  } else {
+    GenericHDF5Format::reorderData(image, permutedImage,
+                                   ReorderMode::FortranToC);
   }
 
   // Assume /exchange already exists
-  return GenericHDF5Format::writeVolume(writer, "/exchange", "data_dark",
-                                        permutedImage);
+  return GenericHDF5Format::writeVolume(writer, path, name, permutedImage);
 }
 
-static bool writeWhite(h5::H5ReadWrite& writer, vtkImageData* image,
-                       bool swapAxes = false)
+bool writeDark(h5::H5ReadWrite& writer, vtkImageData* image,
+               bool isTiltSeries = false)
 {
-  // If this is a tilt series, swap the X and Z axes
-  vtkSmartPointer<vtkImageData> permutedImage = image;
-  if (swapAxes) {
-    permutedImage = vtkImageData::New();
-    permutedImage->ShallowCopy(image);
-    GenericHDF5Format::swapXAndZAxes(permutedImage);
-  }
-
-  // Assume /exchange already exists
-  return GenericHDF5Format::writeVolume(writer, "/exchange", "data_white",
-                                        permutedImage);
+  return writeExtraData(writer, image, "/exchange", "data_dark", isTiltSeries);
 }
 
-static bool writeTheta(h5::H5ReadWrite& writer, vtkImageData* image)
+bool writeWhite(h5::H5ReadWrite& writer, vtkImageData* image,
+                bool isTiltSeries = false)
+{
+  return writeExtraData(writer, image, "/exchange", "data_white", isTiltSeries);
+}
+
+bool writeTheta(h5::H5ReadWrite& writer, vtkImageData* image)
 {
   QVector<double> angles = DataSource::getTiltAngles(image);
 
@@ -186,6 +196,8 @@ static bool writeTheta(h5::H5ReadWrite& writer, vtkImageData* image)
   return writer.writeData("/exchange", "theta", { angles.size() },
                           angles.data());
 }
+
+} // namespace
 
 bool DataExchangeFormat::write(const std::string& fileName, DataSource* source)
 {
@@ -201,19 +213,19 @@ bool DataExchangeFormat::write(const std::string& fileName, DataSource* source)
   if (!writeData(writer, image))
     return false;
 
-  bool swapAxes = source->hasTiltAngles();
+  bool isTiltSeries = source->hasTiltAngles();
 
   if (source->darkData()) {
-    if (!writeDark(writer, source->darkData(), swapAxes))
+    if (!writeDark(writer, source->darkData(), isTiltSeries))
       return false;
   }
 
   if (source->whiteData()) {
-    if (!writeWhite(writer, source->whiteData(), swapAxes))
+    if (!writeWhite(writer, source->whiteData(), isTiltSeries))
       return false;
   }
 
-  if (source->hasTiltAngles()) {
+  if (isTiltSeries) {
     return writeTheta(writer, image);
   }
 

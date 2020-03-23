@@ -28,8 +28,6 @@ public:
   // theta angles, and it will swap x and z for tilt series.
   bool read(const std::string& fileName, DataSource* source,
             const QVariantMap& options = QVariantMap());
-  // A data source is required for writing
-  bool write(const std::string& fileName, DataSource* source);
 
 private:
   // Read the dark dataset into the image data
