@@ -6,7 +6,9 @@
 #include "DataSource.h"
 #include "DoubleSliderWidget.h"
 #include "IntSliderWidget.h"
+#include "ScalarsComboBox.h"
 #include "Utilities.h"
+#include "vtkActiveScalarsProducer.h"
 
 #include <vtkCommand.h>
 #include <vtkDataObject.h>
@@ -66,6 +68,8 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     pqCoreUtilities::connect(m_widget, vtkCommand::InteractionEvent, this,
                              SLOT(onPlaneChanged()));
     connect(data, SIGNAL(dataChanged()), this, SLOT(dataUpdated()));
+    connect(data, &DataSource::activeScalarsChanged, this,
+            &ModuleSlice::onScalarArrayChanged);
   }
 
   Q_ASSERT(m_widget);
@@ -108,7 +112,8 @@ bool ModuleSlice::setupWidget(vtkSMViewProxy* vtkView)
   m_widget->SetLookupTable(stc);
 
   // Lastly we set up the input connection.
-  m_widget->SetInputConnection(dataSource()->producer()->GetOutputPort());
+  m_producer->SetOutput(dataSource()->producer()->GetOutputDataObject(0));
+  m_widget->SetInputConnection(m_producer->GetOutputPort());
 
   Q_ASSERT(rwi);
   onPlaneChanged();
@@ -195,6 +200,10 @@ void ModuleSlice::addToPanel(QWidget* panel)
   line->setFrameShape(QFrame::HLine);
   line->setFrameShadow(QFrame::Sunken);
   formLayout->addRow(line);
+
+  m_scalarsCombo = new ScalarsComboBox();
+  m_scalarsCombo->setOptions(dataSource(), this);
+  formLayout->addRow("Scalars", m_scalarsCombo);
 
   m_directionCombo = new QComboBox();
   m_directionCombo->addItem("XY Plane", QVariant(Direction::XY));
@@ -313,6 +322,12 @@ void ModuleSlice::addToPanel(QWidget* panel)
   });
 
   m_opacityCheckBox->setChecked(m_mapOpacity);
+
+  connect(m_scalarsCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+          this, [this](int idx) {
+            setActiveScalars(m_scalarsCombo->itemData(idx).toInt());
+            onScalarArrayChanged();
+          });
 
   connect(m_directionCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
           this, [this](int idx) {
@@ -479,6 +494,7 @@ bool ModuleSlice::deserialize(const QJsonObject& json)
       }
     }
     m_widget->UpdatePlacement();
+    m_scalarsCombo->setOptions(dataSource(), this);
     // If deserializing a former OrthogonalSlice, the direction is encoded in
     // the property "sliceMode" as an int
     if (props.contains("sliceMode")) {
@@ -515,6 +531,7 @@ bool ModuleSlice::deserialize(const QJsonObject& json)
         m_interpolateCheckBox->setChecked(m_interpolate);
       }
     }
+    onScalarArrayChanged();
     onPlaneChanged();
     return true;
   }
@@ -570,6 +587,18 @@ vtkImageData* ModuleSlice::imageData() const
     dataSource()->producer()->GetOutputDataObject(0));
   Q_ASSERT(data);
   return data;
+}
+
+void ModuleSlice::onScalarArrayChanged()
+{
+  QString arrayName;
+  if (activeScalars() == Module::DEFAULT_SCALARS) {
+    arrayName = dataSource()->activeScalars();
+  } else {
+    arrayName = dataSource()->scalarsName(activeScalars());
+  }
+  m_producer->SetActiveScalars(arrayName.toLatin1().data());
+  emit renderNeeded();
 }
 
 void ModuleSlice::onDirectionChanged(Direction direction)

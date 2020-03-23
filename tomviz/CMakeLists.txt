@@ -213,6 +213,8 @@ set(SOURCES
   vtkCustomPiecewiseControlPointsItem.h
   vtkLengthScaleRepresentation.h
   vtkLengthScaleRepresentation.cxx
+  vtkActiveScalarsProducer.h
+  vtkActiveScalarsProducer.cxx
   vtkNonOrthoImagePlaneWidget.cxx
   vtkNonOrthoImagePlaneWidget.h
   vtkOMETiffReader.cxx
