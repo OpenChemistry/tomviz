@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>246</width>
-    <height>192</height>
+    <height>225</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -62,11 +62,25 @@
     </layout>
    </item>
    <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_4">
+     <item>
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>Contour by</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="comboContourByArray"/>
+     </item>
+    </layout>
+   </item>
+   <item>
     <layout class="QHBoxLayout" name="horizontalLayout_3">
      <item>
       <widget class="QCheckBox" name="cbColorByArray">
        <property name="text">
-        <string>Color by Array</string>
+        <string>Color by</string>
        </property>
       </widget>
      </item>
@@ -129,6 +143,14 @@
    <container>1</container>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>cbColorMapData</tabstop>
+  <tabstop>cbSelectColor</tabstop>
+  <tabstop>comboContourByArray</tabstop>
+  <tabstop>cbColorByArray</tabstop>
+  <tabstop>comboColorByArray</tabstop>
+  <tabstop>cbRepresentation</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>

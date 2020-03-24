@@ -31,6 +31,7 @@ public:
   ~ModuleContourWidget() override;
 
   void setIsoRange(double range[2]);
+  void setContourByArrayOptions(const QStringList& options);
   void setColorByArrayOptions(const QStringList& options);
 
   //@{
@@ -49,6 +50,7 @@ public:
   void setOpacity(const double value);
   void setColor(const QColor& color);
   void setUseSolidColor(const bool state);
+  void setContourByArrayName(const QString& name);
   void setColorByArray(const bool state);
   void setColorByArrayName(const QString& name);
   //@}
@@ -68,6 +70,7 @@ signals:
   void opacityChanged(const double value);
   void colorChanged(const QColor& color);
   void useSolidColorToggled(const bool state);
+  void contourByArrayNameChanged(const QString& name);
   void colorByArrayToggled(const bool state);
   void colorByArrayNameChanged(const QString& name);
   //@}

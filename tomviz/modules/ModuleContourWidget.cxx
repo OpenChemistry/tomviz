@@ -61,6 +61,8 @@ ModuleContourWidget::ModuleContourWidget(QWidget* parent_)
           &ModuleContourWidget::colorByArrayToggled);
   connect(m_ui->comboColorByArray, &QComboBox::currentTextChanged, this,
           &ModuleContourWidget::colorByArrayNameChanged);
+  connect(m_ui->comboContourByArray, &QComboBox::currentTextChanged, this,
+          &ModuleContourWidget::contourByArrayNameChanged);
 }
 
 ModuleContourWidget::~ModuleContourWidget() = default;
@@ -75,6 +77,12 @@ void ModuleContourWidget::setColorByArrayOptions(const QStringList& options)
 {
   m_ui->comboColorByArray->clear();
   m_ui->comboColorByArray->addItems(options);
+}
+
+void ModuleContourWidget::setContourByArrayOptions(const QStringList& options)
+{
+  m_ui->comboContourByArray->clear();
+  m_ui->comboContourByArray->addItems(options);
 }
 
 void ModuleContourWidget::setColorMapData(const bool state)
@@ -135,6 +143,11 @@ void ModuleContourWidget::setColorByArray(const bool state)
 void ModuleContourWidget::setColorByArrayName(const QString& name)
 {
   m_ui->comboColorByArray->setCurrentText(name);
+}
+
+void ModuleContourWidget::setContourByArrayName(const QString& name)
+{
+  m_ui->comboContourByArray->setCurrentText(name);
 }
 
 } // namespace tomviz
