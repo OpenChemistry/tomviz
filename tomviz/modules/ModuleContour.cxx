@@ -6,17 +6,16 @@
 
 #include "DataSource.h"
 
+#include "vtkActiveScalarsProducer.h"
 #include "vtkActor.h"
 #include "vtkColorTransferFunction.h"
 #include "vtkDataSetMapper.h"
 #include "vtkFlyingEdges3D.h"
-#include "vtkImageData.h"
 #include "vtkPVRenderView.h"
 #include "vtkPointData.h"
 #include "vtkProbeFilter.h"
 #include "vtkProperty.h"
 #include "vtkSMViewProxy.h"
-#include "vtkTrivialProducer.h"
 
 #include <QJsonObject>
 #include <QLayout>
@@ -32,8 +31,7 @@ public:
   bool ColorByArray = false;
   bool UseSolidColor = false;
   QString ColorArrayName;
-  vtkNew<vtkTrivialProducer> ColorArrayProducer;
-  vtkNew<vtkImageData> ColorArrayDataSet;
+  vtkNew<vtkActiveScalarsProducer> ColorArrayProducer;
 };
 
 ModuleContour::ModuleContour(QObject* parentObject) : Module(parentObject)
@@ -61,7 +59,6 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   }
 
   d->ColorArrayName = data->activeScalars();
-  d->ColorArrayProducer->SetOutput(d->ColorArrayDataSet);
 
   m_flyingEdges->SetInputConnection(data->producer()->GetOutputPort());
   resetIsoValue();
@@ -105,33 +102,25 @@ void ModuleContour::onActiveScalarsChanged()
 
 void ModuleContour::onDataPropertiesChanged()
 {
-  updateColorArrayDataSet();
+  updateColorArrayProducer();
   updateColorByArrayOptions();
 }
 
-void ModuleContour::updateColorArrayDataSet()
+void ModuleContour::updateColorArrayProducer()
 {
   if (!d->ColorByArray) {
-    clearColorArrayDataSet();
+    clearColorArrayProducer();
     return;
   }
 
-  auto* source = dataSource();
-  auto* image =
-    vtkImageData::SafeDownCast(source->producer()->GetOutputDataObject(0));
-  d->ColorArrayDataSet->SetDimensions(image->GetDimensions());
-  d->ColorArrayDataSet->SetSpacing(image->GetSpacing());
-  d->ColorArrayDataSet->SetOrigin(image->GetOrigin());
-
-  auto* pd = d->ColorArrayDataSet->GetPointData();
-  pd->SetScalars(source->getScalarsArray(colorByArrayName()));
+  d->ColorArrayProducer->SetOutput(dataSource()->dataObject());
+  auto activeName = colorByArrayName().toStdString();
+  d->ColorArrayProducer->SetActiveScalars(activeName.c_str());
 }
 
-void ModuleContour::clearColorArrayDataSet()
+void ModuleContour::clearColorArrayProducer()
 {
-  auto* pd = d->ColorArrayDataSet->GetPointData();
-  while (pd->GetNumberOfArrays() != 0)
-    pd->RemoveArray(0);
+  d->ColorArrayProducer->SetOutput(nullptr);
 }
 
 void ModuleContour::updateColorMap()
@@ -484,13 +473,12 @@ void ModuleContour::onUseSolidColorToggled(const bool state)
 void ModuleContour::onColorByArrayToggled(const bool state)
 {
   d->ColorByArray = state;
+  updateColorArrayProducer();
   if (state) {
-    updateColorArrayDataSet();
     m_probeFilter->SetInputConnection(m_flyingEdges->GetOutputPort());
     m_probeFilter->SetSourceConnection(d->ColorArrayProducer->GetOutputPort());
     m_mapper->SetInputConnection(m_probeFilter->GetOutputPort());
   } else {
-    clearColorArrayDataSet();
     m_probeFilter->RemoveAllInputs();
     m_mapper->SetInputConnection(m_flyingEdges->GetOutputPort());
   }
@@ -501,7 +489,7 @@ void ModuleContour::onColorByArrayToggled(const bool state)
 void ModuleContour::onColorByArrayNameChanged(const QString& name)
 {
   d->ColorArrayName = name;
-  updateColorArrayDataSet();
+  updateColorArrayProducer();
   updateColorMap();
   emit renderNeeded();
 }

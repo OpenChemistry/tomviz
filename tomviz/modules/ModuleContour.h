@@ -66,8 +66,8 @@ protected:
   void updatePanel();
   void updateColorMap() override;
   void updateColorArray();
-  void updateColorArrayDataSet();
-  void clearColorArrayDataSet();
+  void updateColorArrayProducer();
+  void clearColorArrayProducer();
   void updateIsoRange();
   void updateColorByArrayOptions();
 
