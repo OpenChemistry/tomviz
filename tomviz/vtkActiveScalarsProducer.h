@@ -18,7 +18,7 @@ public:
 
   void SetOutput(vtkDataObject* newOutput) override;
 
-  void SetActiveScalars(char* name);
+  void SetActiveScalars(const char* name);
 
 protected:
   vtkActiveScalarsProducer();
