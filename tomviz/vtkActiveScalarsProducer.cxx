@@ -9,7 +9,7 @@
 #include <vtkObjectFactory.h>
 #include <vtkPointData.h>
 
-vtkStandardNewMacro(vtkActiveScalarsProducer);
+vtkStandardNewMacro(vtkActiveScalarsProducer)
 
 vtkActiveScalarsProducer::vtkActiveScalarsProducer()
 {

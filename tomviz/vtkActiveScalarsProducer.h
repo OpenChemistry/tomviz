@@ -12,7 +12,7 @@ class vtkActiveScalarsProducer : public vtkTrivialProducer
 {
 public:
   static vtkActiveScalarsProducer* New();
-  vtkTypeMacro(vtkActiveScalarsProducer, vtkTrivialProducer);
+  vtkTypeMacro(vtkActiveScalarsProducer, vtkTrivialProducer)
 
   vtkMTimeType GetMTime() override;
 
