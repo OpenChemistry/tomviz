@@ -2,8 +2,10 @@
    It is released under the 3-Clause BSD License, see "LICENSE". */
 
 #include "ModuleClip.h"
+
 #include "DataSource.h"
 #include "IntSliderWidget.h"
+#include "ModuleManager.h"
 #include "Utilities.h"
 
 #include <vtkAlgorithm.h>
@@ -90,6 +92,10 @@ bool ModuleClip::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     pqCoreUtilities::connect(m_widget, vtkCommand::InteractionEvent, this,
                              SLOT(onPlaneChanged()));
     connect(data, SIGNAL(dataChanged()), this, SLOT(dataUpdated()));
+    foreach (Module* module, ModuleManager::instance().findModulesGeneric(data, nullptr)) {
+      connect(this, SIGNAL(clipFilterUpdated(vtkPlane*, bool)),
+        module, SLOT(updateClippingPlane(vtkPlane*, bool)));
+    }
   }
 
   Q_ASSERT(m_widget);

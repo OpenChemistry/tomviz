@@ -113,8 +113,6 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   connect(data, &DataSource::activeScalarsChanged, this,
           &ModuleVolume::onScalarArrayChanged);
 
-  connect(this, &ModuleVolume::updateClipFilter, this, 
-          &ModuleVolume::onClipFilterChanged);
   // Work around mapper bug on the mac, see the following issue for details:
   // https://github.com/OpenChemistry/tomviz/issues/1776
   // Should be removed when this is fixed.
@@ -410,7 +408,7 @@ int ModuleVolume::scalarsIndex()
   return index;
 }
 
-void ModuleVolume::onClipFilterChanged(vtkPlane* plane, bool newFilter) {
+bool ModuleVolume::updateClippingPlane(vtkPlane* plane, bool newFilter) {
   if (m_volumeMapper->GetNumberOfClippingPlanes()) {
     m_volumeMapper->RemoveClippingPlane(plane);
   }
@@ -419,6 +417,8 @@ void ModuleVolume::onClipFilterChanged(vtkPlane* plane, bool newFilter) {
   }
 
   emit renderNeeded();
+
+  return true;
 }
 
 } // end of namespace tomviz

@@ -335,4 +335,7 @@ bool Module::setVisibility(bool val) {
   return true;
 }
 
+bool Module::updateClippingPlane(vtkPlane* plane, bool newFilter) {
+  return false;
+}
 } // end of namespace tomviz

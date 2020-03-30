@@ -54,6 +54,9 @@ public:
   };
   Q_ENUM(Direction)
 
+signals:
+  void clipFilterUpdated(vtkPlane*, bool);
+
 protected:
   void updatePlaneWidget();
   static Direction stringToDirection(const QString& name);

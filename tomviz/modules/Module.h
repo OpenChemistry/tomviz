@@ -147,6 +147,10 @@ public slots:
   // This method is called when the active scalars for the module change
   virtual void setActiveScalars(int scalars);
 
+  /// Subclasses should override this method in order to use the clipping 
+  /// plane on a module.
+  virtual bool updateClippingPlane(vtkPlane* plane, bool newFilter);
+
 protected:
   /// Modules that use transfer functions for color/opacity should override this
   /// method to set the color map on appropriate representations. This will be
@@ -165,10 +169,6 @@ signals:
   /// Emitted when the module properties are changed in a way that would require
   /// a re-render of the scene to take effect.
   void renderNeeded();
-
-  /// Emitted when a clipping plane has been created
-  void clipFilterUpdated(vtkPlane* plane, bool newFilter);
-  void updateClipFilter(vtkPlane* plane, bool newFilter);
 
   /// Emitted when the mouse is over a voxel
   void mouseOverVoxel(const vtkVector3i& ijk, double v);
