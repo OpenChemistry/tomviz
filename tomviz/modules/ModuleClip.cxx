@@ -528,6 +528,7 @@ void ModuleClip::onDirectionChanged(Direction direction)
   }
 
   if (!isOrtho) {
+    emit clipFilterUpdated(m_clippingPlane, false);
     return;
   }
 
