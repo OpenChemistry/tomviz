@@ -96,6 +96,13 @@ bool ModuleClip::initialize(DataSource* data, vtkSMViewProxy* vtkView)
       connect(this, SIGNAL(clipFilterUpdated(vtkPlane*, bool)),
         module, SLOT(updateClippingPlane(vtkPlane*, bool)));
     }
+    connect(&ModuleManager::instance(), &ModuleManager::moduleAdded,
+      this, [this](Module* module) {
+        connect(this, SIGNAL(clipFilterUpdated(vtkPlane*, bool)),
+          module, SLOT(updateClippingPlane(vtkPlane*, bool)));
+        emit clipFilterUpdated(m_clippingPlane, false);
+      }
+    );
   }
 
   Q_ASSERT(m_widget);
