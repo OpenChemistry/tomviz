@@ -123,6 +123,8 @@ bool ModuleClip::setupWidget(vtkSMViewProxy* vtkView)
 
   m_widget = vtkSmartPointer<vtkNonOrthoImagePlaneWidget>::New();
   m_widget->GetTexturePlaneProperty()->SetOpacity(0.1);
+  double color[3] ={0.0};
+  m_widget->GetTexturePlaneProperty()->SetColor(color);
 
   // Set the interactor on the widget to be what the current
   // render window is using.
