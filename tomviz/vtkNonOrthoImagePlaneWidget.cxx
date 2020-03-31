@@ -118,6 +118,7 @@ vtkNonOrthoImagePlaneWidget::vtkNonOrthoImagePlaneWidget()
   this->ResliceAxes = vtkMatrix4x4::New();
   this->Texture = vtkTexture::New();
   this->TexturePlaneActor = vtkActor::New();
+  this->ClippingPlanes = vtkPlaneCollection::New();
   this->Transform = vtkTransform::New();
   this->ImageData = nullptr;
   this->LookupTable = nullptr;
@@ -1225,7 +1226,15 @@ void vtkNonOrthoImagePlaneWidget::UpdateClipBounds(double bounds[6])
 
   // setup custom clip planes for the texture mapper so that it doesn't
   // draw outside the box
-  vtkNew<vtkPlaneCollection> clippingPlanes;
+  double texture_bounds[6];
+  this->TexturePlaneActor->GetBounds(texture_bounds);
+  
+  this->TexturePlaneActor->GetMapper()->RemoveAllClippingPlanes();
+  for (auto i = 0; i < this->ClippingPlanes->GetNumberOfItems(); ++i) {
+    auto plane = this->ClippingPlanes->GetItem(i);
+    this->TexturePlaneActor->GetMapper()->AddClippingPlane(plane);
+  }
+  int numPlanes = this->TexturePlaneActor->GetMapper()->GetNumberOfClippingPlanes();
 
   double clip_bounds[6] = {
     bounds[0] + this->DisplayOffset[0], bounds[1] + this->DisplayOffset[0],
@@ -1233,41 +1242,53 @@ void vtkNonOrthoImagePlaneWidget::UpdateClipBounds(double bounds[6])
     bounds[4] + this->DisplayOffset[2], bounds[5] + this->DisplayOffset[2]
   };
 
-  vtkNew<vtkPlane> minXPlane;
-  minXPlane->SetOrigin(clip_bounds[0], clip_bounds[2], clip_bounds[4]);
-  minXPlane->SetNormal(1, 0, 0); // clip everything on low x
+  if (texture_bounds[0] < clip_bounds[0] && numPlanes < 6) {
+    vtkNew<vtkPlane> minXPlane;
+    minXPlane->SetOrigin(clip_bounds[0], clip_bounds[2], clip_bounds[4]);
+    minXPlane->SetNormal(1, 0, 0); // clip everything on low x
+    this->TexturePlaneActor->GetMapper()->AddClippingPlane(minXPlane);
+    numPlanes++;
+  }
 
-  vtkNew<vtkPlane> maxXPlane;
-  maxXPlane->SetOrigin(clip_bounds[1], clip_bounds[3], clip_bounds[5]);
-  maxXPlane->SetNormal(-1, 0, 0); // clip everything on high x
+  if (texture_bounds[1] > clip_bounds[1] && numPlanes < 6) {
+    vtkNew<vtkPlane> maxXPlane;
+    maxXPlane->SetOrigin(clip_bounds[1], clip_bounds[3], clip_bounds[5]);
+    maxXPlane->SetNormal(-1, 0, 0); // clip everything on high x
+    this->TexturePlaneActor->GetMapper()->AddClippingPlane(maxXPlane);
+    numPlanes++;
+  }
 
-  vtkNew<vtkPlane> minYPlane;
-  minYPlane->SetOrigin(clip_bounds[0], clip_bounds[2], clip_bounds[4]);
-  minYPlane->SetNormal(0, 1, 0); // clip everything on low y
+  if (texture_bounds[2] < clip_bounds[2] && numPlanes < 6) {
+    vtkNew<vtkPlane> minYPlane;
+    minYPlane->SetOrigin(clip_bounds[0], clip_bounds[2], clip_bounds[4]);
+    minYPlane->SetNormal(0, 1, 0); // clip everything on low y
+    this->TexturePlaneActor->GetMapper()->AddClippingPlane(minYPlane);
+    numPlanes++;
+  }
 
-  vtkNew<vtkPlane> maxYPlane;
-  maxYPlane->SetOrigin(clip_bounds[1], clip_bounds[3], clip_bounds[5]);
-  maxYPlane->SetNormal(0, -1, 0); // clip everything on high y
+  if (texture_bounds[3] > clip_bounds[3] && numPlanes < 6) {
+    vtkNew<vtkPlane> maxYPlane;
+    maxYPlane->SetOrigin(clip_bounds[1], clip_bounds[3], clip_bounds[5]);
+    maxYPlane->SetNormal(0, -1, 0); // clip everything on high y
+    this->TexturePlaneActor->GetMapper()->AddClippingPlane(maxYPlane);
+    numPlanes++;
+  }
 
-  vtkNew<vtkPlane> minZPlane;
-  minZPlane->SetOrigin(clip_bounds[0], clip_bounds[2], clip_bounds[4]);
-  minZPlane->SetNormal(0, 0, 1); // clip everything on low y
+  if (texture_bounds[4] < clip_bounds[4] && numPlanes < 6) {
+    vtkNew<vtkPlane> minZPlane;
+    minZPlane->SetOrigin(clip_bounds[0], clip_bounds[2], clip_bounds[4]);
+    minZPlane->SetNormal(0, 0, 1); // clip everything on low y
+    this->TexturePlaneActor->GetMapper()->AddClippingPlane(minZPlane);
+    numPlanes++;
+  }
 
-  vtkNew<vtkPlane> maxZPlane;
-  maxZPlane->SetOrigin(clip_bounds[1], clip_bounds[3], clip_bounds[5]);
-  maxZPlane->SetNormal(0, 0, -1); // clip everything on high y
-
-  clippingPlanes->AddItem(minXPlane.GetPointer());
-  clippingPlanes->AddItem(maxXPlane.GetPointer());
-
-  clippingPlanes->AddItem(minYPlane.GetPointer());
-  clippingPlanes->AddItem(maxYPlane.GetPointer());
-
-  clippingPlanes->AddItem(minZPlane.GetPointer());
-  clippingPlanes->AddItem(maxZPlane.GetPointer());
-
-  this->TexturePlaneActor->GetMapper()->SetClippingPlanes(
-    clippingPlanes.GetPointer());
+  if (texture_bounds[5] > clip_bounds[5] && numPlanes < 6) {
+    vtkNew<vtkPlane> maxZPlane;
+    maxZPlane->SetOrigin(clip_bounds[1], clip_bounds[3], clip_bounds[5]);
+    maxZPlane->SetNormal(0, 0, -1); // clip everything on high y
+    this->TexturePlaneActor->GetMapper()->AddClippingPlane(maxZPlane);
+    numPlanes++;
+  }
 }
 
 vtkImageData* vtkNonOrthoImagePlaneWidget::GetResliceOutput()
@@ -1908,4 +1929,29 @@ void vtkNonOrthoImagePlaneWidget::VoxelTimerFired(vtkObject*, unsigned long,
   self->Interactor->RemoveObserver(self->VoxelTimerCommand);
   self->Interactor->Render();
   self->VoxelTimerId = -1;
+}
+
+void vtkNonOrthoImagePlaneWidget::GetResliceMapper(vtkPlane* plane, bool newFilter)
+{
+  auto mapper = this->TexturePlaneActor->GetMapper();
+  int numModulePlanes = this->ClippingPlanes->GetNumberOfItems();
+  if (numModulePlanes) {
+    mapper->RemoveClippingPlane(plane);
+    for(int i = 0; i < numModulePlanes; ++i) {
+      if (this->ClippingPlanes->GetItem(i) == plane) {
+        this->ClippingPlanes->RemoveItem(i);
+      }
+    }
+  }
+  if (!newFilter) {
+    this->ClippingPlanes->AddItem(plane);
+    
+    vtkAlgorithm* inpAlg = this->Reslice->GetInputAlgorithm();
+    inpAlg->UpdateInformation();
+    vtkInformation* outInfo = inpAlg->GetOutputInformation(0);
+
+    double bounds[6];
+    this->FindPlaneBounds(outInfo, bounds);
+    this->UpdateClipBounds(bounds);
+  }
 }

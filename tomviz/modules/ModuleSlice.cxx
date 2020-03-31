@@ -15,6 +15,7 @@
 #include <vtkImageData.h>
 #include <vtkNew.h>
 #include <vtkNonOrthoImagePlaneWidget.h>
+#include <vtkPlane.h>
 #include <vtkProperty.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
@@ -786,6 +787,14 @@ ModuleSlice::Direction ModuleSlice::modeToDirection(int sliceMode)
       return Direction::Custom;
     }
   }
+}
+
+bool ModuleSlice::updateClippingPlane(vtkPlane* plane, bool newFilter) {
+
+  m_widget->GetResliceMapper(plane, newFilter);
+  emit renderNeeded();
+
+  return true;
 }
 
 } // namespace tomviz
