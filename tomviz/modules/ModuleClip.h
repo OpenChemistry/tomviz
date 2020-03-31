@@ -80,7 +80,7 @@ private:
 
   Q_DISABLE_COPY(ModuleClip)
 
-  vtkWeakPointer<vtkSMSourceProxy> m_clipVolume;
+  vtkWeakPointer<vtkSMSourceProxy> m_clip;
   vtkSmartPointer<vtkSMProxy> m_propsPanelProxy;
   vtkSmartPointer<vtkNonOrthoImagePlaneWidget> m_widget;
   vtkSmartPointer<vtkPlane> m_clippingPlane;

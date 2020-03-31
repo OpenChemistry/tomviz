@@ -71,12 +71,12 @@ bool ModuleClip::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   pqCoreUtilities::connect(m_propsPanelProxy, vtkCommand::PropertyModifiedEvent,
                            this, SLOT(onPropertyChanged()));
 
-  m_clipVolume = vtkSMSourceProxy::SafeDownCast(proxy);
-  Q_ASSERT(m_clipVolume);
-  controller->PreInitializeProxy(m_clipVolume);
-  vtkSMPropertyHelper(m_clipVolume, "Input").Set(producer);
-  controller->PostInitializeProxy(m_clipVolume);
-  controller->RegisterPipelineProxy(m_clipVolume);
+  m_clip = vtkSMSourceProxy::SafeDownCast(proxy);
+  Q_ASSERT(m_clip);
+  controller->PreInitializeProxy(m_clip);
+  vtkSMPropertyHelper(m_clip, "Input").Set(producer);
+  controller->PostInitializeProxy(m_clip);
+  controller->RegisterPipelineProxy(m_clip);
 
   // Give the proxy a friendly name for the GUI/Python world.
   if (auto p = convert<pqProxy*>(proxy)) {
@@ -109,15 +109,15 @@ bool ModuleClip::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   return widgetSetup;
 }
 
-// Should only be called from initialize after ClipVolume has been setup
+// Should only be called from initialize after Clip has been setup
 bool ModuleClip::setupWidget(vtkSMViewProxy* vtkView)
 {
-  vtkAlgorithm* clipVolumeAlg =
-    vtkAlgorithm::SafeDownCast(m_clipVolume->GetClientSideObject());
+  vtkAlgorithm* clipAlg =
+    vtkAlgorithm::SafeDownCast(m_clip->GetClientSideObject());
 
   vtkRenderWindowInteractor* rwi = vtkView->GetRenderWindow()->GetInteractor();
 
-  if (!rwi || !clipVolumeAlg) {
+  if (!rwi || !clipAlg) {
     return false;
   }
 
@@ -132,10 +132,10 @@ bool ModuleClip::setupWidget(vtkSMViewProxy* vtkView)
   m_clippingPlane->SetOrigin(m_widget->GetCenter());
   m_clippingPlane->SetNormal(m_widget->GetNormal());
 
-  m_widget->SetInputConnection(clipVolumeAlg->GetOutputPort());
+  m_widget->SetInputConnection(clipAlg->GetOutputPort());
 
   Q_ASSERT(rwi);
-  Q_ASSERT(clipVolumeAlg);
+  Q_ASSERT(clipAlg);
   onPlaneChanged();
   return true;
 }
@@ -159,9 +159,9 @@ bool ModuleClip::finalize()
 {
   emit clipFilterUpdated(m_clippingPlane, true);
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
-  controller->UnRegisterProxy(m_clipVolume);
+  controller->UnRegisterProxy(m_clip);
 
-  m_clipVolume = nullptr;
+  m_clip = nullptr;
 
   if (m_widget != nullptr) {
     m_widget->Off();
