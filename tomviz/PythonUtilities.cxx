@@ -221,6 +221,11 @@ Python::Dict& Python::Dict::operator=(const Python::Object& other)
   return *this;
 }
 
+ssize_t Python::Dict::size() const
+{
+  return PyDict_Size(m_smartPyObject->GetPointer());
+}
+
 QStringList Python::Dict::keys() const
 {
   QStringList ret;
@@ -230,6 +235,12 @@ QStringList Python::Dict::keys() const
     ret.append(list[i].toString());
 
   return ret;
+}
+
+bool Python::Dict::delItem(const QString& key)
+{
+  return PyDict_DelItemString(m_smartPyObject->GetPointer(),
+                              key.toLatin1().data()) == 0;
 }
 
 Python::Object Python::Dict::operator[](const QString& key)
