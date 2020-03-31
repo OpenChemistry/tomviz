@@ -107,6 +107,7 @@ public:
     Dict(const Dict& other);
     Dict(const Object& obj);
     Dict& operator=(const Object& other);
+    QStringList keys() const;
     Object operator[](const QString& key);
     Object operator[](const char* key);
     void set(const QString& key, const Object& value);

@@ -221,6 +221,17 @@ Python::Dict& Python::Dict::operator=(const Python::Object& other)
   return *this;
 }
 
+QStringList Python::Dict::keys() const
+{
+  QStringList ret;
+
+  List list = PyDict_Keys(m_smartPyObject->GetPointer());
+  for (int i = 0; i < list.length(); ++i)
+    ret.append(list[i].toString());
+
+  return ret;
+}
+
 Python::Object Python::Dict::operator[](const QString& key)
 {
   return operator[](key.toLatin1().data());
