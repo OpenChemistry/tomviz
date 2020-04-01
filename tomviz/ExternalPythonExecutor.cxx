@@ -5,7 +5,6 @@
 
 #include "ExternalPythonExecutor.h"
 #include "DataSource.h"
-#include "EmdFormat.h"
 #include "Operator.h"
 #include "OperatorPython.h"
 #include "Pipeline.h"
