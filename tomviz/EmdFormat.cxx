@@ -115,14 +115,12 @@ bool EmdFormat::readNode(h5::H5ReadWrite& reader, const std::string& emdNode,
     }
   }
 
-  // Now to read back in the units, note the reordering for C vs Fortran...
-  std::string dimNode = emdNode + "/dim1";
-  auto dim1 = reader.readData<float>(dimNode);
-  dimNode = emdNode + "/dim2";
-  auto dim2 = reader.readData<float>(dimNode);
-  dimNode = emdNode + "/dim3";
-  auto dim3 = reader.readData<float>(dimNode);
+  // Now to read in the dimensions...
+  auto dim1 = reader.readData<float>(emdNode + "/dim1");
+  auto dim2 = reader.readData<float>(emdNode + "/dim2");
+  auto dim3 = reader.readData<float>(emdNode + "/dim3");
 
+  // Set the spacing
   if (dim1.size() > 1 && dim2.size() > 1 && dim3.size() > 1) {
     double spacing[3];
     spacing[0] = static_cast<double>(dim1[1] - dim1[0]);
@@ -131,6 +129,7 @@ bool EmdFormat::readNode(h5::H5ReadWrite& reader, const std::string& emdNode,
     image->SetSpacing(spacing);
   }
 
+  // If there are angles, read them in
   QVector<double> angles;
   auto units = reader.attribute<std::string>(emdNode + "/dim1", "units", &ok);
   if (ok) {
@@ -149,9 +148,12 @@ bool EmdFormat::readNode(h5::H5ReadWrite& reader, const std::string& emdNode,
   // Now read in any extra scalars
   readExtraScalars(reader, emdNode, image);
 
-  // If this is a tilt series, swap the X and Z axes
-  if (!angles.isEmpty()) {
-    GenericHDF5Format::swapXAndZAxes(image);
+  if (angles.isEmpty()) {
+    // The data has not been re-ordered. Re-order to Fortran.
+    GenericHDF5Format::reorderData(image, ReorderMode::CToFortran);
+  } else {
+    // No deep copying of the data needed. Just relabel the X and Z axes.
+    GenericHDF5Format::relabelXAndZAxes(image);
     DataSource::setTiltAngles(image, angles);
     DataSource::setType(image, DataSource::TiltSeries);
   }
@@ -190,12 +192,15 @@ bool EmdFormat::writeNode(h5::H5ReadWrite& writer, const std::string& path,
   // See if we have tilt angles
   auto hasTiltAngles = DataSource::hasTiltAngles(image);
 
-  // If this is a tilt series, swap the X and Z axes
-  vtkSmartPointer<vtkImageData> permutedImage = image;
+  vtkNew<vtkImageData> permutedImage;
   if (DataSource::hasTiltAngles(image)) {
-    permutedImage = vtkImageData::New();
+    // No deep copies of data needed. Just re-label the axes.
     permutedImage->ShallowCopy(image);
-    GenericHDF5Format::swapXAndZAxes(permutedImage);
+    GenericHDF5Format::relabelXAndZAxes(permutedImage);
+  } else {
+    // Need to re-order to C ordering before writing
+    GenericHDF5Format::reorderData(image, permutedImage,
+                                   ReorderMode::FortranToC);
   }
 
   GenericHDF5Format::writeVolume(writer, path, "data", permutedImage);
