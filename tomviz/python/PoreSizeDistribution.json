@@ -26,7 +26,7 @@
     {
       "name" : "output_folder",
       "label" : "Destination Folder",
-      "type" : "string",
+      "type" : "directory",
       "default" : ""
     }
   ],
