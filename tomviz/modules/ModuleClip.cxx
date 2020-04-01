@@ -449,7 +449,8 @@ void ModuleClip::onPropertyChanged()
   std::vector<double> normalVector = normalProperty.GetDoubleArray();
   vtkSMPropertyHelper invertPlaneProperty(m_propsPanelProxy, "InvertPlane");
   for (auto i = 0; i < 3; ++i) {
-    if (invertPlaneProperty.GetAsInt()) {
+    if ((invertPlaneProperty.GetAsInt() && normalVector[i] >= 0)
+        || (!invertPlaneProperty.GetAsInt() && normalVector[i] < 0)) {
       normalVector[i] *= -1;
     }
   }
