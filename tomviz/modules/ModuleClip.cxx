@@ -93,8 +93,10 @@ bool ModuleClip::initialize(DataSource* data, vtkSMViewProxy* vtkView)
                              SLOT(onPlaneChanged()));
     connect(data, SIGNAL(dataChanged()), this, SLOT(dataUpdated()));
     foreach (Module* module, ModuleManager::instance().findModulesGeneric(data, nullptr)) {
-      connect(this, SIGNAL(clipFilterUpdated(vtkPlane*, bool)),
-        module, SLOT(updateClippingPlane(vtkPlane*, bool)));
+      if (module->dataSource() == data) {
+        connect(this, SIGNAL(clipFilterUpdated(vtkPlane*, bool)),
+          module, SLOT(updateClippingPlane(vtkPlane*, bool)));
+      }
     }
     connect(&ModuleManager::instance(), &ModuleManager::moduleAdded,
       this, [this](Module* module) {
