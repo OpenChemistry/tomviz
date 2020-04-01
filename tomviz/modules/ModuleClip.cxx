@@ -48,7 +48,7 @@ ModuleClip::~ModuleClip()
 
 QIcon ModuleClip::icon() const
 {
-  return QIcon(":/icons/orthoslice.png");
+  return QIcon(":/icons/pqClip.png");
 }
 
 bool ModuleClip::initialize(DataSource* data, vtkSMViewProxy* vtkView)
