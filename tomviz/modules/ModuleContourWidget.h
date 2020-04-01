@@ -76,6 +76,10 @@ signals:
   //@}
 
 private:
+  void onColorByArrayIndexChanged(int i);
+  void onContourByArrayIndexChanged(int i);
+  void onRepresentationIndexChanged(int i);
+
   ModuleContourWidget(const ModuleContourWidget&) = delete;
   void operator=(const ModuleContourWidget&) = delete;
 
