@@ -232,6 +232,7 @@ void ModuleClip::addToPanel(QWidget* panel)
   m_Links.addPropertyLink(invertPlane, "checked", SIGNAL(toggled(bool)),
                         m_propsPanelProxy,
                         m_propsPanelProxy->GetProperty("InvertPlane"), 0);
+  connect(invertPlane, &QCheckBox::toggled, this, &ModuleClip::onInvertPlaneChanged);
   connect(invertPlane, &QCheckBox::toggled, this, &ModuleClip::dataUpdated);
 
   m_directionCombo = new QComboBox();
@@ -447,15 +448,6 @@ void ModuleClip::onPropertyChanged()
   m_clippingPlane->SetOrigin(&centerPoint[0]);
   vtkSMPropertyHelper normalProperty(m_propsPanelProxy, "PlaneNormal");
   std::vector<double> normalVector = normalProperty.GetDoubleArray();
-  vtkSMPropertyHelper invertPlaneProperty(m_propsPanelProxy, "InvertPlane");
-  for (auto i = 0; i < 3; ++i) {
-    if ((invertPlaneProperty.GetAsInt() && normalVector[i] >= 0)
-        || (!invertPlaneProperty.GetAsInt() && normalVector[i] < 0)) {
-      normalVector[i] *= -1;
-    }
-  }
-  m_widget->SetNormal(&normalVector[0]);
-  m_clippingPlane->SetNormal(&normalVector[0]);
   m_widget->UpdatePlacement();
   m_ignoreSignals = false;
 
@@ -604,6 +596,17 @@ void ModuleClip::onPlaneChanged(double* point)
   onPlaneChanged(planePosition);
 
   emit clipFilterUpdated(m_clippingPlane, false);
+}
+
+void ModuleClip::onInvertPlaneChanged() {
+  double normal[3];
+  m_widget->GetNormal(normal);
+  for (auto i = 0; i < 3; ++i) {
+    normal[i] *= -1;
+  }
+  m_widget->SetNormal(normal);
+  m_clippingPlane->SetNormal(normal);
+  onPropertyChanged();
 }
 
 int ModuleClip::directionAxis(Direction direction)

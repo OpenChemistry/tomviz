@@ -66,6 +66,7 @@ protected:
 private slots:
   void onPropertyChanged();
   void onPlaneChanged();
+  void onInvertPlaneChanged();
 
   void dataUpdated();
 
