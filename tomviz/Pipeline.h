@@ -133,8 +133,6 @@ private slots:
 private:
   DataSource* findTransformedDataSource(DataSource* dataSource);
   Operator* findTransformedDataSourceOperator(DataSource* dataSource);
-  // Move modules down below the new data source
-  void moveModulesDown(DataSource* newChildDataSource);
   void addDataSource(DataSource* dataSource);
   bool beingEdited(DataSource* dataSource) const;
   bool isModified(DataSource* dataSource, Operator** firstModified) const;
@@ -166,7 +164,6 @@ public:
   virtual ~Future() override{};
 
   vtkSmartPointer<vtkImageData> result() { return m_imageData; }
-  void setResult(vtkSmartPointer<vtkImageData> result) { m_imageData = result; }
   void setResult(vtkImageData* result) { m_imageData = result; }
   QList<Operator*> operators() { return m_operators; }
   void deleteWhenFinished();

@@ -66,6 +66,9 @@ public:
   QList<Module*> findModulesGeneric(const MoleculeSource* dataSource,
                                     const vtkSMViewProxy* view);
 
+  // Move modules from one data source to another
+  void moveModules(DataSource* from, DataSource* to);
+
   /// Save the application state as JSON, use stateDir as the base for relative
   /// paths.
   bool serialize(QJsonObject& doc, const QDir& stateDir,

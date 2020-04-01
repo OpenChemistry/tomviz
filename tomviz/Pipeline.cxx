@@ -397,13 +397,14 @@ void Pipeline::branchFinished()
     if (newChildDataSource != nullptr) {
       emit lastOp->newChildDataSource(newChildDataSource);
       // Move modules from root data source.
-      moveModulesDown(newChildDataSource);
+      ModuleManager::instance().moveModules(dataSource(), newChildDataSource);
     }
   }
   else {
     // If this is the only operator, make sure the modules are moved down.
     if (start->operators().size() == 1)
-      moveModulesDown(lastOp->childDataSource());
+      ModuleManager::instance().moveModules(dataSource(),
+                                            lastOp->childDataSource());
   }
 }
 
@@ -605,24 +606,6 @@ Pipeline::Future* Pipeline::emptyFuture()
   QTimer::singleShot(0, [future] { emit future->finished(); });
 
   return future;
-}
-
-void Pipeline::moveModulesDown(DataSource* newChildDataSource)
-{
-  bool oldMoveObjectsEnabled =
-    ActiveObjects::instance().moveObjectsEnabled();
-  ActiveObjects::instance().setMoveObjectsMode(false);
-  auto view = ActiveObjects::instance().activeView();
-  foreach (Module* module, ModuleManager::instance().findModules<Module*>(
-           dataSource(), nullptr)) {
-    // TODO: We should really copy the module properties as well.
-    auto newModule = ModuleManager::instance().createAndAddModule(
-      module->label(), newChildDataSource, view);
-    // Copy over properties using the serialization code.
-    newModule->deserialize(module->serialize());
-    ModuleManager::instance().removeModule(module);
-  }
-  ActiveObjects::instance().setMoveObjectsMode(oldMoveObjectsEnabled);
 }
 
 #include "Pipeline.moc"
