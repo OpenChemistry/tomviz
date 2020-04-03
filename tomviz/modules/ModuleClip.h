@@ -12,8 +12,10 @@
 #include <pqPropertyLinks.h>
 
 class QComboBox;
+class pqColorChooserButton;
 class pqLineEdit;
 class vtkPlane;
+class vtkScalarsToColors;
 class vtkSMProxy;
 class vtkSMSourceProxy;
 class vtkNonOrthoImagePlaneWidget;
@@ -63,6 +65,7 @@ protected:
   static Direction stringToDirection(const QString& name);
   static Direction modeToDirection(int planeMode);
   vtkImageData* imageData() const;
+  vtkScalarsToColors* createLookupTable();
 
 private slots:
   void onPropertyChanged();
@@ -70,6 +73,8 @@ private slots:
   void onInvertPlaneChanged();
 
   void dataUpdated();
+  void onUpdateColor(const QColor& color);
+  void setPlaneColor(double rgb[3]);
 
   void onOpacityChanged(double opacity);
   void onDirectionChanged(Direction direction);
@@ -98,6 +103,7 @@ private:
   QPointer<DoubleSliderWidget> m_opacitySlider;
   double m_opacity = 0.1;
 
+  QPointer<pqColorChooserButton> m_colorSelector;
   QPointer<pqLineEdit> m_pointInputs[3];
   QPointer<pqLineEdit> m_normalInputs[3];
 };

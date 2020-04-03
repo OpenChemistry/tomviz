@@ -12,14 +12,18 @@
 #include <vtkAlgorithm.h>
 #include <vtkCommand.h>
 #include <vtkImageData.h>
+#include <vtkLookupTable.h>
 #include <vtkNew.h>
 #include <vtkNonOrthoImagePlaneWidget.h>
 #include <vtkPlane.h>
 #include <vtkProperty.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
+#include <vtkScalarsToColors.h>
+#include <vtkTexture.h>
 #include <vtkTrivialProducer.h>
 
+#include<pqColorChooserButton.h>
 #include <pqCoreUtilities.h>
 #include <pqLineEdit.h>
 #include <vtkSMParaViewPipelineControllerWithRendering.h>
@@ -125,6 +129,7 @@ bool ModuleClip::setupWidget(vtkSMViewProxy* vtkView)
   }
 
   m_widget = vtkSmartPointer<vtkNonOrthoImagePlaneWidget>::New();
+  m_widget->SetLookupTable(createLookupTable());
   double color[3] = {0.0};
   m_widget->GetTexturePlaneProperty()->SetColor(color);
 
@@ -228,6 +233,16 @@ void ModuleClip::addToPanel(QWidget* panel)
           &ModuleClip::onOpacityChanged);
   connect(m_opacitySlider, &DoubleSliderWidget::valueChanged, this,
           &ModuleClip::onOpacityChanged);
+
+  m_colorSelector = new pqColorChooserButton(panel);
+  m_colorSelector->setShowAlphaChannel(false);
+  m_colorSelector->setChosenColor(QColor(1, 1, 1));
+  formLayout->addRow("Select Color", m_colorSelector);
+
+  connect(m_colorSelector, &pqColorChooserButton::chosenColorChanged,
+          this, &ModuleClip::onUpdateColor);
+  connect(m_colorSelector, &pqColorChooserButton::chosenColorChanged,
+          this, &ModuleClip::dataUpdated);
 
   QHBoxLayout* displayRowLayout = new QHBoxLayout;
   QCheckBox* showPlane = new QCheckBox("Show Plane");
@@ -627,10 +642,39 @@ void ModuleClip::onInvertPlaneChanged() {
   onPropertyChanged();
 }
 
+void ModuleClip::onUpdateColor(const QColor& color) {
+  double rgb[3];
+  rgb[0] = color.redF();
+  rgb[1] = color.greenF();
+  rgb[2] = color.blueF();
+  m_widget->GetTexturePlaneProperty()->SetColor(rgb);
+  emit renderNeeded();
+}
+
+void ModuleClip::setPlaneColor(double rgb[3]) {
+  QColor color(static_cast<int>(rgb[0] * 255.0 + 0.5),
+               static_cast<int>(rgb[1] * 255.0 + 0.5),
+               static_cast<int>(rgb[2] * 255.0 + 0.5));
+  m_colorSelector->setChosenColor(color);
+  onUpdateColor(color);
+}
+
 void ModuleClip::onOpacityChanged(double opacity) {
   m_opacity = opacity;
   m_widget->SetOpacity(opacity);
   emit renderNeeded();
+}
+
+vtkScalarsToColors* ModuleClip::createLookupTable()
+{
+  vtkLookupTable* lut = vtkLookupTable::New();
+  lut->Register(m_widget);
+  lut->Delete();
+  lut->SetNumberOfColors(256);
+  lut->SetSaturationRange(0, 0);
+  lut->SetValueRange(1, 1);
+  lut->Build();
+  return lut;
 }
 
 int ModuleClip::directionAxis(Direction direction)
