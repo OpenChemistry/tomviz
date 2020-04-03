@@ -102,10 +102,10 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
 {
   // Override the default setting for showing full messages. This needs to be
   // done prior to calling m_ui->setupUi(this) which sets the default to false.
-  pqSettings* qtSettings = pqApplicationCore::instance()->settings();
-  if (!qtSettings->contains("pqOutputWidget.ShowFullMessages")) {
-    qtSettings->setValue("pqOutputWidget.ShowFullMessages", true);
-  }
+pqSettings* qtSettings = pqApplicationCore::instance()->settings();
+if (!qtSettings->contains("pqOutputWidget.ShowFullMessages")) {
+  qtSettings->setValue("pqOutputWidget.ShowFullMessages", true);
+}
 
   connect(&ModuleManager::instance(), &ModuleManager::enablePythonConsole, this,
           &MainWindow::setEnabledPythonConsole);
@@ -254,7 +254,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
                             m_pipelineTemplates);
   // Populate the menu with templates
   findPipelineTemplates();
-  
+
   // Build Tomography menu
   // ################################################################
   QAction* setVolumeDataTypeAction =
@@ -1086,7 +1086,7 @@ void MainWindow::findPipelineTemplates() {
   QDir created (tomviz::userDataPath() + "/templates");
 
   QList<QDir> locations = { provided, created };
-  foreach (QDir dir, locations) {  
+  foreach (QDir dir, locations) {
     foreach (QFileInfo file, dir.entryInfoList()) {
       QString menuName = file.completeBaseName().replace("_", " ");
       if (file.isFile()) {
