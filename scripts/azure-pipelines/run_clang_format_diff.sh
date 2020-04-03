@@ -3,7 +3,7 @@
 sudo apt-get update
 sudo apt-get install -y clang-format-3.9
 
-DIFF=`git diff -U0 $1...$2 -- '*.h' '*.cxx' | clang-format-diff-3.9 -p1`
+DIFF=`git diff -U0 origin/master...HEAD -- '*.h' '*.cxx' | clang-format-diff-3.9 -p1`
 
 if [ -z "$DIFF" ]; then
   exit 0
