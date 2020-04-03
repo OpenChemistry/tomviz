@@ -21,6 +21,7 @@ class vtkNonOrthoImagePlaneWidget;
 namespace tomviz {
 
 class IntSliderWidget;
+class DoubleSliderWidget;
 
 class ModuleClip : public Module
 {
@@ -70,6 +71,7 @@ private slots:
 
   void dataUpdated();
 
+  void onOpacityChanged(double opacity);
   void onDirectionChanged(Direction direction);
   void onPlaneChanged(int plane);
   void onPlaneChanged(double* point);
@@ -93,6 +95,8 @@ private:
   QPointer<IntSliderWidget> m_planeSlider;
   Direction m_direction = Direction::XY;
   int m_planePosition = 0;
+  QPointer<DoubleSliderWidget> m_opacitySlider;
+  double m_opacity = 0.1;
 
   QPointer<pqLineEdit> m_pointInputs[3];
   QPointer<pqLineEdit> m_normalInputs[3];

@@ -4,6 +4,7 @@
 #include "ModuleClip.h"
 
 #include "DataSource.h"
+#include "DoubleSliderWidget.h"
 #include "IntSliderWidget.h"
 #include "ModuleManager.h"
 #include "Utilities.h"
@@ -124,8 +125,7 @@ bool ModuleClip::setupWidget(vtkSMViewProxy* vtkView)
   }
 
   m_widget = vtkSmartPointer<vtkNonOrthoImagePlaneWidget>::New();
-  m_widget->GetTexturePlaneProperty()->SetOpacity(0.1);
-  double color[3] ={0.0};
+  double color[3] = {0.0};
   m_widget->GetTexturePlaneProperty()->SetColor(color);
 
   // Set the interactor on the widget to be what the current
@@ -216,18 +216,40 @@ void ModuleClip::addToPanel(QWidget* panel)
   layout->addWidget(container);
   formLayout->setContentsMargins(0, 0, 0, 0);
 
-  QHBoxLayout* rowLayout = new QHBoxLayout;
+  m_opacitySlider = new DoubleSliderWidget(true);
+  m_opacitySlider->setLineEditWidth(50);
+  m_opacitySlider->setMinimum(0);
+  m_opacitySlider->setMaximum(1);
+  m_opacitySlider->setValue(m_opacity);
+  onOpacityChanged(m_opacity);
+  formLayout->addRow("Opacity", m_opacitySlider);
+
+  connect(m_opacitySlider, &DoubleSliderWidget::valueEdited, this,
+          &ModuleClip::onOpacityChanged);
+  connect(m_opacitySlider, &DoubleSliderWidget::valueChanged, this,
+          &ModuleClip::onOpacityChanged);
+
+  QHBoxLayout* displayRowLayout = new QHBoxLayout;
   QCheckBox* showPlane = new QCheckBox("Show Plane");
-  rowLayout->addWidget(showPlane);
+  displayRowLayout->addWidget(showPlane);
   
   m_Links.addPropertyLink(showPlane, "checked", SIGNAL(toggled(bool)),
                         m_propsPanelProxy,
                         m_propsPanelProxy->GetProperty("ShowPlane"), 0);
   connect(showPlane, &QCheckBox::toggled, this, &ModuleClip::dataUpdated);
 
+  QCheckBox* showArrow = new QCheckBox("Show Arrow");
+  displayRowLayout->addWidget(showArrow);
+  formLayout->addRow(displayRowLayout);
+
+  m_Links.addPropertyLink(showArrow, "checked", SIGNAL(toggled(bool)),
+                          m_propsPanelProxy,
+                          m_propsPanelProxy->GetProperty("ShowArrow"), 0);
+  connect(showArrow, &QCheckBox::toggled, this, &ModuleClip::dataUpdated);
+  connect(showPlane, &QCheckBox::toggled, showArrow, &QCheckBox::setEnabled);
+
   QCheckBox* invertPlane = new QCheckBox("Invert Plane Direction");
-  rowLayout->addWidget(invertPlane);
-  formLayout->addRow(rowLayout);
+  formLayout->addRow(invertPlane);
 
   m_Links.addPropertyLink(invertPlane, "checked", SIGNAL(toggled(bool)),
                         m_propsPanelProxy,
@@ -265,14 +287,10 @@ void ModuleClip::addToPanel(QWidget* panel)
 
   formLayout->addRow("Plane", m_planeSlider);
 
-  QCheckBox* showArrow = new QCheckBox("Show Arrow");
-  formLayout->addRow(showArrow);
-
-  m_Links.addPropertyLink(showArrow, "checked", SIGNAL(toggled(bool)),
-                          m_propsPanelProxy,
-                          m_propsPanelProxy->GetProperty("ShowArrow"), 0);
-  connect(showArrow, &QCheckBox::toggled, this, &ModuleClip::dataUpdated);
-  connect(showPlane, &QCheckBox::toggled, showArrow, &QCheckBox::setEnabled);
+  auto line = new QFrame;
+  line->setFrameShape(QFrame::HLine);
+  line->setFrameShadow(QFrame::Sunken);
+  formLayout->addRow(line);
 
   QLabel* label = new QLabel("Point on Plane");
   layout->addWidget(label);
@@ -607,6 +625,12 @@ void ModuleClip::onInvertPlaneChanged() {
   m_widget->SetNormal(normal);
   m_clippingPlane->SetNormal(normal);
   onPropertyChanged();
+}
+
+void ModuleClip::onOpacityChanged(double opacity) {
+  m_opacity = opacity;
+  m_widget->SetOpacity(opacity);
+  emit renderNeeded();
 }
 
 int ModuleClip::directionAxis(Direction direction)
