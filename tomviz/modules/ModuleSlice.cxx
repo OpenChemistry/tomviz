@@ -789,7 +789,8 @@ ModuleSlice::Direction ModuleSlice::modeToDirection(int sliceMode)
   }
 }
 
-bool ModuleSlice::updateClippingPlane(vtkPlane* plane, bool newFilter) {
+bool ModuleSlice::updateClippingPlane(vtkPlane* plane, bool newFilter)
+{
 
   m_widget->GetResliceMapper(plane, newFilter);
   emit renderNeeded();

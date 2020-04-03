@@ -313,11 +313,12 @@ void ModuleManager::addModule(Module* module)
         }
       }
     }
-    if(count > 6) {
+    if (count > 6) {
       QMessageBox::warning(tomviz::mainWidget(),
-        tr("Max Clipping Planes Reached"),
-        tr("No more than 6 clipping planes can be added to a single data source."),
-        QMessageBox::Ok);
+                           tr("Max Clipping Planes Reached"),
+                           tr("No more than 6 clipping planes can be added to "
+                              "a single data source."),
+                           QMessageBox::Ok);
       removeModule(module);
       return;
     }

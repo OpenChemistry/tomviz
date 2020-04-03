@@ -1228,13 +1228,14 @@ void vtkNonOrthoImagePlaneWidget::UpdateClipBounds(double bounds[6])
   // draw outside the box
   double texture_bounds[6];
   this->TexturePlaneActor->GetBounds(texture_bounds);
-  
+
   this->TexturePlaneActor->GetMapper()->RemoveAllClippingPlanes();
   for (auto i = 0; i < this->ClippingPlanes->GetNumberOfItems(); ++i) {
     auto plane = this->ClippingPlanes->GetItem(i);
     this->TexturePlaneActor->GetMapper()->AddClippingPlane(plane);
   }
-  int numPlanes = this->TexturePlaneActor->GetMapper()->GetNumberOfClippingPlanes();
+  int numPlanes =
+    this->TexturePlaneActor->GetMapper()->GetNumberOfClippingPlanes();
 
   double clip_bounds[6] = {
     bounds[0] + this->DisplayOffset[0], bounds[1] + this->DisplayOffset[0],
@@ -1931,13 +1932,14 @@ void vtkNonOrthoImagePlaneWidget::VoxelTimerFired(vtkObject*, unsigned long,
   self->VoxelTimerId = -1;
 }
 
-void vtkNonOrthoImagePlaneWidget::GetResliceMapper(vtkPlane* plane, bool newFilter)
+void vtkNonOrthoImagePlaneWidget::GetResliceMapper(vtkPlane* plane,
+                                                   bool newFilter)
 {
   auto mapper = this->TexturePlaneActor->GetMapper();
   int numModulePlanes = this->ClippingPlanes->GetNumberOfItems();
   if (numModulePlanes) {
     mapper->RemoveClippingPlane(plane);
-    for(int i = 0; i < numModulePlanes; ++i) {
+    for (int i = 0; i < numModulePlanes; ++i) {
       if (this->ClippingPlanes->GetItem(i) == plane) {
         this->ClippingPlanes->RemoveItem(i);
       }
@@ -1945,7 +1947,7 @@ void vtkNonOrthoImagePlaneWidget::GetResliceMapper(vtkPlane* plane, bool newFilt
   }
   if (!newFilter) {
     this->ClippingPlanes->AddItem(plane);
-    
+
     vtkAlgorithm* inpAlg = this->Reslice->GetInputAlgorithm();
     inpAlg->UpdateInformation();
     vtkInformation* outInfo = inpAlg->GetOutputInformation(0);

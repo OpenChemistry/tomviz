@@ -408,7 +408,8 @@ int ModuleVolume::scalarsIndex()
   return index;
 }
 
-bool ModuleVolume::updateClippingPlane(vtkPlane* plane, bool newFilter) {
+bool ModuleVolume::updateClippingPlane(vtkPlane* plane, bool newFilter)
+{
   if (m_volumeMapper->GetNumberOfClippingPlanes()) {
     m_volumeMapper->RemoveClippingPlane(plane);
   }

@@ -147,7 +147,7 @@ public slots:
   // This method is called when the active scalars for the module change
   virtual void setActiveScalars(int scalars);
 
-  /// Subclasses should override this method in order to use the clipping 
+  /// Subclasses should override this method in order to use the clipping
   /// plane on a module.
   virtual bool updateClippingPlane(vtkPlane* plane, bool newFilter);
 

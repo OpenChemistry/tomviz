@@ -506,9 +506,11 @@ void ModuleContour::onColorByArrayNameChanged(const QString& name)
   emit renderNeeded();
 }
 
-bool ModuleContour::updateClippingPlane(vtkPlane* plane, bool newFilter) {
+bool ModuleContour::updateClippingPlane(vtkPlane* plane, bool newFilter)
+{
   if (m_mapper->GetNumberOfClippingPlanes()) {
-    m_mapper->RemoveClippingPlane(plane);  }
+    m_mapper->RemoveClippingPlane(plane);
+  }
   if (!newFilter) {
     m_mapper->AddClippingPlane(plane);
   }
