@@ -385,6 +385,12 @@ QJsonObject ModuleClip::serialize() const
   vtkSMPropertyHelper invertPlaneProperty(m_propsPanelProxy, "InvertPlane");
   props["invertPlane"] = invertPlaneProperty.GetAsInt() != 0;
 
+  QColor color = m_colorSelector->chosenColor();
+  double rgb[3] = {color.redF(), color.greenF(), color.blueF()};
+  QJsonArray selection = {rgb[0], rgb[1], rgb[2]};
+  props["selectedColor"] = selection;
+  props["opacity"] = m_opacity;
+
   // Serialize the plane
   double point[3];
   m_widget->GetOrigin(point);
@@ -433,6 +439,21 @@ bool ModuleClip::deserialize(const QJsonObject& json)
       m_widget->SetOrigin(origin);
       m_widget->SetPoint1(point1);
       m_widget->SetPoint2(point2);
+    }
+    if (props.contains("selectedColor")) {
+      auto selection = props["selectedColor"].toArray();
+      double color[3] = { selection[0].toDouble(), selection[1].toDouble(),
+                          selection[2].toDouble() };
+      if (m_colorSelector) {
+        setPlaneColor(color);
+      }
+    }
+    if (props.contains("opacity")) {
+      m_opacity = props["opacity"].toDouble();
+      onOpacityChanged(m_opacity);
+      if (m_opacitySlider) {
+        m_opacitySlider->setValue(m_opacity);
+      }
     }
 
     m_widget->UpdatePlacement();
