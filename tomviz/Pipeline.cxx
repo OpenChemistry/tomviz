@@ -24,8 +24,7 @@
 
 namespace tomviz {
 
-PipelineSettings::PipelineSettings()
-{
+PipelineSettings::PipelineSettings() {
   m_settings = pqApplicationCore::instance()->settings();
 }
 
