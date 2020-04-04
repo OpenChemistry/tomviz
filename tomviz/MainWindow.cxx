@@ -97,9 +97,8 @@ class Connection;
 
 namespace tomviz {
 
-MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
-  : QMainWindow(parent, flags), m_ui(new Ui::MainWindow)
-{
+MainWindow::MainWindow(QWidget * parent, Qt::WindowFlags flags)
+  : QMainWindow(parent, flags), m_ui(new Ui::MainWindow) {
   // Override the default setting for showing full messages. This needs to be
   // done prior to calling m_ui->setupUi(this) which sets the default to false.
   pqSettings* qtSettings = pqApplicationCore::instance()->settings();
@@ -269,8 +268,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     m_ui->menuTomography->addAction("Set Tilt Angles");
   m_ui->menuTomography->addSeparator();
 
-  QAction* dataProcessingLabel =
-    m_ui->menuTomography->addAction("Pre-processing:");
+  QAction* dataProcessingLabel = m_ui->menuTomography->addAction("Pre-processing:");
   dataProcessingLabel->setEnabled(false);
   QAction* downsampleByTwoAction =
     m_ui->menuTomography->addAction("Bin Tilt Images x2");
@@ -564,7 +562,7 @@ std::vector<OperatorDescription> MainWindow::initPython()
 }
 
 template <class T>
-void MainWindow::openDialog(QWidget** dialog)
+void MainWindow::openDialog(QWidget **dialog)
 {
   if (*dialog == nullptr) {
     *dialog = new T(this);
