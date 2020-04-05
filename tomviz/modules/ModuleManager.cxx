@@ -303,14 +303,28 @@ void ModuleManager::addModule(Module* module)
     }
     d->ViewModules.insert(module->view(), module);
 
+    // Prevent the user from adding more than 6 clipping planes
+    // to a data source
+    int count = 0;
+    foreach (Module* m, d->Modules) {
+      if (m->dataSource() == module->dataSource()) {
+        if (strcmp(ModuleFactory::moduleType(m), "Clip") == 0) {
+          ++count;
+        }
+      }
+    }
+    if (count > 6) {
+      QMessageBox::warning(tomviz::mainWidget(),
+                           tr("Max Clipping Planes Reached"),
+                           tr("No more than 6 clipping planes can be added to "
+                              "a single data source."),
+                           QMessageBox::Ok);
+      removeModule(module);
+      return;
+    }
+
     emit moduleAdded(module);
     connect(module, &Module::renderNeeded, this, &ModuleManager::render);
-    if (strcmp(ModuleFactory::moduleType(module), "Volume") == 0) {
-      connect(this, &ModuleManager::clipChanged, module, &Module::updateClipFilter);
-    }
-    if (strcmp(ModuleFactory::moduleType(module), "Clip") == 0) {
-      connect(module, &Module::clipFilterUpdated, this, &ModuleManager::clip);
-    }
     if (strcmp(ModuleFactory::moduleType(module), "Slice") == 0) {
       connect(module, &Module::mouseOverVoxel, this,
               &ModuleManager::mouseOverVoxel);
@@ -1095,10 +1109,6 @@ bool ModuleManager::hasDataSources()
 bool ModuleManager::hasMoleculeSources()
 {
   return !d->MoleculeSources.empty();
-}
-
-void ModuleManager::clip(vtkPlane* plane, bool newFilter) {
-  emit clipChanged(plane, newFilter);
 }
 
 DataSource* ModuleManager::loadDataSource(QJsonObject& dsObject)

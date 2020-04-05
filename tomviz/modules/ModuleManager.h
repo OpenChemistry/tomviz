@@ -12,7 +12,6 @@
 #include <QScopedPointer>
 
 class pqView;
-class vtkPlane;
 class vtkSMSourceProxy;
 class vtkSMViewProxy;
 class vtkPVXMLElement;
@@ -148,8 +147,6 @@ private slots:
 
   void onPipelineFinished();
 
-  void clip(vtkPlane* plane, bool newFilter);
-
 signals:
   void moduleAdded(Module*);
   void moduleRemoved(Module*);
@@ -166,7 +163,6 @@ signals:
 
   void stateDoneLoading();
 
-  void clipChanged(vtkPlane* plane, bool newFilter);
   void enablePythonConsole(bool enable);
 
   void mostRecentStateFileChanged(const QString& s);

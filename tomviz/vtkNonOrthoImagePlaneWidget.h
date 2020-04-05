@@ -88,6 +88,8 @@ class vtkInformation;
 class vtkLineSource;
 class vtkLookupTable;
 class vtkMatrix4x4;
+class vtkPlane;
+class vtkPlaneCollection;
 class vtkPlaneSource;
 class vtkPoints;
 class vtkPolyData;
@@ -347,6 +349,8 @@ public:
   void SetSliceThickness(int slices);
   void SetThickSliceMode(int mode);
 
+  void GetResliceMapper(vtkPlane* plane, bool newFilter);
+
   // BTX
   // Description:
   // Set action associated to buttons.
@@ -469,6 +473,7 @@ protected:
   vtkTransform* Transform;
   vtkActor* TexturePlaneActor;
   vtkTexture* Texture;
+  vtkPlaneCollection* ClippingPlanes;
   vtkScalarsToColors* LookupTable;
   vtkScalarsToColors* CreateDefaultLookupTable();
 

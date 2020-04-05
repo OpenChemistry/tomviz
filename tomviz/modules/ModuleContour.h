@@ -60,6 +60,7 @@ public:
   bool useSolidColor() const;
   bool colorByArray() const;
   QString colorByArrayName() const;
+  bool updateClippingPlane(vtkPlane* plane, bool newFilter) override;
 
 protected:
   void updatePanel();

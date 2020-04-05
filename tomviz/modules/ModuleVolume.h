@@ -55,6 +55,8 @@ public:
 
   vtkDataObject* dataToExport() override;
 
+  bool updateClippingPlane(vtkPlane* plane, bool newFilter) override;
+
 protected:
   void updateColorMap() override;
 
@@ -84,7 +86,6 @@ private slots:
   void onTransferModeChanged(const int mode);
   void onScalarArrayChanged();
   int scalarsIndex();
-  void onClipFilterChanged(vtkPlane* plane, bool newFilter);
 };
 } // namespace tomviz
 

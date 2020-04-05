@@ -2,21 +2,28 @@
    It is released under the 3-Clause BSD License, see "LICENSE". */
 
 #include "ModuleClip.h"
+
 #include "DataSource.h"
+#include "DoubleSliderWidget.h"
 #include "IntSliderWidget.h"
+#include "ModuleManager.h"
 #include "Utilities.h"
 
 #include <vtkAlgorithm.h>
 #include <vtkCommand.h>
 #include <vtkImageData.h>
+#include <vtkLookupTable.h>
 #include <vtkNew.h>
 #include <vtkNonOrthoImagePlaneWidget.h>
 #include <vtkPlane.h>
 #include <vtkProperty.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
+#include <vtkScalarsToColors.h>
+#include <vtkTexture.h>
 #include <vtkTrivialProducer.h>
 
+#include <pqColorChooserButton.h>
 #include <pqCoreUtilities.h>
 #include <pqLineEdit.h>
 #include <vtkSMParaViewPipelineControllerWithRendering.h>
@@ -46,7 +53,7 @@ ModuleClip::~ModuleClip()
 
 QIcon ModuleClip::icon() const
 {
-  return QIcon(":/icons/orthoslice.png");
+  return QIcon(":/icons/pqClip.png");
 }
 
 bool ModuleClip::initialize(DataSource* data, vtkSMViewProxy* vtkView)
@@ -69,12 +76,12 @@ bool ModuleClip::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   pqCoreUtilities::connect(m_propsPanelProxy, vtkCommand::PropertyModifiedEvent,
                            this, SLOT(onPropertyChanged()));
 
-  m_clipVolume = vtkSMSourceProxy::SafeDownCast(proxy);
-  Q_ASSERT(m_clipVolume);
-  controller->PreInitializeProxy(m_clipVolume);
-  vtkSMPropertyHelper(m_clipVolume, "Input").Set(producer);
-  controller->PostInitializeProxy(m_clipVolume);
-  controller->RegisterPipelineProxy(m_clipVolume);
+  m_clip = vtkSMSourceProxy::SafeDownCast(proxy);
+  Q_ASSERT(m_clip);
+  controller->PreInitializeProxy(m_clip);
+  vtkSMPropertyHelper(m_clip, "Input").Set(producer);
+  controller->PostInitializeProxy(m_clip);
+  controller->RegisterPipelineProxy(m_clip);
 
   // Give the proxy a friendly name for the GUI/Python world.
   if (auto p = convert<pqProxy*>(proxy)) {
@@ -90,26 +97,40 @@ bool ModuleClip::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     pqCoreUtilities::connect(m_widget, vtkCommand::InteractionEvent, this,
                              SLOT(onPlaneChanged()));
     connect(data, SIGNAL(dataChanged()), this, SLOT(dataUpdated()));
+    foreach (Module* module,
+             ModuleManager::instance().findModulesGeneric(data, nullptr)) {
+      if (module->dataSource() == data) {
+        connect(this, SIGNAL(clipFilterUpdated(vtkPlane*, bool)), module,
+                SLOT(updateClippingPlane(vtkPlane*, bool)));
+      }
+    }
+    connect(&ModuleManager::instance(), &ModuleManager::moduleAdded, this,
+            [this](Module* module) {
+              connect(this, SIGNAL(clipFilterUpdated(vtkPlane*, bool)), module,
+                      SLOT(updateClippingPlane(vtkPlane*, bool)));
+              emit clipFilterUpdated(m_clippingPlane, false);
+            });
   }
 
   Q_ASSERT(m_widget);
   return widgetSetup;
 }
 
-// Should only be called from initialize after ClipVolume has been setup
+// Should only be called from initialize after Clip has been setup
 bool ModuleClip::setupWidget(vtkSMViewProxy* vtkView)
 {
-  vtkAlgorithm* clipVolumeAlg =
-    vtkAlgorithm::SafeDownCast(m_clipVolume->GetClientSideObject());
+  auto clipAlg = vtkAlgorithm::SafeDownCast(m_clip->GetClientSideObject());
 
   vtkRenderWindowInteractor* rwi = vtkView->GetRenderWindow()->GetInteractor();
 
-  if (!rwi || !clipVolumeAlg) {
+  if (!rwi || !clipAlg) {
     return false;
   }
 
   m_widget = vtkSmartPointer<vtkNonOrthoImagePlaneWidget>::New();
-  m_widget->GetTexturePlaneProperty()->SetOpacity(0.1);
+  m_widget->SetLookupTable(createLookupTable());
+  double color[3] = { 0.0 };
+  m_widget->GetTexturePlaneProperty()->SetColor(color);
 
   // Set the interactor on the widget to be what the current
   // render window is using.
@@ -119,10 +140,10 @@ bool ModuleClip::setupWidget(vtkSMViewProxy* vtkView)
   m_clippingPlane->SetOrigin(m_widget->GetCenter());
   m_clippingPlane->SetNormal(m_widget->GetNormal());
 
-  m_widget->SetInputConnection(clipVolumeAlg->GetOutputPort());
+  m_widget->SetInputConnection(clipAlg->GetOutputPort());
 
   Q_ASSERT(rwi);
-  Q_ASSERT(clipVolumeAlg);
+  Q_ASSERT(clipAlg);
   onPlaneChanged();
   return true;
 }
@@ -146,9 +167,9 @@ bool ModuleClip::finalize()
 {
   emit clipFilterUpdated(m_clippingPlane, true);
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
-  controller->UnRegisterProxy(m_clipVolume);
+  controller->UnRegisterProxy(m_clip);
 
-  m_clipVolume = nullptr;
+  m_clip = nullptr;
 
   if (m_widget != nullptr) {
     m_widget->Off();
@@ -199,22 +220,56 @@ void ModuleClip::addToPanel(QWidget* panel)
   layout->addWidget(container);
   formLayout->setContentsMargins(0, 0, 0, 0);
 
-  QHBoxLayout* rowLayout = new QHBoxLayout;
+  m_opacitySlider = new DoubleSliderWidget(true);
+  m_opacitySlider->setLineEditWidth(50);
+  m_opacitySlider->setMinimum(0);
+  m_opacitySlider->setMaximum(1);
+  m_opacitySlider->setValue(m_opacity);
+  onOpacityChanged(m_opacity);
+  formLayout->addRow("Opacity", m_opacitySlider);
+
+  connect(m_opacitySlider, &DoubleSliderWidget::valueEdited, this,
+          &ModuleClip::onOpacityChanged);
+  connect(m_opacitySlider, &DoubleSliderWidget::valueChanged, this,
+          &ModuleClip::onOpacityChanged);
+
+  m_colorSelector = new pqColorChooserButton(panel);
+  m_colorSelector->setShowAlphaChannel(false);
+  m_colorSelector->setChosenColor(QColor(1, 1, 1));
+  formLayout->addRow("Select Color", m_colorSelector);
+
+  connect(m_colorSelector, &pqColorChooserButton::chosenColorChanged, this,
+          &ModuleClip::onUpdateColor);
+  connect(m_colorSelector, &pqColorChooserButton::chosenColorChanged, this,
+          &ModuleClip::dataUpdated);
+
+  QHBoxLayout* displayRowLayout = new QHBoxLayout;
   QCheckBox* showPlane = new QCheckBox("Show Plane");
-  rowLayout->addWidget(showPlane);
-  
+  displayRowLayout->addWidget(showPlane);
+
   m_Links.addPropertyLink(showPlane, "checked", SIGNAL(toggled(bool)),
                         m_propsPanelProxy,
                         m_propsPanelProxy->GetProperty("ShowPlane"), 0);
   connect(showPlane, &QCheckBox::toggled, this, &ModuleClip::dataUpdated);
 
+  QCheckBox* showArrow = new QCheckBox("Show Arrow");
+  displayRowLayout->addWidget(showArrow);
+  formLayout->addRow(displayRowLayout);
+
+  m_Links.addPropertyLink(showArrow, "checked", SIGNAL(toggled(bool)),
+                          m_propsPanelProxy,
+                          m_propsPanelProxy->GetProperty("ShowArrow"), 0);
+  connect(showArrow, &QCheckBox::toggled, this, &ModuleClip::dataUpdated);
+  connect(showPlane, &QCheckBox::toggled, showArrow, &QCheckBox::setEnabled);
+
   QCheckBox* invertPlane = new QCheckBox("Invert Plane Direction");
-  rowLayout->addWidget(invertPlane);
-  formLayout->addRow(rowLayout);
+  formLayout->addRow(invertPlane);
 
   m_Links.addPropertyLink(invertPlane, "checked", SIGNAL(toggled(bool)),
                         m_propsPanelProxy,
                         m_propsPanelProxy->GetProperty("InvertPlane"), 0);
+  connect(invertPlane, &QCheckBox::toggled, this,
+          &ModuleClip::onInvertPlaneChanged);
   connect(invertPlane, &QCheckBox::toggled, this, &ModuleClip::dataUpdated);
 
   m_directionCombo = new QComboBox();
@@ -247,14 +302,10 @@ void ModuleClip::addToPanel(QWidget* panel)
 
   formLayout->addRow("Plane", m_planeSlider);
 
-  QCheckBox* showArrow = new QCheckBox("Show Arrow");
-  formLayout->addRow(showArrow);
-
-  m_Links.addPropertyLink(showArrow, "checked", SIGNAL(toggled(bool)),
-                          m_propsPanelProxy,
-                          m_propsPanelProxy->GetProperty("ShowArrow"), 0);
-  connect(showArrow, &QCheckBox::toggled, this, &ModuleClip::dataUpdated);
-  connect(showPlane, &QCheckBox::toggled, showArrow, &QCheckBox::setEnabled);
+  auto line = new QFrame;
+  line->setFrameShape(QFrame::HLine);
+  line->setFrameShadow(QFrame::Sunken);
+  formLayout->addRow(line);
 
   QLabel* label = new QLabel("Point on Plane");
   layout->addWidget(label);
@@ -334,6 +385,12 @@ QJsonObject ModuleClip::serialize() const
   vtkSMPropertyHelper invertPlaneProperty(m_propsPanelProxy, "InvertPlane");
   props["invertPlane"] = invertPlaneProperty.GetAsInt() != 0;
 
+  QColor color = m_colorSelector->chosenColor();
+  double rgb[3] = { color.redF(), color.greenF(), color.blueF() };
+  QJsonArray selection = { rgb[0], rgb[1], rgb[2] };
+  props["selectedColor"] = selection;
+  props["opacity"] = m_opacity;
+
   // Serialize the plane
   double point[3];
   m_widget->GetOrigin(point);
@@ -383,6 +440,21 @@ bool ModuleClip::deserialize(const QJsonObject& json)
       m_widget->SetPoint1(point1);
       m_widget->SetPoint2(point2);
     }
+    if (props.contains("selectedColor")) {
+      auto selection = props["selectedColor"].toArray();
+      double color[3] = { selection[0].toDouble(), selection[1].toDouble(),
+                          selection[2].toDouble() };
+      if (m_colorSelector) {
+        setPlaneColor(color);
+      }
+    }
+    if (props.contains("opacity")) {
+      m_opacity = props["opacity"].toDouble();
+      onOpacityChanged(m_opacity);
+      if (m_opacitySlider) {
+        m_opacitySlider->setValue(m_opacity);
+      }
+    }
 
     m_widget->UpdatePlacement();
     // If deserializing a former OrthogonalPlane, the direction is encoded in
@@ -430,14 +502,6 @@ void ModuleClip::onPropertyChanged()
   m_clippingPlane->SetOrigin(&centerPoint[0]);
   vtkSMPropertyHelper normalProperty(m_propsPanelProxy, "PlaneNormal");
   std::vector<double> normalVector = normalProperty.GetDoubleArray();
-  vtkSMPropertyHelper invertPlaneProperty(m_propsPanelProxy, "InvertPlane");
-  for (auto i = 0; i < 3; ++i) {
-    if (invertPlaneProperty.GetAsInt()) {
-      normalVector[i] *= -1;
-    }
-  }
-  m_widget->SetNormal(&normalVector[0]);
-  m_clippingPlane->SetNormal(&normalVector[0]);
   m_widget->UpdatePlacement();
   m_ignoreSignals = false;
 
@@ -515,6 +579,7 @@ void ModuleClip::onDirectionChanged(Direction direction)
   }
 
   if (!isOrtho) {
+    emit clipFilterUpdated(m_clippingPlane, false);
     return;
   }
 
@@ -585,6 +650,56 @@ void ModuleClip::onPlaneChanged(double* point)
   onPlaneChanged(planePosition);
 
   emit clipFilterUpdated(m_clippingPlane, false);
+}
+
+void ModuleClip::onInvertPlaneChanged()
+{
+  double normal[3];
+  m_widget->GetNormal(normal);
+  for (auto i = 0; i < 3; ++i) {
+    normal[i] *= -1;
+  }
+  m_widget->SetNormal(normal);
+  m_clippingPlane->SetNormal(normal);
+  onPropertyChanged();
+}
+
+void ModuleClip::onUpdateColor(const QColor& color)
+{
+  double rgb[3];
+  rgb[0] = color.redF();
+  rgb[1] = color.greenF();
+  rgb[2] = color.blueF();
+  m_widget->GetTexturePlaneProperty()->SetColor(rgb);
+  emit renderNeeded();
+}
+
+void ModuleClip::setPlaneColor(double rgb[3])
+{
+  QColor color(static_cast<int>(rgb[0] * 255.0 + 0.5),
+               static_cast<int>(rgb[1] * 255.0 + 0.5),
+               static_cast<int>(rgb[2] * 255.0 + 0.5));
+  m_colorSelector->setChosenColor(color);
+  onUpdateColor(color);
+}
+
+void ModuleClip::onOpacityChanged(double opacity)
+{
+  m_opacity = opacity;
+  m_widget->SetOpacity(opacity);
+  emit renderNeeded();
+}
+
+vtkScalarsToColors* ModuleClip::createLookupTable()
+{
+  vtkLookupTable* lut = vtkLookupTable::New();
+  lut->Register(m_widget);
+  lut->Delete();
+  lut->SetNumberOfColors(256);
+  lut->SetSaturationRange(0, 0);
+  lut->SetValueRange(1, 1);
+  lut->Build();
+  return lut;
 }
 
 int ModuleClip::directionAxis(Direction direction)

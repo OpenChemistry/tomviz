@@ -12,8 +12,10 @@
 #include <pqPropertyLinks.h>
 
 class QComboBox;
+class pqColorChooserButton;
 class pqLineEdit;
 class vtkPlane;
+class vtkScalarsToColors;
 class vtkSMProxy;
 class vtkSMSourceProxy;
 class vtkNonOrthoImagePlaneWidget;
@@ -21,6 +23,7 @@ class vtkNonOrthoImagePlaneWidget;
 namespace tomviz {
 
 class IntSliderWidget;
+class DoubleSliderWidget;
 
 class ModuleClip : public Module
 {
@@ -54,18 +57,26 @@ public:
   };
   Q_ENUM(Direction)
 
+signals:
+  void clipFilterUpdated(vtkPlane*, bool);
+
 protected:
   void updatePlaneWidget();
   static Direction stringToDirection(const QString& name);
   static Direction modeToDirection(int planeMode);
   vtkImageData* imageData() const;
+  vtkScalarsToColors* createLookupTable();
 
 private slots:
   void onPropertyChanged();
   void onPlaneChanged();
+  void onInvertPlaneChanged();
 
   void dataUpdated();
+  void onUpdateColor(const QColor& color);
+  void setPlaneColor(double rgb[3]);
 
+  void onOpacityChanged(double opacity);
   void onDirectionChanged(Direction direction);
   void onPlaneChanged(int plane);
   void onPlaneChanged(double* point);
@@ -77,7 +88,7 @@ private:
 
   Q_DISABLE_COPY(ModuleClip)
 
-  vtkWeakPointer<vtkSMSourceProxy> m_clipVolume;
+  vtkWeakPointer<vtkSMSourceProxy> m_clip;
   vtkSmartPointer<vtkSMProxy> m_propsPanelProxy;
   vtkSmartPointer<vtkNonOrthoImagePlaneWidget> m_widget;
   vtkSmartPointer<vtkPlane> m_clippingPlane;
@@ -89,7 +100,10 @@ private:
   QPointer<IntSliderWidget> m_planeSlider;
   Direction m_direction = Direction::XY;
   int m_planePosition = 0;
+  QPointer<DoubleSliderWidget> m_opacitySlider;
+  double m_opacity = 0.1;
 
+  QPointer<pqColorChooserButton> m_colorSelector;
   QPointer<pqLineEdit> m_pointInputs[3];
   QPointer<pqLineEdit> m_normalInputs[3];
 };

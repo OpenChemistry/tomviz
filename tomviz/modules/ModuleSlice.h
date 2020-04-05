@@ -70,6 +70,8 @@ public:
 
   bool showArrow() const;
 
+  bool updateClippingPlane(vtkPlane* plane, bool newFilter) override;
+
 protected:
   void updateColorMap() override;
   void updateSliceWidget();
