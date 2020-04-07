@@ -405,7 +405,7 @@ void ModuleVolume::onScalarArrayChanged()
 int ModuleVolume::scalarsIndex()
 {
   int index;
-  if (activeScalars() == Module::DEFAULT_SCALARS_IDX) {
+  if (activeScalars() == Module::s_defaultScalarsIdx) {
     index = dataSource()->activeScalarsIdx();
   } else {
     index = activeScalars();

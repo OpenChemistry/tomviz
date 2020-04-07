@@ -234,6 +234,7 @@ public:
   int activeScalarsIdx() const;
   /// Get the scalars name for a given index.
   QString scalarsName(int arrayIdx) const;
+
   /// Get the scalars idx for a given name.
   int scalarsIdx(const QString& arrayName) const;
 
