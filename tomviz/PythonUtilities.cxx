@@ -221,8 +221,9 @@ Python::Dict& Python::Dict::operator=(const Python::Object& other)
   return *this;
 }
 
-ssize_t Python::Dict::size() const
+long long Python::Dict::size() const
 {
+  // If we use ssize_t, we get an error on Windows...
   return PyDict_Size(m_smartPyObject->GetPointer());
 }
 
