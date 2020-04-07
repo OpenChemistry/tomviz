@@ -771,6 +771,12 @@ QString DataSource::scalarsName(int arrayIdx) const
   return arrayName;
 }
 
+int DataSource::scalarsIdx(const QString& arrayName) const
+{
+  QStringList scalars = listScalars();
+  return scalars.indexOf(arrayName);
+}
+
 QStringList DataSource::listScalars() const
 {
   QStringList scalars;
