@@ -85,6 +85,8 @@ private slots:
 
   void dataUpdated();
 
+  void dataPropertiesChanged();
+
   void onScalarArrayChanged();
 
   void setMapScalars(bool b);

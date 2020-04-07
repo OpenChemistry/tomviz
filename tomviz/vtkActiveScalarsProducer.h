@@ -20,6 +20,8 @@ public:
 
   void SetActiveScalars(const char* name);
 
+  void ReSync();
+
 protected:
   vtkActiveScalarsProducer();
   ~vtkActiveScalarsProducer() override;

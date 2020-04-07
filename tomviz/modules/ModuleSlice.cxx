@@ -68,9 +68,11 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     onTextureInterpolateChanged(m_interpolate);
     pqCoreUtilities::connect(m_widget, vtkCommand::InteractionEvent, this,
                              SLOT(onPlaneChanged()));
-    connect(data, SIGNAL(dataChanged()), this, SLOT(dataUpdated()));
+    connect(data, &DataSource::dataChanged, this, &ModuleSlice::dataUpdated);
     connect(data, &DataSource::activeScalarsChanged, this,
             &ModuleSlice::onScalarArrayChanged);
+    connect(data, &DataSource::dataPropertiesChanged, this,
+            &ModuleSlice::dataPropertiesChanged);
   }
 
   Q_ASSERT(m_widget);
@@ -361,6 +363,11 @@ void ModuleSlice::dataUpdated()
   updateSliceWidget();
   m_widget->UpdatePlacement();
   emit renderNeeded();
+}
+
+void ModuleSlice::dataPropertiesChanged()
+{
+  this->onDirectionChanged(m_direction);
 }
 
 void ModuleSlice::setMapScalars(bool b)
