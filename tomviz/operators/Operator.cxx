@@ -193,23 +193,26 @@ void Operator::createNewChildDataSource(
   const QString& label, vtkSmartPointer<vtkDataObject> childData,
   DataSource::DataSourceType type, DataSource::PersistenceState state)
 {
-  if (this->childDataSource() == nullptr) {
-    DataSource* childDS =
-      new DataSource(vtkImageData::SafeDownCast(childData), type,
-                     this->dataSource()->pipeline(), state);
-    childDS->setLabel(label);
-    setChildDataSource(childDS);
-    setHasChildDataSource(true);
-    emit Operator::newChildDataSource(childDS);
+  auto child = childDataSource();
+  if (!child) {
+    child = new DataSource(vtkImageData::SafeDownCast(childData), type,
+                           this->dataSource()->pipeline(), state);
+    child->setLabel(label);
+    setChildDataSource(child);
+    emit Operator::newChildDataSource(child);
   }
   // Reuse the existing "Output" data source.
   else {
-    childDataSource()->setData(childData);
-    childDataSource()->setLabel(label);
-    childDataSource()->setForkable(true);
-    childDataSource()->dataModified();
-    setHasChildDataSource(true);
+    child->setData(childData);
+    child->setType(type);
+    child->setLabel(label);
+    child->setPersistenceState(state);
+    child->dataModified();
   }
+  // TODO: the following should be set to this, once we get
+  // intermediate datasets working.
+  // child->setForkable(hasChildDataSource());
+  child->setForkable(false);
 }
 
 void Operator::cancelTransform()

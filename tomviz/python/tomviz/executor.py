@@ -10,7 +10,6 @@ import socket
 import abc
 import stat
 import json
-import six
 import errno
 
 from tqdm import tqdm
@@ -684,7 +683,7 @@ def _load_transform_functions(operators):
 
 
 def _write_child_data(result, operator_index, output_file_path, dims):
-    for (label, dataobject) in six.iteritems(result):
+    for (label, dataobject) in result.items():
         # Only need write out data if the operator made updates.
         output_path = '.'
         if output_file_path is not None:
@@ -757,6 +756,12 @@ def execute(operators, start_at, data_file_path, output_file_path,
             if result is not None:
                 _write_child_data(result, operator_index,
                                   output_file_path, dims)
+
+                # Update the data with the result
+                if len(result) > 1:
+                    logger.warning('Multiple results found. '
+                                   'Only one will be used')
+                data = next(iter(result.values()))
 
             progress.finished(operator_index)
             operator_index += 1

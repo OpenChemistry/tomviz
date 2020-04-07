@@ -143,6 +143,7 @@ private:
   QScopedPointer<PipelineExecutor> m_executor;
   ExecutionMode m_executionMode = Threaded;
   int m_editingOperators = 0;
+  DataSource* m_lastOperatorChildRemoved = nullptr;
 };
 
 /// Return from getCopyOfImagePriorTo for caller to track async operation.

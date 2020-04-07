@@ -82,9 +82,19 @@ public:
   virtual OperatorResult* resultAt(int index) const;
 
   /// Set whether the operator is expected to produce a child DataSource.
+  /// TODO: this is beginning to take on a new meaning, since every
+  /// operator now produces a child data source. The new meaning is:
+  /// should the child data source be kept and not thrown away when
+  /// another operator is performed on it?
+  /// Maybe we should change the naming?
   virtual void setHasChildDataSource(bool value);
 
   /// Get whether the operator is expected to produce a child DataSource.
+  /// TODO: this is beginning to take on a new meaning, since every
+  /// operator now produces a child data source. The new meaning is:
+  /// should the child data source be kept and not thrown away when
+  /// another operator is performed on it?
+  /// Maybe we should change the naming?
   virtual bool hasChildDataSource() const;
 
   /// Set the child DataSource. Can be nullptr.

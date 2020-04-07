@@ -167,13 +167,6 @@ OperatorPython::OperatorPython(DataSource* parentObject)
           this, SLOT(updateChildDataSource(vtkSmartPointer<vtkDataObject>)),
           connectionType);
 
-  // This connection is needed so we can create new child data sources in the UI
-  // thread from a pipeline worker threads.
-  connect(this, SIGNAL(newChildDataSource(const QString&,
-                                          vtkSmartPointer<vtkDataObject>)),
-          this, SLOT(createNewChildDataSource(const QString&,
-                                              vtkSmartPointer<vtkDataObject>)),
-          connectionType);
   connect(
     this,
     SIGNAL(newOperatorResult(const QString&, vtkSmartPointer<vtkDataObject>)),
@@ -264,22 +257,26 @@ void OperatorPython::setJSONDescription(const QString& str)
     QJsonObject::size_type size = childDatasetArray.size();
     if (size != 1) {
       qCritical() << "Only one child dataset is supported for now. Found"
-                  << size << " but only the first will be used";
+                  << size << "but only one will be used";
     }
     if (size > 0) {
-      setHasChildDataSource(true);
       QJsonObject dataSourceNode = childDatasetArray[0].toObject();
       QJsonValueRef nameValue = dataSourceNode["name"];
       QJsonValueRef labelValue = dataSourceNode["label"];
-      if (!nameValue.isUndefined() && !nameValue.isNull() &&
-          !labelValue.isUndefined() && !labelValue.isNull()) {
+      if (!nameValue.isUndefined() && !nameValue.isNull()) {
+        // This variable is currently unused
         m_childDataSourceName = nameValue.toString();
+      }
+      if (!labelValue.isUndefined() && !labelValue.isNull()) {
         m_childDataSourceLabel = labelValue.toString();
-      } else if (nameValue.isNull()) {
-        qCritical() << "No name given for child DataSet";
       } else if (labelValue.isNull()) {
         qCritical() << "No label given for child DataSet";
       }
+
+      // TODO: when we add intermediate data sources, we should add
+      // an option to the description.json to keep intermediate data
+      // sources, such as this option.
+      // setHasChildDataSource(dataSourceNode["keepIntermediate"].toBool());
     }
   }
 
@@ -347,36 +344,32 @@ void OperatorPython::setScript(const QString& str)
 
 void OperatorPython::createChildDataSource()
 {
-  // Create child datasets in advance. Keep a map from DataSource to name
-  // so that we can match Python script return dictionary values containing
-  // child data after the script finishes.
-  if (hasChildDataSource() && !childDataSource()) {
-    // Create uninitialized data set as a placeholder for the data
-    vtkSmartPointer<vtkImageData> childData =
-      vtkSmartPointer<vtkImageData>::New();
-    childData->ShallowCopy(
-      vtkImageData::SafeDownCast(dataSource()->dataObject()));
-    emit newChildDataSource(m_childDataSourceLabel, childData);
-    }
+  if (childDataSource())
+    return;
+
+  vtkNew<vtkImageData> childData;
+  childData->ShallowCopy(dataSource()->imageData());
+  createNewChildDataSource(m_childDataSourceLabel, childData);
 }
 
 bool OperatorPython::updateChildDataSource(Python::Dict outputDict)
 {
-  if (hasChildDataSource()) {
-    Python::Object pyDataObject;
-    pyDataObject = outputDict[m_childDataSourceName];
-    if (!pyDataObject.isValid()) {
-      qCritical() << "No child dataset named " << m_childDataSourceName
-                  << "defined in dictionary returned from Python script.\n";
-      return false;
-    } else {
-      vtkObjectBase* vtkobject = Python::VTK::convertToDataObject(pyDataObject);
-      vtkDataObject* dataObject = vtkDataObject::SafeDownCast(vtkobject);
-      if (dataObject) {
-        TemporarilyReleaseGil releaseMe;
-        emit childDataSourceUpdated(dataObject);
-      }
-    }
+  QStringList keys = outputDict.keys();
+  if (keys.isEmpty())
+    return false;
+
+  if (keys.size() > 1) {
+    qCritical() << "Warning: more than one key was received in "
+                << "updateChildDataSource. Only one will be used";
+  }
+
+  Python::Object pyDataObject = outputDict[keys[0]];
+
+  vtkObjectBase* vtkobject = Python::VTK::convertToDataObject(pyDataObject);
+  vtkDataObject* dataObject = vtkDataObject::SafeDownCast(vtkobject);
+  if (dataObject) {
+    TemporarilyReleaseGil releaseMe;
+    emit childDataSourceUpdated(dataObject);
   }
 
   return true;
@@ -385,20 +378,17 @@ bool OperatorPython::updateChildDataSource(Python::Dict outputDict)
 bool OperatorPython::updateChildDataSource(
   QMap<QString, vtkSmartPointer<vtkDataObject>> output)
 {
-  if (hasChildDataSource()) {
-    for (QMap<QString, vtkSmartPointer<vtkDataObject>>::const_iterator iter =
-           output.begin();
-         iter != output.end(); ++iter) {
-
-      if (iter.key() != m_childDataSourceName) {
-        qCritical() << "No child dataset named " << m_childDataSourceName
-                    << "defined in dictionary returned from Python script.\n";
-        return false;
-      }
-
-      emit childDataSourceUpdated(iter.value());
-    }
+  if (output.isEmpty()) {
+    qCritical() << "No output found in updateChildDataSource";
+    return false;
   }
+
+  if (output.size() > 1) {
+    qCritical() << "Warning: more than one output was received in "
+                << "updateChildDataSource. Only one will be used";
+  }
+
+  emit childDataSourceUpdated(output.first());
 
   return true;
 }
@@ -413,8 +403,6 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
   }
 
   Q_ASSERT(data);
-
-  createChildDataSource();
 
   Python::Object result;
   {
@@ -457,18 +445,22 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
     check = result.isDict();
   }
 
+  // Record whether an output was encountered (i. e., a dict was
+  // returned from the python function that contains a child dataset)
+  bool outputEncountered = false;
+
   bool errorEncountered = false;
   if (check) {
     Python python;
     Python::Dict outputDict = result.toDict();
 
-    // Support setting child data from the output dictionary
-    errorEncountered = !updateChildDataSource(outputDict);
-
     // Results (tables, etc.)
     for (int i = 0; i < m_resultNames.size(); ++i) {
-      Python::Object pyDataObject;
-      pyDataObject = outputDict[m_resultNames[i]];
+      Python::Object pyDataObject = outputDict[m_resultNames[i]];
+
+      // Remove the item from the dictionary so that we do not think
+      // it is a child after this loop.
+      outputDict.delItem(m_resultNames[i]);
 
       if (!pyDataObject.isValid()) {
         errorEncountered = true;
@@ -489,11 +481,22 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
       }
     }
 
-    if (errorEncountered) {
+    // At this point, all results should have been removed from the
+    // dictionary. Only children should remain.
+    if (!errorEncountered && outputDict.size() > 0) {
+      outputEncountered = true;
+      errorEncountered = !updateChildDataSource(outputDict);
+    }
 
+    if (errorEncountered) {
       qCritical() << "Dictionary return from Python script is:\n"
                   << outputDict.toString();
     }
+  }
+
+  if (outputEncountered) {
+    // Set the output data on the vtkDataObject
+    data->ShallowCopy(childDataSource()->dataObject());
   }
 
   return !errorEncountered;
@@ -646,8 +649,13 @@ EditOperatorWidget* OperatorPython::getEditorContentsWithData(
 
 void OperatorPython::updateChildDataSource(vtkSmartPointer<vtkDataObject> data)
 {
-  // Check to see if a child data source has already been created. If not,
-  // create it here.
+  // This function can be called either when a progress update is
+  // performed, or when an output dict was returned from a python
+  // operation. Both are stored in the child data source.
+
+  if (!childDataSource())
+    createChildDataSource();
+
   auto dataSource = childDataSource();
   Q_ASSERT(dataSource);
 

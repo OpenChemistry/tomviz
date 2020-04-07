@@ -83,7 +83,6 @@ Pipeline::Future* ExternalPipelineExecutor::execute(vtkDataObject* data,
   if (!m_temporaryDir->isValid()) {
     displayError("Directory Error", "Unable to create temporary directory.");
     return Pipeline::emptyFuture();
-    ;
   }
 
   QString origFileName = originalFileName();
@@ -169,12 +168,10 @@ Pipeline::Future* ExternalPipelineExecutor::execute(vtkDataObject* data,
           &ExternalPipelineExecutor::pipelineStarted);
   connect(m_progressReader.data(), &ProgressReader::pipelineFinished, this,
           [this, future]() {
+            // Read the modified active scalars
             auto transformedFilePath =
               QDir(workingDir()).filePath(TRANSFORM_FILENAME);
-            vtkSmartPointer<vtkDataObject> transformedData =
-              vtkImageData::New();
-            vtkImageData* transformedImageData =
-              vtkImageData::SafeDownCast(transformedData.Get());
+            vtkNew<vtkImageData> transformedImageData;
             // Make sure we don't ask the user about subsampling
             QVariantMap options = { { "askForSubsample", false } };
             if (EmdFormat::read(transformedFilePath.toLatin1().data(),
@@ -186,7 +183,6 @@ Pipeline::Future* ExternalPipelineExecutor::execute(vtkDataObject* data,
                              .arg(transformedFilePath));
             }
             emit future->finished();
-            transformedImageData->FastDelete();
           });
   connect(future, &Pipeline::Future::finished, this,
           &ExternalPipelineExecutor::reset);
@@ -250,11 +246,6 @@ void ExternalPipelineExecutor::operatorStarted(Operator* op)
 {
   op->setState(OperatorState::Running);
   emit op->transformingStarted();
-
-  auto pythonOp = qobject_cast<OperatorPython*>(op);
-  if (pythonOp != nullptr) {
-    pythonOp->createChildDataSource();
-  }
 }
 
 void ExternalPipelineExecutor::operatorFinished(Operator* op)
@@ -277,7 +268,6 @@ void ExternalPipelineExecutor::operatorFinished(Operator* op)
       if (EmdFormat::read(fileInfo.filePath().toLatin1().data(), childData,
                           options)) {
         childOutput[name] = childData;
-        emit pipeline()->finished();
       } else {
         displayError(
           "Read Error",

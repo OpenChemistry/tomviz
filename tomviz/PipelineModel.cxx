@@ -204,8 +204,6 @@ bool PipelineModel::TreeItem::remove(DataSource* source)
         // Resume but don't execute as we are removing this data source.
         pipeline->resume();
       }
-    } else if (childItem->module()) {
-      ModuleManager::instance().removeModule(childItem->module());
     }
   }
   if (parent()) {
