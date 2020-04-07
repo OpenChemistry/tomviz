@@ -2,11 +2,10 @@
    It is released under the 3-Clause BSD License, see "LICENSE". */
 
 #include "OperatorPythonWrapper.h"
+
 #include "OperatorPython.h"
-#include "PythonUtilities.h"
 
 #include <vtkImageData.h>
-#include <vtkSmartPointer.h>
 
 using namespace tomviz;
 

@@ -2,39 +2,29 @@
    It is released under the 3-Clause BSD License, see "LICENSE". */
 
 #include "PipelineStateManager.h"
+
 #include "ActiveObjects.h"
 #include "DataSource.h"
 #include "LoadDataReaction.h"
 #include "ModuleFactory.h"
 #include "ModuleManager.h"
-#include "Operator.h"
 #include "OperatorFactory.h"
 #include "OperatorPython.h"
 #include "PipelineManager.h"
-#include "PythonUtilities.h"
 
-#include <vtkSMProxyManager.h>
-#include <vtkSMSessionProxyManager.h>
-#include <vtkSMViewLayoutProxy.h>
 #include <vtkSMViewProxy.h>
-#include <vtkSMPropertyHelper.h>
-#include <vtkSMParaViewPipelineController.h>
-#include <pqActiveObjects.h>
 #include <vtkSMSaveScreenshotProxy.h>
 
 #include <pqApplicationCore.h>
 #include <pqServerManagerModel.h>
+#include <pqView.h>
 
 #include <QApplication>
-#include <QDesktopWidget>
-#include <QDebug>
 #include <QDir>
-#include <QEventLoop>
 #include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QObject>
 
 using namespace tomviz;
 
@@ -372,7 +362,7 @@ void PipelineStateManager::load(const std::string& state,
   auto doc = QJsonDocument::fromJson(json);
 
   emit(&ModuleManager::instance())->enablePythonConsole(false);
-  // QEventLoop loop;
+
   QObject::connect(
     &ModuleManager::instance(), &ModuleManager::stateDoneLoading, [this]() {
       tomviz::Python python;
