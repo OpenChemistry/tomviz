@@ -68,7 +68,7 @@ bool PipelineSettings::dockerRemove()
 
 QString PipelineSettings::externalPythonExecutablePath()
 {
-  return m_settings->value("pipeline/external.executable", true).toString();
+  return m_settings->value("pipeline/external.executable").toString();
 }
 
 void PipelineSettings::setDockerImage(const QString& image)
