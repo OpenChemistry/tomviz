@@ -4,6 +4,8 @@
 #ifndef tomvizPythonFactory_h
 #define tomvizPythonFactory_h
 
+#include "tomvizcore_export.h"
+
 namespace tomviz {
 
 class OperatorProxyBase;
@@ -11,7 +13,7 @@ class OperatorProxyBaseFactory;
 class PipelineProxyBase;
 class PipelineProxyBaseFactory;
 
-class PythonFactory
+class TOMVIZCORE_EXPORT PythonFactory
 {
 public:
   /// Returns reference to the singleton instance.

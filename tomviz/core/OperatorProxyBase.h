@@ -4,6 +4,8 @@
 #ifndef tomvizOperatorProxyBase_h
 #define tomvizOperatorProxyBase_h
 
+#include "tomvizcore_export.h"
+
 #include <string>
 
 class vtkImageData;
@@ -11,7 +13,7 @@ class vtkImageData;
 namespace tomviz {
 
 /** Pure virtual base class providing a proxy to the operator class. */
-class OperatorProxyBase
+class TOMVIZCORE_EXPORT OperatorProxyBase
 {
 public:
   OperatorProxyBase(void*) {}

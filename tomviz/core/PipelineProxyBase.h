@@ -4,13 +4,15 @@
 #ifndef tomvizPipelineProxyBase_h
 #define tomvizPipelineProxyBase_h
 
+#include "tomvizcore_export.h"
+
 #include <string>
 #include <vector>
 
 namespace tomviz {
 
 /** Pure virtual base class providing a proxy to the operator class. */
-class PipelineProxyBase
+class TOMVIZCORE_EXPORT PipelineProxyBase
 {
 public:
   virtual ~PipelineProxyBase() = default;
