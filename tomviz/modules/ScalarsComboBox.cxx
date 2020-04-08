@@ -19,7 +19,7 @@ void ScalarsComboBox::setOptions(DataSource* ds, Module* module)
     return;
   }
 
-  addItem("Default", Module::s_defaultScalarsIdx);
+  addItem("Default", Module::defaultScalarsIdx());
 
   QStringList scalars = ds->listScalars();
   for (int i = 0; i < scalars.length(); ++i) {
@@ -27,7 +27,7 @@ void ScalarsComboBox::setOptions(DataSource* ds, Module* module)
   }
 
   int currentIndex;
-  if (module->activeScalars() == Module::s_defaultScalarsIdx) {
+  if (module->activeScalars() == Module::defaultScalarsIdx()) {
     currentIndex = 0;
   } else {
     currentIndex = module->activeScalars() + 1;

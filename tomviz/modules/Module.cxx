@@ -80,11 +80,9 @@ public:
   }
 };
 
-const QString Module::s_defaultScalarsName = "tomviz::DefaultScalars";
-const int Module::s_defaultScalarsIdx = -1;
-
 Module::Module(QObject* parentObject)
-  : QObject(parentObject), d(new Module::MInternals())
+  : QObject(parentObject), d(new Module::MInternals()),
+    m_activeScalars(Module::defaultScalarsIdx())
 {}
 
 Module::~Module() = default;
@@ -302,8 +300,8 @@ bool Module::deserialize(const QJsonObject& json)
 
   if (json.contains("activeScalars")) {
     auto activeScalarsName = json["activeScalars"].toString();
-    if (activeScalarsName == Module::s_defaultScalarsName) {
-      m_activeScalars = Module::s_defaultScalarsIdx;
+    if (activeScalarsName == Module::defaultScalarsName()) {
+      m_activeScalars = Module::defaultScalarsIdx();
     } else {
       m_activeScalars = dataSource()->scalarsIdx(activeScalarsName);
     }
@@ -346,10 +344,20 @@ bool Module::updateClippingPlane(vtkPlane* plane, bool newFilter)
   return false;
 }
 
+QString Module::defaultScalarsName()
+{
+  return "tomviz::DefaultScalars";
+}
+
+int Module::defaultScalarsIdx()
+{
+  return -1;
+}
+
 QString Module::activeScalarsName() const
 {
-  if (m_activeScalars == Module::s_defaultScalarsIdx) {
-    return Module::s_defaultScalarsName;
+  if (m_activeScalars == Module::defaultScalarsIdx()) {
+    return Module::defaultScalarsName();
   } else {
     return dataSource()->scalarsName(m_activeScalars);
   }

@@ -598,7 +598,7 @@ void ModuleSlice::onScalarArrayChanged()
   }
 
   QString arrayName;
-  if (activeScalars() == Module::s_defaultScalarsIdx) {
+  if (activeScalars() == Module::defaultScalarsIdx()) {
     arrayName = dataSource()->activeScalars();
   } else {
     arrayName = dataSource()->scalarsName(activeScalars());

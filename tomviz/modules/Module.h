@@ -115,8 +115,8 @@ public:
   /// Returns the active scalars of the module
   int activeScalars() const { return m_activeScalars; }
   QString activeScalarsName() const;
-  static const QString s_defaultScalarsName;
-  static const int s_defaultScalarsIdx;
+  static QString defaultScalarsName();
+  static int defaultScalarsIdx();
 
 signals:
 
@@ -196,7 +196,7 @@ private:
 
   class MInternals;
   const QScopedPointer<MInternals> d;
-  int m_activeScalars = s_defaultScalarsIdx;
+  int m_activeScalars;
 };
 } // namespace tomviz
 #endif
