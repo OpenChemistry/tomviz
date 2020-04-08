@@ -665,7 +665,7 @@ void ModuleClip::onInvertPlaneChanged()
 
 void ModuleClip::onUpdateColor(const QColor& color)
 {
-  double rgb[3] = {color.redF(), color.greenF(), color.blueF()};
+  double rgb[3] = { color.redF(), color.greenF(), color.blueF() };
   m_widget->GetTexturePlaneProperty()->SetColor(rgb);
   m_planeColor.setRgbF(rgb[0], rgb[1], rgb[2]);
   emit renderNeeded();
