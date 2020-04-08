@@ -502,7 +502,9 @@ QJsonObject DataSource::serialize() const
 
 bool DataSource::deserialize(const QJsonObject& state)
 {
-  setLabel(state["label"].toString());
+  if (!state["label"].isUndefined()) {
+    setLabel(state["label"].toString());
+  }
 
   if (state.contains("colorOpacityMap")) {
     tomviz::deserialize(colorMap(), state["colorOpacityMap"].toObject());
