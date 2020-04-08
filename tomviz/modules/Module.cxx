@@ -80,7 +80,8 @@ public:
   }
 };
 
-const int Module::DEFAULT_SCALARS = -1;
+const QString Module::s_defaultScalarsName = "tomviz::DefaultScalars";
+const int Module::s_defaultScalarsIdx = -1;
 
 Module::Module(QObject* parentObject)
   : QObject(parentObject), d(new Module::MInternals())
@@ -262,7 +263,7 @@ QJsonObject Module::serialize() const
     }
   }
   json["properties"] = props;
-  json["activeScalars"] = m_activeScalars;
+  json["activeScalars"] = activeScalarsName();
   json["id"] = QString().sprintf("%p", static_cast<const void*>(this));
   json["type"] = ModuleFactory::moduleType(this);
   json["viewId"] = static_cast<int>(this->view()->GetGlobalID());
@@ -300,7 +301,12 @@ bool Module::deserialize(const QJsonObject& json)
   }
 
   if (json.contains("activeScalars")) {
-    m_activeScalars = json["activeScalars"].toInt();
+    auto activeScalarsName = json["activeScalars"].toString();
+    if (activeScalarsName == Module::s_defaultScalarsName) {
+      m_activeScalars = Module::s_defaultScalarsIdx;
+    } else {
+      m_activeScalars = dataSource()->scalarsIdx(activeScalarsName);
+    }
   }
 
   return true;
@@ -338,5 +344,14 @@ bool Module::setVisibility(bool val) {
 bool Module::updateClippingPlane(vtkPlane* plane, bool newFilter)
 {
   return false;
+}
+
+QString Module::activeScalarsName() const
+{
+  if (m_activeScalars == Module::s_defaultScalarsIdx) {
+    return Module::s_defaultScalarsName;
+  } else {
+    return dataSource()->scalarsName(m_activeScalars);
+  }
 }
 } // end of namespace tomviz

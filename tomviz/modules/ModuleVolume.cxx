@@ -389,6 +389,11 @@ void ModuleVolume::setJittering(const bool val)
 
 void ModuleVolume::onScalarArrayChanged()
 {
+  // The scalar arrays may have been renamed
+  if (m_scalarsCombo) {
+    m_scalarsCombo->setOptions(dataSource(), this);
+  }
+
   m_volumeMapper->SelectScalarArray(scalarsIndex());
   auto tp = dataSource()->producer();
   if (tp) {
@@ -400,7 +405,7 @@ void ModuleVolume::onScalarArrayChanged()
 int ModuleVolume::scalarsIndex()
 {
   int index;
-  if (activeScalars() == Module::DEFAULT_SCALARS) {
+  if (activeScalars() == Module::s_defaultScalarsIdx) {
     index = dataSource()->activeScalarsIdx();
   } else {
     index = activeScalars();

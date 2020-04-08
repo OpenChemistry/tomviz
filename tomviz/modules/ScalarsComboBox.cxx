@@ -11,19 +11,28 @@ ScalarsComboBox::ScalarsComboBox(QWidget* parent) : QComboBox(parent)
 
 void ScalarsComboBox::setOptions(DataSource* ds, Module* module)
 {
+  const QSignalBlocker blocker(this);
+
   clear();
 
   if (!ds || !module) {
     return;
   }
 
-  addItem("Default", module->DEFAULT_SCALARS);
+  addItem("Default", Module::s_defaultScalarsIdx);
 
   QStringList scalars = ds->listScalars();
   for (int i = 0; i < scalars.length(); ++i) {
     addItem(scalars[i], i);
   }
 
-  setCurrentIndex(module->activeScalars() + 1);
+  int currentIndex;
+  if (module->activeScalars() == Module::s_defaultScalarsIdx) {
+    currentIndex = 0;
+  } else {
+    currentIndex = module->activeScalars() + 1;
+  }
+
+  setCurrentIndex(currentIndex);
 }
 }

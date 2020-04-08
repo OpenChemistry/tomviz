@@ -592,8 +592,13 @@ vtkImageData* ModuleSlice::imageData() const
 
 void ModuleSlice::onScalarArrayChanged()
 {
+  // The scalar arrays may have been renamed
+  if (m_scalarsCombo) {
+    m_scalarsCombo->setOptions(dataSource(), this);
+  }
+
   QString arrayName;
-  if (activeScalars() == Module::DEFAULT_SCALARS) {
+  if (activeScalars() == Module::s_defaultScalarsIdx) {
     arrayName = dataSource()->activeScalars();
   } else {
     arrayName = dataSource()->scalarsName(activeScalars());
