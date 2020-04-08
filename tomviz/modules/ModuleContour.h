@@ -90,6 +90,7 @@ protected:
 
 private slots:
   void onDataPropertiesChanged();
+  void onActiveScalarsChanged();
   void onColorMapDataToggled(const bool state);
   void onAmbientChanged(const double value);
   void onDiffuseChanged(const double value);
@@ -100,7 +101,7 @@ private slots:
   void onOpacityChanged(const double value);
   void onColorChanged(const QColor& color);
   void onUseSolidColorToggled(const bool state);
-  void onContourByArrayNameChanged(const QString& name);
+  void onContourByArrayValueChanged(int i);
   void onColorByArrayToggled(const bool state);
   void onColorByArrayNameChanged(const QString& name);
 

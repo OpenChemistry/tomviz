@@ -89,13 +89,10 @@ void ModuleContourWidget::setColorByArrayOptions(const QStringList& options)
     m_ui->comboColorByArray->addItem(opt, opt);
 }
 
-void ModuleContourWidget::setContourByArrayOptions(const QStringList& options)
+void ModuleContourWidget::setContourByArrayOptions(DataSource* ds,
+                                                   Module* module)
 {
-  m_ui->comboContourByArray->clear();
-
-  // Save and use the text in the item data
-  for (const auto& opt : options)
-    m_ui->comboContourByArray->addItem(opt, opt);
+  m_ui->comboContourByArray->setOptions(ds, module);
 }
 
 void ModuleContourWidget::setColorMapData(const bool state)
@@ -173,27 +170,27 @@ void ModuleContourWidget::setColorByArrayName(const QString& name)
   qCritical() << "Could not find" << name << "in ColorByArray options";
 }
 
-void ModuleContourWidget::setContourByArrayName(const QString& name)
+void ModuleContourWidget::setContourByArrayValue(int val)
 {
   for (int i = 0; i < m_ui->comboContourByArray->count(); ++i) {
-    if (m_ui->comboContourByArray->itemData(i).toString() == name) {
+    if (m_ui->comboContourByArray->itemData(i).toInt() == val) {
       m_ui->comboContourByArray->setCurrentIndex(i);
       return;
     }
   }
 
-  qCritical() << "Could not find" << name << "in ContourByArray options";
+  qCritical() << "Could not find" << val << "in ContourByArray options";
+}
+
+void ModuleContourWidget::onContourByArrayIndexChanged(int i)
+{
+  emit contourByArrayValueChanged(
+    m_ui->comboContourByArray->itemData(i).toInt());
 }
 
 void ModuleContourWidget::onColorByArrayIndexChanged(int i)
 {
   emit colorByArrayNameChanged(m_ui->comboColorByArray->itemData(i).toString());
-}
-
-void ModuleContourWidget::onContourByArrayIndexChanged(int i)
-{
-  emit contourByArrayNameChanged(
-    m_ui->comboContourByArray->itemData(i).toString());
 }
 
 void ModuleContourWidget::onRepresentationIndexChanged(int i)

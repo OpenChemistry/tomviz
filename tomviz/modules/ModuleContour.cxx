@@ -31,7 +31,6 @@ public:
   bool ColorByArray = false;
   bool UseSolidColor = false;
   QString ColorArrayName;
-  QString ContourArrayName;
   vtkNew<vtkActiveScalarsProducer> ColorArrayProducer;
   vtkNew<vtkActiveScalarsProducer> ContourArrayProducer;
 };
@@ -60,7 +59,6 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     return false;
   }
 
-  d->ContourArrayName = data->activeScalars();
   d->ColorArrayName = data->activeScalars();
 
   updateContourArrayProducer();
@@ -83,6 +81,8 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 
   connect(data, &DataSource::dataPropertiesChanged, this,
           &ModuleContour::onDataPropertiesChanged);
+  connect(data, &DataSource::activeScalarsChanged, this,
+          &ModuleContour::onActiveScalarsChanged);
 
   emit renderNeeded();
   return true;
@@ -98,8 +98,22 @@ bool ModuleContour::finalize()
 
 void ModuleContour::onDataPropertiesChanged()
 {
+  updateContourByArrayOptions();
   updateColorArrayProducer();
   updateColorByArrayOptions();
+}
+
+void ModuleContour::onActiveScalarsChanged()
+{
+  // We only need to update if we are using the default option
+  if (activeScalars() != Module::s_defaultScalarsIdx)
+    return;
+
+  updateContourArrayProducer();
+  updateIsoRange();
+  resetIsoValue();
+  updateColorMap();
+  emit renderNeeded();
 }
 
 void ModuleContour::updateContourArrayProducer()
@@ -197,8 +211,8 @@ void ModuleContour::addToPanel(QWidget* panel)
           &ModuleContour::onColorChanged);
   connect(m_controllers, &ModuleContourWidget::useSolidColorToggled, this,
           &ModuleContour::onUseSolidColorToggled);
-  connect(m_controllers, &ModuleContourWidget::contourByArrayNameChanged, this,
-          &ModuleContour::onContourByArrayNameChanged);
+  connect(m_controllers, &ModuleContourWidget::contourByArrayValueChanged, this,
+          &ModuleContour::onContourByArrayValueChanged);
   connect(m_controllers, &ModuleContourWidget::colorByArrayToggled, this,
           &ModuleContour::onColorByArrayToggled);
   connect(m_controllers, &ModuleContourWidget::colorByArrayNameChanged, this,
@@ -226,7 +240,7 @@ void ModuleContour::updatePanel()
   m_controllers->setOpacity(opacity());
   m_controllers->setColor(color());
   m_controllers->setUseSolidColor(useSolidColor());
-  m_controllers->setContourByArrayName(contourByArrayName());
+  m_controllers->setContourByArrayValue(activeScalars());
   m_controllers->setColorByArray(colorByArray());
   m_controllers->setColorByArrayName(colorByArrayName());
 }
@@ -270,13 +284,7 @@ void ModuleContour::updateContourByArrayOptions()
     return;
 
   QSignalBlocker blocker(m_controllers);
-  QStringList options = dataSource()->listScalars();
-  m_controllers->setContourByArrayOptions(options);
-
-  if (!options.contains(contourByArrayName()))
-    onContourByArrayNameChanged(dataSource()->activeScalars());
-
-  m_controllers->setContourByArrayName(contourByArrayName());
+  m_controllers->setContourByArrayOptions(dataSource(), this);
 }
 
 void ModuleContour::updateColorByArrayOptions()
@@ -323,7 +331,6 @@ QJsonObject ModuleContour::serialize() const
   props["representation"] = representation();
   props["opacity"] = opacity();
   props["mapScalars"] = colorMapData();
-  props["contourByArrayName"] = contourByArrayName();
   props["colorByArray"] = colorByArray();
   props["colorByArrayName"] = colorByArrayName();
 
@@ -354,7 +361,6 @@ bool ModuleContour::deserialize(const QJsonObject& json)
   onRepresentationChanged(props["representation"].toString());
   onOpacityChanged(props["opacity"].toDouble());
   onColorMapDataToggled(props["mapScalars"].toBool());
-  onContourByArrayNameChanged(props["contourByArrayName"].toString());
   onColorByArrayToggled(props["colorByArray"].toBool());
   onColorByArrayNameChanged(props["colorByArrayName"].toString());
 
@@ -443,7 +449,10 @@ bool ModuleContour::useSolidColor() const
 
 QString ModuleContour::contourByArrayName() const
 {
-  return d->ContourArrayName;
+  if (activeScalars() == Module::s_defaultScalarsIdx)
+    return dataSource()->activeScalars();
+
+  return dataSource()->scalarsName(activeScalars());
 }
 
 bool ModuleContour::colorByArray() const
@@ -525,9 +534,9 @@ void ModuleContour::onUseSolidColorToggled(const bool state)
   emit renderNeeded();
 }
 
-void ModuleContour::onContourByArrayNameChanged(const QString& name)
+void ModuleContour::onContourByArrayValueChanged(int i)
 {
-  d->ContourArrayName = name;
+  setActiveScalars(i);
   updateContourArrayProducer();
   updateIsoRange();
   resetIsoValue();

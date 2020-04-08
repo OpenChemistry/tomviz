@@ -22,6 +22,9 @@ class LightingParametersForm;
 
 namespace tomviz {
 
+class DataSource;
+class Module;
+
 class ModuleContourWidget : public QWidget
 {
   Q_OBJECT
@@ -31,7 +34,7 @@ public:
   ~ModuleContourWidget() override;
 
   void setIsoRange(double range[2]);
-  void setContourByArrayOptions(const QStringList& options);
+  void setContourByArrayOptions(DataSource* ds, Module* module);
   void setColorByArrayOptions(const QStringList& options);
 
   //@{
@@ -50,7 +53,7 @@ public:
   void setOpacity(const double value);
   void setColor(const QColor& color);
   void setUseSolidColor(const bool state);
-  void setContourByArrayName(const QString& name);
+  void setContourByArrayValue(int i);
   void setColorByArray(const bool state);
   void setColorByArrayName(const QString& name);
   //@}
@@ -70,14 +73,14 @@ signals:
   void opacityChanged(const double value);
   void colorChanged(const QColor& color);
   void useSolidColorToggled(const bool state);
-  void contourByArrayNameChanged(const QString& name);
+  void contourByArrayValueChanged(int i);
   void colorByArrayToggled(const bool state);
   void colorByArrayNameChanged(const QString& name);
   //@}
 
 private:
-  void onColorByArrayIndexChanged(int i);
   void onContourByArrayIndexChanged(int i);
+  void onColorByArrayIndexChanged(int i);
   void onRepresentationIndexChanged(int i);
 
   ModuleContourWidget(const ModuleContourWidget&) = delete;

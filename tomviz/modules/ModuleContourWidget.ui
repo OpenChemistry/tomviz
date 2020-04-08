@@ -71,7 +71,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QComboBox" name="comboContourByArray"/>
+      <widget class="tomviz::ScalarsComboBox" name="comboContourByArray"/>
      </item>
     </layout>
    </item>
@@ -141,6 +141,11 @@
    <extends>QWidget</extends>
    <header>pqColorChooserButton.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>tomviz::ScalarsComboBox</class>
+   <extends>QComboBox</extends>
+   <header>ScalarsComboBox.h</header>
   </customwidget>
  </customwidgets>
  <tabstops>
