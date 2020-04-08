@@ -58,6 +58,7 @@ public:
   double opacity() const;
   QColor color() const;
   bool useSolidColor() const;
+  QString contourByArrayName() const;
   bool colorByArray() const;
   QString colorByArrayName() const;
   bool updateClippingPlane(vtkPlane* plane, bool newFilter) override;
@@ -66,9 +67,11 @@ protected:
   void updatePanel();
   void updateColorMap() override;
   void updateColorArray();
-  void updateColorArrayDataSet();
-  void clearColorArrayDataSet();
+  void updateContourArrayProducer();
+  void updateColorArrayProducer();
+  void clearColorArrayProducer();
   void updateIsoRange();
+  void updateContourByArrayOptions();
   void updateColorByArrayOptions();
 
   vtkNew<vtkActor> m_actor;
@@ -86,8 +89,8 @@ protected:
   QString m_representation;
 
 private slots:
-  void onActiveScalarsChanged();
   void onDataPropertiesChanged();
+  void onActiveScalarsChanged();
   void onColorMapDataToggled(const bool state);
   void onAmbientChanged(const double value);
   void onDiffuseChanged(const double value);
@@ -98,6 +101,7 @@ private slots:
   void onOpacityChanged(const double value);
   void onColorChanged(const QColor& color);
   void onUseSolidColorToggled(const bool state);
+  void onContourByArrayValueChanged(int i);
   void onColorByArrayToggled(const bool state);
   void onColorByArrayNameChanged(const QString& name);
 

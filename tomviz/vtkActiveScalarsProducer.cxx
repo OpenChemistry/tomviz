@@ -9,7 +9,7 @@
 #include <vtkObjectFactory.h>
 #include <vtkPointData.h>
 
-vtkStandardNewMacro(vtkActiveScalarsProducer);
+vtkStandardNewMacro(vtkActiveScalarsProducer)
 
 vtkActiveScalarsProducer::vtkActiveScalarsProducer()
 {
@@ -44,7 +44,7 @@ void vtkActiveScalarsProducer::SetOutput(vtkDataObject* newOutput)
   }
 }
 
-void vtkActiveScalarsProducer::SetActiveScalars(char* name)
+void vtkActiveScalarsProducer::SetActiveScalars(const char* name)
 {
   auto data = vtkImageData::SafeDownCast(this->Output);
   if (data) {

@@ -12,13 +12,13 @@ class vtkActiveScalarsProducer : public vtkTrivialProducer
 {
 public:
   static vtkActiveScalarsProducer* New();
-  vtkTypeMacro(vtkActiveScalarsProducer, vtkTrivialProducer);
+  vtkTypeMacro(vtkActiveScalarsProducer, vtkTrivialProducer)
 
   vtkMTimeType GetMTime() override;
 
   void SetOutput(vtkDataObject* newOutput) override;
 
-  void SetActiveScalars(char* name);
+  void SetActiveScalars(const char* name);
 
 protected:
   vtkActiveScalarsProducer();

@@ -5,6 +5,8 @@
 #include "ui_LightingParametersForm.h"
 #include "ui_ModuleContourWidget.h"
 
+#include <QDebug>
+
 namespace tomviz {
 
 ModuleContourWidget::ModuleContourWidget(QWidget* parent_)
@@ -35,7 +37,9 @@ ModuleContourWidget::ModuleContourWidget(QWidget* parent_)
 
   QStringList labelsRepre;
   labelsRepre << tr("Surface") << tr("Wireframe") << tr("Points");
-  m_ui->cbRepresentation->addItems(labelsRepre);
+
+  for (const auto& label : labelsRepre)
+    m_ui->cbRepresentation->addItem(label, label);
 
   connect(m_ui->cbColorMapData, &QCheckBox::toggled, this,
           &ModuleContourWidget::colorMapDataToggled);
@@ -49,8 +53,9 @@ ModuleContourWidget::ModuleContourWidget(QWidget* parent_)
           this, &ModuleContourWidget::specularPowerChanged);
   connect(m_ui->sliValue, &DoubleSliderWidget::valueEdited, this,
           &ModuleContourWidget::isoChanged);
-  connect(m_ui->cbRepresentation, &QComboBox::currentTextChanged, this,
-          &ModuleContourWidget::representationChanged);
+  connect(m_ui->cbRepresentation,
+          QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          &ModuleContourWidget::onRepresentationIndexChanged);
   connect(m_ui->sliOpacity, &DoubleSliderWidget::valueEdited, this,
           &ModuleContourWidget::opacityChanged);
   connect(m_ui->colorChooser, &pqColorChooserButton::chosenColorChanged, this,
@@ -59,8 +64,12 @@ ModuleContourWidget::ModuleContourWidget(QWidget* parent_)
           &ModuleContourWidget::useSolidColorToggled);
   connect(m_ui->cbColorByArray, &QCheckBox::toggled, this,
           &ModuleContourWidget::colorByArrayToggled);
-  connect(m_ui->comboColorByArray, &QComboBox::currentTextChanged, this,
-          &ModuleContourWidget::colorByArrayNameChanged);
+  connect(m_ui->comboColorByArray,
+          QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          &ModuleContourWidget::onColorByArrayIndexChanged);
+  connect(m_ui->comboContourByArray,
+          QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          &ModuleContourWidget::onContourByArrayIndexChanged);
 }
 
 ModuleContourWidget::~ModuleContourWidget() = default;
@@ -74,7 +83,16 @@ void ModuleContourWidget::setIsoRange(double range[2])
 void ModuleContourWidget::setColorByArrayOptions(const QStringList& options)
 {
   m_ui->comboColorByArray->clear();
-  m_ui->comboColorByArray->addItems(options);
+
+  // Save and use the text in the item data
+  for (const auto& opt : options)
+    m_ui->comboColorByArray->addItem(opt, opt);
+}
+
+void ModuleContourWidget::setContourByArrayOptions(DataSource* ds,
+                                                   Module* module)
+{
+  m_ui->comboContourByArray->setOptions(ds, module);
 }
 
 void ModuleContourWidget::setColorMapData(const bool state)
@@ -109,7 +127,15 @@ void ModuleContourWidget::setIso(const double value)
 
 void ModuleContourWidget::setRepresentation(const QString& representation)
 {
-  m_ui->cbRepresentation->setCurrentText(representation);
+  for (int i = 0; i < m_ui->cbRepresentation->count(); ++i) {
+    if (m_ui->cbRepresentation->itemData(i).toString() == representation) {
+      m_ui->cbRepresentation->setCurrentIndex(i);
+      return;
+    }
+  }
+
+  qCritical() << "Could not find" << representation
+              << "in representation options";
 }
 
 void ModuleContourWidget::setOpacity(const double value)
@@ -134,7 +160,42 @@ void ModuleContourWidget::setColorByArray(const bool state)
 
 void ModuleContourWidget::setColorByArrayName(const QString& name)
 {
-  m_ui->comboColorByArray->setCurrentText(name);
+  for (int i = 0; i < m_ui->comboColorByArray->count(); ++i) {
+    if (m_ui->comboColorByArray->itemData(i).toString() == name) {
+      m_ui->comboColorByArray->setCurrentIndex(i);
+      return;
+    }
+  }
+
+  qCritical() << "Could not find" << name << "in ColorByArray options";
+}
+
+void ModuleContourWidget::setContourByArrayValue(int val)
+{
+  for (int i = 0; i < m_ui->comboContourByArray->count(); ++i) {
+    if (m_ui->comboContourByArray->itemData(i).toInt() == val) {
+      m_ui->comboContourByArray->setCurrentIndex(i);
+      return;
+    }
+  }
+
+  qCritical() << "Could not find" << val << "in ContourByArray options";
+}
+
+void ModuleContourWidget::onContourByArrayIndexChanged(int i)
+{
+  emit contourByArrayValueChanged(
+    m_ui->comboContourByArray->itemData(i).toInt());
+}
+
+void ModuleContourWidget::onColorByArrayIndexChanged(int i)
+{
+  emit colorByArrayNameChanged(m_ui->comboColorByArray->itemData(i).toString());
+}
+
+void ModuleContourWidget::onRepresentationIndexChanged(int i)
+{
+  emit representationChanged(m_ui->cbRepresentation->itemData(i).toString());
 }
 
 } // namespace tomviz
