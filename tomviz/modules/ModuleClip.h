@@ -102,6 +102,7 @@ private:
   int m_planePosition = 0;
   QPointer<DoubleSliderWidget> m_opacitySlider;
   double m_opacity = 0.1;
+  QColor m_planeColor = QColor(0, 0, 0);
 
   QPointer<pqColorChooserButton> m_colorSelector;
   QPointer<pqLineEdit> m_pointInputs[3];

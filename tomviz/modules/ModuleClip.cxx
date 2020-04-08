@@ -235,7 +235,7 @@ void ModuleClip::addToPanel(QWidget* panel)
 
   m_colorSelector = new pqColorChooserButton(panel);
   m_colorSelector->setShowAlphaChannel(false);
-  m_colorSelector->setChosenColor(QColor(1, 1, 1));
+  m_colorSelector->setChosenColor(m_planeColor);
   formLayout->addRow("Select Color", m_colorSelector);
 
   connect(m_colorSelector, &pqColorChooserButton::chosenColorChanged, this,
@@ -385,9 +385,8 @@ QJsonObject ModuleClip::serialize() const
   vtkSMPropertyHelper invertPlaneProperty(m_propsPanelProxy, "InvertPlane");
   props["invertPlane"] = invertPlaneProperty.GetAsInt() != 0;
 
-  QColor color = m_colorSelector->chosenColor();
-  double rgb[3] = { color.redF(), color.greenF(), color.blueF() };
-  QJsonArray selection = { rgb[0], rgb[1], rgb[2] };
+  QJsonArray selection = { m_planeColor.redF(), m_planeColor.greenF(),
+                           m_planeColor.blueF() };
   props["selectedColor"] = selection;
   props["opacity"] = m_opacity;
 
@@ -666,11 +665,9 @@ void ModuleClip::onInvertPlaneChanged()
 
 void ModuleClip::onUpdateColor(const QColor& color)
 {
-  double rgb[3];
-  rgb[0] = color.redF();
-  rgb[1] = color.greenF();
-  rgb[2] = color.blueF();
+  double rgb[3] = {color.redF(), color.greenF(), color.blueF()};
   m_widget->GetTexturePlaneProperty()->SetColor(rgb);
+  m_planeColor.setRgbF(rgb[0], rgb[1], rgb[2]);
   emit renderNeeded();
 }
 
