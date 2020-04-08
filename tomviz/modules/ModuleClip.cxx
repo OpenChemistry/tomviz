@@ -105,10 +105,12 @@ bool ModuleClip::initialize(DataSource* data, vtkSMViewProxy* vtkView)
       }
     }
     connect(&ModuleManager::instance(), &ModuleManager::moduleAdded, this,
-            [this](Module* module) {
-              connect(this, SIGNAL(clipFilterUpdated(vtkPlane*, bool)), module,
-                      SLOT(updateClippingPlane(vtkPlane*, bool)));
-              emit clipFilterUpdated(m_clippingPlane, false);
+            [this, data](Module* module) {
+              if (module->dataSource() == data) {
+                connect(this, SIGNAL(clipFilterUpdated(vtkPlane*, bool)),
+                        module, SLOT(updateClippingPlane(vtkPlane*, bool)));
+                emit clipFilterUpdated(m_clippingPlane, false);
+              }
             });
   }
 
