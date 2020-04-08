@@ -5,6 +5,7 @@ include_directories(SYSTEM
   ${Qt5Concurrent_INCLUDE_DIRS}
   ${PROJECT_SOURCE_DIR}/thirdparty/pybind11/include)
 
+add_subdirectory(core)
 add_subdirectory(pvextensions)
 
 set(SOURCES
@@ -123,6 +124,8 @@ set(SOURCES
   PipelineManager.h
   PipelineModel.cxx
   PipelineModel.h
+  PipelineProxy.cxx
+  PipelineProxy.h
   PipelineView.cxx
   PipelineView.h
   PipelineWorker.cxx
@@ -327,6 +330,8 @@ list(APPEND SOURCES
   operators/OperatorFactory.h
   operators/OperatorPropertiesPanel.cxx
   operators/OperatorPropertiesPanel.h
+  operators/OperatorProxy.cxx
+  operators/OperatorProxy.h
   operators/OperatorPython.cxx
   operators/OperatorPython.h
   operators/OperatorResult.cxx
@@ -626,6 +631,7 @@ target_link_libraries(tomviz PRIVATE tomvizlib ${OPENGL_LIBRARIES})
 
 target_link_libraries(tomvizlib
   PUBLIC
+    tomvizcore
     ParaView::pqApplicationComponents
     ParaView::pqPython
     ParaView::ServerManagerRendering

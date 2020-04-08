@@ -10,7 +10,6 @@
 #include <pqSaveAnimationReaction.h>
 #include <pqSettings.h>
 #include <pqView.h>
-#include <vtkPVPlugin.h>
 #include <vtkPVRenderView.h>
 #include <vtkSMPropertyHelper.h>
 #include <vtkSMSettings.h>
@@ -36,9 +35,11 @@
 #include "ModuleMenu.h"
 #include "ModulePropertiesPanel.h"
 #include "OperatorFactory.h"
+#include "OperatorProxy.h"
 #include "PassiveAcquisitionWidget.h"
 #include "Pipeline.h"
 #include "PipelineManager.h"
+#include "PipelineProxy.h"
 #include "PipelineSettingsDialog.h"
 #include "ProgressDialogManager.h"
 #include "PythonGeneratedDatasetReaction.h"
@@ -254,7 +255,11 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
                             m_pipelineTemplates);
   // Populate the menu with templates
   findPipelineTemplates();
-  
+
+  // Register our factories for Python wrapping.
+  OperatorProxyFactory::registerWithFactory();
+  PipelineProxyFactory::registerWithFactory();
+
   // Build Tomography menu
   // ################################################################
   QAction* setVolumeDataTypeAction =

@@ -10,7 +10,8 @@ class vtkImageData;
 
 namespace tomviz {
 class OperatorPython;
-}
+class OperatorProxyBase;
+} // namespace tomviz
 
 struct OperatorPythonWrapper
 {
@@ -27,7 +28,7 @@ struct OperatorPythonWrapper
   void progressData();
   void setProgressData(vtkImageData* object);
 
-  tomviz::OperatorPython* op = nullptr;
+  tomviz::OperatorProxyBase* m_op = nullptr;
 };
 
 #endif
