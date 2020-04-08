@@ -45,7 +45,7 @@ bool SaveLoadTemplateReaction::saveTemplate()
     if (!tomviz::userDataPath().isEmpty()) {
       path = tomviz::userDataPath() + "/templates";
       QDir dir(path);
-      if (!dir.mkdir(path)) {
+      if (!dir.exists() && !dir.mkdir(path)) {
         QMessageBox::warning(
           tomviz::mainWidget(), "Could not create tomviz directory",
           QString("Could not create tomviz directory '%1'.").arg(path));
