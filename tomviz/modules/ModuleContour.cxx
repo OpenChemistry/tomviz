@@ -106,7 +106,7 @@ void ModuleContour::onDataPropertiesChanged()
 void ModuleContour::onActiveScalarsChanged()
 {
   // We only need to update if we are using the default option
-  if (activeScalars() != Module::s_defaultScalarsIdx)
+  if (activeScalars() != Module::defaultScalarsIdx())
     return;
 
   updateContourArrayProducer();
@@ -449,7 +449,7 @@ bool ModuleContour::useSolidColor() const
 
 QString ModuleContour::contourByArrayName() const
 {
-  if (activeScalars() == Module::s_defaultScalarsIdx)
+  if (activeScalars() == Module::defaultScalarsIdx())
     return dataSource()->activeScalars();
 
   return dataSource()->scalarsName(activeScalars());
