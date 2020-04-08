@@ -186,8 +186,10 @@ vtkNonOrthoImagePlaneWidget::vtkNonOrthoImagePlaneWidget()
 
 vtkNonOrthoImagePlaneWidget::~vtkNonOrthoImagePlaneWidget()
 {
-  this->Interactor->RemoveObserver(this->VoxelTimerCommand);
-  this->Interactor->DestroyTimer(this->VoxelTimerId);
+  if (this->Interactor) {
+    this->Interactor->RemoveObserver(this->VoxelTimerCommand);
+    this->Interactor->DestroyTimer(this->VoxelTimerId);
+  }
 
   this->PlaneOutlineActor->Delete();
   this->PlaneOutlinePolyData->Delete();
