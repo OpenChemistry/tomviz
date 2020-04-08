@@ -367,7 +367,7 @@ void ModuleSlice::dataUpdated()
 
 void ModuleSlice::dataPropertiesChanged()
 {
-  this->onDirectionChanged(m_direction);
+  onDirectionChanged(m_direction);
 }
 
 void ModuleSlice::setMapScalars(bool b)
