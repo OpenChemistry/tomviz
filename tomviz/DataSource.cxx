@@ -458,6 +458,9 @@ QJsonObject DataSource::serialize() const
     }
   }
 
+  // Serialize the currently active scalars
+  json["activeScalars"] = activeScalars();
+
   // Serialize the color map, opacity map, and others if needed.
   json["colorOpacityMap"] = tomviz::serialize(colorMap());
   json["gradientOpacityMap"] = tomviz::serialize(gradientOpacityMap());
@@ -504,6 +507,10 @@ bool DataSource::deserialize(const QJsonObject& state)
 {
   if (!state["label"].isUndefined()) {
     setLabel(state["label"].toString());
+  }
+
+  if (state.contains("activeScalars")) {
+    setActiveScalars(state["activeScalars"].toString());
   }
 
   if (state.contains("colorOpacityMap")) {
