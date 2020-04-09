@@ -6,11 +6,14 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "DataSource.h"
+#include "core/DataSourceProxyBase.h"
+
 #include "PipelineStateManager.h"
 #include "vtkImageData.h"
 
 namespace py = pybind11;
+
+using tomviz::DataSourceProxyBase;
 
 PYBIND11_VTK_TYPECASTER(vtkImageData)
 
@@ -31,10 +34,10 @@ PYBIND11_PLUGIN(_wrapping)
     .def_property("progress_data", &OperatorPythonWrapper::progressData,
                   &OperatorPythonWrapper::setProgressData);
 
-  py::class_<tomviz::DataSource>(m, "DataSource")
-    .def_property_readonly("dark_data", &tomviz::DataSource::darkData,
+  py::class_<tomviz::DataSourceProxyBase>(m, "DataSource")
+    .def_property_readonly("dark_data", &DataSourceProxyBase::darkData,
                            "Get the dark image data")
-    .def_property_readonly("white_data", &tomviz::DataSource::whiteData,
+    .def_property_readonly("white_data", &DataSourceProxyBase::whiteData,
                            "Get the white image data");
 
   py::class_<PipelineStateManager>(m, "PipelineStateManagerBase")

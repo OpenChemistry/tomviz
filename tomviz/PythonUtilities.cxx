@@ -5,6 +5,8 @@
 
 #include "vtkPython.h" // must be first
 
+#include "core/DataSourceProxyBase.h"
+
 #include "DataSource.h"
 #include "Logger.h"
 #include "OperatorFactory.h"
@@ -508,7 +510,7 @@ Python::Object Python::createDataset(vtkObjectBase* data,
   }
 
   auto dataObj = Python::VTK::GetObjectFromPointer(data);
-  auto dataSourceObj = Python::Object(source);
+  auto dataSourceObj = Python::Object(source.pythonProxy());
 
   Python::Tuple args(2);
   args.set(0, dataObj);

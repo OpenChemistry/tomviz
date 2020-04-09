@@ -24,6 +24,7 @@ class vtkAlgorithm;
 class vtkTrivialProducer;
 
 namespace tomviz {
+class DataSourceProxyBase;
 class Operator;
 class Pipeline;
 
@@ -307,6 +308,9 @@ public:
   /// Set the volume bounds used to generate the subsample
   static void setSubsampleVolumeBounds(vtkDataObject* image, int bs[6]);
 
+  /// Get a simple proxy for the data source to simplify Python wrapping.
+  DataSourceProxyBase* pythonProxy() const { return m_pythonProxy; }
+
 signals:
   /// This signal is fired to notify the world that the DataSource may have
   /// new/updated data.
@@ -350,6 +354,9 @@ private:
 
   class DSInternals;
   const QScopedPointer<DSInternals> Internals;
+
+  /// This is a simple proxy class for forwarding Python calls.
+  DataSourceProxyBase* m_pythonProxy = nullptr;
 
   QJsonObject m_json;
 };
