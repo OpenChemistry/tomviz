@@ -92,6 +92,8 @@ public:
   vtkRectd m_transferFunction2DBox;
   bool UnitsModified = false;
   bool Forkable = true;
+  // Track data array renames
+  QMap<QString, QString> CurrentToOriginal;
 
   // Checks if the tilt angles data array exists on the given VTK data
   // and creates it if it does not exist.
@@ -460,6 +462,12 @@ QJsonObject DataSource::serialize() const
 
   // Serialize the currently active scalars
   json["activeScalars"] = activeScalars();
+  QJsonObject scalarsRename;
+  for (auto it = Internals->CurrentToOriginal.begin();
+       it != Internals->CurrentToOriginal.end(); ++it) {
+    scalarsRename[it.value()] = it.key();
+  }
+  json["scalarsRename"] = scalarsRename;
 
   // Serialize the color map, opacity map, and others if needed.
   json["colorOpacityMap"] = tomviz::serialize(colorMap());
@@ -507,6 +515,13 @@ bool DataSource::deserialize(const QJsonObject& state)
 {
   if (!state["label"].isUndefined()) {
     setLabel(state["label"].toString());
+  }
+
+  if (state.contains("scalarsRename")) {
+    auto scalarsRename = state["scalarsRename"].toObject();
+    for (auto it = scalarsRename.begin(); it != scalarsRename.end(); ++it) {
+      renameScalarsArray(it.key(), it.value().toString());
+    }
   }
 
   if (state.contains("activeScalars")) {
@@ -717,6 +732,12 @@ void DataSource::setSpacing(const double spacing[3], bool markModified)
 
 void DataSource::setActiveScalars(const QString& arrayName)
 {
+  if (!getScalarsArray(arrayName)) {
+    qWarning() << QString("Unable to select %1 as the active scalars array")
+                    .arg(arrayName);
+    return;
+  }
+
   vtkAlgorithm* alg = algorithm();
   if (alg) {
     vtkImageData* data =
@@ -807,6 +828,10 @@ QStringList DataSource::listScalars() const
 void DataSource::renameScalarsArray(const QString& oldName,
                                     const QString& newName)
 {
+  if (oldName == newName) {
+    return;
+  }
+
   const bool isCurrentScalars = oldName == activeScalars();
 
   // Ensure the array actually exist
@@ -830,6 +855,10 @@ void DataSource::renameScalarsArray(const QString& oldName,
     emit activeScalarsChanged();
     emit dataPropertiesChanged();
   }
+
+  auto originalName = Internals->CurrentToOriginal[oldName];
+  Internals->CurrentToOriginal.remove(oldName);
+  Internals->CurrentToOriginal[newName] = originalName;
 }
 
 vtkDataArray* DataSource::getScalarsArray(const QString& arrayName)
@@ -1225,6 +1254,12 @@ void DataSource::init(vtkImageData* data, DataSourceType dataType,
   if (data) {
     auto tp = vtkTrivialProducer::SafeDownCast(source->GetClientSideObject());
     tp->SetOutput(data);
+  }
+
+  // Initialize maps to track array renames
+  auto arrayNames = listScalars();
+  for (auto name : arrayNames) {
+    Internals->CurrentToOriginal[name] = name;
   }
 
   // Setup color map for this data-source.
