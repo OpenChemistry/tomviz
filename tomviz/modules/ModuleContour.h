@@ -89,6 +89,7 @@ protected:
   QString m_representation;
 
 private slots:
+  void onDataChanged();
   void onDataPropertiesChanged();
   void onActiveScalarsChanged();
   void onColorMapDataToggled(const bool state);

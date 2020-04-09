@@ -83,6 +83,8 @@ protected:
 private slots:
   void onPlaneChanged();
 
+  void dataChanged();
+
   void dataUpdated();
 
   void dataPropertiesChanged();

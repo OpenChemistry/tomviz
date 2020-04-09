@@ -68,7 +68,7 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     onTextureInterpolateChanged(m_interpolate);
     pqCoreUtilities::connect(m_widget, vtkCommand::InteractionEvent, this,
                              SLOT(onPlaneChanged()));
-    connect(data, &DataSource::dataChanged, this, &ModuleSlice::dataUpdated);
+    connect(data, &DataSource::dataChanged, this, &ModuleSlice::dataChanged);
     connect(data, &DataSource::activeScalarsChanged, this,
             &ModuleSlice::onScalarArrayChanged);
     connect(data, &DataSource::dataPropertiesChanged, this,
@@ -363,6 +363,16 @@ void ModuleSlice::dataUpdated()
   updateSliceWidget();
   m_widget->UpdatePlacement();
   emit renderNeeded();
+}
+
+void ModuleSlice::dataChanged()
+{
+  // FIXME: Implementing the vtkActiveScalarsProducer as a producer breaks the
+  // vtk pipeline, requiring manual updates to keep in sync like here.
+  // It really should be implemented as a filter.
+  m_producer->SetOutput(dataSource()->dataObject());
+  dataPropertiesChanged();
+  dataUpdated();
 }
 
 void ModuleSlice::dataPropertiesChanged()

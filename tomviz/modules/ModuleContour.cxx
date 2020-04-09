@@ -79,6 +79,7 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   m_view->AddPropToRenderer(m_actor);
   m_view->Update();
 
+  connect(data, &DataSource::dataChanged, this, &ModuleContour::onDataChanged);
   connect(data, &DataSource::dataPropertiesChanged, this,
           &ModuleContour::onDataPropertiesChanged);
   connect(data, &DataSource::activeScalarsChanged, this,
@@ -96,8 +97,17 @@ bool ModuleContour::finalize()
   return true;
 }
 
+void ModuleContour::onDataChanged()
+{
+  // FIXME: Implementing the vtkActiveScalarsProducer as a producer breaks the
+  // vtk pipeline, requiring manual updates to keep in sync like here.
+  // It really should be implemented as a filter.
+  onDataPropertiesChanged();
+}
+
 void ModuleContour::onDataPropertiesChanged()
 {
+  updateContourArrayProducer();
   updateContourByArrayOptions();
   updateColorArrayProducer();
   updateColorByArrayOptions();
