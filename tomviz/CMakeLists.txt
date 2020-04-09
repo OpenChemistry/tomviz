@@ -623,8 +623,7 @@ include_directories(
 configure_file(tomvizConfig.h.in tomvizConfig.h @ONLY)
 configure_file(tomvizPythonConfig.h.in tomvizPythonConfig.h @ONLY)
 
-add_library(tomvizlib ${SOURCES} ${accel_srcs})
-target_link_libraries(tomvizlib PRIVATE ${PYTHON_LIBRARIES})
+add_library(tomvizlib STATIC ${SOURCES} ${accel_srcs})
 set_target_properties(tomvizlib PROPERTIES OUTPUT_NAME tomviz)
 
 set_property(TARGET tomvizlib PROPERTY POSITION_INDEPENDENT_CODE TRUE)
@@ -642,8 +641,9 @@ target_link_libraries(tomvizlib
     VTK::jsoncpp
     VTK::pugixml
     VTK::tiff
-    #    TomvizExtensions
-    Qt5::Network)
+    Qt5::Network
+  PRIVATE
+    ${PYTHON_LIBRARIES})
 if(WIN32)
   target_link_libraries(tomvizlib PUBLIC Qt5::WinMain)
 endif()
