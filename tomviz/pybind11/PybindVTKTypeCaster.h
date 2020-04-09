@@ -35,7 +35,8 @@
       template <typename X>                                                    \
       static typename std::enable_if<!std::is_destructible<X>::value>::type    \
       Delete(X*)                                                               \
-      {}                                                                       \
+      {                                                                        \
+      }                                                                        \
                                                                                \
     public:                                                                    \
       template <typename T>                                                    \
