@@ -4,14 +4,12 @@
 #ifndef tomvizDataSourceBase_h
 #define tomvizDataSourceBase_h
 
-#include "tomvizcore_export.h"
-
 class vtkImageData;
 
 namespace tomviz {
 
 /** Pure virtual base class providing a proxy to the DataSource class. */
-class TOMVIZCORE_EXPORT DataSourceBase
+class DataSourceBase
 {
 public:
   void setDarkData(vtkImageData* data) { m_dark = data; }
