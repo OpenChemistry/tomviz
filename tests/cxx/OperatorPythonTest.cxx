@@ -18,14 +18,30 @@
 
 #include "TomvizTest.h"
 #include "operators/OperatorPython.h"
+#include "operators/OperatorProxy.h"
+#include "PipelineProxy.h"
 
 using namespace tomviz;
 
 class OperatorPythonTest : public ::testing::Test
 {
+public:
+  // This should be called once globally - it is not in my testing :-(
+  static void SetUpTestSuite()
+  {
+    // Register our factories for Python wrapping.
+    OperatorProxyFactory::registerWithFactory();
+    PipelineProxyFactory::registerWithFactory();
+  }
+
 protected:
   void SetUp() override
   {
+    // Register our factories for Python wrapping. Should be done globally
+    // above, but for some reason isn't running for me. Putting it here as a
+    // hack - FIXME: remove this when the single invocation works.
+    OperatorProxyFactory::registerWithFactory();
+    PipelineProxyFactory::registerWithFactory();
     dataObject = vtkDataObject::New();
     pythonOperator = new OperatorPython(nullptr);
   }
