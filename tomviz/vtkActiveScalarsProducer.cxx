@@ -3,6 +3,7 @@
 
 #include "vtkActiveScalarsProducer.h"
 
+#include <vtkDataArray.h>
 #include <vtkExecutive.h>
 #include <vtkGarbageCollector.h>
 #include <vtkImageData.h>
@@ -64,11 +65,28 @@ vtkMTimeType vtkActiveScalarsProducer::GetMTime()
   }
   if (this->Output) {
     auto omtime = this->Output->GetMTime();
-    if (omtime > mtime) {
+    if (omtime >= mtime) {
       mtime = omtime;
+    } else {
+      this->ReSync();
     }
   }
   return mtime;
+}
+
+//----------------------------------------------------------------------------
+void vtkActiveScalarsProducer::ReSync()
+{
+  auto data = vtkImageData::SafeDownCast(this->Output);
+  auto originalData = vtkImageData::SafeDownCast(this->OriginalOutput);
+  if (data && originalData) {
+    auto originalActiveScalars =
+      std::string(originalData->GetPointData()->GetScalars()->GetName());
+    auto currenActiveScalars =
+      std::string(data->GetPointData()->GetScalars()->GetName());
+    data->ShallowCopy(originalData);
+    data->GetPointData()->SetActiveScalars(currenActiveScalars.c_str());
+  }
 }
 
 //----------------------------------------------------------------------------
