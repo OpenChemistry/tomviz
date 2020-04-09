@@ -10,6 +10,9 @@ class vtkGarbageCollector;
 
 class vtkActiveScalarsProducer : public vtkTrivialProducer
 {
+  // FIXME: Implementing the vtkActiveScalarsProducer as a producer breaks the
+  // vtk pipeline, requiring manual updates to keep in sync like here.
+  // It really should be implemented as a filter.
 public:
   static vtkActiveScalarsProducer* New();
   vtkTypeMacro(vtkActiveScalarsProducer, vtkTrivialProducer)
