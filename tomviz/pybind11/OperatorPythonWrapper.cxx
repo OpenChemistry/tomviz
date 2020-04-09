@@ -2,59 +2,55 @@
    It is released under the 3-Clause BSD License, see "LICENSE". */
 
 #include "OperatorPythonWrapper.h"
-#include "OperatorPython.h"
-#include "PythonUtilities.h"
 
-#include <vtkImageData.h>
-#include <vtkSmartPointer.h>
+#include "core/OperatorProxyBase.h"
+#include "core/PythonFactory.h"
 
 using namespace tomviz;
 
 OperatorPythonWrapper::OperatorPythonWrapper(void* o)
 {
-  this->op = static_cast<OperatorPython*>(o);
+  m_op = PythonFactory::instance().createOperatorProxy(o);
 }
 
 bool OperatorPythonWrapper::canceled()
 {
-  return this->op->isCanceled();
+  return m_op->canceled();
 }
 
 void OperatorPythonWrapper::setTotalProgressSteps(int progress)
 {
-  this->op->setTotalProgressSteps(progress);
+  m_op->setTotalProgressSteps(progress);
 }
 
 int OperatorPythonWrapper::totalProgressSteps()
 {
-  return this->op->totalProgressSteps();
+  return m_op->totalProgressSteps();
 }
 
 void OperatorPythonWrapper::setProgressStep(int progress)
 {
-  this->op->setProgressStep(progress);
+  m_op->setProgressStep(progress);
 }
 
 int OperatorPythonWrapper::progressStep()
 {
-  return this->op->progressStep();
+  return m_op->progressStep();
 }
 
 void OperatorPythonWrapper::setProgressMessage(const std::string& message)
 {
-  QString msg = QString::fromStdString(message);
-  this->op->setProgressMessage(msg);
+  m_op->setProgressMessage(message);
 }
 
 std::string OperatorPythonWrapper::progressMessage()
 {
-  return this->op->progressMessage().toStdString();
+  return m_op->progressMessage();
 }
 
 void OperatorPythonWrapper::progressData() {}
 
 void OperatorPythonWrapper::setProgressData(vtkImageData* imageData)
 {
-  TemporarilyReleaseGil releaseMe;
-  emit this->op->childDataSourceUpdated(imageData);
+  m_op->setProgressData(imageData);
 }

@@ -24,6 +24,7 @@ class vtkAlgorithm;
 class vtkTrivialProducer;
 
 namespace tomviz {
+class DataSourceBase;
 class Operator;
 class Pipeline;
 
@@ -134,13 +135,13 @@ public:
   void setDarkData(vtkSmartPointer<vtkImageData> image);
 
   /// Set/get the dark/white data, used in Data Exchange currently
-  vtkImageData* darkData();
+  vtkImageData* darkData() const;
 
   /// Set/get the dark/white data, used in Data Exchange currently
   void setWhiteData(vtkSmartPointer<vtkImageData> image);
 
   /// Set/get the dark/white data, used in Data Exchange currently
-  vtkImageData* whiteData();
+  vtkImageData* whiteData() const;
 
   /// Check to see if the data was subsampled while reading
   bool wasSubsampled() const;
@@ -307,6 +308,9 @@ public:
   /// Set the volume bounds used to generate the subsample
   static void setSubsampleVolumeBounds(vtkDataObject* image, int bs[6]);
 
+  /// Get a simple proxy for the data source to simplify Python wrapping.
+  DataSourceBase* pythonProxy() const { return m_pythonProxy; }
+
 signals:
   /// This signal is fired to notify the world that the DataSource may have
   /// new/updated data.
@@ -350,6 +354,9 @@ private:
 
   class DSInternals;
   const QScopedPointer<DSInternals> Internals;
+
+  /// This is a simple proxy class for forwarding Python calls.
+  DataSourceBase* m_pythonProxy = nullptr;
 
   QJsonObject m_json;
 };

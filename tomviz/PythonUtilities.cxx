@@ -5,6 +5,8 @@
 
 #include "vtkPython.h" // must be first
 
+#include "core/DataSourceBase.h"
+
 #include "DataSource.h"
 #include "Logger.h"
 #include "OperatorFactory.h"
@@ -54,7 +56,7 @@ Python::Object::Object(const Variant& value)
   m_smartPyObject = new vtkSmartPyObject(toPyObject(value));
 }
 
-Python::Object::Object(const DataSource& source)
+Python::Object::Object(const DataSourceBase& source)
 {
   // The vtkSmartPyObject will take ownership of the PyObject*
   py::object obj = py::cast(source, py::return_value_policy::reference);
@@ -508,7 +510,7 @@ Python::Object Python::createDataset(vtkObjectBase* data,
   }
 
   auto dataObj = Python::VTK::GetObjectFromPointer(data);
-  auto dataSourceObj = Python::Object(source);
+  auto dataSourceObj = Python::Object(*source.pythonProxy());
 
   Python::Tuple args(2);
   args.set(0, dataObj);

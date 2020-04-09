@@ -3,6 +3,8 @@
 
 #include "DataSource.h"
 
+#include "core/DataSourceBase.h"
+
 #include "ActiveObjects.h"
 #include "ColorMap.h"
 #include "DataExchangeFormat.h"
@@ -170,6 +172,7 @@ DataSource::~DataSource()
     vtkNew<vtkSMParaViewPipelineController> controller;
     controller->UnRegisterProxy(this->Internals->ProducerProxy);
   }
+  delete m_pythonProxy;
 }
 
 // Simple templated function to extend the image data.
@@ -306,20 +309,22 @@ QStringList DataSource::fileNames() const
 
 void DataSource::setDarkData(vtkSmartPointer<vtkImageData> image)
 {
+  m_pythonProxy->setDarkData(image);
   this->Internals->m_darkData = image;
 }
 
-vtkImageData* DataSource::darkData()
+vtkImageData* DataSource::darkData() const
 {
   return this->Internals->m_darkData;
 }
 
 void DataSource::setWhiteData(vtkSmartPointer<vtkImageData> image)
 {
+  m_pythonProxy->setWhiteData(image);
   this->Internals->m_whiteData = image;
 }
 
-vtkImageData* DataSource::whiteData()
+vtkImageData* DataSource::whiteData() const
 {
   return this->Internals->m_whiteData;
 }
@@ -1194,6 +1199,7 @@ vtkTrivialProducer* DataSource::producer() const
 void DataSource::init(vtkImageData* data, DataSourceType dataType,
                       PersistenceState persistState)
 {
+  m_pythonProxy = new DataSourceBase;
   this->Internals->Type = dataType;
   this->Internals->PersistState = persistState;
   this->Internals->DisplayPosition.Set(0, 0, 0);

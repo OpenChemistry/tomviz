@@ -7,6 +7,10 @@
 #include <string>
 #include <vector>
 
+namespace tomviz {
+class PipelineProxyBase;
+}
+
 class PipelineStateManager
 {
 public:
@@ -19,13 +23,15 @@ public:
   void updateOperator(const std::string& path, const std::string& state);
   std::string serializeModule(const std::string& path, const std::string& id);
   void updateModule(const std::string& path, const std::string& state);
-  std::string serializeDataSource(const std::string& path, const std::string& id);
+  std::string serializeDataSource(const std::string& path,
+                                  const std::string& id);
   void updateDataSource(const std::string& path, const std::string& state);
   std::string addModule(const std::string& dataSourcePath,
                         const std::string& dataSourceId,
                         const std::string& moduleType);
   std::string addOperator(const std::string& dataSourcePath,
-                   const std::string& dataSourceId, const std::string& opState);
+                          const std::string& dataSourceId,
+                          const std::string& opState);
   std::string addDataSource(const std::string& dataSourceState);
   void removeOperator(const std::string& opPath,
                       const std::string& dataSourceId,
@@ -38,8 +44,7 @@ public:
   void modified(std::vector<std::string> opPaths,
                 std::vector<std::string> modulePaths);
   void syncToPython();
-  static void syncViewsToPython();
-  static void syncToApp();
+  void syncViewsToPython();
   void enableSyncToPython();
   void disableSyncToPython();
   void pausePipeline(const std::string& dataSourcePath);
@@ -47,9 +52,8 @@ public:
   void executePipeline(const std::string& dataSourcePath);
   bool pipelinePaused(const std::string& dataSourcePath);
 
-
 private:
-  bool m_syncToPython = true;
+  tomviz::PipelineProxyBase* m_proxy = nullptr;
 };
 
 #endif

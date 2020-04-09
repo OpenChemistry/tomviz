@@ -5,6 +5,7 @@ include_directories(SYSTEM
   ${Qt5Concurrent_INCLUDE_DIRS}
   ${PROJECT_SOURCE_DIR}/thirdparty/pybind11/include)
 
+add_subdirectory(core)
 add_subdirectory(pvextensions)
 
 set(SOURCES
@@ -123,6 +124,8 @@ set(SOURCES
   PipelineManager.h
   PipelineModel.cxx
   PipelineModel.h
+  PipelineProxy.cxx
+  PipelineProxy.h
   PipelineView.cxx
   PipelineView.h
   PipelineWorker.cxx
@@ -327,6 +330,8 @@ list(APPEND SOURCES
   operators/OperatorFactory.h
   operators/OperatorPropertiesPanel.cxx
   operators/OperatorPropertiesPanel.h
+  operators/OperatorProxy.cxx
+  operators/OperatorProxy.h
   operators/OperatorPython.cxx
   operators/OperatorPython.h
   operators/OperatorResult.cxx
@@ -610,13 +615,15 @@ elseif(WIN32)
   list(APPEND exec_sources icons/tomviz.rc)
 endif()
 
-include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(
+  ${CMAKE_CURRENT_BINARY_DIR}/core
+  ${CMAKE_CURRENT_BINARY_DIR}
+  ${CMAKE_CURRENT_SOURCE_DIR})
 
 configure_file(tomvizConfig.h.in tomvizConfig.h @ONLY)
 configure_file(tomvizPythonConfig.h.in tomvizPythonConfig.h @ONLY)
 
-add_library(tomvizlib ${SOURCES} ${accel_srcs})
-target_link_libraries(tomvizlib PRIVATE ${PYTHON_LIBRARIES})
+add_library(tomvizlib STATIC ${SOURCES} ${accel_srcs})
 set_target_properties(tomvizlib PROPERTIES OUTPUT_NAME tomviz)
 
 set_property(TARGET tomvizlib PROPERTY POSITION_INDEPENDENT_CODE TRUE)
@@ -626,6 +633,7 @@ target_link_libraries(tomviz PRIVATE tomvizlib ${OPENGL_LIBRARIES})
 
 target_link_libraries(tomvizlib
   PUBLIC
+    tomvizcore
     ParaView::pqApplicationComponents
     ParaView::pqPython
     ParaView::ServerManagerRendering
@@ -633,8 +641,9 @@ target_link_libraries(tomvizlib
     VTK::jsoncpp
     VTK::pugixml
     VTK::tiff
-    #    TomvizExtensions
-    Qt5::Network)
+    Qt5::Network
+  PRIVATE
+    ${PYTHON_LIBRARIES})
 if(WIN32)
   target_link_libraries(tomvizlib PUBLIC Qt5::WinMain)
 endif()
