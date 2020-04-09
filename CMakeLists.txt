@@ -32,7 +32,35 @@ if(UNIX AND NOT APPLE)
   endif()
 endif()
 
+# Location where Python modules will be installed.
+set(tomviz_python_install_dir "lib/tomviz/site-packages")
+# Location where Python modules will be copied to in binary tree.
+set(tomviz_python_binary_dir "${tomviz_BINARY_DIR}/lib/site-packages")
+# Location where sample data will be installed.
+set(tomviz_data_install_dir "share/tomviz")
 
+set(tomviz_html_binary_dir "${CMAKE_BINARY_DIR}/web")
+set(tomviz_js_binary_path "${tomviz_html_binary_dir}/tomviz.js")
+set(tomviz_html_binary_path "${tomviz_html_binary_dir}/tomviz.html")
+set(tomviz_web_install_dir "share/tomviz/web")
+
+# Centrally set the grand exception for macOS...
+if(APPLE)
+  set(MACOSX_BUNDLE_NAME "tomviz")
+  set(prefix "${MACOSX_BUNDLE_NAME}.app/Contents")
+  set(INSTALL_INCLUDE_DIR "${prefix}/${INSTALL_INCLUDE_DIR}")
+  set(INSTALL_RUNTIME_DIR "${prefix}/MacOS")
+  set(INSTALL_LIBRARY_DIR "${prefix}/${INSTALL_LIBRARY_DIR}")
+  set(INSTALL_ARCHIVE_DIR "${prefix}/${INSTALL_ARCHIVE_DIR}")
+  set(INSTALL_DATA_DIR    "${prefix}/${INSTALL_DATA_DIR}")
+  set(INSTALL_DOC_DIR     "${prefix}/${INSTALL_DOC_DIR}")
+  set(INSTALL_CMAKE_DIR   "${prefix}/Resources")
+  set(tomviz_python_install_dir "${prefix}/Python")
+  set(tomviz_data_install_dir "${prefix}/share/tomviz")
+  set(tomviz_web_install_dir "${prefix}/share/tomviz/web")
+endif()
+
+# Add our CMake modules to the search path.
 set(CMAKE_MODULE_PATH "${tomviz_SOURCE_DIR}/cmake")
 
 # Request C++11 standard, using new CMake variables.
@@ -62,21 +90,6 @@ if(tomviz_VERSION)
 endif()
 set(tomviz_version
   "${tomviz_version_major}.${tomviz_version_minor}.${tomviz_version_patch}")
-
-# Location where python modules will be installed.
-set(tomviz_python_install_dir "lib/tomviz/site-packages")
-if(APPLE)
-  set(tomviz_python_install_dir "Applications/tomviz.app/Contents/Python")
-endif()
-
-# Location where python modules will be copied to in binary tree.
-set(tomviz_python_binary_dir "${tomviz_BINARY_DIR}/lib/site-packages")
-
-# Location where sample data will be installed.
-set(tomviz_data_install_dir "share/tomviz")
-if(APPLE)
-  set(tomviz_data_install_dir "Applications/tomviz.app/Contents/share/tomviz")
-endif()
 
 # These dependencies are inherited from ParaView.
 find_package(Qt5 REQUIRED COMPONENTS Concurrent Network Widgets)
@@ -126,24 +139,17 @@ endif()
 # -----------------------------------------------------------------------------
 # Add web application
 # -----------------------------------------------------------------------------
-
 option(TOMVIZ_DOWNLOAD_WEB  "Enable downloading web application." OFF)
-
-set(tomviz_html_binary_dir "${CMAKE_BINARY_DIR}/web")
-set(tomviz_js_binary_path "${tomviz_html_binary_dir}/tomviz.js")
-set(tomviz_html_binary_path "${tomviz_html_binary_dir}/tomviz.html")
 
 # -----------------------------------------------------------------------------
 # Section to update when a new version of tomvizweb became available
 # -----------------------------------------------------------------------------
-
 set(tomvizweb_version "1.0.7")
 set(tomviz_js_sha512 "820c4f4ed80044cd7f8cfcdf53f5fb961c5098a315bb208d9a0ff8bb94dc7e1c7aaa8f814390672c730546ec19c07d243d6846b8aba01e51625cf902d2b1eba0")
 set(tomviz_html_sha512 "97d41012baf6300002cd59a6122b1fcedc75014d3ee876fcc9250ce9a6352b00495103473ee9ec28550c275a0038f98b1396306366609197d9901fda4b5d94cd")
 
 # -----------------------------------------------------------------------------
-
-if (TOMVIZ_DOWNLOAD_WEB)
+if(TOMVIZ_DOWNLOAD_WEB)
   message(STATUS "Downloading tomviz.js")
   file(DOWNLOAD
     "https://unpkg.com/tomvizweb@${tomvizweb_version}"
@@ -159,11 +165,6 @@ if (TOMVIZ_DOWNLOAD_WEB)
     EXPECTED_HASH SHA512=${tomviz_html_sha512}
     SHOW_PROGRESS
   )
-endif()
-
-set(tomviz_web_install_dir "share/tomviz/web")
-if(APPLE)
-  set(tomviz_web_install_dir "Applications/tomviz.app/Contents/share/tomviz/web")
 endif()
 
 if(EXISTS "${tomviz_html_binary_path}")
