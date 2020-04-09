@@ -49,10 +49,14 @@ class Dataset:
 
     @property
     def dark(self):
+        if not self._data_source.dark_data:
+            return None
         return utils.get_array(self._data_source.dark_data)
 
     @property
     def white(self):
+        if not self._data_source.white_data:
+            return None
         return utils.get_array(self._data_source.white_data)
 
     def create_child_dataset(self):
