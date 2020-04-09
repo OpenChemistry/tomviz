@@ -309,7 +309,7 @@ void DataSource::setDarkData(vtkSmartPointer<vtkImageData> image)
   this->Internals->m_darkData = image;
 }
 
-vtkImageData* DataSource::darkData()
+vtkImageData* DataSource::darkData() const
 {
   return this->Internals->m_darkData;
 }
@@ -319,7 +319,7 @@ void DataSource::setWhiteData(vtkSmartPointer<vtkImageData> image)
   this->Internals->m_whiteData = image;
 }
 
-vtkImageData* DataSource::whiteData()
+vtkImageData* DataSource::whiteData() const
 {
   return this->Internals->m_whiteData;
 }

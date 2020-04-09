@@ -134,13 +134,13 @@ public:
   void setDarkData(vtkSmartPointer<vtkImageData> image);
 
   /// Set/get the dark/white data, used in Data Exchange currently
-  vtkImageData* darkData();
+  vtkImageData* darkData() const;
 
   /// Set/get the dark/white data, used in Data Exchange currently
   void setWhiteData(vtkSmartPointer<vtkImageData> image);
 
   /// Set/get the dark/white data, used in Data Exchange currently
-  vtkImageData* whiteData();
+  vtkImageData* whiteData() const;
 
   /// Check to see if the data was subsampled while reading
   bool wasSubsampled() const;
