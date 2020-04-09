@@ -14,7 +14,8 @@ import tomviz.io.formats
 def list_python_readers():
 
     readers = []
-    for importer, name, _ in pkgutil.iter_modules(tomviz.io.formats.__path__, prefix='tomviz.io.formats.'):
+    for importer, name, _ in pkgutil.iter_modules(tomviz.io.formats.__path__,
+                                                  prefix='tomviz.io.formats.'):
         m = importer.find_spec(name).loader.load_module()
         for _, c in inspect.getmembers(m, inspect.isclass):
             if inspect.getmodule(c) is m:
@@ -39,7 +40,8 @@ def execute_reader(obj, path):
 
 def list_python_writers():
     writers = []
-    for importer, name, _ in pkgutil.iter_modules(tomviz.io.formats.__path__, prefix='tomviz.io.formats.'):
+    for importer, name, _ in pkgutil.iter_modules(tomviz.io.formats.__path__,
+                                                  prefix='tomviz.io.formats.'):
         m = importer.find_spec(name).loader.load_module()
         for _, c in inspect.getmembers(m, inspect.isclass):
             if inspect.getmodule(c) is m:
