@@ -1105,6 +1105,13 @@ void DataSource::setData(vtkDataObject* newData)
   }
   typeArray->SetTuple1(0, this->Internals->Type);
 
+  // Initialize maps to track array renames
+  Internals->CurrentToOriginal.clear();
+  auto arrayNames = listScalars();
+  for (auto name : arrayNames) {
+    Internals->CurrentToOriginal[name] = name;
+  }
+
   // Make sure everything gets updated with the new data
   dataModified();
 }
@@ -1257,6 +1264,7 @@ void DataSource::init(vtkImageData* data, DataSourceType dataType,
   }
 
   // Initialize maps to track array renames
+  Internals->CurrentToOriginal.clear();
   auto arrayNames = listScalars();
   for (auto name : arrayNames) {
     Internals->CurrentToOriginal[name] = name;
