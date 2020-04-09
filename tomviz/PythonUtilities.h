@@ -30,6 +30,7 @@ class capsule;
 namespace tomviz {
 
 class DataSource;
+class DataSourceBase;
 
 class Python
 {
@@ -56,7 +57,7 @@ public:
     Object(const Object& other);
     Object(const QString& str);
     Object(const Variant& value);
-    Object(const DataSource& source);
+    Object(const DataSourceBase& source);
     Object(PyObject* obj);
 
     Object& operator=(const Object& other);

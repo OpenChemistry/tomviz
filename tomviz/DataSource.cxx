@@ -3,7 +3,7 @@
 
 #include "DataSource.h"
 
-#include "core/DataSourceProxyBase.h"
+#include "core/DataSourceBase.h"
 
 #include "ActiveObjects.h"
 #include "ColorMap.h"
@@ -75,31 +75,6 @@ void createOrResizeTiltAnglesArray(vtkDataObject* data)
 } // namespace
 
 namespace tomviz {
-
-// This is a utility proxy for the Python internal code to forward calls.
-class DataSourceProxy : public DataSourceProxyBase
-{
-public:
-  DataSourceProxy(DataSource* ds) { m_ds = ds; }
-  ~DataSourceProxy() override = default;
-
-  vtkImageData* darkData() override
-  {
-    if (m_ds)
-      return m_ds->darkData();
-    return nullptr;
-  }
-
-  vtkImageData* whiteData() override
-  {
-    if (m_ds)
-      return m_ds->whiteData();
-    return nullptr;
-  }
-
-private:
-  DataSource* m_ds = nullptr;
-};
 
 class DataSource::DSInternals
 {
@@ -334,6 +309,7 @@ QStringList DataSource::fileNames() const
 
 void DataSource::setDarkData(vtkSmartPointer<vtkImageData> image)
 {
+  m_pythonProxy->setDarkData(image);
   this->Internals->m_darkData = image;
 }
 
@@ -344,6 +320,7 @@ vtkImageData* DataSource::darkData() const
 
 void DataSource::setWhiteData(vtkSmartPointer<vtkImageData> image)
 {
+  m_pythonProxy->setWhiteData(image);
   this->Internals->m_whiteData = image;
 }
 
@@ -1220,7 +1197,7 @@ vtkTrivialProducer* DataSource::producer() const
 void DataSource::init(vtkImageData* data, DataSourceType dataType,
                       PersistenceState persistState)
 {
-  m_pythonProxy = new DataSourceProxy(this);
+  m_pythonProxy = new DataSourceBase;
   this->Internals->Type = dataType;
   this->Internals->PersistState = persistState;
   this->Internals->DisplayPosition.Set(0, 0, 0);
