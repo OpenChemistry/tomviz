@@ -47,7 +47,7 @@ set(tomviz_web_install_dir "share/tomviz/web")
 # Centrally set the grand exception for macOS...
 if(APPLE)
   set(MACOSX_BUNDLE_NAME "tomviz")
-  set(prefix "${MACOSX_BUNDLE_NAME}.app/Contents")
+  set(prefix "Applications/${MACOSX_BUNDLE_NAME}.app/Contents")
   set(INSTALL_INCLUDE_DIR "${prefix}/${INSTALL_INCLUDE_DIR}")
   set(INSTALL_RUNTIME_DIR "${prefix}/MacOS")
   set(INSTALL_LIBRARY_DIR "${prefix}/${INSTALL_LIBRARY_DIR}")
@@ -58,6 +58,9 @@ if(APPLE)
   set(tomviz_python_install_dir "${prefix}/Python")
   set(tomviz_data_install_dir "${prefix}/share/tomviz")
   set(tomviz_web_install_dir "${prefix}/share/tomviz/web")
+  if(NOT CMAKE_INSTALL_NAME_DIR)
+    set(CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/${INSTALL_LIBRARY_DIR}")
+  endif()
 endif()
 
 # Add our CMake modules to the search path.
