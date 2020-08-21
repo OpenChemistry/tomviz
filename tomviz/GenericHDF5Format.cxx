@@ -520,7 +520,12 @@ bool GenericHDF5Format::read(const std::string& fileName, vtkImageData* image,
 
   if (datasets.size() == 1) {
     // Only one volume. Load and return.
-    return readVolume(reader, dataNode, image);
+    if (readVolume(reader, dataNode, image)) {
+      GenericHDF5Format::reorderData(image, ReorderMode::CToFortran);
+      return true;
+    } else {
+      return false;
+    }
   }
 
   // If there is more than one volume, have the user choose.
