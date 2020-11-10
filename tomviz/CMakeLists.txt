@@ -435,6 +435,7 @@ set(python_files
   TV_Filter.py
   PoreSizeDistribution.py
   Tortuosity.py
+  Recon_live_tomo.py
   )
 
 set(json_files
@@ -482,6 +483,7 @@ set(json_files
   TV_Filter.json
   PoreSizeDistribution.json
   Tortuosity.json
+  Recon_live_tomo.json
   )
 
 set(resource_files

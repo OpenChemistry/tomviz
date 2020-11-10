@@ -1,0 +1,56 @@
+{
+  "name" : "LiveTomo",
+  "label" : "Live Tomography Visualization",
+  "description" : "Get live updates of a volume reconstructed from a server.",
+  "children": [
+    {
+      "name": "live_tomo_tomviz",
+      "label": "Reconstruction",
+      "type": "reconstruction"
+    }
+  ],
+  "parameters" : [
+    {
+      "name" : "hostName",
+      "label" : "Server Hostname",
+      "type" : "string",
+      "default" : "141.212.131.14"
+    },
+    {
+      "name" : "userName",
+      "label" : "Server Username",
+      "type" : "string",
+      "default" : "hlab"
+    },
+    {
+      "name" : "password",
+      "label" : "Server Password",
+      "type" : "string",
+      "default" : "angstrom"
+    },
+    {
+      "name" : "port",
+      "label" : "Server Port",
+      "type" : "int",
+      "default" : 48105
+    },
+    {
+      "name" : "filename",
+      "label" : "Output file name",
+      "type" : "string",
+      "default" : "bowtie.h5"
+    },
+    {
+      "name" : "localDirectory",
+      "label" : "local monitoring directory",
+      "type" : "string",
+      "default" : "/Users/jonathanschwartz/Desktop/"
+    },
+    {
+      "name" : "remoteDirectory",
+      "label" : "remote monitoring directory",
+      "type" : "string",
+      "default" : "/media/hlab/hvol1/Jonathan/20201101_dynamicSIRT"
+    }
+  ]
+}
