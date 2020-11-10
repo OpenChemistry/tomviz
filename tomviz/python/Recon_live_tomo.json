@@ -14,43 +14,43 @@
       "name" : "hostName",
       "label" : "Server Hostname",
       "type" : "string",
-      "default" : "141.212.131.14"
+      "default" : "localhost"
     },
     {
       "name" : "userName",
       "label" : "Server Username",
       "type" : "string",
-      "default" : "hlab"
+      "default" : ""
     },
     {
       "name" : "password",
       "label" : "Server Password",
       "type" : "string",
-      "default" : "angstrom"
+      "default" : ""
     },
     {
       "name" : "port",
       "label" : "Server Port",
       "type" : "int",
-      "default" : 48105
+      "default" : 8080
     },
     {
       "name" : "filename",
       "label" : "Output file name",
       "type" : "string",
-      "default" : "bowtie.h5"
+      "default" : "live_monitor.h5"
     },
     {
       "name" : "localDirectory",
       "label" : "local monitoring directory",
       "type" : "string",
-      "default" : "/Users/jonathanschwartz/Desktop/"
+      "default" : ""
     },
     {
       "name" : "remoteDirectory",
       "label" : "remote monitoring directory",
       "type" : "string",
-      "default" : "/media/hlab/hvol1/Jonathan/20201101_dynamicSIRT"
+      "default" : ""
     }
   ]
 }
