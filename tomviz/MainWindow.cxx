@@ -422,10 +422,11 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     reconTomoPyGridRecAction, "Reconstruct (TomoPy Gridrec)",
     readInPythonScript("Recon_tomopy_gridrec"), true, false, false,
     readInJSONDescription("Recon_tomopy_gridrec"));
-  new AddPythonTransformReaction(
-    reconLiveView, "Live Reconstruction Monitor",
-    readInPythonScript("Recon_live_tomo"), true, false, false,
-    readInJSONDescription("Recon_live_tomo"));
+  new AddPythonTransformReaction(reconLiveView,
+                                 "Live Reconstruction Monitor",
+                                 readInPythonScript("Recon_live_tomo"), true,
+                                 false, false,
+                                 readInJSONDescription("Recon_live_tomo"));
 
   new ReconstructionReaction(reconWBP_CAction);
 
