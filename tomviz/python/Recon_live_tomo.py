@@ -3,8 +3,9 @@ import numpy as np
 import paramiko
 import h5py
 
+
 class liveTomoOperator(tomviz.operators.CancelableOperator):
-    
+
     def transform(self, dataset, hostName=None, userName=None, password=None,
                   port=None, filename=None, remoteDirectory=None,
                   localDirectory=None):
@@ -21,22 +22,23 @@ class liveTomoOperator(tomviz.operators.CancelableOperator):
         while True:
 
             if self.canceled:
-            	break
+                break
 
             # Check is new volume is available
-            (newVolume, lastMtime) = check_for_new_volume(sftpConnection, \
+            (newVolume, lastMtime) = check_for_new_volume(sftpConnection, 
                                       filename, localDirectory, lastMtime)
             if newVolume:
-                try: 
+                try:
                     file = h5py.File(localDirectory + filename, 'r')
-                    if firstLoad: 
+                    if firstLoad:
                         recon = np.zeros(file['recon'].shape, dtype=np.float32)
                         firstLoad = False
                     recon[:, :, :] = file['recon'][:, :, :]
                     child.active_scalars = recon
                     self.progress.data = child
                     file.close()
-                except: continue
+                except: 
+                    continue
 
         sftpConnection.close() # Close connection
 
@@ -46,6 +48,7 @@ class liveTomoOperator(tomviz.operators.CancelableOperator):
         returnValues = {}
         returnValues["reconstruction"] = child
         return returnValues
+
 
 def check_for_new_volume(sftp, filename, localDirectory, lastModifiedTime):
     import time
