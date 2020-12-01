@@ -154,6 +154,7 @@ class ColorMap2DBoxSchema(Schema):
     y = fields.Float()
     height = fields.Float()
     width = fields.Float()
+
     @post_load
     def make_namespace(self, data, **kwargs):
         return to_namespaces(data)
