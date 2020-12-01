@@ -262,8 +262,8 @@ def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
                     midpoints_y = rmepsilon(0.5 * (yy[0:-1] + yy[1:]))
                     #Calculate the pixel index for mid points
                     pixelIndicex = ((np.floor(Nside / 2.0 - midpoints_y / pixelWidth)) * # noqa TODO reformat this
-                        Nside + (np.floor(midpoints_x /
-                        pixelWidth + Nside / 2.0)))
+                                    Nside + (np.floor(midpoints_x /
+                                             pixelWidth + Nside / 2.0)))
                     # Create the indices to store the values to the measurement
                     # matrix
                     idxstart = idxend
