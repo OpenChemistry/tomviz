@@ -264,6 +264,9 @@ public:
   /// Create copy of current data object, caller is responsible for ownership
   vtkDataObject* copyData();
 
+  /// If there are arrays in the data, ensure one of them is active.
+  void ensureActiveArray();
+
   /// Set data output of trivial producer to new data object, the trivial
   /// producer takes over ownership of the data object.
   void setData(vtkDataObject* newData);
