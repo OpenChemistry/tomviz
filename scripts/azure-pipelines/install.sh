@@ -24,13 +24,6 @@ elif [[ $AGENT_OS == 'Darwin' ]]; then
     qt5 \
     tbb
 
-  # Downgrade cmake to 3.14.6
-  # TODO: Remove this when our VTK includes this commit:
-  # https://gitlab.kitware.com/vtk/vtk/commit/eebd1042c88d9ae047f3620590587f81e5d44503
-  brew unlink cmake
-  brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/74d54460d0af8e21deacee8dcced325cfc191141/Formula/cmake.rb
-  brew switch cmake 3.14.6
-
   # Install gtest
   cd $PIPELINE_WORKSPACE
   git clone --branch release-1.8.1 --depth 1 https://github.com/google/googletest
