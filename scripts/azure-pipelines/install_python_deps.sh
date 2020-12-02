@@ -1,15 +1,5 @@
 #!/bin/bash
 
-if [[ $AGENT_OS == 'Linux' ]]; then
-  # h5py wheels for Linux python3.8 aren't on PyPI yet. Install from scipy.
-  # Remove after this is fixed: https://github.com/h5py/h5py/issues/1410
-  pip3 install http://wheels.scipy.org/h5py-2.10.0-cp38-cp38-manylinux1_x86_64.whl
-elif [[ $AGENT_OS == 'Darwin' ]]; then
-  # h5py wheels for Mac python3.8 aren't on PyPI yet. Install from scipy.
-  # Remove after this is fixed: https://github.com/h5py/h5py/issues/1410
-  pip3 install http://wheels.scipy.org/h5py-2.10.0-cp38-cp38-macosx_10_9_x86_64.whl
-fi
-
 pip3 install --upgrade pip setuptools wheel
 pip3 install numpy scipy
 pip3 install -r acquisition/requirements-dev.txt
