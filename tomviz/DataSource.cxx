@@ -1267,6 +1267,7 @@ void DataSource::init(vtkImageData* data, DataSourceType dataType,
   if (data) {
     auto tp = vtkTrivialProducer::SafeDownCast(source->GetClientSideObject());
     tp->SetOutput(data);
+    ensureActiveArray();
   }
 
   // Initialize maps to track array renames
@@ -1334,6 +1335,21 @@ bool DataSource::forkable()
 void DataSource::setForkable(bool forkable)
 {
   Internals->Forkable = forkable;
+}
+
+void DataSource::ensureActiveArray()
+{
+  // If there is no active array, then set one.
+  if (!imageData() || !imageData()->GetPointData()) {
+    return;
+  }
+
+  auto* pointData = imageData()->GetPointData();
+  if (pointData->GetScalars() || pointData->GetNumberOfArrays() == 0) {
+    return;
+  }
+
+  pointData->SetActiveScalars(pointData->GetArrayName(0));
 }
 
 bool DataSource::hasTiltAngles(vtkDataObject* image)
