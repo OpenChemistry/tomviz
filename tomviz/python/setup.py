@@ -22,7 +22,7 @@ setup(
         'Programming Language :: Python :: 3.5'
     ],
     packages=find_packages(),
-    install_requires=['tqdm', 'h5py', 'numpy==1.16.4', 'click', 'scipy'],
+    install_requires=['tqdm', 'h5py', 'numpy', 'click', 'scipy'],
     extras_require={
         'interactive': [
             jsonpatch_uri, 'marshmallow'],
