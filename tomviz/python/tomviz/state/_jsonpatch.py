@@ -125,25 +125,25 @@ def module_update(patch_module):
 def datasource_update(patch_datasource):
     # First get path to datasource
     path = patch_datasource['path']
-    datasource_path = datasouce_path(path)
+    ds_path = datasource_path(path)
 
     # Now get the current state of the datasource
-    datasource = find_datasource(datasource_path.split('/')[1:])
+    datasource = find_datasource(ds_path.split('/')[1:])
     current_state = PipelineStateManager().serialize_datasource(path,
                                                                 datasource.id)
     current_state_dct = json.loads(current_state)
 
     # Apply the update
     # Adjust the path
-    patch_datasource['path'] = path.replace(datasource_path, '')
+    patch_datasource['path'] = path.replace(ds_path, '')
     patch = jsonpatch.JsonPatch([patch_datasource])
     current_state_dct = patch.apply(current_state_dct)
 
     # Now update the datasource
-    PipelineStateManager().update_datasource(datasource_path,
+    PipelineStateManager().update_datasource(ds_path,
                                              json.dumps(current_state_dct))
 
-    return datasource_path
+    return ds_path
 
 
 def module_add(patch_module):
