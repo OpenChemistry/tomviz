@@ -332,8 +332,60 @@ def is_datasource_remove(path):
 
 
 def diff(src, dst):
-    patch = jsonpatch.JsonPatch.from_diff(src, dst)
-    patch = json.loads(patch.to_string())
+    # The semantic for Tomviz state is a little different than a simple dict.
+    # You can't change a operator or module by simply patch id of a dict. If
+    # an id is different then the objects should be treated as immutable. So we
+    # need to post process the operations and replace any attempts to patch
+    # object ids with a operation to replace the whole object.
+
+    # Utility function to get the prefix from a path
+    def _prefix(p):
+        return '/'.join(p.split('/')[:-1])
+
+    # The new patch
+    patch = []
+
+    # The set of paths the we can skip over, as we are doing a full object
+    # replace
+    exclude_paths = set()
+
+    # First get the patch from jsonpatch
+    original_patch = jsonpatch.JsonPatch.from_diff(src, dst)
+
+    # Iterate once to build up list of paths we can discard as we will be
+    # simple replacing the whole object. We need todo this in two iterations as
+    # we can't guarantee that the replace operation for a id will appear before
+    # other operations that we need to exclude.
+    for op in original_patch:
+        path_prefix = _prefix(op['path'])
+
+        if op['op'] == 'replace':
+            if op['path'].endswith('/id'):
+                # Save the path so we know we can ignore operations that start
+                # with this path.
+                exclude_paths.add(path_prefix)
+
+    # Now iterate through and update and exclude appropriate operations.
+    for op in original_patch:
+        path_prefix = _prefix(op['path'])
+        if op['op'] == 'replace':
+            # We are trying to patch an id, replace with operation that
+            # replaces the whole object.
+            if op['path'].endswith('/id'):
+
+                new_object = resolve_pointer(dst, path_prefix)
+                op = {
+                    "op": "replace",
+                    "path": path_prefix,
+                    "value": new_object
+                }
+
+                patch.append(op)
+                continue
+
+        # If not in exclude path add operation
+        if path_prefix not in exclude_paths:
+            patch.append(op)
 
     return patch
 
