@@ -561,7 +561,7 @@ def module_remove_from_python(patch_op, removed_cache):
     add_mod_to_removed_cache(removed_cache, mod)
 
     # Kill it
-    #mod._kill()
+    # mod._kill()
 
 
 def module_add_to_python(patch_module, removed_cache):
