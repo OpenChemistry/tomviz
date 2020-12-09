@@ -35,11 +35,6 @@ elif [[ $AGENT_OS == 'Darwin' ]]; then
   # Mojave by default. This fixes the issue.
   sudo installer -pkg /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg -target /
 
-  # Install docker
-  # If azure-pipelines adds docker to MacOS, we can skip this.
-  cd $BUILD_SOURCESDIRECTORY
-  scripts/azure-pipelines/mac_install_docker.sh
-
 elif [[ $AGENT_OS == 'Windows_NT' ]]; then
   choco install wget
   choco install ninja
