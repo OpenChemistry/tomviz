@@ -16,6 +16,7 @@ class vtkPVRenderView;
 
 class vtkGPUVolumeRayCastMapper;
 class vtkImageClip;
+class vtkImageData;
 class vtkPlane;
 class vtkVolumeProperty;
 class vtkVolume;
@@ -47,6 +48,10 @@ public:
   void addToPanel(QWidget* panel) override;
   void updatePanel();
 
+  bool useRGBAComponentMapping();
+  void updateMapperInput(DataSource* data = nullptr);
+  void updateRGBADataObject();
+
   void dataSourceMoved(double newX, double newY, double newZ) override;
 
   bool supportsGradientOpacity() override { return true; }
@@ -70,6 +75,9 @@ private:
   QPointer<ModuleVolumeWidget> m_controllers;
   QPointer<ScalarsComboBox> m_scalarsCombo;
 
+  // Data object used for mapping 3-components to RGBA
+  vtkNew<vtkImageData> m_rgbaDataObject;
+
 private slots:
   /**
    * Actuator methods for m_volumeMapper.  These slots should be connected to
@@ -86,6 +94,9 @@ private slots:
   void onTransferModeChanged(const int mode);
   void onScalarArrayChanged();
   int scalarsIndex();
+
+  void onRGBAComponentMappingToggled();
+  void onDataChanged();
 };
 } // namespace tomviz
 

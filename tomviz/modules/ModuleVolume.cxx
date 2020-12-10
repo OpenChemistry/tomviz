@@ -10,6 +10,7 @@
 #include "vtkTransferFunctionBoxItem.h"
 
 #include <vtkColorTransferFunction.h>
+#include <vtkDataArray.h>
 #include <vtkGPUVolumeRayCastMapper.h>
 #include <vtkImageClip.h>
 #include <vtkImageData.h>
@@ -30,6 +31,8 @@
 #include <QCheckBox>
 #include <QFormLayout>
 #include <QVBoxLayout>
+
+#include <cmath>
 
 namespace tomviz {
 
@@ -67,16 +70,8 @@ QIcon ModuleVolume::icon() const
 
 void ModuleVolume::initializeMapper(DataSource* data)
 {
-  vtkAlgorithmOutput *output = nullptr;
-  if (data == nullptr) {
-    output = m_volumeMapper->GetInputConnection(0, 0);
-  }
-  else {
-    output = data->producer()->GetOutputPort();
-  }
-
   m_volumeMapper = vtkSmartPointer<vtkGPUVolumeRayCastMapper>::New();
-  m_volumeMapper->SetInputConnection(output);
+  updateMapperInput(data);
   m_volumeMapper->SetScalarModeToUsePointFieldData();
   m_volumeMapper->SelectScalarArray(scalarsIndex());
   m_volume->SetMapper(m_volumeMapper);
@@ -104,12 +99,14 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   m_volumeProperty->SetSpecular(1.0);
   m_volumeProperty->SetSpecularPower(100.0);
 
+  onRGBAComponentMappingToggled();
   updateColorMap();
 
   m_view = vtkPVRenderView::SafeDownCast(vtkView->GetClientSideView());
   m_view->AddPropToRenderer(m_volume);
   m_view->Update();
 
+  connect(data, &DataSource::dataChanged, this, &ModuleVolume::onDataChanged);
   connect(data, &DataSource::activeScalarsChanged, this,
           &ModuleVolume::onScalarArrayChanged);
 
@@ -121,6 +118,88 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
           [this]() { this->initializeMapper(); });
 #endif
   return true;
+}
+
+void ModuleVolume::onRGBAComponentMappingToggled()
+{
+  updateMapperInput();
+  if (useRGBAComponentMapping()) {
+    updateRGBADataObject();
+    m_volumeProperty->IndependentComponentsOff();
+  } else {
+    m_volumeProperty->IndependentComponentsOn();
+  }
+}
+
+void ModuleVolume::onDataChanged()
+{
+  if (useRGBAComponentMapping()) {
+    updateRGBADataObject();
+  }
+}
+
+void ModuleVolume::updateMapperInput(DataSource* data)
+{
+  if (useRGBAComponentMapping()) {
+    m_volumeMapper->SetInputDataObject(m_rgbaDataObject);
+  } else if (data || (data = dataSource())) {
+    auto* output = data->producer()->GetOutputPort();
+    m_volumeMapper->SetInputConnection(output);
+  }
+}
+
+static double computeNorm(double* vals, int num)
+{
+  double result = 0;
+  for (int i = 0; i < num; ++i) {
+    result += std::pow(vals[i], 2.0);
+  }
+  return std::sqrt(result);
+}
+
+static double rescale(double val, double* oldRange, double* newRange)
+{
+  return (val - oldRange[0]) * (newRange[1] - newRange[0]) /
+           (oldRange[1] - oldRange[0]) +
+         newRange[0];
+}
+
+bool ModuleVolume::useRGBAComponentMapping()
+{
+  auto* array = dataSource()->imageData()->GetPointData()->GetScalars();
+  return array->GetNumberOfComponents() == 3;
+}
+
+void ModuleVolume::updateRGBADataObject()
+{
+  auto* imageData = dataSource()->imageData();
+  auto* input = imageData->GetPointData()->GetScalars();
+
+  // FIXME: we should probably do a filter instead of an object.
+  m_rgbaDataObject->SetDimensions(imageData->GetDimensions());
+  m_rgbaDataObject->AllocateScalars(input->GetDataType(), 4);
+
+  auto* output = m_rgbaDataObject->GetPointData()->GetScalars();
+
+  // Rescale from 0 to 1 for the coloring.
+  double newRange[2] = { 0.0, 1.0 };
+  double oldRange[2] = { DBL_MAX, -DBL_MAX };
+  for (int i = 0; i < 3; ++i) {
+    auto* tmp = input->GetRange(i);
+    oldRange[0] = std::min(oldRange[0], tmp[0]);
+    oldRange[1] = std::max(oldRange[1], tmp[1]);
+  }
+
+  for (int i = 0; i < input->GetNumberOfTuples(); ++i) {
+    for (int j = 0; j < 3; ++j) {
+      double oldVal = input->GetComponent(i, j);
+      double newVal = rescale(oldVal, oldRange, newRange);
+      output->SetComponent(i, j, newVal);
+    }
+    auto* vals = input->GetTuple3(i);
+    auto norm = computeNorm(vals, 3);
+    output->SetComponent(i, 3, norm);
+  }
 }
 
 void ModuleVolume::updateColorMap()
