@@ -6,7 +6,7 @@
 
 extern "C"
 {
-#include <hdf5.h>
+#include <vtk_hdf5.h>
 }
 
 #endif // tomvizH5CAPI_h
