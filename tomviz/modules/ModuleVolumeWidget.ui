@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>274</width>
-    <height>165</height>
+    <height>220</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -22,15 +22,15 @@
    </property>
    <item>
     <layout class="QFormLayout" name="formLayout">
-     <item row="2" column="0">
-      <widget class="QLabel" name="label_4">
+     <item row="0" column="0">
+      <widget class="QLabel" name="label">
        <property name="text">
-        <string>Blending Mode</string>
+        <string>Transfer Mode</string>
        </property>
       </widget>
      </item>
-     <item row="2" column="1">
-      <widget class="QComboBox" name="cbBlending"/>
+     <item row="0" column="1">
+      <widget class="QComboBox" name="cbTransferMode"/>
      </item>
      <item row="1" column="0">
       <widget class="QLabel" name="label_5">
@@ -42,15 +42,15 @@
      <item row="1" column="1">
       <widget class="QComboBox" name="cbInterpolation"/>
      </item>
-     <item row="0" column="1">
-      <widget class="QComboBox" name="cbTransferMode"/>
-     </item>
-     <item row="0" column="0">
-      <widget class="QLabel" name="label">
+     <item row="2" column="0">
+      <widget class="QLabel" name="label_4">
        <property name="text">
-        <string>Transfer Mode</string>
+        <string>Blending Mode</string>
        </property>
       </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QComboBox" name="cbBlending"/>
      </item>
     </layout>
    </item>
@@ -64,8 +64,51 @@
      </property>
     </widget>
    </item>
+   <item>
+    <widget class="QGroupBox" name="groupRgbaMappingRange">
+     <property name="title">
+      <string>RGBA Mapping Range</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="rgbaMappingMinLabel">
+        <property name="text">
+         <string>Min:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="rgbaMappingMaxLabel">
+        <property name="text">
+         <string>Max:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="tomviz::DoubleSliderWidget" name="sliRgbaMappingMin" native="true"/>
+      </item>
+      <item row="1" column="1">
+       <widget class="tomviz::DoubleSliderWidget" name="sliRgbaMappingMax" native="true"/>
+      </item>
+     </layout>
+    </widget>
+   </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>tomviz::DoubleSliderWidget</class>
+   <extends>QWidget</extends>
+   <header>DoubleSliderWidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <tabstops>
+  <tabstop>cbTransferMode</tabstop>
+  <tabstop>cbInterpolation</tabstop>
+  <tabstop>cbBlending</tabstop>
+  <tabstop>cbJittering</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

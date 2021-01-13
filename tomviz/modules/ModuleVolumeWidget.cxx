@@ -54,6 +54,12 @@ ModuleVolumeWidget::ModuleVolumeWidget(QWidget* parent_)
   connect(m_ui->cbTransferMode, SIGNAL(currentIndexChanged(int)), this,
           SIGNAL(transferModeChanged(const int)));
 
+  // Using QueuedConnections here to circumvent DoubleSliderWidget->BlockUpdate
+  connect(m_ui->sliRgbaMappingMin, &DoubleSliderWidget::valueEdited, this,
+          &ModuleVolumeWidget::onRgbaMappingMinChanged, Qt::QueuedConnection);
+  connect(m_ui->sliRgbaMappingMax, &DoubleSliderWidget::valueEdited, this,
+          &ModuleVolumeWidget::onRgbaMappingMaxChanged, Qt::QueuedConnection);
+
   connect(m_uiLighting->gbLighting, SIGNAL(toggled(bool)), this,
           SIGNAL(lightingToggled(const bool)));
   connect(m_uiLighting->sliAmbient, SIGNAL(valueEdited(double)), this,
@@ -127,6 +133,57 @@ bool ModuleVolumeWidget::usesLighting(const int mode) const
 void ModuleVolumeWidget::setTransferMode(const int transferMode)
 {
   m_ui->cbTransferMode->setCurrentIndex(transferMode);
+}
+
+void ModuleVolumeWidget::setRgbaMappingEnabled(const bool enabled)
+{
+  m_ui->groupRgbaMappingRange->setVisible(enabled);
+}
+
+void ModuleVolumeWidget::setRgbaMappingMin(const double v)
+{
+  m_ui->sliRgbaMappingMin->setValue(v);
+}
+
+void ModuleVolumeWidget::setRgbaMappingMax(const double v)
+{
+  m_ui->sliRgbaMappingMax->setValue(v);
+}
+
+void ModuleVolumeWidget::setRgbaMappingSliderRange(const double range[2])
+{
+  double min = range[0];
+  double max = range[1];
+  m_ui->sliRgbaMappingMin->setMinimum(min);
+  m_ui->sliRgbaMappingMin->setMaximum(max);
+  m_ui->sliRgbaMappingMax->setMinimum(min);
+  m_ui->sliRgbaMappingMax->setMaximum(max);
+}
+
+void ModuleVolumeWidget::onRgbaMappingMinChanged(double v)
+{
+  double max = m_ui->sliRgbaMappingMax->value();
+  if (v > max) {
+    // Don't allow the min to be greater than the max.
+    // This is better than modifying the ranges so the slider
+    // range doesn't visually change.
+    setRgbaMappingMin(max);
+    v = max;
+  }
+  emit rgbaMappingMinChanged(v);
+}
+
+void ModuleVolumeWidget::onRgbaMappingMaxChanged(double v)
+{
+  double min = m_ui->sliRgbaMappingMin->value();
+  if (v < min) {
+    // Don't allow the max to be less than the min.
+    // This is better than modifying the ranges so the slider
+    // range doesn't visually change.
+    setRgbaMappingMax(min);
+    v = min;
+  }
+  emit rgbaMappingMaxChanged(v);
 }
 
 QFormLayout* ModuleVolumeWidget::formLayout()

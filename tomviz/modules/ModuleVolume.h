@@ -48,9 +48,10 @@ public:
   void addToPanel(QWidget* panel) override;
   void updatePanel();
 
-  bool useRGBAComponentMapping();
+  bool useRgbaComponentMapping();
   void updateMapperInput(DataSource* data = nullptr);
-  void updateRGBADataObject();
+  void updateRgbaMappingDataObject();
+  void resetRgbaMappingRange();
 
   void dataSourceMoved(double newX, double newY, double newZ) override;
 
@@ -75,8 +76,11 @@ private:
   QPointer<ModuleVolumeWidget> m_controllers;
   QPointer<ScalarsComboBox> m_scalarsCombo;
 
-  // Data object used for mapping 3-components to RGBA
+  // Data object used for mapping 3-components to Rgba
   vtkNew<vtkImageData> m_rgbaDataObject;
+
+  // Range used for Rgba data object
+  double m_rgbaMappingRange[2];
 
 private slots:
   /**
@@ -92,10 +96,12 @@ private slots:
   void onSpecularChanged(const double value);
   void onSpecularPowerChanged(const double value);
   void onTransferModeChanged(const int mode);
+  void onRgbaMappingMinChanged(const double value);
+  void onRgbaMappingMaxChanged(const double value);
   void onScalarArrayChanged();
   int scalarsIndex();
 
-  void onRGBAComponentMappingToggled();
+  void onRgbaComponentMappingToggled();
   void onDataChanged();
 };
 } // namespace tomviz
