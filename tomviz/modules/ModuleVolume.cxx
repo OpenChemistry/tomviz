@@ -14,10 +14,12 @@
 #include <vtkGPUVolumeRayCastMapper.h>
 #include <vtkImageClip.h>
 #include <vtkImageData.h>
+#include <vtkObjectFactory.h>
 #include <vtkNew.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkPlane.h>
 #include <vtkSmartPointer.h>
+#include <vtkSmartVolumeMapper.h>
 #include <vtkTrivialProducer.h>
 #include <vtkVector.h>
 #include <vtkView.h>
@@ -37,6 +39,22 @@
 namespace tomviz {
 
 static void computeRange(vtkDataArray* array, double range[2]);
+
+// Subclass vtkSmartVolumeMapper so we can have a little more customization
+class SmartVolumeMapper : public vtkSmartVolumeMapper
+{
+public:
+  SmartVolumeMapper() { SetRequestedRenderModeToGPU(); }
+
+  static SmartVolumeMapper* New();
+
+  void UseJitteringOn() { GetGPUMapper()->UseJitteringOn(); }
+  void UseJitteringOff() { GetGPUMapper()->UseJitteringOff(); }
+  vtkTypeBool GetUseJittering() { return GetGPUMapper()->GetUseJittering(); }
+  void SetUseJittering(vtkTypeBool b) { GetGPUMapper()->SetUseJittering(b); }
+};
+
+vtkStandardNewMacro(SmartVolumeMapper)
 
 ModuleVolume::ModuleVolume(QObject* parentObject) : Module(parentObject)
 {
@@ -72,7 +90,6 @@ QIcon ModuleVolume::icon() const
 
 void ModuleVolume::initializeMapper(DataSource* data)
 {
-  m_volumeMapper = vtkSmartPointer<vtkGPUVolumeRayCastMapper>::New();
   updateMapperInput(data);
   m_volumeMapper->SetScalarModeToUsePointFieldData();
   m_volumeMapper->SelectScalarArray(scalarsIndex());

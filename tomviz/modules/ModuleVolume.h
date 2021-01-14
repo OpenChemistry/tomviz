@@ -8,13 +8,11 @@
 
 #include <vtkNew.h>
 #include <vtkWeakPointer.h>
-#include <vtkSmartPointer.h>
 
 #include <QPointer>
 
 class vtkPVRenderView;
 
-class vtkGPUVolumeRayCastMapper;
 class vtkImageClip;
 class vtkImageData;
 class vtkPlane;
@@ -25,6 +23,7 @@ namespace tomviz {
 
 class ModuleVolumeWidget;
 class ScalarsComboBox;
+class SmartVolumeMapper;
 
 class ModuleVolume : public Module
 {
@@ -71,7 +70,7 @@ private:
 
   vtkWeakPointer<vtkPVRenderView> m_view;
   vtkNew<vtkVolume> m_volume;
-  vtkSmartPointer<vtkGPUVolumeRayCastMapper> m_volumeMapper;
+  vtkNew<SmartVolumeMapper> m_volumeMapper;
   vtkNew<vtkVolumeProperty> m_volumeProperty;
   QPointer<ModuleVolumeWidget> m_controllers;
   QPointer<ScalarsComboBox> m_scalarsCombo;
