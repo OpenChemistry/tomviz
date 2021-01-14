@@ -119,7 +119,7 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   m_volumeProperty->SetSpecularPower(100.0);
 
   resetRgbaMappingRange();
-  onRgbaComponentMappingToggled();
+  onRgbaMappingToggled(false);
   updateColorMap();
 
   m_view = vtkPVRenderView::SafeDownCast(vtkView->GetClientSideView());
@@ -146,21 +146,26 @@ void ModuleVolume::resetRgbaMappingRange()
                m_rgbaMappingRange);
 }
 
-void ModuleVolume::onRgbaComponentMappingToggled()
+void ModuleVolume::onRgbaMappingToggled(bool b)
 {
+  m_useRgbaMapping = b;
+
   updateMapperInput();
-  if (useRgbaComponentMapping()) {
+  updateVectorMode();
+  if (useRgbaMapping()) {
     updateRgbaMappingDataObject();
     m_volumeProperty->IndependentComponentsOff();
   } else {
     m_volumeProperty->IndependentComponentsOn();
   }
   updatePanel();
+
+  emit renderNeeded();
 }
 
 void ModuleVolume::onDataChanged()
 {
-  if (useRgbaComponentMapping()) {
+  if (useRgbaMapping()) {
     updateRgbaMappingDataObject();
   }
   updatePanel();
@@ -168,7 +173,7 @@ void ModuleVolume::onDataChanged()
 
 void ModuleVolume::updateMapperInput(DataSource* data)
 {
-  if (useRgbaComponentMapping()) {
+  if (useRgbaMapping()) {
     m_volumeMapper->SetInputDataObject(m_rgbaDataObject);
   } else if (data || (data = dataSource())) {
     auto* output = data->producer()->GetOutputPort();
@@ -203,10 +208,30 @@ static double rescale(double val, double* oldRange, double* newRange)
          newRange[0];
 }
 
-bool ModuleVolume::useRgbaComponentMapping()
+void ModuleVolume::updateVectorMode()
+{
+  int vectorMode = vtkSmartVolumeMapper::DISABLED;
+  auto* array = dataSource()->imageData()->GetPointData()->GetScalars();
+  if (array->GetNumberOfComponents() > 1 && !useRgbaMapping()) {
+    vectorMode = vtkSmartVolumeMapper::MAGNITUDE;
+  }
+
+  m_volumeMapper->SetVectorMode(vectorMode);
+}
+
+bool ModuleVolume::rgbaMappingAllowed()
 {
   auto* array = dataSource()->imageData()->GetPointData()->GetScalars();
   return array->GetNumberOfComponents() == 3;
+}
+
+bool ModuleVolume::useRgbaMapping()
+{
+  if (!rgbaMappingAllowed()) {
+    m_useRgbaMapping = false;
+  }
+
+  return m_useRgbaMapping;
 }
 
 void ModuleVolume::updateRgbaMappingDataObject()
@@ -399,6 +424,8 @@ void ModuleVolume::addToPanel(QWidget* panel)
           SLOT(onSpecularPowerChanged(const double)));
   connect(m_controllers, SIGNAL(transferModeChanged(const int)), this,
           SLOT(onTransferModeChanged(const int)));
+  connect(m_controllers, &ModuleVolumeWidget::useRgbaMappingToggled, this,
+          &ModuleVolume::onRgbaMappingToggled);
   connect(m_controllers, &ModuleVolumeWidget::rgbaMappingMinChanged, this,
           &ModuleVolume::onRgbaMappingMinChanged);
   connect(m_controllers, &ModuleVolumeWidget::rgbaMappingMaxChanged, this,
@@ -428,8 +455,9 @@ void ModuleVolume::updatePanel()
   m_controllers->setSpecularPower(m_volumeProperty->GetSpecularPower());
   m_controllers->setInterpolationType(m_volumeProperty->GetInterpolationType());
 
-  m_controllers->setRgbaMappingEnabled(useRgbaComponentMapping());
-  if (useRgbaComponentMapping()) {
+  m_controllers->setRgbaMappingAllowed(rgbaMappingAllowed());
+  m_controllers->setUseRgbaMapping(useRgbaMapping());
+  if (useRgbaMapping()) {
     m_controllers->setRgbaMappingMin(m_rgbaMappingRange[0]);
     m_controllers->setRgbaMappingMax(m_rgbaMappingRange[1]);
 

@@ -54,6 +54,9 @@ ModuleVolumeWidget::ModuleVolumeWidget(QWidget* parent_)
   connect(m_ui->cbTransferMode, SIGNAL(currentIndexChanged(int)), this,
           SIGNAL(transferModeChanged(const int)));
 
+  connect(m_ui->useRgbaMapping, &QCheckBox::toggled, this,
+          &ModuleVolumeWidget::useRgbaMappingToggled);
+
   // Using QueuedConnections here to circumvent DoubleSliderWidget->BlockUpdate
   connect(m_ui->sliRgbaMappingMin, &DoubleSliderWidget::valueEdited, this,
           &ModuleVolumeWidget::onRgbaMappingMinChanged, Qt::QueuedConnection);
@@ -70,6 +73,8 @@ ModuleVolumeWidget::ModuleVolumeWidget(QWidget* parent_)
           SIGNAL(specularChanged(const double)));
   connect(m_uiLighting->sliSpecularPower, SIGNAL(valueEdited(double)), this,
           SIGNAL(specularPowerChanged(const double)));
+
+  m_ui->groupRgbaMappingRange->setVisible(false);
 }
 
 ModuleVolumeWidget::~ModuleVolumeWidget() = default;
@@ -135,9 +140,18 @@ void ModuleVolumeWidget::setTransferMode(const int transferMode)
   m_ui->cbTransferMode->setCurrentIndex(transferMode);
 }
 
-void ModuleVolumeWidget::setRgbaMappingEnabled(const bool enabled)
+void ModuleVolumeWidget::setRgbaMappingAllowed(const bool b)
 {
-  m_ui->groupRgbaMappingRange->setVisible(enabled);
+  m_ui->useRgbaMapping->setVisible(b);
+
+  if (!b) {
+    setUseRgbaMapping(false);
+  }
+}
+
+void ModuleVolumeWidget::setUseRgbaMapping(const bool b)
+{
+  m_ui->useRgbaMapping->setChecked(b);
 }
 
 void ModuleVolumeWidget::setRgbaMappingMin(const double v)

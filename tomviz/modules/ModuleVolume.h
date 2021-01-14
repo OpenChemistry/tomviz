@@ -47,10 +47,12 @@ public:
   void addToPanel(QWidget* panel) override;
   void updatePanel();
 
-  bool useRgbaComponentMapping();
+  bool rgbaMappingAllowed();
+  bool useRgbaMapping();
   void updateMapperInput(DataSource* data = nullptr);
   void updateRgbaMappingDataObject();
   void resetRgbaMappingRange();
+  void updateVectorMode();
 
   void dataSourceMoved(double newX, double newY, double newZ) override;
 
@@ -78,6 +80,8 @@ private:
   // Data object used for mapping 3-components to Rgba
   vtkNew<vtkImageData> m_rgbaDataObject;
 
+  bool m_useRgbaMapping = false;
+
   // Range used for Rgba data object
   double m_rgbaMappingRange[2];
 
@@ -95,12 +99,12 @@ private slots:
   void onSpecularChanged(const double value);
   void onSpecularPowerChanged(const double value);
   void onTransferModeChanged(const int mode);
+  void onRgbaMappingToggled(const bool b);
   void onRgbaMappingMinChanged(const double value);
   void onRgbaMappingMaxChanged(const double value);
   void onScalarArrayChanged();
   int scalarsIndex();
 
-  void onRgbaComponentMappingToggled();
   void onDataChanged();
 };
 } // namespace tomviz

@@ -47,7 +47,8 @@ public:
   void setSpecular(const double value);
   void setSpecularPower(const double value);
   void setTransferMode(const int transferMode);
-  void setRgbaMappingEnabled(const bool enable);
+  void setRgbaMappingAllowed(const bool allowed);
+  void setUseRgbaMapping(const bool b);
   void setRgbaMappingMin(const double value);
   void setRgbaMappingMax(const double value);
   void setRgbaMappingSliderRange(const double range[2]);
@@ -68,6 +69,7 @@ signals:
   void specularChanged(const double value);
   void specularPowerChanged(const double value);
   void transferModeChanged(const int mode);
+  void useRgbaMappingToggled(const bool b);
   void rgbaMappingMinChanged(const double value);
   void rgbaMappingMaxChanged(const double value);
   //@}

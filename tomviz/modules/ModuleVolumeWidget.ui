@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>274</width>
-    <height>220</height>
+    <height>249</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -65,7 +65,20 @@
     </widget>
    </item>
    <item>
+    <widget class="QCheckBox" name="useRgbaMapping">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This option is for 3-component data only. If checked, the three components will be mapped directly to RGB values, where the first, second, and third components are mapped to red, green, and blue, respectively, instead of using the color map to determine color. Additionally, the norm will be used along with the opacity editor to compute opacity.&lt;/p&gt;&lt;p&gt;The RGBA mapping range is used to determine the range of data values that get rescaled to the RGB color range.&lt;/p&gt;&lt;p&gt;If unchecked, the norm of the data is displayed instead.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Use RGBA Mapping</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QGroupBox" name="groupRgbaMappingRange">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Set the range of data values that get mapped to the RGB range. Data values below the range will have the minimum RGB values, and data values above the range will have the maximum RGB values.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
      <property name="title">
       <string>RGBA Mapping Range</string>
      </property>
@@ -108,7 +121,25 @@
   <tabstop>cbInterpolation</tabstop>
   <tabstop>cbBlending</tabstop>
   <tabstop>cbJittering</tabstop>
+  <tabstop>useRgbaMapping</tabstop>
  </tabstops>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>useRgbaMapping</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>groupRgbaMappingRange</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>136</x>
+     <y>135</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>136</x>
+     <y>194</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>
