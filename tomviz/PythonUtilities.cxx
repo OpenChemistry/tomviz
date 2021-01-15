@@ -89,6 +89,26 @@ bool Python::Object::toBool() const
   return m_smartPyObject->GetPointer() == Py_True;
 }
 
+bool Python::Object::isBool() const
+{
+  return PyBool_Check(m_smartPyObject->GetPointer());
+}
+
+bool Python::Object::isString() const
+{
+  return PyString_Check(m_smartPyObject->GetPointer());
+}
+
+bool Python::Object::isInt() const
+{
+  return PyLong_Check(m_smartPyObject->GetPointer());
+}
+
+bool Python::Object::isFloat() const
+{
+  return PyFloat_Check(m_smartPyObject->GetPointer());
+}
+
 bool Python::Object::isDict() const
 {
   return PyDict_Check(m_smartPyObject->GetPointer());
@@ -130,6 +150,36 @@ QString Python::Object::toString() const
 #endif
 
   return QString(cdata ? cdata : "");
+}
+
+long Python::Object::toLong() const
+{
+  return PyLong_AsLong(m_smartPyObject->GetPointer());
+}
+
+double Python::Object::toDouble() const
+{
+  return PyFloat_AsDouble(m_smartPyObject->GetPointer());
+}
+
+Variant Python::Object::toVariant()
+{
+  if (isBool()) {
+    return Variant(toBool());
+  } else if (isString()) {
+    return Variant(toString().toStdString());
+  } else if (isDict()) {
+    return toDict().toVariant();
+  } else if (isList() || isTuple()) {
+    return toList().toVariant();
+  } else if (isFloat()) {
+    return Variant(toDouble());
+  } else if (isInt()) {
+    return Variant(toLong());
+  } else {
+    Logger::critical("Unsupported type.");
+    return Variant();
+  }
 }
 
 Python::Object Python::Object::getAttr(const QString& name)
@@ -203,6 +253,17 @@ Python::Object Python::Tuple::operator[](int index)
   return PyTuple_GetItem(m_smartPyObject->GetPointer(), index);
 }
 
+Variant Python::Tuple::toVariant()
+{
+  std::vector<Variant> variantList;
+
+  for (auto i = 0; i < length(); i++) {
+    variantList.push_back((*this)[i].toVariant());
+  }
+
+  return Variant(variantList);
+}
+
 Python::Dict::Dict() : Object()
 {
   m_smartPyObject->TakeReference(PyDict_New());
@@ -224,6 +285,16 @@ Python::Dict& Python::Dict::operator=(const Python::Object& other)
 Python::Object Python::Dict::operator[](const QString& key)
 {
   return operator[](key.toLatin1().data());
+}
+
+Python::Object Python::Dict::operator[](const std::string& key)
+{
+  PyObject* item =
+    PyDict_GetItemString(m_smartPyObject->GetPointer(), key.c_str());
+  // Increment ref count as our destructor will decrement it.
+  Py_XINCREF(item);
+
+  return item;
 }
 
 Python::Object Python::Dict::operator[](const char* key)
@@ -253,6 +324,19 @@ QString Python::Dict::toString()
   return PyString_AsString(objectRepr);
 }
 
+Variant Python::Dict::toVariant()
+{
+  std::map<std::string, Variant> map;
+  auto keys = List(PyDict_Keys(m_smartPyObject->GetPointer()));
+  for (auto i = 0; i < keys.length(); i++) {
+    auto key = keys[i].toString().toStdString();
+    auto value = (*this)[key].toVariant();
+    map[key] = value;
+  }
+
+  return map;
+}
+
 Python::List::List(PyObject* obj) : Object(obj) {}
 
 Python::List::List(const List& other) : Object(other) {}
@@ -269,6 +353,17 @@ Python::Object Python::List::operator[](int index)
 int Python::List::length()
 {
   return PyList_Size(m_smartPyObject->GetPointer());
+}
+
+Variant Python::List::toVariant()
+{
+  std::vector<Variant> variantList;
+
+  for (int i = 0; i < length(); i++) {
+    variantList.push_back((*this)[i].toVariant());
+  }
+
+  return Variant(variantList);
 }
 
 Python::Function::Function() : Object() {}

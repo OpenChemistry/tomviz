@@ -35,9 +35,19 @@ Variant::Variant(const vector<Variant>& l) : m_type(LIST)
   new (&m_value.listVal) vector<Variant>(l);
 }
 
+Variant::Variant(const map<string, Variant>& m) : m_type(MAP)
+{
+  new (&m_value.mapVal) map<string, Variant>(m);
+}
+
 Variant::Variant(int i) : m_type(Variant::INTEGER)
 {
   m_value.integerVal = i;
+}
+
+Variant::Variant(long l) : m_type(Variant::LONG)
+{
+  m_value.longVal = l;
 }
 
 Variant::Variant(double d) : m_type(Variant::DOUBLE)
@@ -69,6 +79,11 @@ int Variant::toInteger() const
   return m_value.integerVal;
 }
 
+long Variant::toLong() const
+{
+  return m_value.longVal;
+}
+
 double Variant::toDouble() const
 {
   return m_value.doubleVal;
@@ -82,6 +97,11 @@ string Variant::toString() const
 vector<Variant> Variant::toList() const
 {
   return m_value.listVal;
+}
+
+map<string, Variant> Variant::toMap() const
+{
+  return m_value.mapVal;
 }
 
 Variant::Type Variant::type() const
@@ -99,6 +119,9 @@ void Variant::copy(const Variant& v)
     case INTEGER:
       m_value.integerVal = v.toInteger();
       break;
+    case LONG:
+      m_value.longVal = v.toLong();
+      break;
     case DOUBLE:
       m_value.doubleVal = v.toDouble();
       break;
@@ -110,6 +133,9 @@ void Variant::copy(const Variant& v)
       break;
     case LIST:
       new (&m_value.listVal) vector<Variant>(v.toList());
+      break;
+    case MAP:
+      new (&m_value.mapVal) map<std::string, Variant>(v.toMap());
       break;
   }
 }

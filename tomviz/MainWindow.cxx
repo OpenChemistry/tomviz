@@ -25,6 +25,8 @@
 #include "Behaviors.h"
 #include "CameraReaction.h"
 #include "Connection.h"
+#include "DataBroker.h"
+#include "DataBrokerLoadReaction.h"
 #include "DataPropertiesPanel.h"
 #include "DataTransformMenu.h"
 #include "FileFormatManager.h"
@@ -239,6 +241,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   new LoadDataReaction(m_ui->actionOpen);
 
   new LoadStackReaction(m_ui->actionStack);
+
+  new DataBrokerLoadReaction(m_ui->actionImportFromDataBroker);
 
   // Build Data Transforms menu
   new DataTransformMenu(this, m_ui->menuData, m_ui->menuSegmentation);
@@ -539,6 +543,11 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
             m_ui->actionAcquisition->setEnabled(true);
             m_ui->actionPassiveAcquisition->setEnabled(true);
             registerCustomOperators(pythonWatcher->result());
+            // Check if we have DataBroker and enable menu if we do
+            auto dataBroker = new DataBroker(this);
+            m_ui->actionImportFromDataBroker->setEnabled(
+              dataBroker->installed());
+
             delete pythonWatcher;
             statusBar()->showMessage("Initialization complete", 1500);
           });
@@ -1091,7 +1100,7 @@ void MainWindow::findPipelineTemplates() {
   QDir created (tomviz::userDataPath() + "/templates");
 
   QList<QDir> locations = { provided, created };
-  foreach (QDir dir, locations) {  
+  foreach (QDir dir, locations) {
     foreach (QFileInfo file, dir.entryInfoList()) {
       QString menuName = file.completeBaseName().replace("_", " ");
       if (file.isFile()) {
@@ -1101,7 +1110,8 @@ void MainWindow::findPipelineTemplates() {
           action->setEnabled(false);
         }
       }
-    }}
+    }
+  }
   m_pipelineTemplates->addSeparator();
   QAction* actionSaveTemplate = m_pipelineTemplates->addAction("Save Template");
   new SaveLoadTemplateReaction(actionSaveTemplate);

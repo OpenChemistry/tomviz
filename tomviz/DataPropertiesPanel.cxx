@@ -133,30 +133,6 @@ QString getDataDimensionsString(vtkSMSourceProxy* proxy)
   return extentString;
 }
 
-template <typename T>
-QString getSizeNearestThousand(T num, bool labelAsBytes = false)
-{
-  char format = 'f';
-  int prec = 1;
-
-  QString ret;
-  if (num < 1e3)
-    ret = QString::number(num) + " ";
-  else if (num < 1e6)
-    ret = QString::number(num / 1e3, format, prec) + " K";
-  else if (num < 1e9)
-    ret = QString::number(num / 1e6, format, prec) + " M";
-  else if (num < 1e12)
-    ret = QString::number(num / 1e9, format, prec) + " G";
-  else
-    ret = QString::number(num / 1e12, format, prec) + " T";
-
-  if (labelAsBytes)
-    ret += "B";
-
-  return ret;
-}
-
 QString getNumVoxelsString(vtkSMSourceProxy* proxy)
 {
   vtkPVDataInformation* info = proxy->GetDataInformation(0);
