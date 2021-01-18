@@ -85,6 +85,7 @@ private slots:
   void onSpecularPowerChanged(const double value);
   void onTransferModeChanged(const int mode);
   void onScalarArrayChanged();
+  void onSolidityChanged(const double value);
   int scalarsIndex();
 };
 } // namespace tomviz

@@ -47,6 +47,7 @@ public:
   void setSpecular(const double value);
   void setSpecularPower(const double value);
   void setTransferMode(const int transferMode);
+  void setSolidity(const double value);
   QFormLayout* formLayout();
   //@}
 
@@ -64,6 +65,7 @@ signals:
   void specularChanged(const double value);
   void specularPowerChanged(const double value);
   void transferModeChanged(const int mode);
+  void solidityChanged(const double value);
   //@}
 
 private:
