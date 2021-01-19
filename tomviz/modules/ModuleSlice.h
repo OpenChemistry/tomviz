@@ -44,6 +44,8 @@ public:
   bool areScalarsMapped() const override;
   void addToPanel(QWidget* panel) override;
 
+  void planeBounds(double b[6]);
+
   void dataSourceMoved(double newX, double newY, double newZ) override;
 
   QString exportDataTypeString() override { return "Image"; }
@@ -72,6 +74,17 @@ public:
 
   bool updateClippingPlane(vtkPlane* plane, bool newFilter) override;
 
+  bool isOrtho() const;
+  int maxSlice() const;
+
+  void onDirectionChanged(Direction direction);
+  void onSliceChanged(int slice);
+  void setShowArrow(bool b);
+
+signals:
+
+  void sliceChanged(int slice);
+
 protected:
   void updateColorMap() override;
   void updateSliceWidget();
@@ -92,17 +105,14 @@ private slots:
   void onScalarArrayChanged();
 
   void setMapScalars(bool b);
-  void setShowArrow(bool b);
 
   void updatePointOnPlane();
   void updatePlaneNormal();
 
-  void onDirectionChanged(Direction direction);
-  void onSliceChanged(int slice);
   void onSliceChanged(double* point);
   void onThicknessChanged(int value);
   void onThickSliceModeChanged(int index);
-  int directionAxis(Direction direction);
+  int directionAxis(Direction direction) const;
   void onOpacityChanged(double opacity);
 
   void onTextureInterpolateChanged(bool flag);

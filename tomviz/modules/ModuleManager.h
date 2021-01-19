@@ -172,6 +172,8 @@ signals:
 
   void mouseOverVoxel(const vtkVector3i& ijk, double v);
 
+  void pipelineViewRenderNeeded();
+
 private:
   Q_DISABLE_COPY(ModuleManager)
   ModuleManager(QObject* parent = nullptr);

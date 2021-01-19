@@ -450,7 +450,9 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   connect(m_ui->menu_File, &QMenu::aboutToShow, reaction,
           &ResetReaction::updateEnableState);
 
-  new ViewMenuManager(this, m_ui->menuView);
+  auto* viewMenuManager = new ViewMenuManager(this, m_ui->menuView);
+  connect(viewMenuManager, &ViewMenuManager::imageViewerModeToggled, this,
+          &MainWindow::setImageViewerMode);
 
   QMenu* sampleDataMenu = new QMenu("Sample Data", this);
   m_ui->menubar->insertMenu(m_ui->menuHelp->menuAction(), sampleDataMenu);
@@ -1054,6 +1056,11 @@ void MainWindow::setEnabledPythonConsole(bool enabled)
   m_ui->dockWidgetPythonConsole->setEnabled(enabled);
 }
 
+void MainWindow::setImageViewerMode(bool enabled)
+{
+  m_ui->centralWidget->setImageViewerMode(enabled);
+}
+
 void MainWindow::onMouseOverVoxel(const vtkVector3i& ijk, double v)
 {
 
@@ -1091,7 +1098,7 @@ void MainWindow::findPipelineTemplates() {
   QDir created (tomviz::userDataPath() + "/templates");
 
   QList<QDir> locations = { provided, created };
-  foreach (QDir dir, locations) {  
+  foreach (QDir dir, locations) {
     foreach (QFileInfo file, dir.entryInfoList()) {
       QString menuName = file.completeBaseName().replace("_", " ");
       if (file.isFile()) {
@@ -1101,7 +1108,8 @@ void MainWindow::findPipelineTemplates() {
           action->setEnabled(false);
         }
       }
-    }}
+    }
+  }
   m_pipelineTemplates->addSeparator();
   QAction* actionSaveTemplate = m_pipelineTemplates->addAction("Save Template");
   new SaveLoadTemplateReaction(actionSaveTemplate);

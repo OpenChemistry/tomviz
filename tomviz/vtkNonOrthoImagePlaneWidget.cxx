@@ -1690,6 +1690,11 @@ void vtkNonOrthoImagePlaneWidget::GetVector2(double v2[3])
   v2[2] = p2[2] - o[2];
 }
 
+void vtkNonOrthoImagePlaneWidget::GetPlaneBounds(double bounds[6])
+{
+  this->TexturePlaneActor->GetBounds(bounds);
+}
+
 void vtkNonOrthoImagePlaneWidget::Rotate(double X, double Y, double* p1,
                                          double* p2, double* vpn)
 {
