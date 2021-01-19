@@ -580,6 +580,10 @@ void ModuleSlice::onPlaneChanged()
   // Adjust the slice slider if the slice has changed from dragging the arrow
   onSliceChanged(centerPoint);
 
+  // I'm not sure why, but the slice plane moving doesn't cause a re-compute
+  // of the bounds automatically. Make sure the bounds get re-computed.
+  emit updateClientSideViewNeeded();
+
   m_ignoreSignals = false;
 }
 

@@ -144,6 +144,7 @@ private slots:
   void onViewRemoved(pqView*);
 
   void render();
+  void updateClientSideView();
 
   void onPipelineFinished();
 
