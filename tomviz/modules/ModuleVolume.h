@@ -8,14 +8,13 @@
 
 #include <vtkNew.h>
 #include <vtkWeakPointer.h>
-#include <vtkSmartPointer.h>
 
 #include <QPointer>
 
 class vtkPVRenderView;
 
-class vtkGPUVolumeRayCastMapper;
 class vtkImageClip;
+class vtkImageData;
 class vtkPlane;
 class vtkVolumeProperty;
 class vtkVolume;
@@ -24,6 +23,7 @@ namespace tomviz {
 
 class ModuleVolumeWidget;
 class ScalarsComboBox;
+class SmartVolumeMapper;
 
 class ModuleVolume : public Module
 {
@@ -47,6 +47,13 @@ public:
   void addToPanel(QWidget* panel) override;
   void updatePanel();
 
+  bool rgbaMappingAllowed();
+  bool useRgbaMapping();
+  void updateMapperInput(DataSource* data = nullptr);
+  void updateRgbaMappingDataObject();
+  void resetRgbaMappingRange();
+  void updateVectorMode();
+
   void dataSourceMoved(double newX, double newY, double newZ) override;
 
   bool supportsGradientOpacity() override { return true; }
@@ -65,10 +72,18 @@ private:
 
   vtkWeakPointer<vtkPVRenderView> m_view;
   vtkNew<vtkVolume> m_volume;
-  vtkSmartPointer<vtkGPUVolumeRayCastMapper> m_volumeMapper;
+  vtkNew<SmartVolumeMapper> m_volumeMapper;
   vtkNew<vtkVolumeProperty> m_volumeProperty;
   QPointer<ModuleVolumeWidget> m_controllers;
   QPointer<ScalarsComboBox> m_scalarsCombo;
+
+  // Data object used for mapping 3-components to Rgba
+  vtkNew<vtkImageData> m_rgbaDataObject;
+
+  bool m_useRgbaMapping = false;
+
+  // Range used for Rgba data object
+  double m_rgbaMappingRange[2];
 
 private slots:
   /**
@@ -84,8 +99,13 @@ private slots:
   void onSpecularChanged(const double value);
   void onSpecularPowerChanged(const double value);
   void onTransferModeChanged(const int mode);
+  void onRgbaMappingToggled(const bool b);
+  void onRgbaMappingMinChanged(const double value);
+  void onRgbaMappingMaxChanged(const double value);
   void onScalarArrayChanged();
   int scalarsIndex();
+
+  void onDataChanged();
 };
 } // namespace tomviz
 
