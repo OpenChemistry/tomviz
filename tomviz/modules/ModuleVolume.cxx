@@ -14,8 +14,8 @@
 #include <vtkGPUVolumeRayCastMapper.h>
 #include <vtkImageClip.h>
 #include <vtkImageData.h>
-#include <vtkObjectFactory.h>
 #include <vtkNew.h>
+#include <vtkObjectFactory.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkPlane.h>
 #include <vtkSmartPointer.h>
@@ -56,7 +56,8 @@ public:
 
 vtkStandardNewMacro(SmartVolumeMapper)
 
-ModuleVolume::ModuleVolume(QObject* parentObject) : Module(parentObject)
+  ModuleVolume::ModuleVolume(QObject* parentObject)
+  : Module(parentObject)
 {
   connect(&HistogramManager::instance(), &HistogramManager::histogram2DReady,
           this, [=](vtkSmartPointer<vtkImageData> image,
