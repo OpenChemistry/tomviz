@@ -31,6 +31,8 @@ ModuleVolumeWidget::ModuleVolumeWidget(QWidget* parent_)
   m_uiLighting->sliSpecularPower->setMinimum(1);
   m_uiLighting->sliSpecularPower->setResolution(200);
 
+  m_ui->soliditySlider->setLineEditWidth(leWidth);
+
   QStringList labelsBlending;
   labelsBlending << tr("Composite") << tr("Max") << tr("Min") << tr("Average")
                  << tr("Additive");
@@ -73,6 +75,8 @@ ModuleVolumeWidget::ModuleVolumeWidget(QWidget* parent_)
           SIGNAL(specularChanged(const double)));
   connect(m_uiLighting->sliSpecularPower, SIGNAL(valueEdited(double)), this,
           SIGNAL(specularPowerChanged(const double)));
+  connect(m_ui->soliditySlider, SIGNAL(valueEdited(double)), this,
+          SIGNAL(solidityChanged(const double)));
 
   m_ui->groupRgbaMappingRange->setVisible(false);
 }
@@ -138,6 +142,11 @@ bool ModuleVolumeWidget::usesLighting(const int mode) const
 void ModuleVolumeWidget::setTransferMode(const int transferMode)
 {
   m_ui->cbTransferMode->setCurrentIndex(transferMode);
+}
+
+void ModuleVolumeWidget::setSolidity(const double value)
+{
+  m_ui->soliditySlider->setValue(value);
 }
 
 void ModuleVolumeWidget::setRgbaMappingAllowed(const bool b)

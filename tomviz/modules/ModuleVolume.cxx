@@ -352,6 +352,7 @@ QJsonObject ModuleVolume::serialize() const
   lighting["specular"] = m_volumeProperty->GetSpecular();
   lighting["specularPower"] = m_volumeProperty->GetSpecularPower();
   props["lighting"] = lighting;
+  props["solidity"] = 1 / m_volumeProperty->GetScalarOpacityUnitDistance();
 
   json["properties"] = props;
   return json;
@@ -370,6 +371,7 @@ bool ModuleVolume::deserialize(const QJsonObject& json)
     onInterpolationChanged(props["interpolation"].toInt());
     setBlendingMode(props["blendingMode"].toInt());
     setJittering(props["rayJittering"].toBool());
+    onSolidityChanged(props["solidity"].toDouble());
 
     if (props["lighting"].isObject()) {
       auto lighting = props["lighting"].toObject();
@@ -436,6 +438,8 @@ void ModuleVolume::addToPanel(QWidget* panel)
             setActiveScalars(m_scalarsCombo->itemData(idx).toInt());
             onScalarArrayChanged();
           });
+  connect(m_controllers, SIGNAL(solidityChanged(const double)), this,
+          SLOT(onSolidityChanged(const double)));
 }
 
 void ModuleVolume::updatePanel()
@@ -455,6 +459,8 @@ void ModuleVolume::updatePanel()
   m_controllers->setSpecular(m_volumeProperty->GetSpecular());
   m_controllers->setSpecularPower(m_volumeProperty->GetSpecularPower());
   m_controllers->setInterpolationType(m_volumeProperty->GetInterpolationType());
+  m_controllers->setSolidity(1 /
+                             m_volumeProperty->GetScalarOpacityUnitDistance());
 
   m_controllers->setRgbaMappingAllowed(rgbaMappingAllowed());
   m_controllers->setUseRgbaMapping(useRgbaMapping());
@@ -569,6 +575,12 @@ void ModuleVolume::onScalarArrayChanged()
   if (tp) {
     tp->GetOutputDataObject(0)->Modified();
   }
+  emit renderNeeded();
+}
+
+void ModuleVolume::onSolidityChanged(const double value)
+{
+  m_volumeProperty->SetScalarOpacityUnitDistance(1 / value);
   emit renderNeeded();
 }
 

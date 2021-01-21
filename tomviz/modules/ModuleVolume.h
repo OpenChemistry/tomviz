@@ -103,6 +103,7 @@ private slots:
   void onRgbaMappingMinChanged(const double value);
   void onRgbaMappingMaxChanged(const double value);
   void onScalarArrayChanged();
+  void onSolidityChanged(const double value);
   int scalarsIndex();
 
   void onDataChanged();
