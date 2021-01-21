@@ -10,13 +10,16 @@
 #include "vtkTransferFunctionBoxItem.h"
 
 #include <vtkColorTransferFunction.h>
+#include <vtkDataArray.h>
 #include <vtkGPUVolumeRayCastMapper.h>
 #include <vtkImageClip.h>
 #include <vtkImageData.h>
 #include <vtkNew.h>
+#include <vtkObjectFactory.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkPlane.h>
 #include <vtkSmartPointer.h>
+#include <vtkSmartVolumeMapper.h>
 #include <vtkTrivialProducer.h>
 #include <vtkVector.h>
 #include <vtkView.h>
@@ -31,9 +34,30 @@
 #include <QFormLayout>
 #include <QVBoxLayout>
 
+#include <cmath>
+
 namespace tomviz {
 
-ModuleVolume::ModuleVolume(QObject* parentObject) : Module(parentObject)
+static void computeRange(vtkDataArray* array, double range[2]);
+
+// Subclass vtkSmartVolumeMapper so we can have a little more customization
+class SmartVolumeMapper : public vtkSmartVolumeMapper
+{
+public:
+  SmartVolumeMapper() { SetRequestedRenderModeToGPU(); }
+
+  static SmartVolumeMapper* New();
+
+  void UseJitteringOn() { GetGPUMapper()->UseJitteringOn(); }
+  void UseJitteringOff() { GetGPUMapper()->UseJitteringOff(); }
+  vtkTypeBool GetUseJittering() { return GetGPUMapper()->GetUseJittering(); }
+  void SetUseJittering(vtkTypeBool b) { GetGPUMapper()->SetUseJittering(b); }
+};
+
+vtkStandardNewMacro(SmartVolumeMapper)
+
+  ModuleVolume::ModuleVolume(QObject* parentObject)
+  : Module(parentObject)
 {
   connect(&HistogramManager::instance(), &HistogramManager::histogram2DReady,
           this, [=](vtkSmartPointer<vtkImageData> image,
@@ -67,16 +91,7 @@ QIcon ModuleVolume::icon() const
 
 void ModuleVolume::initializeMapper(DataSource* data)
 {
-  vtkAlgorithmOutput *output = nullptr;
-  if (data == nullptr) {
-    output = m_volumeMapper->GetInputConnection(0, 0);
-  }
-  else {
-    output = data->producer()->GetOutputPort();
-  }
-
-  m_volumeMapper = vtkSmartPointer<vtkGPUVolumeRayCastMapper>::New();
-  m_volumeMapper->SetInputConnection(output);
+  updateMapperInput(data);
   m_volumeMapper->SetScalarModeToUsePointFieldData();
   m_volumeMapper->SelectScalarArray(scalarsIndex());
   m_volume->SetMapper(m_volumeMapper);
@@ -104,12 +119,15 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   m_volumeProperty->SetSpecular(1.0);
   m_volumeProperty->SetSpecularPower(100.0);
 
+  resetRgbaMappingRange();
+  onRgbaMappingToggled(false);
   updateColorMap();
 
   m_view = vtkPVRenderView::SafeDownCast(vtkView->GetClientSideView());
   m_view->AddPropToRenderer(m_volume);
   m_view->Update();
 
+  connect(data, &DataSource::dataChanged, this, &ModuleVolume::onDataChanged);
   connect(data, &DataSource::activeScalarsChanged, this,
           &ModuleVolume::onScalarArrayChanged);
 
@@ -121,6 +139,126 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
           [this]() { this->initializeMapper(); });
 #endif
   return true;
+}
+
+void ModuleVolume::resetRgbaMappingRange()
+{
+  computeRange(dataSource()->imageData()->GetPointData()->GetScalars(),
+               m_rgbaMappingRange);
+}
+
+void ModuleVolume::onRgbaMappingToggled(bool b)
+{
+  m_useRgbaMapping = b;
+
+  updateMapperInput();
+  updateVectorMode();
+  if (useRgbaMapping()) {
+    updateRgbaMappingDataObject();
+    m_volumeProperty->IndependentComponentsOff();
+  } else {
+    m_volumeProperty->IndependentComponentsOn();
+  }
+  updatePanel();
+
+  emit renderNeeded();
+}
+
+void ModuleVolume::onDataChanged()
+{
+  if (useRgbaMapping()) {
+    updateRgbaMappingDataObject();
+  }
+  updatePanel();
+}
+
+void ModuleVolume::updateMapperInput(DataSource* data)
+{
+  if (useRgbaMapping()) {
+    m_volumeMapper->SetInputDataObject(m_rgbaDataObject);
+  } else if (data || (data = dataSource())) {
+    auto* output = data->producer()->GetOutputPort();
+    m_volumeMapper->SetInputConnection(output);
+  }
+}
+
+static void computeRange(vtkDataArray* array, double range[2])
+{
+  range[0] = DBL_MAX;
+  range[1] = -DBL_MAX;
+  for (int i = 0; i < array->GetNumberOfComponents(); ++i) {
+    auto* tmp = array->GetRange(i);
+    range[0] = std::min(range[0], tmp[0]);
+    range[1] = std::max(range[1], tmp[1]);
+  }
+}
+
+static double computeNorm(double* vals, int num)
+{
+  double result = 0;
+  for (int i = 0; i < num; ++i) {
+    result += std::pow(vals[i], 2.0);
+  }
+  return std::sqrt(result);
+}
+
+static double rescale(double val, double* oldRange, double* newRange)
+{
+  return (val - oldRange[0]) * (newRange[1] - newRange[0]) /
+           (oldRange[1] - oldRange[0]) +
+         newRange[0];
+}
+
+void ModuleVolume::updateVectorMode()
+{
+  int vectorMode = vtkSmartVolumeMapper::DISABLED;
+  auto* array = dataSource()->imageData()->GetPointData()->GetScalars();
+  if (array->GetNumberOfComponents() > 1 && !useRgbaMapping()) {
+    vectorMode = vtkSmartVolumeMapper::MAGNITUDE;
+  }
+
+  m_volumeMapper->SetVectorMode(vectorMode);
+}
+
+bool ModuleVolume::rgbaMappingAllowed()
+{
+  auto* array = dataSource()->imageData()->GetPointData()->GetScalars();
+  return array->GetNumberOfComponents() == 3;
+}
+
+bool ModuleVolume::useRgbaMapping()
+{
+  if (!rgbaMappingAllowed()) {
+    m_useRgbaMapping = false;
+  }
+
+  return m_useRgbaMapping;
+}
+
+void ModuleVolume::updateRgbaMappingDataObject()
+{
+  auto* imageData = dataSource()->imageData();
+  auto* input = imageData->GetPointData()->GetScalars();
+
+  // FIXME: we should probably do a filter instead of an object.
+  m_rgbaDataObject->SetDimensions(imageData->GetDimensions());
+  m_rgbaDataObject->AllocateScalars(input->GetDataType(), 4);
+
+  auto* output = m_rgbaDataObject->GetPointData()->GetScalars();
+
+  // Rescale from 0 to 1 for the coloring.
+  double newRange[2] = { 0.0, 1.0 };
+  double oldRange[2] = { m_rgbaMappingRange[0], m_rgbaMappingRange[1] };
+  for (int i = 0; i < input->GetNumberOfTuples(); ++i) {
+    for (int j = 0; j < 3; ++j) {
+      double oldVal = input->GetComponent(i, j);
+      double newVal = rescale(oldVal, oldRange, newRange);
+      output->SetComponent(i, j, newVal);
+    }
+    auto* vals = input->GetTuple3(i);
+    auto norm = computeNorm(vals, 3);
+    output->SetComponent(i, 3, norm);
+  }
 }
 
 void ModuleVolume::updateColorMap()
@@ -289,6 +427,12 @@ void ModuleVolume::addToPanel(QWidget* panel)
           SLOT(onSpecularPowerChanged(const double)));
   connect(m_controllers, SIGNAL(transferModeChanged(const int)), this,
           SLOT(onTransferModeChanged(const int)));
+  connect(m_controllers, &ModuleVolumeWidget::useRgbaMappingToggled, this,
+          &ModuleVolume::onRgbaMappingToggled);
+  connect(m_controllers, &ModuleVolumeWidget::rgbaMappingMinChanged, this,
+          &ModuleVolume::onRgbaMappingMinChanged);
+  connect(m_controllers, &ModuleVolumeWidget::rgbaMappingMaxChanged, this,
+          &ModuleVolume::onRgbaMappingMaxChanged);
   connect(m_scalarsCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
           this, [this](int idx) {
             setActiveScalars(m_scalarsCombo->itemData(idx).toInt());
@@ -318,6 +462,18 @@ void ModuleVolume::updatePanel()
   m_controllers->setSolidity(1 /
                              m_volumeProperty->GetScalarOpacityUnitDistance());
 
+  m_controllers->setRgbaMappingAllowed(rgbaMappingAllowed());
+  m_controllers->setUseRgbaMapping(useRgbaMapping());
+  if (useRgbaMapping()) {
+    m_controllers->setRgbaMappingMin(m_rgbaMappingRange[0]);
+    m_controllers->setRgbaMappingMax(m_rgbaMappingRange[1]);
+
+    double sliderRange[2];
+    computeRange(dataSource()->imageData()->GetPointData()->GetScalars(),
+                 sliderRange);
+    m_controllers->setRgbaMappingSliderRange(sliderRange);
+  }
+
   const auto tfMode = getTransferMode();
   m_controllers->setTransferMode(tfMode);
 
@@ -330,6 +486,20 @@ void ModuleVolume::onTransferModeChanged(const int mode)
   updateColorMap();
 
   emit transferModeChanged(mode);
+  emit renderNeeded();
+}
+
+void ModuleVolume::onRgbaMappingMinChanged(const double value)
+{
+  m_rgbaMappingRange[0] = value;
+  updateRgbaMappingDataObject();
+  emit renderNeeded();
+}
+
+void ModuleVolume::onRgbaMappingMaxChanged(const double value)
+{
+  m_rgbaMappingRange[1] = value;
+  updateRgbaMappingDataObject();
   emit renderNeeded();
 }
 

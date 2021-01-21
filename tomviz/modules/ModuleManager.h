@@ -144,6 +144,7 @@ private slots:
   void onViewRemoved(pqView*);
 
   void render();
+  void updateClientSideView();
 
   void onPipelineFinished();
 
@@ -170,6 +171,8 @@ signals:
   void visibilityChanged(bool);
 
   void mouseOverVoxel(const vtkVector3i& ijk, double v);
+
+  void pipelineViewRenderNeeded();
 
 private:
   Q_DISABLE_COPY(ModuleManager)

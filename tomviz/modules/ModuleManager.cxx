@@ -325,6 +325,8 @@ void ModuleManager::addModule(Module* module)
 
     emit moduleAdded(module);
     connect(module, &Module::renderNeeded, this, &ModuleManager::render);
+    connect(module, &Module::updateClientSideViewNeeded, this,
+            &ModuleManager::updateClientSideView);
     if (strcmp(ModuleFactory::moduleType(module), "Slice") == 0) {
       connect(module, &Module::mouseOverVoxel, this,
               &ModuleManager::mouseOverVoxel);
@@ -1094,6 +1096,21 @@ void ModuleManager::render()
   if (view) {
     view->render();
   }
+}
+
+void ModuleManager::updateClientSideView()
+{
+  auto* view = ActiveObjects::instance().activeView();
+  if (!view) {
+    return;
+  }
+
+  auto* clientView = vtkPVRenderView::SafeDownCast(view->GetClientSideView());
+  if (!clientView) {
+    return;
+  }
+
+  clientView->Update();
 }
 
 vtkSMViewProxy* ModuleManager::lookupView(int id)

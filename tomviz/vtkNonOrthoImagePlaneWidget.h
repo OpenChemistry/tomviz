@@ -184,6 +184,10 @@ public:
   void GetVector2(double v2[3]);
 
   // Description:
+  // Get the bounds of the plane actor.
+  void GetPlaneBounds(double bounds[6]);
+
+  // Description:
   // Get the slice position in terms of the data extent.
   int GetSliceIndex();
 

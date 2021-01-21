@@ -48,6 +48,11 @@ public:
   void setSpecularPower(const double value);
   void setTransferMode(const int transferMode);
   void setSolidity(const double value);
+  void setRgbaMappingAllowed(const bool allowed);
+  void setUseRgbaMapping(const bool b);
+  void setRgbaMappingMin(const double value);
+  void setRgbaMappingMax(const double value);
+  void setRgbaMappingSliderRange(const double range[2]);
   QFormLayout* formLayout();
   //@}
 
@@ -66,6 +71,9 @@ signals:
   void specularPowerChanged(const double value);
   void transferModeChanged(const int mode);
   void solidityChanged(const double value);
+  void useRgbaMappingToggled(const bool b);
+  void rgbaMappingMinChanged(const double value);
+  void rgbaMappingMaxChanged(const double value);
   //@}
 
 private:
@@ -79,6 +87,8 @@ private:
 
 private slots:
   void onBlendingChanged(const int mode);
+  void onRgbaMappingMinChanged(double value);
+  void onRgbaMappingMaxChanged(double value);
 };
 } // namespace tomviz
 #endif
