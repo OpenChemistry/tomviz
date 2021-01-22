@@ -21,6 +21,7 @@
 #include <vtkDataArray.h>
 #include <vtkDiscretizableColorTransferFunction.h>
 #include <vtkEventQtSlotConnect.h>
+#include <vtkImageData.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkRenderWindow.h>
 #include <vtkTable.h>
@@ -46,6 +47,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QSettings>
+#include <QSignalBlocker>
 #include <QToolButton>
 #include <QVBoxLayout>
 
@@ -116,12 +118,21 @@ HistogramWidget::HistogramWidget(QWidget* parent)
   button = new QToolButton;
   m_colorLegendToolButton = button;
   button->setIcon(QIcon(":/pqWidgets/Icons/pqScalarBar24.png"));
-  button->setToolTip("Show color legend in the 3D window.");
+  button->setToolTip("Show color legend in the 3D window");
   button->setEnabled(false);
   button->setCheckable(true);
   connect(button, SIGNAL(toggled(bool)), this,
           SIGNAL(colorLegendToggled(bool)));
   button->setChecked(false);
+  vLayout->addWidget(button);
+
+  button = new QToolButton;
+  m_autoAdjustContrastButton = button;
+  button->setIcon(QIcon(":/icons/greybar.png"));
+  button->setToolTip("Auto adjust contrast");
+  button->setEnabled(false);
+  connect(button, &QToolButton::clicked, this,
+          &HistogramWidget::onAutoAdjustContrastClicked);
   vLayout->addWidget(button);
 
   vLayout->addStretch(1);
@@ -140,6 +151,10 @@ HistogramWidget::~HistogramWidget() = default;
 void HistogramWidget::setLUT(vtkDiscretizableColorTransferFunction* lut)
 {
   if (m_LUT != lut) {
+    if (m_LUT) {
+      m_eventLink->Disconnect(m_LUT, vtkCommand::ModifiedEvent, this,
+                              SLOT(onColorFunctionChanged()));
+    }
     if (m_scalarOpacityFunction) {
       m_eventLink->Disconnect(m_scalarOpacityFunction,
                               vtkCommand::ModifiedEvent, this,
@@ -147,8 +162,14 @@ void HistogramWidget::setLUT(vtkDiscretizableColorTransferFunction* lut)
     }
     m_LUT = lut;
     m_scalarOpacityFunction = m_LUT->GetScalarOpacityFunction();
+
+    m_eventLink->Connect(m_LUT, vtkCommand::ModifiedEvent, this,
+                         SLOT(onColorFunctionChanged()));
     m_eventLink->Connect(m_scalarOpacityFunction, vtkCommand::ModifiedEvent,
                          this, SLOT(onScalarOpacityFunctionChanged()));
+
+    onColorFunctionChanged();
+    resetAutoContrastState();
     emit colorMapUpdated();
   }
 }
@@ -174,6 +195,30 @@ void HistogramWidget::setLUTProxy(vtkSMProxy* proxy)
       }
     }
   }
+}
+
+void HistogramWidget::updateLUTProxy()
+{
+  // Update the LUT proxy from the LUT object
+  auto* lutProxy = m_LUTProxy.Get();
+  auto* lut = m_LUT.Get();
+
+  if (!lutProxy || !lut) {
+    return;
+  }
+
+  auto numNodes = lut->GetSize();
+  auto* dataArray = lut->GetDataPointer();
+  int nodeStride = 4;
+
+  auto colorSpace = lut->GetColorSpace();
+
+  auto* controlPointsProperty = lutProxy->GetProperty("RGBPoints");
+  vtkSMPropertyHelper(controlPointsProperty)
+    .Set(dataArray, numNodes * nodeStride);
+
+  auto* colorSpaceProperty = lutProxy->GetProperty("ColorSpace");
+  vtkSMPropertyHelper(colorSpaceProperty).Set(colorSpace);
 }
 
 void HistogramWidget::setInputData(vtkTable* table, const char* x_,
@@ -216,6 +261,11 @@ vtkSMProxy* HistogramWidget::getScalarBarRepresentation(vtkSMProxy* view)
   }
 
   return sbProxy;
+}
+
+void HistogramWidget::onColorFunctionChanged()
+{
+  updateLUTProxy();
 }
 
 void HistogramWidget::onScalarOpacityFunctionChanged()
@@ -378,13 +428,23 @@ bool HistogramWidget::createContourDialog(double& isoValue)
 
 void HistogramWidget::onResetRangeClicked()
 {
+  resetRange();
+}
+
+void HistogramWidget::resetRange()
+{
   auto activeDataSource = ActiveObjects::instance().activeDataSource();
   if (!activeDataSource)
     return;
 
   double range[2];
   activeDataSource->getRange(range);
+  resetRange(range);
+}
 
+void HistogramWidget::resetRange(double range[2])
+{
+  resetAutoContrastState();
   rescaleTransferFunction(m_LUTProxy, range[0], range[1]);
   renderViews();
 }
@@ -470,6 +530,7 @@ void HistogramWidget::onCustomRangeClicked()
   vLayout.addWidget(&buttonBox);
 
   if (dialog.exec() == QDialog::Accepted) {
+    resetAutoContrastState();
     rescaleTransferFunction(m_LUTProxy, bottom.value(), top.value());
     renderViews();
   }
@@ -480,7 +541,10 @@ void HistogramWidget::onCustomRangeClicked()
 
 void HistogramWidget::onInvertClicked()
 {
+  removePlaceholderNodes();
   vtkSMTransferFunctionProxy::InvertTransferFunction(m_LUTProxy);
+  addPlaceholderNodes();
+  resetAutoContrastState();
   renderViews();
   emit colorMapUpdated();
 }
@@ -541,6 +605,102 @@ void HistogramWidget::onPresetClicked()
   showPresetDialog(QJsonObject());
 }
 
+void HistogramWidget::resetAutoContrastState()
+{
+  m_currentAutoContrastThreshold = m_defaultAutoContrastThreshold;
+}
+
+void HistogramWidget::onAutoAdjustContrastClicked()
+{
+  autoAdjustContrast();
+}
+
+void HistogramWidget::autoAdjustContrast()
+{
+  auto* table = m_inputData.Get();
+
+  // For now, auto adjust contrast for the whole data source. We can
+  // also do it for individual slices in the future (in which case
+  // we should generate a histogram for an individual slice).
+  auto* ds = ActiveObjects::instance().activeDataSource();
+
+  if (!table || !ds || !m_LUT) {
+    return;
+  }
+
+  auto* imageData = ds->imageData();
+  auto* histogram =
+    vtkDataArray::SafeDownCast(table->GetColumnByName("image_pops"));
+  auto* extents =
+    vtkDataArray::SafeDownCast(table->GetColumnByName("image_extents"));
+
+  if (!imageData || !histogram || !extents ||
+      extents->GetNumberOfTuples() < 2) {
+    return;
+  }
+
+  autoAdjustContrast(histogram, extents, imageData);
+}
+
+void HistogramWidget::autoAdjustContrast(vtkDataArray* histogram,
+                                         vtkDataArray* extents,
+                                         vtkImageData* imageData)
+{
+  // Gather some information
+  double range[2];
+  DataSource::getRange(imageData, range);
+
+  int dims[3];
+  imageData->GetDimensions(dims);
+
+  auto voxelCount = static_cast<size_t>(dims[0]) * dims[1] * dims[2];
+  auto numBins = histogram->GetNumberOfTuples();
+  auto histMin = extents->GetTuple1(0);
+  auto binSize = extents->GetTuple1(1) - histMin;
+  auto& autoThreshold = m_currentAutoContrastThreshold;
+
+  // Perform the operation as ImageJ does it
+  auto limit = voxelCount / 10;
+  if (autoThreshold < 10) {
+    autoThreshold = m_defaultAutoContrastThreshold;
+  } else {
+    autoThreshold /= 2;
+  }
+  auto threshold = voxelCount / autoThreshold;
+
+  int i;
+  for (i = 0; i < numBins; ++i) {
+    double count = histogram->GetTuple1(i);
+    count = count > limit ? 0 : count;
+    if (count > threshold) {
+      break;
+    }
+  }
+  int hmin = i;
+
+  for (i = 255; i >= 0; --i) {
+    double count = histogram->GetTuple1(i);
+    count = count > limit ? 0 : count;
+    if (count > threshold) {
+      break;
+    }
+  }
+  int hmax = i;
+
+  if (hmax < hmin) {
+    resetRange(range);
+    return;
+  }
+
+  double min = histMin + hmin * binSize;
+  double max = histMin + hmax * binSize;
+  if (min == max) {
+    min = range[0];
+    max = range[1];
+  }
+  rescaleTransferFunction(m_LUTProxy, min, max);
+}
+
 void HistogramWidget::applyCurrentPreset()
 {
   vtkSMProxy* lut = m_LUTProxy;
@@ -553,6 +713,7 @@ void HistogramWidget::applyCurrentPreset()
   ColorMap::instance().applyPreset(current, lut);
 
   renderViews();
+  resetAutoContrastState();
   emit colorMapUpdated();
 }
 
@@ -564,25 +725,25 @@ void HistogramWidget::updateUI()
   if (m_LUTProxy) {
     auto sbProxy = getScalarBarRepresentation(view);
     if (view && sbProxy) {
-      m_colorLegendToolButton->blockSignals(true);
-      m_savePresetButton->blockSignals(true);
+      QSignalBlocker blocker1(m_colorLegendToolButton);
+      QSignalBlocker blocker2(m_savePresetButton);
+      QSignalBlocker blocker3(m_autoAdjustContrastButton);
       m_colorLegendToolButton->setEnabled(true);
       m_colorLegendToolButton->setChecked(
         vtkSMPropertyHelper(sbProxy, "Visibility").GetAsInt() == 1);
       m_savePresetButton->setEnabled(true);
-      m_savePresetButton->blockSignals(false);
-      m_colorLegendToolButton->blockSignals(false);
+      m_autoAdjustContrastButton->setEnabled(true);
     }
   }
 
   auto dataSource = ActiveObjects::instance().activeDataSource();
   if (!dataSource) {
-    m_colorLegendToolButton->blockSignals(true);
-    m_savePresetButton->blockSignals(true);
+    QSignalBlocker blocker1(m_colorLegendToolButton);
+    QSignalBlocker blocker2(m_savePresetButton);
+    QSignalBlocker blocker3(m_autoAdjustContrastButton);
     m_colorLegendToolButton->setEnabled(false);
     m_savePresetButton->setEnabled(false);
-    m_savePresetButton->blockSignals(false);
-    m_colorLegendToolButton->blockSignals(false);
+    m_autoAdjustContrastButton->setEnabled(false);
   }
 }
 
@@ -598,10 +759,14 @@ void HistogramWidget::renderViews()
 void HistogramWidget::rescaleTransferFunction(vtkSMProxy* lutProxy, double min,
                                               double max)
 {
-  vtkSMTransferFunctionProxy::RescaleTransferFunction(lutProxy, min, max);
   auto opacityMap =
     vtkSMPropertyHelper(m_LUTProxy, "ScalarOpacityFunction").GetAsProxy();
+
+  removePlaceholderNodes();
+  vtkSMTransferFunctionProxy::RescaleTransferFunction(lutProxy, min, max);
   vtkSMTransferFunctionProxy::RescaleTransferFunction(opacityMap, min, max);
+  addPlaceholderNodes();
+
   emit colorMapUpdated();
 }
 
@@ -609,5 +774,199 @@ void HistogramWidget::showEvent(QShowEvent* event)
 {
   QWidget::showEvent(event);
   this->renderViews();
+}
+
+static bool areClose(double a, double b, double tol = 1.e-8)
+{
+  return std::abs(a - b) < tol;
+}
+
+static bool nodeColorsMatch(double* a, double* b)
+{
+  for (int i = 1; i < 4; ++i) {
+    if (!areClose(a[i], b[i])) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+static bool nodeYsMatch(double* a, double* b)
+{
+  return areClose(a[1], b[1]);
+}
+
+void HistogramWidget::addPlaceholderNodes()
+{
+  addLUTPlaceholderNodes();
+  addOpacityPlaceholderNodes();
+}
+
+void HistogramWidget::addLUTPlaceholderNodes()
+{
+  auto* lut = m_LUT.Get();
+  auto* ds = ActiveObjects::instance().activeDataSource();
+  if (!lut || !ds) {
+    return;
+  }
+
+  double range[2];
+  ds->getRange(range);
+
+  auto numNodes = lut->GetSize();
+  auto* dataArray = lut->GetDataPointer();
+  int nodeStride = 4;
+  double* firstNode = dataArray;
+  double* backNode = firstNode + (numNodes - 1) * nodeStride;
+
+  bool addFront = false;
+  if (!m_firstColorNodeIsPlaceholder) {
+    double* nextNode = firstNode + nodeStride;
+    addFront = !nodeColorsMatch(firstNode, nextNode);
+  }
+
+  bool addBack = false;
+  if (!m_lastColorNodeIsPlaceholder) {
+    double* nextBackNode = backNode - nodeStride;
+    addBack = !nodeColorsMatch(backNode, nextBackNode);
+  }
+
+  if (addFront) {
+    lut->AddRGBPoint(range[0], firstNode[1], firstNode[2], firstNode[3]);
+  }
+
+  if (addBack) {
+    lut->AddRGBPoint(range[1], backNode[1], backNode[2], backNode[3]);
+  }
+
+  m_firstColorNodeIsPlaceholder = addFront;
+  m_lastColorNodeIsPlaceholder = addBack;
+}
+
+void HistogramWidget::addOpacityPlaceholderNodes()
+{
+  auto* opacity = m_scalarOpacityFunction.Get();
+  auto* ds = ActiveObjects::instance().activeDataSource();
+  if (!opacity || !ds) {
+    return;
+  }
+
+  double range[2];
+  ds->getRange(range);
+
+  auto numNodes = opacity->GetSize();
+  auto* dataArray = opacity->GetDataPointer();
+  int nodeStride = 2;
+  double* firstNode = dataArray;
+  double* backNode = firstNode + (numNodes - 1) * nodeStride;
+
+  bool addFront = false;
+  if (!m_firstOpacityNodeIsPlaceholder) {
+    double* nextNode = firstNode + nodeStride;
+    addFront = !nodeYsMatch(firstNode, nextNode);
+  }
+
+  bool addBack = false;
+  if (!m_lastOpacityNodeIsPlaceholder) {
+    double* nextBackNode = backNode - nodeStride;
+    addBack = !nodeYsMatch(backNode, nextBackNode);
+  }
+
+  if (addFront) {
+    opacity->AddPoint(range[0], firstNode[1]);
+  }
+
+  if (addBack) {
+    opacity->AddPoint(range[1], backNode[1]);
+  }
+
+  m_firstOpacityNodeIsPlaceholder = addFront;
+  m_lastOpacityNodeIsPlaceholder = addBack;
+}
+
+void HistogramWidget::removePlaceholderNodes()
+{
+  removeLUTPlaceholderNodes();
+  removeOpacityPlaceholderNodes();
+}
+
+void HistogramWidget::removeLUTPlaceholderNodes()
+{
+  auto* lut = m_LUT.Get();
+  auto* ds = ActiveObjects::instance().activeDataSource();
+  if (!lut || !ds) {
+    return;
+  }
+
+  double range[2];
+  ds->getRange(range);
+
+  auto numNodes = lut->GetSize();
+  auto* dataArray = lut->GetDataPointer();
+  int nodeStride = 4;
+  double* firstNode = dataArray;
+  double* backNode = firstNode + (numNodes - 1) * nodeStride;
+
+  bool removeFront = false;
+  if (m_firstColorNodeIsPlaceholder) {
+    double* nextNode = firstNode + nodeStride;
+    removeFront = nodeColorsMatch(firstNode, nextNode);
+  }
+
+  bool removeBack = false;
+  if (m_lastColorNodeIsPlaceholder) {
+    double* nextBackNode = backNode - nodeStride;
+    removeBack = nodeColorsMatch(backNode, nextBackNode);
+  }
+
+  if (removeFront) {
+    lut->RemovePoint(firstNode[0]);
+  }
+
+  if (removeBack) {
+    lut->RemovePoint(backNode[0]);
+  }
+
+  m_firstColorNodeIsPlaceholder = false;
+  m_lastColorNodeIsPlaceholder = false;
+}
+
+void HistogramWidget::removeOpacityPlaceholderNodes()
+{
+  auto* opacity = m_scalarOpacityFunction.Get();
+  auto* ds = ActiveObjects::instance().activeDataSource();
+  if (!opacity || !ds) {
+    return;
+  }
+
+  auto numNodes = opacity->GetSize();
+  auto* dataArray = opacity->GetDataPointer();
+  int nodeStride = 2;
+  double* firstNode = dataArray;
+  double* backNode = firstNode + (numNodes - 1) * nodeStride;
+
+  bool removeFront = false;
+  if (m_firstOpacityNodeIsPlaceholder) {
+    double* nextNode = firstNode + nodeStride;
+    removeFront = nodeYsMatch(firstNode, nextNode);
+  }
+
+  bool removeBack = false;
+  if (m_lastOpacityNodeIsPlaceholder) {
+    double* nextBackNode = backNode - nodeStride;
+    removeBack = nodeYsMatch(backNode, nextBackNode);
+  }
+
+  if (removeFront) {
+    opacity->RemovePoint(firstNode[0]);
+  }
+
+  if (removeBack) {
+    opacity->RemovePoint(backNode[0]);
+  }
+
+  m_firstOpacityNodeIsPlaceholder = false;
+  m_lastOpacityNodeIsPlaceholder = false;
 }
 } // namespace tomviz
