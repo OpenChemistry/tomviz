@@ -11,7 +11,9 @@
 
 class vtkChartHistogramColorOpacityEditor;
 class vtkContextView;
+class vtkDataArray;
 class vtkEventQtSlotConnect;
+class vtkImageData;
 class vtkPiecewiseFunction;
 class vtkObject;
 class vtkTable;
@@ -47,6 +49,7 @@ signals:
   void colorLegendToggled(bool);
 
 public slots:
+  void onColorFunctionChanged();
   void onScalarOpacityFunctionChanged();
   void onCurrentPointEditEvent();
   void histogramClicked(vtkObject*);
@@ -56,6 +59,7 @@ public slots:
   void onInvertClicked();
   void onPresetClicked();
   void onSaveToPresetClicked();
+  void onAutoAdjustContrastClicked();
   void applyCurrentPreset();
   void updateUI();
 
@@ -67,11 +71,35 @@ private:
   void rescaleTransferFunction(vtkSMProxy* lutProxy, double min, double max);
   bool createContourDialog(double& isoValue);
   void showPresetDialog(const QJsonObject& newPreset);
+
+  void resetRange();
+  void resetRange(double range[2]);
+
+  // When the user modifies the LUT via the control points, we unfortunately
+  // need to update the proxy with these modifications, or any operations
+  // with the proxy will over-write what the user has done.
+  void updateLUTProxy();
+
+  // Auto contrast functions
+  void autoAdjustContrast();
+  void autoAdjustContrast(vtkDataArray* histogram, vtkDataArray* extents,
+                          vtkImageData* imageData);
+  void resetAutoContrastState();
+
+  // Add placeholder nodes to make the color bar and opacity editor look nicer
+  void addPlaceholderNodes();
+  void removePlaceholderNodes();
+  void addLUTPlaceholderNodes();
+  void addOpacityPlaceholderNodes();
+  void removeLUTPlaceholderNodes();
+  void removeOpacityPlaceholderNodes();
+
   vtkNew<vtkChartHistogramColorOpacityEditor> m_histogramColorOpacityEditor;
   vtkNew<vtkContextView> m_histogramView;
   vtkNew<vtkEventQtSlotConnect> m_eventLink;
   QToolButton* m_colorLegendToolButton;
   QToolButton* m_savePresetButton;
+  QToolButton* m_autoAdjustContrastButton;
 
   vtkWeakPointer<vtkDiscretizableColorTransferFunction> m_LUT;
   vtkWeakPointer<vtkPiecewiseFunction> m_scalarOpacityFunction;
@@ -80,6 +108,14 @@ private:
 
   PresetDialog* m_presetDialog = nullptr;
   QVTKGLWidget* m_qvtk;
+
+  bool m_firstColorNodeIsPlaceholder = false;
+  bool m_lastColorNodeIsPlaceholder = false;
+  bool m_firstOpacityNodeIsPlaceholder = false;
+  bool m_lastOpacityNodeIsPlaceholder = false;
+
+  static const int m_defaultAutoContrastThreshold = 5000;
+  int m_currentAutoContrastThreshold = 5000;
 };
 } // namespace tomviz
 
