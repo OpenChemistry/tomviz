@@ -38,6 +38,8 @@ set(SOURCES
   CloneDataReaction.h
   ColorMap.cxx
   ColorMap.h
+  ColorMapSettingsWidget.cxx
+  ColorMapSettingsWidget.h
   ConvertToFloatReaction.cxx
   ConvertToFloatReaction.h
   CropReaction.cxx
