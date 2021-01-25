@@ -265,7 +265,20 @@ vtkSMProxy* HistogramWidget::getScalarBarRepresentation(vtkSMProxy* view)
 
 void HistogramWidget::onColorFunctionChanged()
 {
+  if (m_updatingColorFunction) {
+    // Avoid infinite recursion
+    return;
+  }
+  m_updatingColorFunction = true;
+
   updateLUTProxy();
+  if (m_LUT) {
+    m_LUT->Build();
+    renderViews();
+    emit colorMapUpdated();
+  }
+
+  m_updatingColorFunction = false;
 }
 
 void HistogramWidget::onScalarOpacityFunctionChanged()

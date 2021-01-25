@@ -109,6 +109,9 @@ private:
   PresetDialog* m_presetDialog = nullptr;
   QVTKGLWidget* m_qvtk;
 
+  // To prevent infinite recursion...
+  bool m_updatingColorFunction = false;
+
   bool m_firstColorNodeIsPlaceholder = false;
   bool m_lastColorNodeIsPlaceholder = false;
   bool m_firstOpacityNodeIsPlaceholder = false;
