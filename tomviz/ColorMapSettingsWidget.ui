@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ColorMapSettingsWidget</class>
+ <widget class="QWidget" name="ColorMapSettingsWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>415</width>
+    <height>72</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="0" column="0">
+    <widget class="QLabel" name="colorSpaceLabel">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The color space used for interpolation: RGB, HSV, Lab (CIELAB), or Diverging. &lt;/p&gt;&lt;p&gt;In HSV mode, if HSVWrap is on, it will take the shortest path in Hue (going back through 0 if that is the shortest way around the hue circle) whereas if HSVWrap is off it will not go through 0 (in order the match the current functionality of vtkLookupTable).&lt;/p&gt;&lt;p&gt;Diverging is a special mode where colors will pass through white when interpolating between two saturated colors.&lt;/p&gt;&lt;p&gt;In Lab/CIEDE2000 mode, it will take the shortest path in the Lab color space with respect to the CIE Delta E 2000 color distance measure.&lt;/p&gt;&lt;p&gt;In Step mode, the color of an interval is the color of the second point of the interval.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Color Space:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QComboBox" name="colorSpace">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The color space used for interpolation: RGB, HSV, Lab (CIELAB), or Diverging. &lt;/p&gt;&lt;p&gt;In HSV mode, if HSVWrap is on, it will take the shortest path in Hue (going back through 0 if that is the shortest way around the hue circle) whereas if HSVWrap is off it will not go through 0 (in order the match the current functionality of vtkLookupTable).&lt;/p&gt;&lt;p&gt;Diverging is a special mode where colors will pass through white when interpolating between two saturated colors.&lt;/p&gt;&lt;p&gt;In Lab/CIEDE2000 mode, it will take the shortest path in the Lab color space with respect to the CIE Delta E 2000 color distance measure.&lt;/p&gt;&lt;p&gt;In Step mode, the color of an interval is the color of the second point of the interval.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

@@ -4,6 +4,7 @@
 #ifndef tomvizHistogramWidget_h
 #define tomvizHistogramWidget_h
 
+#include <QScopedPointer>
 #include <QWidget>
 
 #include <vtkNew.h>
@@ -18,6 +19,7 @@ class vtkPiecewiseFunction;
 class vtkObject;
 class vtkTable;
 
+class QDialog;
 class QToolButton;
 
 class vtkDiscretizableColorTransferFunction;
@@ -25,6 +27,7 @@ class vtkSMProxy;
 
 namespace tomviz {
 
+class ColorMapSettingsWidget;
 class PresetDialog;
 class QVTKGLWidget;
 
@@ -57,6 +60,7 @@ public slots:
   void onResetRangeClicked();
   void onCustomRangeClicked();
   void onInvertClicked();
+  void onColorMapSettingsClicked();
   void onPresetClicked();
   void onSaveToPresetClicked();
   void onAutoAdjustContrastClicked();
@@ -67,6 +71,8 @@ protected:
   void showEvent(QShowEvent* event) override;
 
 private:
+  void setupColorMapSettingsDialog();
+
   void renderViews();
   void rescaleTransferFunction(vtkSMProxy* lutProxy, double min, double max);
   bool createContourDialog(double& isoValue);
@@ -98,6 +104,7 @@ private:
   vtkNew<vtkContextView> m_histogramView;
   vtkNew<vtkEventQtSlotConnect> m_eventLink;
   QToolButton* m_colorLegendToolButton;
+  QToolButton* m_colorMapSettingsButton;
   QToolButton* m_savePresetButton;
   QToolButton* m_autoAdjustContrastButton;
 
@@ -108,6 +115,11 @@ private:
 
   PresetDialog* m_presetDialog = nullptr;
   QVTKGLWidget* m_qvtk;
+  QScopedPointer<QDialog> m_colorMapSettingsDialog;
+  ColorMapSettingsWidget* m_colorMapSettingsWidget = nullptr;
+
+  // To prevent infinite recursion...
+  bool m_updatingColorFunction = false;
 
   bool m_firstColorNodeIsPlaceholder = false;
   bool m_lastColorNodeIsPlaceholder = false;

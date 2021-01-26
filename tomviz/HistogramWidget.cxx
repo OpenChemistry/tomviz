@@ -5,6 +5,7 @@
 
 #include "ActiveObjects.h"
 #include "ColorMap.h"
+#include "ColorMapSettingsWidget.h"
 #include "DataSource.h"
 #include "DoubleSliderWidget.h"
 #include "ModuleContour.h"
@@ -102,6 +103,14 @@ HistogramWidget::HistogramWidget(QWidget* parent)
   vLayout->addWidget(button);
 
   button = new QToolButton;
+  m_colorMapSettingsButton = button;
+  button->setIcon(QIcon(":/pqWidgets/Icons/pqAdvanced26.png"));
+  button->setToolTip("Edit color map settings");
+  connect(button, &QToolButton::clicked, this,
+          &HistogramWidget::onColorMapSettingsClicked);
+  vLayout->addWidget(button);
+
+  button = new QToolButton;
   button->setIcon(QIcon(":/icons/pqFavorites.png"));
   button->setToolTip("Choose preset color map");
   connect(button, SIGNAL(clicked()), this, SLOT(onPresetClicked()));
@@ -144,9 +153,22 @@ HistogramWidget::HistogramWidget(QWidget* parent)
   connect(this, SIGNAL(colorMapUpdated()), this, SLOT(updateUI()));
 
   setLayout(hLayout);
+
+  setupColorMapSettingsDialog();
 }
 
 HistogramWidget::~HistogramWidget() = default;
+
+void HistogramWidget::setupColorMapSettingsDialog()
+{
+  m_colorMapSettingsDialog.reset(new QDialog);
+  auto& dialog = *m_colorMapSettingsDialog;
+  dialog.setLayout(new QVBoxLayout);
+  dialog.setWindowTitle("Color map settings");
+
+  m_colorMapSettingsWidget = new ColorMapSettingsWidget(m_LUT, this);
+  dialog.layout()->addWidget(m_colorMapSettingsWidget);
+}
 
 void HistogramWidget::setLUT(vtkDiscretizableColorTransferFunction* lut)
 {
@@ -171,6 +193,10 @@ void HistogramWidget::setLUT(vtkDiscretizableColorTransferFunction* lut)
     onColorFunctionChanged();
     resetAutoContrastState();
     emit colorMapUpdated();
+  }
+
+  if (m_colorMapSettingsWidget) {
+    m_colorMapSettingsWidget->setLut(m_LUT);
   }
 }
 
@@ -265,7 +291,20 @@ vtkSMProxy* HistogramWidget::getScalarBarRepresentation(vtkSMProxy* view)
 
 void HistogramWidget::onColorFunctionChanged()
 {
+  if (m_updatingColorFunction) {
+    // Avoid infinite recursion
+    return;
+  }
+  m_updatingColorFunction = true;
+
   updateLUTProxy();
+  if (m_LUT) {
+    m_LUT->Build();
+    renderViews();
+    emit colorMapUpdated();
+  }
+
+  m_updatingColorFunction = false;
 }
 
 void HistogramWidget::onScalarOpacityFunctionChanged()
@@ -549,6 +588,15 @@ void HistogramWidget::onInvertClicked()
   emit colorMapUpdated();
 }
 
+void HistogramWidget::onColorMapSettingsClicked()
+{
+  if (!m_colorMapSettingsDialog) {
+    return;
+  }
+
+  m_colorMapSettingsDialog->show();
+}
+
 void HistogramWidget::showPresetDialog(const QJsonObject& newPreset)
 {
   if (m_presetDialog == nullptr) {
@@ -715,6 +763,10 @@ void HistogramWidget::applyCurrentPreset()
   renderViews();
   resetAutoContrastState();
   emit colorMapUpdated();
+
+  if (m_colorMapSettingsWidget) {
+    m_colorMapSettingsWidget->updateGui();
+  }
 }
 
 void HistogramWidget::updateUI()
@@ -726,9 +778,11 @@ void HistogramWidget::updateUI()
     auto sbProxy = getScalarBarRepresentation(view);
     if (view && sbProxy) {
       QSignalBlocker blocker1(m_colorLegendToolButton);
-      QSignalBlocker blocker2(m_savePresetButton);
-      QSignalBlocker blocker3(m_autoAdjustContrastButton);
+      QSignalBlocker blocker2(m_colorMapSettingsButton);
+      QSignalBlocker blocker3(m_savePresetButton);
+      QSignalBlocker blocker4(m_autoAdjustContrastButton);
       m_colorLegendToolButton->setEnabled(true);
+      m_colorMapSettingsButton->setEnabled(true);
       m_colorLegendToolButton->setChecked(
         vtkSMPropertyHelper(sbProxy, "Visibility").GetAsInt() == 1);
       m_savePresetButton->setEnabled(true);
@@ -739,9 +793,11 @@ void HistogramWidget::updateUI()
   auto dataSource = ActiveObjects::instance().activeDataSource();
   if (!dataSource) {
     QSignalBlocker blocker1(m_colorLegendToolButton);
-    QSignalBlocker blocker2(m_savePresetButton);
-    QSignalBlocker blocker3(m_autoAdjustContrastButton);
+    QSignalBlocker blocker2(m_colorMapSettingsButton);
+    QSignalBlocker blocker3(m_savePresetButton);
+    QSignalBlocker blocker4(m_autoAdjustContrastButton);
     m_colorLegendToolButton->setEnabled(false);
+    m_colorMapSettingsButton->setEnabled(false);
     m_savePresetButton->setEnabled(false);
     m_autoAdjustContrastButton->setEnabled(false);
   }
