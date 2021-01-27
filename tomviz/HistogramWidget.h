@@ -4,7 +4,7 @@
 #ifndef tomvizHistogramWidget_h
 #define tomvizHistogramWidget_h
 
-#include <QScopedPointer>
+#include <QPointer>
 #include <QWidget>
 
 #include <vtkNew.h>
@@ -27,6 +27,7 @@ class vtkSMProxy;
 
 namespace tomviz {
 
+class BrightnessContrastWidget;
 class ColorMapSettingsWidget;
 class PresetDialog;
 class QVTKGLWidget;
@@ -63,16 +64,16 @@ public slots:
   void onColorMapSettingsClicked();
   void onPresetClicked();
   void onSaveToPresetClicked();
-  void onAutoAdjustContrastClicked();
+  void onBrightnessAndContrastClicked();
   void applyCurrentPreset();
   void updateUI();
+
+  void updateColorMapDialogs();
 
 protected:
   void showEvent(QShowEvent* event) override;
 
 private:
-  void setupColorMapSettingsDialog();
-
   void renderViews();
   void rescaleTransferFunction(vtkSMProxy* lutProxy, double min, double max);
   bool createContourDialog(double& isoValue);
@@ -95,10 +96,6 @@ private:
   // Add placeholder nodes to make the color bar and opacity editor look nicer
   void addPlaceholderNodes();
   void removePlaceholderNodes();
-  void addLUTPlaceholderNodes();
-  void addOpacityPlaceholderNodes();
-  void removeLUTPlaceholderNodes();
-  void removeOpacityPlaceholderNodes();
 
   vtkNew<vtkChartHistogramColorOpacityEditor> m_histogramColorOpacityEditor;
   vtkNew<vtkContextView> m_histogramView;
@@ -106,7 +103,7 @@ private:
   QToolButton* m_colorLegendToolButton;
   QToolButton* m_colorMapSettingsButton;
   QToolButton* m_savePresetButton;
-  QToolButton* m_autoAdjustContrastButton;
+  QToolButton* m_brightnessAndContrastButton;
 
   vtkWeakPointer<vtkDiscretizableColorTransferFunction> m_LUT;
   vtkWeakPointer<vtkPiecewiseFunction> m_scalarOpacityFunction;
@@ -115,16 +112,15 @@ private:
 
   PresetDialog* m_presetDialog = nullptr;
   QVTKGLWidget* m_qvtk;
-  QScopedPointer<QDialog> m_colorMapSettingsDialog;
-  ColorMapSettingsWidget* m_colorMapSettingsWidget = nullptr;
+
+  QPointer<QDialog> m_colorMapSettingsDialog;
+  QPointer<ColorMapSettingsWidget> m_colorMapSettingsWidget;
+
+  QPointer<QDialog> m_brightnessContrastDialog;
+  QPointer<BrightnessContrastWidget> m_brightnessContrastWidget;
 
   // To prevent infinite recursion...
   bool m_updatingColorFunction = false;
-
-  bool m_firstColorNodeIsPlaceholder = false;
-  bool m_lastColorNodeIsPlaceholder = false;
-  bool m_firstOpacityNodeIsPlaceholder = false;
-  bool m_lastOpacityNodeIsPlaceholder = false;
 
   static const int m_defaultAutoContrastThreshold = 5000;
   int m_currentAutoContrastThreshold = 5000;
