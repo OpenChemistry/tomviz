@@ -18,6 +18,7 @@
 #include <pqSettings.h>
 #include <vtkPVDiscretizableColorTransferFunction.h>
 #include <vtkSMPropertyHelper.h>
+#include <vtkSMRenderViewProxy.h>
 #include <vtkSMViewProxy.h>
 
 #include <QModelIndex>
@@ -30,6 +31,7 @@
 #include "HistogramManager.h"
 #include "Module.h"
 #include "ModuleManager.h"
+#include "ModuleSlice.h"
 #include "Pipeline.h"
 #include "Utilities.h"
 
@@ -149,6 +151,8 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   connect(m_timer.data(), SIGNAL(timeout()), SLOT(refreshHistogram()));
   layout()->setMargin(0);
   layout()->setSpacing(0);
+
+  m_ui->imageViewerSlider->setVisible(false);
 }
 
 CentralWidget::~CentralWidget()
@@ -293,6 +297,46 @@ void CentralWidget::onColorLegendToggled(bool visibility)
     sbProxy->UpdateVTKObjects();
     ActiveObjects::instance().renderAllViews();
   }
+}
+
+void CentralWidget::setImageViewerMode(bool enabled)
+{
+  // First, reset the state of the slider
+  m_ui->imageViewerSlider->setVisible(false);
+  m_ui->imageViewerSlider->disconnect();
+  m_ui->imageViewerSlider->setValue(0);
+  m_ui->imageViewerSlider->setMaximum(0);
+
+  if (!enabled) {
+    // Nothing more to do
+    return;
+  }
+
+  // Find the first slice module and connect to it
+  auto* ds = ActiveObjects::instance().activeDataSource();
+  auto* view =
+    vtkSMRenderViewProxy::SafeDownCast(ActiveObjects::instance().activeView());
+
+  auto& moduleManager = ModuleManager::instance();
+  auto sliceModules = moduleManager.findModules<ModuleSlice*>(ds, view);
+  auto* sliceModule = !sliceModules.empty() ? sliceModules[0] : nullptr;
+
+  if (!sliceModule) {
+    qCritical() << "Error: in CentralWidget::setImageViewerMode: "
+                << "no slice module found";
+    return;
+  }
+
+  // Connect the two sliders together
+  m_ui->imageViewerSlider->setMaximum(sliceModule->maxSlice());
+  connect(m_ui->imageViewerSlider, &IntSliderWidget::valueEdited, sliceModule,
+          QOverload<int>::of(&ModuleSlice::onSliceChanged));
+  connect(sliceModule, &ModuleSlice::sliceChanged, m_ui->imageViewerSlider,
+          &IntSliderWidget::setValue);
+  connect(sliceModule, &QObject::destroyed, m_ui->imageViewerSlider,
+          &IntSliderWidget::hide);
+
+  m_ui->imageViewerSlider->setVisible(true);
 }
 
 void CentralWidget::onColorMapDataSourceChanged()

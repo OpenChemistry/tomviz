@@ -4,31 +4,61 @@
 #include "ViewMenuManager.h"
 
 #include <pqCoreUtilities.h>
+#include <pqRenderView.h>
 #include <pqView.h>
+#include <vtkPVRenderView.h>
 #include <vtkSMPropertyHelper.h>
+#include <vtkSMRenderViewProxy.h>
 #include <vtkSMSessionProxyManager.h>
 #include <vtkSMViewProxy.h>
 
+#include <vtkCamera.h>
 #include <vtkColorTransferFunction.h>
 #include <vtkCommand.h>
 #include <vtkGridAxes3DActor.h>
 #include <vtkImageData.h>
 #include <vtkProperty.h>
+#include <vtkRenderWindow.h>
 #include <vtkTextProperty.h>
 
 #include <QAction>
 #include <QActionGroup>
+#include <QDebug>
 #include <QDialog>
 #include <QHBoxLayout>
-#include <QMainWindow>
+#include <QJsonObject>
 #include <QMenu>
 
 #include "ActiveObjects.h"
+#include "CameraReaction.h"
 #include "DataSource.h"
+#include "ModuleManager.h"
+#include "ModuleSlice.h"
 #include "SliceViewDialog.h"
 #include "Utilities.h"
 
 namespace tomviz {
+
+class PreviousImageViewerSettings
+{
+public:
+  vtkNew<vtkCamera> camera;
+  QString projection;
+  bool newSliceModule;
+  QPointer<ModuleSlice> sliceModule;
+  QJsonObject sliceModuleSettings;
+  QList<QPointer<Module>> visibleModules;
+  int interactionMode;
+
+  void clear()
+  {
+    // Only clear whatever needs to be cleared
+    visibleModules.clear();
+    newSliceModule = false;
+    sliceModule = nullptr;
+    sliceModuleSettings = QJsonObject();
+  };
+};
 
 ViewMenuManager::ViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
   : pqViewMenuManager(mainWindow, menu), m_perspectiveProjectionAction(nullptr),
@@ -81,18 +111,50 @@ ViewMenuManager::ViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
 
   Menu->addSeparator();
 
+  m_imageViewerModeAction = Menu->addAction("Image Viewer Mode");
+  m_imageViewerModeAction->setCheckable(true);
+  m_imageViewerModeAction->setChecked(false);
+  connect(m_imageViewerModeAction, &QAction::triggered, this,
+          &ViewMenuManager::setImageViewerMode);
+
+  Menu->addSeparator();
+
   m_showDarkWhiteDataAction = Menu->addAction("Show Dark/White Data");
   m_showDarkWhiteDataAction->setEnabled(false);
   connect(m_showDarkWhiteDataAction, &QAction::triggered, this,
           &ViewMenuManager::showDarkWhiteData);
 
   Menu->addSeparator();
+
+  m_previousImageViewerSettings.reset(new PreviousImageViewerSettings);
 }
 
 ViewMenuManager::~ViewMenuManager()
 {
   if (m_view) {
     m_view->RemoveObserver(m_viewObserverId);
+  }
+}
+
+QString ViewMenuManager::projectionMode() const
+{
+  if (!m_view->GetProperty("CameraParallelProjection")) {
+    return "";
+  }
+  int parallel =
+    vtkSMPropertyHelper(m_view, "CameraParallelProjection").GetAsInt();
+
+  return parallel == 0 ? "Perspective" : "Orthographic";
+}
+
+void ViewMenuManager::setProjectionMode(QString mode)
+{
+  if (mode == "Perspective") {
+    setProjectionModeToPerspective();
+  } else if (mode == "Orthographic") {
+    setProjectionModeToOrthographic();
+  } else {
+    qCritical() << "Invalid projection mode: " << mode;
   }
 }
 
@@ -106,10 +168,7 @@ void ViewMenuManager::setProjectionModeToPerspective()
   if (parallel) {
     vtkSMPropertyHelper(m_view, "CameraParallelProjection").Set(0);
     m_view->UpdateVTKObjects();
-    pqView* view = tomviz::convert<pqView*>(m_view);
-    if (view) {
-      view->render();
-    }
+    render();
   }
 }
 
@@ -123,10 +182,7 @@ void ViewMenuManager::setProjectionModeToOrthographic()
   if (!parallel) {
     vtkSMPropertyHelper(m_view, "CameraParallelProjection").Set(1);
     m_view->UpdateVTKObjects();
-    pqView* view = tomviz::convert<pqView*>(m_view);
-    if (view) {
-      view->render();
-    }
+    render();
   }
 }
 
@@ -197,10 +253,7 @@ void ViewMenuManager::setShowCenterAxes(bool show)
   vtkSMPropertyHelper visibility(m_view, "CenterAxesVisibility");
   visibility.Set(show ? 1 : 0);
   m_view->UpdateVTKObjects();
-  pqView* view = tomviz::convert<pqView*>(m_view);
-  if (view) {
-    view->render();
-  }
+  render();
 }
 
 void ViewMenuManager::setShowOrientationAxes(bool show)
@@ -211,10 +264,170 @@ void ViewMenuManager::setShowOrientationAxes(bool show)
   vtkSMPropertyHelper visibility(m_view, "OrientationAxesVisibility");
   visibility.Set(show ? 1 : 0);
   m_view->UpdateVTKObjects();
-  pqView* view = tomviz::convert<pqView*>(m_view);
+  render();
+}
+
+int ViewMenuManager::interactionMode() const
+{
+  auto* renderView = ActiveObjects::instance().activePqRenderView();
+  return vtkSMPropertyHelper(renderView->getProxy(), "InteractionMode")
+    .GetAsInt();
+}
+
+void ViewMenuManager::setInteractionMode(int mode)
+{
+  auto* renderView = ActiveObjects::instance().activePqRenderView();
+  vtkSMPropertyHelper(renderView->getProxy(), "InteractionMode").Set(mode);
+  renderView->getProxy()->UpdateProperty("InteractionMode", 1);
+}
+
+void ViewMenuManager::render()
+{
+  auto* view = tomviz::convert<pqView*>(m_view);
   if (view) {
     view->render();
   }
+}
+
+static void resize2DCameraToFit(vtkSMRenderViewProxy* view, double bounds[6],
+                                int axis)
+{
+  double lengths[3] = {
+    bounds[1] - bounds[0], bounds[3] - bounds[2], bounds[5] - bounds[4],
+  };
+
+  int* size = view->GetRenderWindow()->GetSize();
+  double w = size[0];
+  double h = size[1];
+
+  double bw, bh;
+  if (axis == 0 || axis == 2) {
+    bw = lengths[(axis + 1) % 3];
+    bh = lengths[(axis + 2) % 3];
+  } else {
+    bw = lengths[(axis + 2) % 3];
+    bh = lengths[(axis + 1) % 3];
+  }
+  double viewAspect = w / h;
+  double boundsAspect = bw / bh;
+
+  double scale = 0;
+  if (viewAspect >= boundsAspect) {
+    scale = bh / 2;
+  } else {
+    scale = bw / 2 / viewAspect;
+  }
+
+  auto* camera = view->GetActiveCamera();
+  camera->SetParallelScale(scale);
+}
+
+void ViewMenuManager::setImageViewerMode(bool enable)
+{
+  if (!enable) {
+    emit imageViewerModeToggled(enable);
+    // Restore the state to where it was before we began image viewer mode
+    restoreImageViewerSettings();
+    return;
+  }
+
+  auto* ds = ActiveObjects::instance().activeDataSource();
+  auto* view =
+    vtkSMRenderViewProxy::SafeDownCast(ActiveObjects::instance().activeView());
+  auto* camera = view->GetActiveCamera();
+
+  auto& moduleManager = ModuleManager::instance();
+
+  // Save some of the old settings to restore them later
+  auto& oldSettings = m_previousImageViewerSettings;
+  oldSettings->clear();
+  oldSettings->camera->ShallowCopy(camera);
+  oldSettings->projection = projectionMode();
+  oldSettings->interactionMode = interactionMode();
+
+  // Do the following:
+  // 1. Set the projection to orthographic
+  // 2. Set the render interactor mode to 2D
+  // 3. Find the first slice module, or create one. Hide all other modules.
+  // 4. Align the camera so the single slice is filling the screen
+  // 5. Show the image viewer slider widget
+  setProjectionModeToOrthographic();
+  setInteractionMode(vtkPVRenderView::INTERACTION_MODE_2D);
+
+  auto sliceModules = moduleManager.findModules<ModuleSlice*>(ds, view);
+  auto* sliceModule = !sliceModules.empty() ? sliceModules[0] : nullptr;
+
+  oldSettings->newSliceModule = !sliceModule;
+  if (sliceModule) {
+    // Save it's settings before modifying it...
+    oldSettings->sliceModuleSettings = sliceModule->serialize();
+    // Make sure it is visible
+    sliceModule->show();
+  } else {
+    // If there are no slice modules, create one
+    sliceModule = qobject_cast<ModuleSlice*>(
+      moduleManager.createAndAddModule("Slice", ds, view));
+  }
+  oldSettings->sliceModule = sliceModule;
+
+  // Hide all other modules on this data source
+  for (auto* module : moduleManager.findModulesGeneric(ds, view)) {
+    if (module != sliceModule && module->visibility()) {
+      oldSettings->visibleModules.append(module);
+      module->hide();
+    }
+  }
+
+  // Use XY direction, set the index to 0, and hide the arrow
+  sliceModule->onDirectionChanged(ModuleSlice::XY);
+  sliceModule->onSliceChanged(0);
+  sliceModule->setShowArrow(false);
+
+  CameraReaction::resetNegativeZ();
+
+  double bounds[6];
+  sliceModule->planeBounds(bounds);
+  resize2DCameraToFit(view, bounds, 2);
+
+  emit imageViewerModeToggled(enable);
+  emit moduleManager.pipelineViewRenderNeeded();
+}
+
+void ViewMenuManager::restoreImageViewerSettings()
+{
+  auto& settings = m_previousImageViewerSettings;
+
+  auto* view =
+    vtkSMRenderViewProxy::SafeDownCast(ActiveObjects::instance().activeView());
+  auto* camera = view->GetActiveCamera();
+  auto& moduleManager = ModuleManager::instance();
+
+  setInteractionMode(settings->interactionMode);
+  setProjectionMode(settings->projection);
+  camera->ShallowCopy(settings->camera);
+
+  if (settings->sliceModule) {
+    if (settings->newSliceModule) {
+      // Remove the newly created slice module
+      moduleManager.removeModule(settings->sliceModule);
+    } else {
+      // Restore the settings on the slice module we grabbed
+      settings->sliceModule->deserialize(settings->sliceModuleSettings);
+    }
+  }
+
+  // Restore visible modules
+  for (auto module : settings->visibleModules) {
+    if (module) {
+      module->show();
+    }
+  }
+  emit moduleManager.pipelineViewRenderNeeded();
+
+  // FIXME: at this point, the center is in a different place, and view
+  // is not updated to match the camera position. As a quick fix, just
+  // reset the camera. We can improve this in the future if needed.
+  view->ResetCamera();
 }
 
 void ViewMenuManager::updateDataSource(DataSource* s)

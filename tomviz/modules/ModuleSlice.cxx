@@ -142,14 +142,8 @@ void ModuleSlice::updateSliceWidget()
   if (!m_sliceSlider || !imageData())
     return;
 
-  int dims[3];
-  imageData()->GetDimensions(dims);
-
-  int axis = directionAxis(m_direction);
-  int maxSlice = dims[axis] - 1;
-
   m_sliceSlider->setMinimum(0);
-  m_sliceSlider->setMaximum(maxSlice);
+  m_sliceSlider->setMaximum(maxSlice());
 }
 
 bool ModuleSlice::finalize()
@@ -220,12 +214,8 @@ void ModuleSlice::addToPanel(QWidget* panel)
   m_sliceSlider->setLineEditWidth(50);
   m_sliceSlider->setPageStep(1);
   m_sliceSlider->setMinimum(0);
-  int axis = directionAxis(m_direction);
-  bool isOrtho = axis >= 0;
-  if (isOrtho) {
-    int dims[3];
-    imageData()->GetDimensions(dims);
-    m_sliceSlider->setMaximum(dims[axis] - 1);
+  if (isOrtho()) {
+    m_sliceSlider->setMaximum(maxSlice());
   }
 
   // Sanity check: make sure the slice value is within the bounds
@@ -278,7 +268,7 @@ void ModuleSlice::addToPanel(QWidget* panel)
     label = new QLabel(labels[i]);
     row->addWidget(label);
     pqLineEdit* inputBox = new pqLineEdit;
-    inputBox->setEnabled(!isOrtho);
+    inputBox->setEnabled(!isOrtho());
     inputBox->setValidator(new QDoubleValidator(inputBox));
     connect(inputBox, &pqLineEdit::textChangedAndEditingFinished, this,
             &ModuleSlice::updatePointOnPlane);
@@ -294,7 +284,7 @@ void ModuleSlice::addToPanel(QWidget* panel)
     label = new QLabel(labels[i]);
     row->addWidget(label);
     pqLineEdit* inputBox = new pqLineEdit;
-    inputBox->setEnabled(!isOrtho);
+    inputBox->setEnabled(!isOrtho());
     inputBox->setValidator(new QDoubleValidator(inputBox));
     connect(inputBox, &pqLineEdit::textChangedAndEditingFinished, this,
             &ModuleSlice::updatePlaneNormal);
@@ -357,6 +347,11 @@ void ModuleSlice::addToPanel(QWidget* panel)
           &ModuleSlice::onOpacityChanged);
 }
 
+void ModuleSlice::planeBounds(double b[6])
+{
+  m_widget->GetPlaneBounds(b);
+}
+
 void ModuleSlice::dataUpdated()
 {
   // In case there are new slices, update min and max
@@ -391,6 +386,9 @@ void ModuleSlice::setMapScalars(bool b)
 void ModuleSlice::setShowArrow(bool b)
 {
   if (b != showArrow()) {
+    if (m_showArrowCheckBox) {
+      m_showArrowCheckBox->setChecked(b);
+    }
     m_widget->SetArrowVisibility(b);
     updateInteractionState();
     emit renderNeeded();
@@ -512,7 +510,9 @@ bool ModuleSlice::deserialize(const QJsonObject& json)
       }
     }
     m_widget->UpdatePlacement();
-    m_scalarsCombo->setOptions(dataSource(), this);
+    if (m_scalarsCombo) {
+      m_scalarsCombo->setOptions(dataSource(), this);
+    }
     // If deserializing a former OrthogonalSlice, the direction is encoded in
     // the property "sliceMode" as an int
     if (props.contains("sliceMode")) {
@@ -580,6 +580,10 @@ void ModuleSlice::onPlaneChanged()
   // Adjust the slice slider if the slice has changed from dragging the arrow
   onSliceChanged(centerPoint);
 
+  // I'm not sure why, but the slice plane moving doesn't cause a re-compute
+  // of the bounds automatically. Make sure the bounds get re-computed.
+  emit updateClientSideViewNeeded();
+
   m_ignoreSignals = false;
 }
 
@@ -629,18 +633,16 @@ void ModuleSlice::onDirectionChanged(Direction direction)
   m_direction = direction;
   int axis = directionAxis(direction);
 
-  bool isOrtho = axis >= 0;
-
   for (int i = 0; i < 3; ++i) {
     if (m_pointInputs[i]) {
-      m_pointInputs[i]->setEnabled(!isOrtho);
+      m_pointInputs[i]->setEnabled(!isOrtho());
     }
     if (m_normalInputs[i]) {
-      m_normalInputs[i]->setEnabled(!isOrtho);
+      m_normalInputs[i]->setEnabled(!isOrtho());
     }
   }
   if (m_sliceSlider) {
-    m_sliceSlider->setVisible(isOrtho);
+    m_sliceSlider->setVisible(isOrtho());
   }
 
   m_widget->SetPlaneOrientation(axis);
@@ -656,7 +658,7 @@ void ModuleSlice::onDirectionChanged(Direction direction)
     }
   }
 
-  if (!isOrtho) {
+  if (!isOrtho()) {
     return;
   }
 
@@ -665,20 +667,35 @@ void ModuleSlice::onDirectionChanged(Direction direction)
 
   double normal[3] = { 0, 0, 0 };
   int slice = 0;
-  int maxSlice = 0;
 
   normal[axis] = 1;
   slice = dims[axis] / 2;
-  maxSlice = dims[axis] - 1;
 
   m_widget->SetNormal(normal);
   if (m_sliceSlider) {
     m_sliceSlider->setMinimum(0);
-    m_sliceSlider->setMaximum(maxSlice);
+    m_sliceSlider->setMaximum(maxSlice());
   }
   onSliceChanged(slice);
   onPlaneChanged();
   dataUpdated();
+}
+
+bool ModuleSlice::isOrtho() const
+{
+  return directionAxis(m_direction) >= 0;
+}
+
+int ModuleSlice::maxSlice() const
+{
+  if (!isOrtho()) {
+    return -1;
+  }
+
+  int axis = directionAxis(m_direction);
+  int dims[3];
+  imageData()->GetDimensions(dims);
+  return dims[axis] - 1;
 }
 
 void ModuleSlice::onSliceChanged(int slice)
@@ -696,6 +713,8 @@ void ModuleSlice::onSliceChanged(int slice)
   }
   onPlaneChanged();
   dataUpdated();
+
+  emit sliceChanged(slice);
 }
 
 void ModuleSlice::onSliceChanged(double* point)
@@ -762,7 +781,7 @@ void ModuleSlice::onThickSliceModeChanged(int index)
   emit renderNeeded();
 }
 
-int ModuleSlice::directionAxis(Direction direction)
+int ModuleSlice::directionAxis(Direction direction) const
 {
   switch (direction) {
     case Direction::XY: {

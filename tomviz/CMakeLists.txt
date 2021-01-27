@@ -30,6 +30,8 @@ set(SOURCES
   AxesReaction.h
   Behaviors.cxx
   Behaviors.h
+  BrightnessContrastWidget.cxx
+  BrightnessContrastWidget.h
   CameraReaction.cxx
   CameraReaction.h
   CentralWidget.cxx
@@ -38,6 +40,8 @@ set(SOURCES
   CloneDataReaction.h
   ColorMap.cxx
   ColorMap.h
+  ColorMapSettingsWidget.cxx
+  ColorMapSettingsWidget.h
   ConvertToFloatReaction.cxx
   ConvertToFloatReaction.h
   CropReaction.cxx

@@ -13,10 +13,7 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QHBoxLayout" name="horizontalLayout">
-   <property name="spacing">
-    <number>2</number>
-   </property>
+  <layout class="QVBoxLayout" name="centralWidgetLayout">
    <property name="leftMargin">
     <number>0</number>
    </property>
@@ -255,6 +252,9 @@
      </widget>
     </widget>
    </item>
+   <item>
+    <widget class="tomviz::IntSliderWidget" name="imageViewerSlider" native="true"/>
+   </item>
   </layout>
  </widget>
  <customwidgets>
@@ -280,6 +280,12 @@
    <class>tomviz::Histogram2DWidget</class>
    <extends>QWidget</extends>
    <header>Histogram2DWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>tomviz::IntSliderWidget</class>
+   <extends>QWidget</extends>
+   <header>IntSliderWidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

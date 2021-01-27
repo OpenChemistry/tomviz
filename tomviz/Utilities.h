@@ -26,6 +26,7 @@
 
 class pqAnimationScene;
 
+class vtkColorTransferFunction;
 class vtkDiscretizableColorTransferFunction;
 class vtkImageSliceMapper;
 class vtkCubeAxesActor;
@@ -264,6 +265,18 @@ QString getSizeNearestThousand(T num, bool labelAsBytes = false)
   return ret;
 }
 
+void addPlaceholderNodes(vtkColorTransferFunction* lut, DataSource* ds);
+void removePlaceholderNodes(vtkColorTransferFunction* lut);
+
+void addPlaceholderNodes(vtkPiecewiseFunction* opacity, DataSource* ds);
+void removePlaceholderNodes(vtkPiecewiseFunction* opacity);
+
+double rescale(double val, double oldMin, double oldMax, double newMin,
+               double newMax);
+void rescaleNodes(vtkColorTransferFunction* lut, double newMin, double newMax);
+void rescaleNodes(vtkPiecewiseFunction* opacity, double newMin, double newMax);
+void removePointsOutOfRange(vtkColorTransferFunction* lut, DataSource* ds);
+void removePointsOutOfRange(vtkPiecewiseFunction* opacity, DataSource* ds);
 } // namespace tomviz
 
 #endif

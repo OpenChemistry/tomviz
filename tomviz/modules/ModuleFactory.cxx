@@ -54,8 +54,7 @@ bool ModuleFactory::moduleApplicable(const QString& moduleName,
 
   if (dataSource && view) {
     if (dataSource->getNumberOfComponents() > 1) {
-      if (moduleName == "Contour" || moduleName == "Volume" ||
-          moduleName == "Threshold") {
+      if (moduleName == "Contour" || moduleName == "Threshold") {
         return false;
       }
     }

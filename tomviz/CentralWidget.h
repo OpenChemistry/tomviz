@@ -52,6 +52,8 @@ public slots:
   void onColorMapUpdated();
   void onColorLegendToggled(bool visibility);
 
+  void setImageViewerMode(bool b);
+
 private slots:
   void histogramReady(vtkSmartPointer<vtkImageData>, vtkSmartPointer<vtkTable>);
   void histogram2DReady(vtkSmartPointer<vtkImageData> input,

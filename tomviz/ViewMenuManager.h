@@ -8,6 +8,7 @@
 
 #include <QPointer>
 #include <QScopedPointer>
+#include <QString>
 
 class QDialog;
 class QAction;
@@ -17,6 +18,7 @@ class vtkSMViewProxy;
 namespace tomviz {
 
 class DataSource;
+class PreviousImageViewerSettings;
 class SliceViewDialog;
 
 enum class ScaleLegendStyle : unsigned int;
@@ -28,6 +30,16 @@ public:
   ViewMenuManager(QMainWindow* mainWindow, QMenu* menu);
   ~ViewMenuManager();
 
+  /// "Perspective" or "Orthographic"
+  QString projectionMode() const;
+  void setProjectionMode(QString mode);
+
+  int interactionMode() const;
+  void setInteractionMode(int mode);
+
+signals:
+  void imageViewerModeToggled(bool b);
+
 private slots:
   void setProjectionModeToPerspective();
   void setProjectionModeToOrthographic();
@@ -36,6 +48,7 @@ private slots:
 
   void setShowCenterAxes(bool show);
   void setShowOrientationAxes(bool show);
+  void setImageViewerMode(bool b);
 
   void showDarkWhiteData();
 
@@ -46,12 +59,18 @@ private:
   void updateDataSource(DataSource* s);
   void updateDataSourceEnableStates();
 
+  void render();
+
+  void restoreImageViewerSettings();
+
   QPointer<QAction> m_perspectiveProjectionAction;
   QPointer<QAction> m_orthographicProjectionAction;
   QPointer<QAction> m_showCenterAxesAction;
   QPointer<QAction> m_showOrientationAxesAction;
+  QPointer<QAction> m_imageViewerModeAction;
   QPointer<QAction> m_showDarkWhiteDataAction;
 
+  QScopedPointer<PreviousImageViewerSettings> m_previousImageViewerSettings;
   QScopedPointer<SliceViewDialog> m_sliceViewDialog;
 
   DataSource* m_dataSource = nullptr;

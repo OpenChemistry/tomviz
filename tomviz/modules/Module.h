@@ -172,6 +172,11 @@ signals:
   /// a re-render of the scene to take effect.
   void renderNeeded();
 
+  /// Emitted when the client side view needs to be updated (such as geometry
+  /// bounds being re-computed), but this was not done automatically. Most
+  /// widgets don't need this, but the slice module does for some reason.
+  void updateClientSideViewNeeded();
+
   /// Emitted when the mouse is over a voxel
   void mouseOverVoxel(const vtkVector3i& ijk, double v);
 

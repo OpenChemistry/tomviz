@@ -147,6 +147,9 @@ PipelineView::PipelineView(QWidget* p) : QTreeView(p)
                     });
           });
 
+  connect(&ModuleManager::instance(), &ModuleManager::pipelineViewRenderNeeded,
+          viewport(), QOverload<>::of(&QWidget::update));
+
   connect(this, SIGNAL(doubleClicked(QModelIndex)),
           SLOT(rowDoubleClicked(QModelIndex)));
 }

@@ -1234,3 +1234,291 @@ QString userDataPath() {
 }
 
 } // namespace tomviz
+
+namespace tomviz {
+
+namespace {
+
+static bool areClose(double a, double b, double tol = 1.e-8)
+{
+  return std::abs(a - b) < tol;
+}
+
+static bool nodeColorsMatch(double* a, double* b)
+{
+  for (int i = 1; i < 4; ++i) {
+    if (!areClose(a[i], b[i])) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+static bool nodeYsMatch(double* a, double* b)
+{
+  return areClose(a[1], b[1]);
+}
+
+} // namespace
+
+void addPlaceholderNodes(vtkColorTransferFunction* lut, DataSource* ds)
+{
+  // Add nodes on the data ends as placeholders
+  auto numNodes = lut->GetSize();
+  if (numNodes == 0) {
+    return;
+  }
+
+  double range[2];
+  ds->getRange(range);
+
+  auto* dataArray = lut->GetDataPointer();
+  int nodeStride = 4;
+  double* firstNode = dataArray;
+  double* backNode = firstNode + (numNodes - 1) * nodeStride;
+
+  std::vector<std::array<double, 4>> addPoints;
+  if (!areClose(firstNode[0], range[0])) {
+    addPoints.push_back({ range[0], firstNode[1], firstNode[2], firstNode[3] });
+  }
+
+  if (!areClose(backNode[0], range[1])) {
+    addPoints.push_back({ range[1], backNode[1], backNode[2], backNode[3] });
+  }
+
+  for (const auto& point : addPoints) {
+    lut->AddRGBPoint(point[0], point[1], point[2], point[3]);
+  }
+}
+
+void removePlaceholderNodes(vtkColorTransferFunction* lut)
+{
+  // Remove all nodes on the ends that match their neighboring nodes
+  auto numNodes = lut->GetSize();
+  if (numNodes == 0) {
+    return;
+  }
+
+  auto* dataArray = lut->GetDataPointer();
+  int nodeStride = 4;
+  double* firstNode = dataArray;
+  double* backNode = firstNode + (numNodes - 1) * nodeStride;
+
+  std::vector<double> removePoints;
+  double* currentNode = firstNode;
+  double* nextNode = currentNode + nodeStride;
+  while (nodeColorsMatch(currentNode, nextNode) && nextNode != backNode) {
+    removePoints.push_back(currentNode[0]);
+    currentNode += nodeStride;
+    nextNode += nodeStride;
+  }
+
+  currentNode = backNode;
+  nextNode = currentNode - nodeStride;
+
+  while (nodeColorsMatch(currentNode, nextNode) && nextNode != firstNode) {
+    removePoints.push_back(currentNode[0]);
+    currentNode -= nodeStride;
+    nextNode -= nodeStride;
+  }
+
+  for (auto point : removePoints) {
+    lut->RemovePoint(point);
+  }
+}
+
+void addPlaceholderNodes(vtkPiecewiseFunction* opacity, DataSource* ds)
+{
+  // Add nodes on the data ends as placeholders
+  auto numNodes = opacity->GetSize();
+  if (numNodes == 0) {
+    return;
+  }
+
+  double range[2];
+  ds->getRange(range);
+
+  auto* dataArray = opacity->GetDataPointer();
+  int nodeStride = 2;
+  double* firstNode = dataArray;
+  double* backNode = firstNode + (numNodes - 1) * nodeStride;
+
+  std::vector<std::array<double, 2>> addPoints;
+  if (!areClose(firstNode[0], range[0])) {
+    addPoints.push_back({ range[0], firstNode[1] });
+  }
+
+  if (!areClose(backNode[0], range[1])) {
+    addPoints.push_back({ range[1], backNode[1] });
+  }
+
+  for (const auto& point : addPoints) {
+    opacity->AddPoint(point[0], point[1]);
+  }
+}
+
+void removePlaceholderNodes(vtkPiecewiseFunction* opacity)
+{
+  // Remove all nodes on the ends that match their neighboring nodes
+  auto numNodes = opacity->GetSize();
+  if (numNodes == 0) {
+    return;
+  }
+
+  auto* dataArray = opacity->GetDataPointer();
+  int nodeStride = 2;
+  double* firstNode = dataArray;
+  double* backNode = firstNode + (numNodes - 1) * nodeStride;
+
+  std::vector<double> removePoints;
+  double* currentNode = firstNode;
+  double* nextNode = currentNode + nodeStride;
+  while (nodeYsMatch(currentNode, nextNode) && nextNode != backNode) {
+    removePoints.push_back(currentNode[0]);
+    currentNode += nodeStride;
+    nextNode += nodeStride;
+  }
+
+  currentNode = backNode;
+  nextNode = currentNode - nodeStride;
+
+  while (nodeYsMatch(currentNode, nextNode) && nextNode != firstNode) {
+    removePoints.push_back(currentNode[0]);
+    currentNode -= nodeStride;
+    nextNode -= nodeStride;
+  }
+
+  for (auto point : removePoints) {
+    opacity->RemovePoint(point);
+  }
+}
+
+double rescale(double val, double oldMin, double oldMax, double newMin,
+               double newMax)
+{
+  return (val - oldMin) * (newMax - newMin) / (oldMax - oldMin) + newMin;
+}
+
+void rescaleNodes(vtkColorTransferFunction* lut, double newMin, double newMax)
+{
+  // Rescale all nodes to a new range
+  auto numNodes = lut->GetSize();
+  if (numNodes == 0) {
+    return;
+  }
+
+  auto* dataArray = lut->GetDataPointer();
+  int nodeStride = 4;
+  double* firstNode = dataArray;
+  double* backNode = firstNode + (numNodes - 1) * nodeStride;
+
+  double oldMin = firstNode[0];
+  double oldMax = backNode[0];
+
+  std::vector<std::array<double, 4>> points;
+  for (int i = 0; i < numNodes; ++i) {
+    double* currentNode = firstNode + i * nodeStride;
+    double newX = rescale(currentNode[0], oldMin, oldMax, newMin, newMax);
+    points.push_back({ newX, currentNode[1], currentNode[2], currentNode[3] });
+  }
+
+  lut->RemoveAllPoints();
+
+  for (const auto& point : points) {
+    lut->AddRGBPoint(point[0], point[1], point[2], point[3]);
+  }
+}
+
+void rescaleNodes(vtkPiecewiseFunction* opacity, double newMin, double newMax)
+{
+  // Rescale all nodes to a new range
+  auto numNodes = opacity->GetSize();
+  if (numNodes == 0) {
+    return;
+  }
+
+  auto* dataArray = opacity->GetDataPointer();
+  int nodeStride = 2;
+  double* firstNode = dataArray;
+  double* backNode = firstNode + (numNodes - 1) * nodeStride;
+
+  double oldMin = firstNode[0];
+  double oldMax = backNode[0];
+
+  std::vector<std::array<double, 2>> points;
+  for (int i = 0; i < numNodes; ++i) {
+    double* currentNode = firstNode + i * nodeStride;
+    double newX = rescale(currentNode[0], oldMin, oldMax, newMin, newMax);
+    points.push_back({ newX, currentNode[1] });
+  }
+
+  opacity->RemoveAllPoints();
+
+  for (const auto& point : points) {
+    opacity->AddPoint(point[0], point[1]);
+  }
+}
+
+void removePointsOutOfRange(vtkColorTransferFunction* lut, DataSource* ds)
+{
+  // Remove points outside the range of the data source
+  // This will also add points on the ends of the range
+  double range[2];
+  ds->getRange(range);
+
+  // Make sure there are points on the ends of the data
+  double startColor[3], endColor[3];
+  lut->GetColor(range[0], startColor);
+  lut->GetColor(range[1], endColor);
+
+  // Remove all points out of range
+  std::vector<double> removePoints;
+  for (int i = 0; i < lut->GetSize(); ++i) {
+    double node[6];
+    lut->GetNodeValue(i, node);
+    double x = node[0];
+    if (x < range[0] || x > range[1]) {
+      removePoints.push_back(x);
+    }
+  }
+
+  for (auto point : removePoints) {
+    lut->RemovePoint(point);
+  }
+
+  lut->AddRGBPoint(range[0], startColor[0], startColor[1], startColor[2]);
+  lut->AddRGBPoint(range[1], endColor[1], endColor[2], endColor[3]);
+}
+
+void removePointsOutOfRange(vtkPiecewiseFunction* opacity, DataSource* ds)
+{
+  // Remove points outside the range of the data source
+  // This will also add points on the ends of the range
+
+  double range[2];
+  ds->getRange(range);
+
+  // Make sure there are points on the ends of the data
+  double startY = opacity->GetValue(range[0]);
+  double endY = opacity->GetValue(range[1]);
+
+  std::vector<double> removePoints;
+  for (int i = 0; i < opacity->GetSize(); ++i) {
+    double node[4];
+    opacity->GetNodeValue(i, node);
+    double x = node[0];
+    if (x < range[0] || x > range[1]) {
+      removePoints.push_back(x);
+    }
+  }
+
+  for (auto point : removePoints) {
+    opacity->RemovePoint(point);
+  }
+
+  opacity->AddPoint(range[0], startY);
+  opacity->AddPoint(range[1], endY);
+}
+
+} // namespace tomviz

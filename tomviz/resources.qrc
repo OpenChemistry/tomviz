@@ -54,5 +54,7 @@
         <file>icons/pqResetRangeCustom@2x.png</file>
         <file>icons/pqLock.png</file>
         <file>icons/pqLock@2x.png</file>
+        <file>icons/greybar.png</file>
+        <file>icons/greybar@2x.png</file>
     </qresource>
 </RCC>

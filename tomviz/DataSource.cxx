@@ -676,22 +676,22 @@ void DataSource::getBounds(double bounds[6])
   }
 }
 
-void DataSource::getRange(double range[2])
+void DataSource::getRange(vtkImageData* imageData, double range[2])
 {
-  vtkAlgorithm* tp = algorithm();
-  if (tp) {
-    vtkImageData* data = vtkImageData::SafeDownCast(tp->GetOutputDataObject(0));
-    if (data) {
-      vtkDataArray* arrayPtr = data->GetPointData()->GetScalars();
-      if (arrayPtr) {
-        arrayPtr->GetFiniteRange(range, -1);
-        return;
-      }
-    }
-  }
   for (int i = 0; i < 2; ++i) {
     range[i] = 0.0;
   }
+
+  if (!imageData) {
+    return;
+  }
+
+  auto* arrayPtr = imageData->GetPointData()->GetScalars();
+  if (!arrayPtr) {
+    return;
+  }
+
+  arrayPtr->GetFiniteRange(range, -1);
 }
 
 void DataSource::getSpacing(double spacing[3]) const
