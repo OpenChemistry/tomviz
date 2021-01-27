@@ -4,6 +4,7 @@
 #include "HistogramWidget.h"
 
 #include "ActiveObjects.h"
+#include "BrightnessContrastWidget.h"
 #include "ColorMap.h"
 #include "ColorMapSettingsWidget.h"
 #include "DataSource.h"
@@ -136,39 +137,29 @@ HistogramWidget::HistogramWidget(QWidget* parent)
   vLayout->addWidget(button);
 
   button = new QToolButton;
-  m_autoAdjustContrastButton = button;
+  m_brightnessAndContrastButton = button;
   button->setIcon(QIcon(":/icons/greybar.png"));
-  button->setToolTip("Auto adjust contrast");
+  button->setToolTip("Brightness and Contrast");
   button->setEnabled(false);
   connect(button, &QToolButton::clicked, this,
-          &HistogramWidget::onAutoAdjustContrastClicked);
+          &HistogramWidget::onBrightnessAndContrastClicked);
   vLayout->addWidget(button);
 
   vLayout->addStretch(1);
 
   connect(&ActiveObjects::instance(), SIGNAL(viewChanged(vtkSMViewProxy*)),
           this, SLOT(updateUI()));
+  connect(&ActiveObjects::instance(),
+          QOverload<DataSource*>::of(&ActiveObjects::dataSourceChanged), this,
+          &HistogramWidget::updateColorMapDialogs);
   connect(&ModuleManager::instance(), SIGNAL(dataSourceRemoved(DataSource*)),
 	  this, SLOT(updateUI()));
   connect(this, SIGNAL(colorMapUpdated()), this, SLOT(updateUI()));
 
   setLayout(hLayout);
-
-  setupColorMapSettingsDialog();
 }
 
 HistogramWidget::~HistogramWidget() = default;
-
-void HistogramWidget::setupColorMapSettingsDialog()
-{
-  m_colorMapSettingsDialog.reset(new QDialog);
-  auto& dialog = *m_colorMapSettingsDialog;
-  dialog.setLayout(new QVBoxLayout);
-  dialog.setWindowTitle("Color map settings");
-
-  m_colorMapSettingsWidget = new ColorMapSettingsWidget(m_LUT, this);
-  dialog.layout()->addWidget(m_colorMapSettingsWidget);
-}
 
 void HistogramWidget::setLUT(vtkDiscretizableColorTransferFunction* lut)
 {
@@ -195,9 +186,7 @@ void HistogramWidget::setLUT(vtkDiscretizableColorTransferFunction* lut)
     emit colorMapUpdated();
   }
 
-  if (m_colorMapSettingsWidget) {
-    m_colorMapSettingsWidget->setLut(m_LUT);
-  }
+  updateColorMapDialogs();
 }
 
 void HistogramWidget::setLUTProxy(vtkSMProxy* proxy)
@@ -245,6 +234,23 @@ void HistogramWidget::updateLUTProxy()
 
   auto* colorSpaceProperty = lutProxy->GetProperty("ColorSpace");
   vtkSMPropertyHelper(colorSpaceProperty).Set(colorSpace);
+}
+
+void HistogramWidget::updateColorMapDialogs()
+{
+  auto* ds = ActiveObjects::instance().activeDataSource();
+  auto* lut = m_LUT.Get();
+
+  if (m_colorMapSettingsWidget) {
+    m_colorMapSettingsWidget->setLut(lut);
+    m_colorMapSettingsWidget->updateGui();
+  }
+
+  if (m_brightnessContrastWidget) {
+    m_brightnessContrastWidget->setDataSource(ds);
+    m_brightnessContrastWidget->setLut(lut);
+    m_brightnessContrastWidget->updateGui();
+  }
 }
 
 void HistogramWidget::setInputData(vtkTable* table, const char* x_,
@@ -590,11 +596,23 @@ void HistogramWidget::onInvertClicked()
 
 void HistogramWidget::onColorMapSettingsClicked()
 {
-  if (!m_colorMapSettingsDialog) {
+  if (m_colorMapSettingsDialog) {
+    // It's already visible
     return;
   }
 
-  m_colorMapSettingsDialog->show();
+  m_colorMapSettingsDialog = new QDialog(this);
+  auto& dialog = *m_colorMapSettingsDialog;
+  dialog.setLayout(new QVBoxLayout);
+  dialog.setWindowTitle("Color map settings");
+
+  m_colorMapSettingsWidget = new ColorMapSettingsWidget(m_LUT, this);
+  dialog.layout()->addWidget(m_colorMapSettingsWidget);
+
+  dialog.show();
+
+  // Delete the dialog when it is closed
+  connect(&dialog, &QDialog::finished, &dialog, &QDialog::deleteLater);
 }
 
 void HistogramWidget::showPresetDialog(const QJsonObject& newPreset)
@@ -658,9 +676,32 @@ void HistogramWidget::resetAutoContrastState()
   m_currentAutoContrastThreshold = m_defaultAutoContrastThreshold;
 }
 
-void HistogramWidget::onAutoAdjustContrastClicked()
+void HistogramWidget::onBrightnessAndContrastClicked()
 {
-  autoAdjustContrast();
+  if (m_brightnessContrastDialog) {
+    // It's already visible
+    return;
+  }
+
+  m_brightnessContrastDialog = new QDialog(this);
+  auto& dialog = *m_brightnessContrastDialog;
+  dialog.setLayout(new QVBoxLayout);
+  dialog.setWindowTitle("Brightness and Contrast");
+
+  auto* ds = ActiveObjects::instance().activeDataSource();
+  m_brightnessContrastWidget = new BrightnessContrastWidget(ds, m_LUT, this);
+  dialog.layout()->addWidget(m_brightnessContrastWidget);
+
+  auto* widget = m_brightnessContrastWidget.data();
+  connect(widget, &BrightnessContrastWidget::autoPressed, this,
+          QOverload<>::of(&HistogramWidget::autoAdjustContrast));
+  connect(widget, &BrightnessContrastWidget::resetPressed, this,
+          QOverload<>::of(&HistogramWidget::resetRange));
+
+  dialog.show();
+
+  // Delete the dialog when it is closed
+  connect(&dialog, &QDialog::finished, &dialog, &QDialog::deleteLater);
 }
 
 void HistogramWidget::autoAdjustContrast()
@@ -764,9 +805,7 @@ void HistogramWidget::applyCurrentPreset()
   resetAutoContrastState();
   emit colorMapUpdated();
 
-  if (m_colorMapSettingsWidget) {
-    m_colorMapSettingsWidget->updateGui();
-  }
+  updateColorMapDialogs();
 }
 
 void HistogramWidget::updateUI()
@@ -780,13 +819,13 @@ void HistogramWidget::updateUI()
       QSignalBlocker blocker1(m_colorLegendToolButton);
       QSignalBlocker blocker2(m_colorMapSettingsButton);
       QSignalBlocker blocker3(m_savePresetButton);
-      QSignalBlocker blocker4(m_autoAdjustContrastButton);
+      QSignalBlocker blocker4(m_brightnessAndContrastButton);
       m_colorLegendToolButton->setEnabled(true);
       m_colorMapSettingsButton->setEnabled(true);
       m_colorLegendToolButton->setChecked(
         vtkSMPropertyHelper(sbProxy, "Visibility").GetAsInt() == 1);
       m_savePresetButton->setEnabled(true);
-      m_autoAdjustContrastButton->setEnabled(true);
+      m_brightnessAndContrastButton->setEnabled(true);
     }
   }
 
@@ -795,11 +834,11 @@ void HistogramWidget::updateUI()
     QSignalBlocker blocker1(m_colorLegendToolButton);
     QSignalBlocker blocker2(m_colorMapSettingsButton);
     QSignalBlocker blocker3(m_savePresetButton);
-    QSignalBlocker blocker4(m_autoAdjustContrastButton);
+    QSignalBlocker blocker4(m_brightnessAndContrastButton);
     m_colorLegendToolButton->setEnabled(false);
     m_colorMapSettingsButton->setEnabled(false);
     m_savePresetButton->setEnabled(false);
-    m_autoAdjustContrastButton->setEnabled(false);
+    m_brightnessAndContrastButton->setEnabled(false);
   }
 }
 
@@ -832,197 +871,33 @@ void HistogramWidget::showEvent(QShowEvent* event)
   this->renderViews();
 }
 
-static bool areClose(double a, double b, double tol = 1.e-8)
-{
-  return std::abs(a - b) < tol;
-}
-
-static bool nodeColorsMatch(double* a, double* b)
-{
-  for (int i = 1; i < 4; ++i) {
-    if (!areClose(a[i], b[i])) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-static bool nodeYsMatch(double* a, double* b)
-{
-  return areClose(a[1], b[1]);
-}
-
 void HistogramWidget::addPlaceholderNodes()
 {
-  addLUTPlaceholderNodes();
-  addOpacityPlaceholderNodes();
-}
-
-void HistogramWidget::addLUTPlaceholderNodes()
-{
   auto* lut = m_LUT.Get();
-  auto* ds = ActiveObjects::instance().activeDataSource();
-  if (!lut || !ds) {
-    return;
-  }
-
-  double range[2];
-  ds->getRange(range);
-
-  auto numNodes = lut->GetSize();
-  auto* dataArray = lut->GetDataPointer();
-  int nodeStride = 4;
-  double* firstNode = dataArray;
-  double* backNode = firstNode + (numNodes - 1) * nodeStride;
-
-  bool addFront = false;
-  if (!m_firstColorNodeIsPlaceholder) {
-    double* nextNode = firstNode + nodeStride;
-    addFront = !nodeColorsMatch(firstNode, nextNode);
-  }
-
-  bool addBack = false;
-  if (!m_lastColorNodeIsPlaceholder) {
-    double* nextBackNode = backNode - nodeStride;
-    addBack = !nodeColorsMatch(backNode, nextBackNode);
-  }
-
-  if (addFront) {
-    lut->AddRGBPoint(range[0], firstNode[1], firstNode[2], firstNode[3]);
-  }
-
-  if (addBack) {
-    lut->AddRGBPoint(range[1], backNode[1], backNode[2], backNode[3]);
-  }
-
-  m_firstColorNodeIsPlaceholder = addFront;
-  m_lastColorNodeIsPlaceholder = addBack;
-}
-
-void HistogramWidget::addOpacityPlaceholderNodes()
-{
   auto* opacity = m_scalarOpacityFunction.Get();
   auto* ds = ActiveObjects::instance().activeDataSource();
-  if (!opacity || !ds) {
-    return;
+
+  if (lut && ds) {
+    tomviz::addPlaceholderNodes(lut, ds);
   }
 
-  double range[2];
-  ds->getRange(range);
-
-  auto numNodes = opacity->GetSize();
-  auto* dataArray = opacity->GetDataPointer();
-  int nodeStride = 2;
-  double* firstNode = dataArray;
-  double* backNode = firstNode + (numNodes - 1) * nodeStride;
-
-  bool addFront = false;
-  if (!m_firstOpacityNodeIsPlaceholder) {
-    double* nextNode = firstNode + nodeStride;
-    addFront = !nodeYsMatch(firstNode, nextNode);
+  if (opacity && ds) {
+    tomviz::addPlaceholderNodes(opacity, ds);
   }
-
-  bool addBack = false;
-  if (!m_lastOpacityNodeIsPlaceholder) {
-    double* nextBackNode = backNode - nodeStride;
-    addBack = !nodeYsMatch(backNode, nextBackNode);
-  }
-
-  if (addFront) {
-    opacity->AddPoint(range[0], firstNode[1]);
-  }
-
-  if (addBack) {
-    opacity->AddPoint(range[1], backNode[1]);
-  }
-
-  m_firstOpacityNodeIsPlaceholder = addFront;
-  m_lastOpacityNodeIsPlaceholder = addBack;
 }
 
 void HistogramWidget::removePlaceholderNodes()
 {
-  removeLUTPlaceholderNodes();
-  removeOpacityPlaceholderNodes();
-}
-
-void HistogramWidget::removeLUTPlaceholderNodes()
-{
   auto* lut = m_LUT.Get();
-  auto* ds = ActiveObjects::instance().activeDataSource();
-  if (!lut || !ds) {
-    return;
-  }
-
-  double range[2];
-  ds->getRange(range);
-
-  auto numNodes = lut->GetSize();
-  auto* dataArray = lut->GetDataPointer();
-  int nodeStride = 4;
-  double* firstNode = dataArray;
-  double* backNode = firstNode + (numNodes - 1) * nodeStride;
-
-  bool removeFront = false;
-  if (m_firstColorNodeIsPlaceholder) {
-    double* nextNode = firstNode + nodeStride;
-    removeFront = nodeColorsMatch(firstNode, nextNode);
-  }
-
-  bool removeBack = false;
-  if (m_lastColorNodeIsPlaceholder) {
-    double* nextBackNode = backNode - nodeStride;
-    removeBack = nodeColorsMatch(backNode, nextBackNode);
-  }
-
-  if (removeFront) {
-    lut->RemovePoint(firstNode[0]);
-  }
-
-  if (removeBack) {
-    lut->RemovePoint(backNode[0]);
-  }
-
-  m_firstColorNodeIsPlaceholder = false;
-  m_lastColorNodeIsPlaceholder = false;
-}
-
-void HistogramWidget::removeOpacityPlaceholderNodes()
-{
   auto* opacity = m_scalarOpacityFunction.Get();
-  auto* ds = ActiveObjects::instance().activeDataSource();
-  if (!opacity || !ds) {
-    return;
+
+  if (lut) {
+    tomviz::removePlaceholderNodes(lut);
   }
 
-  auto numNodes = opacity->GetSize();
-  auto* dataArray = opacity->GetDataPointer();
-  int nodeStride = 2;
-  double* firstNode = dataArray;
-  double* backNode = firstNode + (numNodes - 1) * nodeStride;
-
-  bool removeFront = false;
-  if (m_firstOpacityNodeIsPlaceholder) {
-    double* nextNode = firstNode + nodeStride;
-    removeFront = nodeYsMatch(firstNode, nextNode);
+  if (opacity) {
+    tomviz::removePlaceholderNodes(opacity);
   }
-
-  bool removeBack = false;
-  if (m_lastOpacityNodeIsPlaceholder) {
-    double* nextBackNode = backNode - nodeStride;
-    removeBack = nodeYsMatch(backNode, nextBackNode);
-  }
-
-  if (removeFront) {
-    opacity->RemovePoint(firstNode[0]);
-  }
-
-  if (removeBack) {
-    opacity->RemovePoint(backNode[0]);
-  }
-
-  m_firstOpacityNodeIsPlaceholder = false;
-  m_lastOpacityNodeIsPlaceholder = false;
 }
+
 } // namespace tomviz

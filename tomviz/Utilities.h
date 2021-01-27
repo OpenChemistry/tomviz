@@ -26,6 +26,7 @@
 
 class pqAnimationScene;
 
+class vtkColorTransferFunction;
 class vtkDiscretizableColorTransferFunction;
 class vtkImageSliceMapper;
 class vtkCubeAxesActor;
@@ -237,6 +238,18 @@ bool vtkRescaleControlPoints(std::vector<vtkTuple<double, 4>>& cntrlPoints,
 double getVoxelValue(vtkImageData* data, const vtkVector3d& point,
                      vtkVector3i& ijk, bool& ok);
 
+void addPlaceholderNodes(vtkColorTransferFunction* lut, DataSource* ds);
+void removePlaceholderNodes(vtkColorTransferFunction* lut);
+
+void addPlaceholderNodes(vtkPiecewiseFunction* opacity, DataSource* ds);
+void removePlaceholderNodes(vtkPiecewiseFunction* opacity);
+
+double rescale(double val, double oldMin, double oldMax, double newMin,
+               double newMax);
+void rescaleNodes(vtkColorTransferFunction* lut, double newMin, double newMax);
+void rescaleNodes(vtkPiecewiseFunction* opacity, double newMin, double newMax);
+void removePointsOutOfRange(vtkColorTransferFunction* lut, DataSource* ds);
+void removePointsOutOfRange(vtkPiecewiseFunction* opacity, DataSource* ds);
 } // namespace tomviz
 
 #endif

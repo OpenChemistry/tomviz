@@ -30,6 +30,8 @@ set(SOURCES
   AxesReaction.h
   Behaviors.cxx
   Behaviors.h
+  BrightnessContrastWidget.cxx
+  BrightnessContrastWidget.h
   CameraReaction.cxx
   CameraReaction.h
   CentralWidget.cxx
