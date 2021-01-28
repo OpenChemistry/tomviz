@@ -549,6 +549,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
             auto dataBroker = new DataBroker(this);
             m_ui->actionImportFromDataBroker->setEnabled(
               dataBroker->installed());
+            dataBroker->deleteLater();
 
             delete pythonWatcher;
             statusBar()->showMessage("Initialization complete", 1500);
