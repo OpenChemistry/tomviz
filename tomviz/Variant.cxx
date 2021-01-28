@@ -66,6 +66,8 @@ Variant::~Variant()
     m_value.stringVal.~string();
   } else if (m_type == LIST) {
     m_value.listVal.~vector<Variant>();
+  } else if (m_type == MAP) {
+    m_value.mapVal.~map<string, Variant>();
   }
 }
 
