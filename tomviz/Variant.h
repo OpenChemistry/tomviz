@@ -5,6 +5,7 @@
 #define tomvizVariant_h
 
 #include <iostream>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -18,28 +19,34 @@ public:
   {
     INVALID,
     INTEGER,
+    LONG,
     DOUBLE,
     BOOL,
     STRING,
-    LIST
+    LIST,
+    MAP
   };
 
   Variant();
   Variant(const std::string& str);
   Variant(const std::vector<Variant>& l);
   Variant(int i);
+  Variant(long l);
   Variant(double d);
   Variant(bool b);
   Variant(const Variant& v);
+  Variant(const std::map<std::string, Variant>& m);
   ~Variant();
 
   Variant& operator=(const Variant& v);
 
   bool toBool() const;
   int toInteger() const;
+  long toLong() const;
   double toDouble() const;
   std::string toString() const;
   std::vector<Variant> toList() const;
+  std::map<std::string, Variant> toMap() const;
   Type type() const;
 
 private:
@@ -47,10 +54,12 @@ private:
   union VariantUnion
   {
     int integerVal;
+    long longVal;
     double doubleVal;
     bool boolVal;
     std::string stringVal;
     std::vector<Variant> listVal;
+    std::map<std::string, Variant> mapVal;
 
     VariantUnion() {}
 

@@ -45,6 +45,8 @@
     <addaction name="separator"/>
     <addaction name="actionSaveData"/>
     <addaction name="separator"/>
+    <addaction name="actionImportFromDataBroker"/>
+    <addaction name="separator"/>
     <addaction name="actionSaveScreenshot"/>
     <addaction name="actionSaveMovie"/>
     <addaction name="actionSaveWeb"/>
@@ -407,6 +409,14 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="actionImportFromDataBroker">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Import from DataBroker</string>
    </property>
   </action>
   <action name="actionSaveScreenshot">
