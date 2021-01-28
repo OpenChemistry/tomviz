@@ -52,6 +52,16 @@
       </widget>
      </item>
      <item>
+      <widget class="QCheckBox" name="imageViewerMode">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;After the data is loaded, enable image viewer mode.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>Image Viewer Mode</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -198,7 +208,12 @@
   </layout>
  </widget>
  <tabstops>
+  <tabstop>stackTypeCombo</tabstop>
+  <tabstop>imageViewerMode</tabstop>
+  <tabstop>openFolder</tabstop>
+  <tabstop>openFile</tabstop>
   <tabstop>tableView</tabstop>
+  <tabstop>checkSizes</tabstop>
  </tabstops>
  <resources/>
  <connections>

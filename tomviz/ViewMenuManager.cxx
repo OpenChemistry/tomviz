@@ -78,6 +78,8 @@ ViewMenuManager::ViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
   connect(&ActiveObjects::instance(),
           &ActiveObjects::transformedDataSourceActivated, this,
           &ViewMenuManager::updateDataSource);
+  connect(&ActiveObjects::instance(), &ActiveObjects::setImageViewerMode, this,
+          &ViewMenuManager::setImageViewerMode);
 
   Menu->addSeparator();
   // Projection modes
@@ -324,6 +326,17 @@ static void resize2DCameraToFit(vtkSMRenderViewProxy* view, double bounds[6],
 
 void ViewMenuManager::setImageViewerMode(bool enable)
 {
+  if (m_imageViewerModeAction->isChecked() != enable) {
+    QSignalBlocker blocked(m_imageViewerModeAction);
+    m_imageViewerModeAction->setChecked(enable);
+  }
+
+  if (!enable && enable == m_imageViewerMode) {
+    // Just return, nothing to do...
+    return;
+  }
+  m_imageViewerMode = enable;
+
   if (!enable) {
     emit imageViewerModeToggled(enable);
     // Restore the state to where it was before we began image viewer mode

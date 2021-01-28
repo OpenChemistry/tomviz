@@ -167,6 +167,9 @@ signals:
   /// Fired whenever the color map has changed
   void colorMapChanged(DataSource*);
 
+  /// Fired to set image viewer mode
+  void setImageViewerMode(bool b);
+
 private slots:
   void viewChanged(pqView*);
   void dataSourceRemoved(DataSource*);

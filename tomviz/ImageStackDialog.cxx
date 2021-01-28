@@ -393,6 +393,11 @@ DataSource::DataSourceType ImageStackDialog::getStackType() const
   return m_stackType;
 }
 
+bool ImageStackDialog::getImageViewerMode() const
+{
+  return m_ui->imageViewerMode->isChecked();
+}
+
 void ImageStackDialog::onImageToggled(int row, bool value)
 {
   m_summary[row].selected = value;
