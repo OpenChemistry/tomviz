@@ -11,12 +11,15 @@
 
 #include <vtkCallbackCommand.h>
 #include <vtkDiscretizableColorTransferFunction.h>
+#include <vtkMath.h>
 #include <vtkNew.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkSmartPointer.h>
 
 #include "DataSource.h"
 #include "Utilities.h"
+
+static const double PI = vtkMath::Pi();
 
 namespace tomviz {
 
@@ -237,7 +240,7 @@ public:
     double dataWidth = range[1] - range[0];
 
     double angle = atan((width - dataWidth) / dataWidth);
-    return rescale(angle, -M_PI / 4, M_PI / 4, 100, 0);
+    return rescale(angle, -PI / 4, PI / 4, 100, 0);
   }
 
   void setMinimum(double v)
@@ -272,11 +275,10 @@ public:
     double dataWidth = range[1] - range[0];
 
     double previousContrast = computeContrast();
-    double previousAngle =
-      rescale(previousContrast, 100, 0, -M_PI / 4, M_PI / 4);
+    double previousAngle = rescale(previousContrast, 100, 0, -PI / 4, PI / 4);
     double previousWidth = tan(previousAngle) * dataWidth + dataWidth;
 
-    double angle = rescale(v, 100, 0, -M_PI / 4, M_PI / 4);
+    double angle = rescale(v, 100, 0, -PI / 4, PI / 4);
     double width = tan(angle) * dataWidth + dataWidth;
 
     double offset = (width - previousWidth) / 2.0;
