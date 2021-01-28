@@ -352,7 +352,7 @@ QJsonObject ModuleVolume::serialize() const
   lighting["specular"] = m_volumeProperty->GetSpecular();
   lighting["specularPower"] = m_volumeProperty->GetSpecularPower();
   props["lighting"] = lighting;
-  props["solidity"] = 1 / m_volumeProperty->GetScalarOpacityUnitDistance();
+  props["solidity"] = solidity();
 
   json["properties"] = props;
   return json;
@@ -371,7 +371,7 @@ bool ModuleVolume::deserialize(const QJsonObject& json)
     onInterpolationChanged(props["interpolation"].toInt());
     setBlendingMode(props["blendingMode"].toInt());
     setJittering(props["rayJittering"].toBool());
-    onSolidityChanged(props["solidity"].toDouble());
+    setSolidity(props["solidity"].toDouble());
 
     if (props["lighting"].isObject()) {
       auto lighting = props["lighting"].toObject();
@@ -439,7 +439,7 @@ void ModuleVolume::addToPanel(QWidget* panel)
             onScalarArrayChanged();
           });
   connect(m_controllers, SIGNAL(solidityChanged(const double)), this,
-          SLOT(onSolidityChanged(const double)));
+          SLOT(setSolidity(const double)));
 }
 
 void ModuleVolume::updatePanel()
@@ -459,8 +459,7 @@ void ModuleVolume::updatePanel()
   m_controllers->setSpecular(m_volumeProperty->GetSpecular());
   m_controllers->setSpecularPower(m_volumeProperty->GetSpecularPower());
   m_controllers->setInterpolationType(m_volumeProperty->GetInterpolationType());
-  m_controllers->setSolidity(1 /
-                             m_volumeProperty->GetScalarOpacityUnitDistance());
+  m_controllers->setSolidity(solidity());
 
   m_controllers->setRgbaMappingAllowed(rgbaMappingAllowed());
   m_controllers->setUseRgbaMapping(useRgbaMapping());
@@ -578,9 +577,17 @@ void ModuleVolume::onScalarArrayChanged()
   emit renderNeeded();
 }
 
-void ModuleVolume::onSolidityChanged(const double value)
+double ModuleVolume::solidity() const
 {
-  m_volumeProperty->SetScalarOpacityUnitDistance(1 / value);
+  return 1 / m_volumeProperty->GetScalarOpacityUnitDistance();
+}
+
+void ModuleVolume::setSolidity(const double value)
+{
+  int numComponents = useRgbaMapping() ? 4 : 1;
+  for (int i = 0; i < numComponents; ++i) {
+    m_volumeProperty->SetScalarOpacityUnitDistance(i, 1 / value);
+  }
   emit renderNeeded();
 }
 
