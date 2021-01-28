@@ -772,6 +772,8 @@ Variant toVariant(const QVariant& value)
       return toVariant(list);
     }
     case QVariant::Map: {
+      QVariantMap map = value.toMap();
+      return toVariant(map);
     }
     default:
       qCritical() << "Unsupported type";
