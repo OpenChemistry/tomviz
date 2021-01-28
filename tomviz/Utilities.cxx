@@ -47,6 +47,7 @@
 #include <vtkTuple.h>
 #include <vtkVariantArray.h>
 
+#include <array>
 #include <sstream>
 #include <vector>
 
