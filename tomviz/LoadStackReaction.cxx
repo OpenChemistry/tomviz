@@ -3,9 +3,11 @@
 
 #include "LoadStackReaction.h"
 
+#include "ActiveObjects.h"
 #include "DataSource.h"
 #include "ImageStackDialog.h"
 #include "LoadDataReaction.h"
+#include "Pipeline.h"
 #include "SetTiltAnglesOperator.h"
 #include "Utilities.h"
 
@@ -59,6 +61,7 @@ DataSource* LoadStackReaction::execStackDialog(ImageStackDialog& dialog)
     }
     DataSource* dataSource = LoadDataReaction::loadData(fNames);
     DataSource::DataSourceType stackType = dialog.getStackType();
+    bool imageViewerMode = dialog.getImageViewerMode();
     if (stackType == DataSource::DataSourceType::TiltSeries) {
       auto op = new SetTiltAnglesOperator;
       QMap<size_t, double> angles;
@@ -70,7 +73,17 @@ DataSource* LoadStackReaction::execStackDialog(ImageStackDialog& dialog)
       }
       op->setTiltAngles(angles);
       dataSource->addOperator(op);
+
+      // After the operator completes, update the image viewer mode
+      auto* pipeline = dataSource->pipeline();
+      connect(pipeline, &Pipeline::finished, &ActiveObjects::instance(),
+              [imageViewerMode]() {
+                ActiveObjects::instance().setImageViewerMode(imageViewerMode);
+              });
+    } else {
+      ActiveObjects::instance().setImageViewerMode(imageViewerMode);
     }
+
     return dataSource;
   } else {
     return nullptr;

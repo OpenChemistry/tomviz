@@ -76,6 +76,7 @@ private:
   DataSource* m_dataSource = nullptr;
   vtkSMViewProxy* m_view;
   unsigned long m_viewObserverId;
+  bool m_imageViewerMode = false;
 };
 } // namespace tomviz
 

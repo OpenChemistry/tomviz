@@ -31,6 +31,7 @@ public:
   void processFiles(const QStringList& fileNames);
   QList<ImageInfo> getStackSummary() const;
   DataSource::DataSourceType getStackType() const;
+  bool getImageViewerMode() const;
 
 public slots:
   void onOpenFileClick();
