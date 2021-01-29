@@ -59,6 +59,9 @@ vtkStandardNewMacro(SmartVolumeMapper)
   ModuleVolume::ModuleVolume(QObject* parentObject)
   : Module(parentObject)
 {
+  // NOTE: Due to a bug in vtkMultiVolume, a gradient opacity function must be
+  // set or the shader will fail to compile.
+  m_gradientOpacity->AddPoint(0.0, 1.0);
   connect(&HistogramManager::instance(), &HistogramManager::histogram2DReady,
           this, [=](vtkSmartPointer<vtkImageData> image,
                     vtkSmartPointer<vtkImageData> histogram2D) {
@@ -272,7 +275,7 @@ void ModuleVolume::updateColorMap()
   const Module::TransferMode mode = getTransferMode();
   switch (mode) {
     case (Module::SCALAR):
-      m_volumeProperty->SetGradientOpacity(nullptr);
+      m_volumeProperty->SetGradientOpacity(m_gradientOpacity);
       break;
     case (Module::GRADIENT_1D):
       m_volumeProperty->SetGradientOpacity(gradientOpacityMap());
@@ -614,6 +617,11 @@ bool ModuleVolume::updateClippingPlane(vtkPlane* plane, bool newFilter)
   emit renderNeeded();
 
   return true;
+}
+
+vtkVolume* ModuleVolume::getVolume()
+{
+  return m_volume;
 }
 
 } // end of namespace tomviz
