@@ -64,6 +64,8 @@ public:
 
   bool updateClippingPlane(vtkPlane* plane, bool newFilter) override;
 
+  double solidity() const;
+
 protected:
   void updateColorMap() override;
 
@@ -103,7 +105,7 @@ private slots:
   void onRgbaMappingMinChanged(const double value);
   void onRgbaMappingMaxChanged(const double value);
   void onScalarArrayChanged();
-  void onSolidityChanged(const double value);
+  void setSolidity(const double value);
   int scalarsIndex();
 
   void onDataChanged();
