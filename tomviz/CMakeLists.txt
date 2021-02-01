@@ -647,11 +647,17 @@ target_link_libraries(tomvizlib
     tomvizcore
     ParaView::pqApplicationComponents
     ParaView::pqPython
-    ParaView::ServerManagerRendering
+    ParaView::RemotingExport
+    ParaView::RemotingViews
     VTK::glew
     VTK::jsoncpp
     VTK::pugixml
     VTK::tiff
+    VTK::DomainsChemistry
+    VTK::hdf5
+    VTK::InteractionStyle
+    VTK::RenderingVolume
+    VTK::RenderingVolumeOpenGL2
     Qt5::Network
   PRIVATE
     ${PYTHON_LIBRARIES})

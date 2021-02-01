@@ -33,7 +33,7 @@ public:
   /**
    * Method to satisfy superclasses' API.
    */
-  void BuildRepresentation() VTK_OVERRIDE;
+  void BuildRepresentation() override;
 
   //@{
   /**
@@ -42,7 +42,7 @@ public:
   vtkTypeMacro(vtkLengthScaleRepresentation,
                vtkDistanceRepresentation2D) void PrintSelf(ostream& os,
                                                            vtkIndent indent)
-    VTK_OVERRIDE;
+    override;
   //@}
 
   //@{
@@ -98,17 +98,17 @@ public:
   /**
    * Methods to make this class properly act like a vtkWidgetRepresentation.
    */
-  void GetActors2D(vtkPropCollection*) VTK_OVERRIDE;
-  void ReleaseGraphicsResources(vtkWindow*) VTK_OVERRIDE;
-  int RenderOverlay(vtkViewport*) VTK_OVERRIDE;
-  int RenderOpaqueGeometry(vtkViewport*) VTK_OVERRIDE;
-  int RenderTranslucentPolygonalGeometry(vtkViewport*) VTK_OVERRIDE;
-  int HasTranslucentPolygonalGeometry() VTK_OVERRIDE;
+  void GetActors2D(vtkPropCollection*) override;
+  void ReleaseGraphicsResources(vtkWindow*) override;
+  int RenderOverlay(vtkViewport*) override;
+  int RenderOpaqueGeometry(vtkViewport*) override;
+  int RenderTranslucentPolygonalGeometry(vtkViewport*) override;
+  int HasTranslucentPolygonalGeometry() override;
   //@}
 
 protected:
   vtkLengthScaleRepresentation();
-  ~vtkLengthScaleRepresentation() VTK_OVERRIDE;
+  ~vtkLengthScaleRepresentation() override;
 
   void UpdateRuler();
   void UpdateLabel();
@@ -123,8 +123,8 @@ protected:
 
 private:
   vtkLengthScaleRepresentation(const vtkLengthScaleRepresentation&)
-    VTK_DELETE_FUNCTION;
-  void operator=(const vtkLengthScaleRepresentation&) VTK_DELETE_FUNCTION;
+    = delete;
+  void operator=(const vtkLengthScaleRepresentation&) = delete;
 };
 
 #endif

@@ -35,7 +35,7 @@ public:
 
   vtkTypeMacro(vtkTransferFunctionBoxItem, vtkControlPointsItem)
 
-    void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
+    void PrintSelf(ostream& os, vtkIndent indent) override;
 
   //@{
   /**
@@ -72,7 +72,7 @@ protected:
   ~vtkTransferFunctionBoxItem() override;
 
   vtkIdType AddPoint(const double x, const double y);
-  vtkIdType AddPoint(double* pos) VTK_OVERRIDE;
+  vtkIdType AddPoint(double* pos) override;
 
   /**
    * Box corners are ordered as follows:
@@ -96,17 +96,17 @@ protected:
   /**
    * This method does nothing as this item has a fixed number of points (4).
    */
-  vtkIdType RemovePoint(double* pos) VTK_OVERRIDE;
+  vtkIdType RemovePoint(double* pos) override;
 
-  vtkIdType GetNumberOfPoints() const VTK_OVERRIDE;
+  vtkIdType GetNumberOfPoints() const override;
 
-  void GetControlPoint(vtkIdType index, double* point) const VTK_OVERRIDE;
+  void GetControlPoint(vtkIdType index, double* point) const override;
 
-  vtkMTimeType GetControlPointsMTime() VTK_OVERRIDE;
+  vtkMTimeType GetControlPointsMTime() override;
 
-  void SetControlPoint(vtkIdType index, double* point) VTK_OVERRIDE;
+  void SetControlPoint(vtkIdType index, double* point) override;
 
-  void emitEvent(unsigned long event, void* params = 0) VTK_OVERRIDE;
+  void emitEvent(unsigned long event, void* params = 0) override;
 
   void MovePoint(const vtkIdType pointId, const double deltaX,
                  const double deltaY);
@@ -115,13 +115,13 @@ protected:
 
   void DragCorner(const vtkIdType cornerId, const double* delta);
 
-  bool Paint(vtkContext2D* painter) VTK_OVERRIDE;
+  bool Paint(vtkContext2D* painter) override;
 
   /**
    * Returns true if the supplied x, y coordinate is within the bounds of
    * the box or any of the control points.
    */
-  bool Hit(const vtkContextMouseEvent& mouse) VTK_OVERRIDE;
+  bool Hit(const vtkContextMouseEvent& mouse) override;
 
   //@{
   /**
@@ -131,12 +131,12 @@ protected:
    * clicking on the control points and moving them. No key events are currently
    * reimplemented.
    */
-  bool MouseButtonPressEvent(const vtkContextMouseEvent& mouse) VTK_OVERRIDE;
-  bool MouseButtonReleaseEvent(const vtkContextMouseEvent& mouse) VTK_OVERRIDE;
-  bool MouseDoubleClickEvent(const vtkContextMouseEvent& mouse) VTK_OVERRIDE;
-  bool MouseMoveEvent(const vtkContextMouseEvent& mouse) VTK_OVERRIDE;
-  bool KeyPressEvent(const vtkContextKeyEvent& key) VTK_OVERRIDE;
-  bool KeyReleaseEvent(const vtkContextKeyEvent& key) VTK_OVERRIDE;
+  bool MouseButtonPressEvent(const vtkContextMouseEvent& mouse) override;
+  bool MouseButtonReleaseEvent(const vtkContextMouseEvent& mouse) override;
+  bool MouseDoubleClickEvent(const vtkContextMouseEvent& mouse) override;
+  bool MouseMoveEvent(const vtkContextMouseEvent& mouse) override;
+  bool KeyPressEvent(const vtkContextKeyEvent& key) override;
+  bool KeyReleaseEvent(const vtkContextKeyEvent& key) override;
   //@}
 
   virtual void ComputeTexture();

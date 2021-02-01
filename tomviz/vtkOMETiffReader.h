@@ -14,19 +14,19 @@ class vtkOMETiffReader : public vtkImageReader2
 public:
   static vtkOMETiffReader *New();
   vtkTypeMacro(vtkOMETiffReader, vtkImageReader2)
-  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /**
    * Is the given file name a tiff file?
    */
-  int CanReadFile(const char* fname) VTK_OVERRIDE;
+  int CanReadFile(const char* fname) override;
 
   /**
    * Get the file extensions for this format.
    * Returns a string with a space separated list of extensions in
    * the format .extension
    */
-  const char* GetFileExtensions() VTK_OVERRIDE
+  const char* GetFileExtensions() override
   {
     return ".tif .tiff";
   }
@@ -35,23 +35,23 @@ public:
    * Return a descriptive name for the file format that might be useful
    * in a GUI.
    */
-  const char* GetDescriptiveName() VTK_OVERRIDE
+  const char* GetDescriptiveName() override
   {
     return "TIFF";
   }
 
 protected:
   vtkOMETiffReader();
-  ~vtkOMETiffReader() VTK_OVERRIDE;
+  ~vtkOMETiffReader() override;
 
   enum { NOFORMAT, RGB, GRAYSCALE, PALETTE_RGB, PALETTE_GRAYSCALE, OTHER };
 
-  void ExecuteInformation() VTK_OVERRIDE;
-  void ExecuteDataWithInformation(vtkDataObject *out, vtkInformation *outInfo) VTK_OVERRIDE;
+  void ExecuteInformation() override;
+  void ExecuteDataWithInformation(vtkDataObject *out, vtkInformation *outInfo) override;
 
 private:
-  vtkOMETiffReader(const vtkOMETiffReader&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkOMETiffReader&) VTK_DELETE_FUNCTION;
+  vtkOMETiffReader(const vtkOMETiffReader&) = delete;
+  void operator=(const vtkOMETiffReader&) = delete;
 
   /**
    * Evaluates the image at a single pixel location.

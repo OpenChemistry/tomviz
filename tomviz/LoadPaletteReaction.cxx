@@ -12,8 +12,8 @@
 #include <pqApplicationSettingsReaction.h>
 #include <pqUndoStack.h>
 
+#include <vtkSMPropertyLink.h>
 #include <vtkPVProxyDefinitionIterator.h>
-#include <vtkSMGlobalPropertiesProxy.h>
 #include <vtkSMProxy.h>
 #include <vtkSMProxyDefinitionManager.h>
 #include <vtkSMSessionProxyManager.h>
@@ -90,41 +90,39 @@ void LoadPaletteReaction::actionTriggered(QAction* action)
   auto pxm = pqActiveObjects::instance().proxyManager();
   Q_ASSERT(pxm);
 
-  auto paletteProxy = pxm->GetProxy("global_properties", "ColorPalette");
+  auto paletteProxy = pxm->GetProxy("settings", "ColorPalette");
 
-  if (action->property("PV_XML_NAME").isValid()) {
-    // Setting the color property unlinks the global palette background property
-    // from the view background property. As a result, changes to the palette
-    // do not update the view background. To solve this, we re-link the global
-    // palette background color property to the background.
-    auto gbPaletteProxy =
-      vtkSMGlobalPropertiesProxy::SafeDownCast(paletteProxy);
-    Q_ASSERT(gbPaletteProxy);
+  // if (action->property("PV_XML_NAME").isValid()) {
+  //   // Setting the color property unlinks the global palette background property
+  //   // from the view background property. As a result, changes to the palette
+  //   // do not update the view background. To solve this, we re-link the global
+  //   // palette background color property to the background.
+  //   auto gbPaletteProxy =
+  //     vtkSMPropertyLink::SafeDownCast(paletteProxy);
+  //   Q_ASSERT(gbPaletteProxy);
 
-    auto view = pqActiveObjects::instance().activeView();
-    auto viewProxy = view->getProxy();
+  //   auto view = pqActiveObjects::instance().activeView();
+  //   auto viewProxy = view->getProxy();
 
-    auto linkedPropertyName =
-      gbPaletteProxy->GetLinkedPropertyName(viewProxy, "Background");
-    if (!linkedPropertyName) {
-      if (!gbPaletteProxy->Link("BackgroundColor", viewProxy, "Background")) {
-        qWarning() << "Failed to setup Background property link.";
-      }
-    }
+  //   auto linkedPropertyName =
+  //     gbPaletteProxy->GetLinkedPropertyName(viewProxy, "Background");
+  //   if (!linkedPropertyName) {
+  //     gbPaletteProxy->AddLinkedProperty(viewProxy, "Background", 1);
+  //   }
 
-    auto palettePrototype = pxm->GetPrototypeProxy(
-      "palettes", action->property("PV_XML_NAME").toString().toLatin1().data());
-    Q_ASSERT(palettePrototype);
+  //   auto palettePrototype = pxm->GetPrototypeProxy(
+  //     "palettes", action->property("PV_XML_NAME").toString().toLatin1().data());
+  //   Q_ASSERT(palettePrototype);
 
-    BEGIN_UNDO_SET("Load color palette");
-    paletteProxy->Copy(palettePrototype);
-    paletteProxy->UpdateVTKObjects();
-    END_UNDO_SET();
+  //   BEGIN_UNDO_SET("Load color palette");
+  //   paletteProxy->Copy(palettePrototype);
+  //   paletteProxy->UpdateVTKObjects();
+  //   END_UNDO_SET();
 
-    pqApplicationCore::instance()->render();
-  } else if (action->text() == tr("Make Current Palette Default")) {
-    auto settings = vtkSMSettings::GetInstance();
-    settings->SetProxySettings(paletteProxy);
-  }
+  //   pqApplicationCore::instance()->render();
+  // } else if (action->text() == tr("Make Current Palette Default")) {
+  //   auto settings = vtkSMSettings::GetInstance();
+  //   settings->SetProxySettings(paletteProxy);
+  // }
 }
 } // namespace tomviz
