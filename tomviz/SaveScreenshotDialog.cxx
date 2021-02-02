@@ -33,7 +33,7 @@ SaveScreenshotDialog::SaveScreenshotDialog(QWidget* p) : QDialog(p)
   m_height->setRange(42, 42000);
   m_height->setValue(69);
   auto lockAspectButton =
-    new QPushButton(QIcon(":/pqWidgets/Icons/pqLock24.png"), "");
+    new QPushButton(QIcon(":/pqWidgets/Icons/pqLock.svg"), "");
   lockAspectButton->setToolTip("Lock aspect ratio");
   lockAspectButton->setCheckable(true);
   dimensionsLayout->addWidget(m_width);

@@ -141,11 +141,11 @@ void CameraReaction::rotateCamera(double angle)
 void CameraReaction::addAllActionsToToolBar(QToolBar* toolBar)
 {
   QAction* resetCamera = toolBar->addAction(
-    QIcon(":/pqWidgets/Icons/pqResetCamera.png"), tr("Reset Camera"));
+    QIcon(":/pqWidgets/Icons/pqResetCamera.svg"), tr("Reset Camera"));
   new CameraReaction(resetCamera, CameraReaction::RESET_CAMERA);
 
   QAction* zoomToBox = toolBar->addAction(
-    QIcon(":/pqWidgets/Icons/pqZoomToSelection.png"), tr("Zoom to Box"));
+    QIcon(":/pqWidgets/Icons/pqZoomToSelection.svg"), tr("Zoom to Box"));
   zoomToBox->setCheckable(true);
   new pqRenderViewSelectionReaction(zoomToBox, nullptr,
                                     pqRenderViewSelectionReaction::ZOOM_TO_BOX);
@@ -153,40 +153,40 @@ void CameraReaction::addAllActionsToToolBar(QToolBar* toolBar)
   QMenu* menuResetViewDirection =
     new QMenu(tr("Reset view direction"), toolBar);
   QAction* setViewPlusX = menuResetViewDirection->addAction(
-    QIcon(":/pqWidgets/Icons/pqXPlus.png"), "+X");
+    QIcon(":/pqWidgets/Icons/pqXPlus.svg"), "+X");
   new CameraReaction(setViewPlusX, CameraReaction::RESET_POSITIVE_X);
   QAction* setViewMinusX = menuResetViewDirection->addAction(
-    QIcon(":/pqWidgets/Icons/pqXMinus.png"), "-X");
+    QIcon(":/pqWidgets/Icons/pqXMinus.svg"), "-X");
   new CameraReaction(setViewMinusX, CameraReaction::RESET_NEGATIVE_X);
 
   QAction* setViewPlusY = menuResetViewDirection->addAction(
-    QIcon(":/pqWidgets/Icons/pqYPlus.png"), "+Y");
+    QIcon(":/pqWidgets/Icons/pqYPlus.svg"), "+Y");
   new CameraReaction(setViewPlusY, CameraReaction::RESET_POSITIVE_Y);
   QAction* setViewMinusY = menuResetViewDirection->addAction(
-    QIcon(":/pqWidgets/Icons/pqYMinus.png"), "-Y");
+    QIcon(":/pqWidgets/Icons/pqYMinus.svg"), "-Y");
   new CameraReaction(setViewMinusY, CameraReaction::RESET_NEGATIVE_Y);
 
   QAction* setViewPlusZ = menuResetViewDirection->addAction(
-    QIcon(":/pqWidgets/Icons/pqZPlus.png"), "+Z");
+    QIcon(":/pqWidgets/Icons/pqZPlus.svg"), "+Z");
   new CameraReaction(setViewPlusZ, CameraReaction::RESET_POSITIVE_Z);
   QAction* setViewMinusZ = menuResetViewDirection->addAction(
-    QIcon(":/pqWidgets/Icons/pqZMinus.png"), "-Z");
+    QIcon(":/pqWidgets/Icons/pqZMinus.svg"), "-Z");
   new CameraReaction(setViewMinusZ, CameraReaction::RESET_NEGATIVE_Z);
 
   QScopedPointer<QToolButton> toolButton(new QToolButton);
-  toolButton->setIcon(QIcon(":/pqWidgets/Icons/pqXPlus.png"));
+  toolButton->setIcon(QIcon(":/pqWidgets/Icons/pqXPlus.svg"));
   toolButton->setMenu(menuResetViewDirection);
   toolButton->setToolTip(tr("Reset view direction"));
   toolButton->setPopupMode(QToolButton::InstantPopup);
   toolBar->addWidget(toolButton.take());
 
   QAction* rotateCameraCW =
-    toolBar->addAction(QIcon(":/pqWidgets/Icons/pqRotateCameraCW.png"),
+    toolBar->addAction(QIcon(":/pqWidgets/Icons/pqRotateCameraCW.svg"),
                        tr("Rotate 90° clockwise"));
   new CameraReaction(rotateCameraCW, CameraReaction::ROTATE_CAMERA_CW);
 
   QAction* rotateCameraCCW =
-    toolBar->addAction(QIcon(":/pqWidgets/Icons/pqRotateCameraCCW.png"),
+    toolBar->addAction(QIcon(":/pqWidgets/Icons/pqRotateCameraCCW.svg"),
                        tr("Rotate 90° counterclockwise"));
   new CameraReaction(rotateCameraCCW, CameraReaction::ROTATE_CAMERA_CCW);
 }

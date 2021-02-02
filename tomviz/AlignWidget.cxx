@@ -401,11 +401,11 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   // Now to add the controls to the widget.
   QHBoxLayout* viewControls = new QHBoxLayout;
   QPushButton* zoomToBox = new QPushButton(
-    QIcon(":/pqWidgets/Icons/pqZoomToSelection24.png"), "Zoom to Selection");
+    QIcon(":/pqWidgets/Icons/pqZoomToSelection.svg"), "Zoom to Selection");
   connect(zoomToBox, SIGNAL(pressed()), this, SLOT(zoomToSelectionStart()));
   viewControls->addWidget(zoomToBox);
   QPushButton* resetCamera = new QPushButton(
-    QIcon(":/pqWidgets/Icons/pqResetCamera24.png"), "Reset View");
+    QIcon(":/pqWidgets/Icons/pqResetCamera.svg"), "Reset View");
   connect(resetCamera, SIGNAL(pressed()), this, SLOT(resetCamera()));
   viewControls->addWidget(resetCamera);
 
@@ -472,7 +472,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   optionsLayout->addWidget(m_modeSelect);
 
   QToolButton* presetSelectorButton = new QToolButton;
-  presetSelectorButton->setIcon(QIcon(":/pqWidgets/Icons/pqFavorites16.png"));
+  presetSelectorButton->setIcon(QIcon(":/pqWidgets/Icons/pqFavorites.svg"));
   presetSelectorButton->setToolTip("Choose preset color map");
   connect(presetSelectorButton, SIGNAL(clicked()), this,
           SLOT(onPresetClicked()));

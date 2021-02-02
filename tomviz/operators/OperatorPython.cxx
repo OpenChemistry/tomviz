@@ -191,7 +191,7 @@ void OperatorPython::setLabel(const QString& txt)
 
 QIcon OperatorPython::icon() const
 {
-  return QIcon(":/pqWidgets/Icons/pqProgrammableFilter24.png");
+  return QIcon(":/pqWidgets/Icons/pqProgrammableFilter.svg");
 }
 
 void OperatorPython::setJSONDescription(const QString& str)

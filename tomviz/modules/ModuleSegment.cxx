@@ -46,7 +46,7 @@ QString ModuleSegment::label() const
 
 QIcon ModuleSegment::icon() const
 {
-  return QIcon(":/pqWidgets/Icons/pqCalculator24.png");
+  return QIcon(":/pqWidgets/Icons/pqCalculator.svg");
 }
 
 bool ModuleSegment::initialize(DataSource* data, vtkSMViewProxy* vtkView)

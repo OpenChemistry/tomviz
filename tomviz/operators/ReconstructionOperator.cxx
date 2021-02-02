@@ -51,7 +51,7 @@ ReconstructionOperator::ReconstructionOperator(DataSource* source, QObject* p)
 
 QIcon ReconstructionOperator::icon() const
 {
-  return QIcon(":/pqWidgets/Icons/pqExtractGrid24.png");
+  return QIcon(":/pqWidgets/Icons/pqExtractGrid.svg");
 }
 
 Operator* ReconstructionOperator::clone() const

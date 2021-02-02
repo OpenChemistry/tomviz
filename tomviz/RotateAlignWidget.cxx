@@ -320,7 +320,7 @@ RotateAlignWidget::RotateAlignWidget(Operator* op,
   this->Internals->readSettings();
 
   this->Internals->setupColorMaps();
-  QIcon setColorMapIcon(":/pqWidgets/Icons/pqFavorites16.png");
+  QIcon setColorMapIcon(":/pqWidgets/Icons/pqFavorites.svg");
   this->Internals->Ui.colorMapButton_1->setIcon(setColorMapIcon);
   this->Internals->Ui.colorMapButton_2->setIcon(setColorMapIcon);
   this->Internals->Ui.colorMapButton_3->setIcon(setColorMapIcon);
