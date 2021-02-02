@@ -2,15 +2,7 @@
     <qresource prefix="/">
         <file>icons/tomviz.png</file>
         <file>icons/tomvizfull.png</file>
-        <file>icons/pqEyeballClosed.png</file>
-        <file>icons/pqEyeballClosed@2x.png</file>
-        <file>icons/pqEyeball.png</file>
-        <file>icons/pqEyeball@2x.png</file>
-        <file>icons/orthoslice.png</file>
-        <file>icons/orthoslice@2x.png</file>
         <file>icons/orthoslice.svg</file>
-        <file>icons/pqClip.png</file>
-        <file>icons/pqClip@2x.png</file>
         <file>icons/move_objects.png</file>
         <file>icons/move_objects@2x.png</file>
         <file>icons/check.png</file>
@@ -27,30 +19,14 @@
         <file>icons/red_cross@2x.png</file>
         <file>icons/pqVolumeData.png</file>
         <file>icons/pqVolumeData@2x.png</file>
-        <file>icons/pqIsosurface.png</file>
-        <file>icons/pqIsosurface@2x.png</file>
-        <file>icons/pqProbeLocation.png</file>
-        <file>icons/pqProbeLocation@2x.png</file>
-        <file>icons/pqThreshold.png</file>
-        <file>icons/pqThreshold@2x.png</file>
         <file>icons/pqInspect.png</file>
         <file>icons/pqInspect@2x.png</file>
         <file>icons/spinner.png</file>
         <file>icons/spinner@2x.png</file>
-        <file>icons/pqRuler.png</file>
-        <file>icons/pqRuler@2x.png</file>
         <file>icons/pqMeasurementCube@2x.png</file>
         <file>icons/pqMeasurementCube.png</file>
-        <file>icons/pqPalette.png</file>
-        <file>icons/pqPalette@2x.png</file>
         <file>icons/gradient_opacity.png</file>
         <file>icons/gradient_opacity@2x.png</file>
-        <file>icons/pqInvert.png</file>
-        <file>icons/pqInvert@2x.png</file>
-        <file>icons/pqFavorites@2x.png</file>
-        <file>icons/pqFavorites.png</file>
-        <file>icons/pqResetRange.png</file>
-        <file>icons/pqResetRange@2x.png</file>
         <file>icons/pqResetRangeCustom.png</file>
         <file>icons/pqResetRangeCustom@2x.png</file>
         <file>icons/pqLock.png</file>
