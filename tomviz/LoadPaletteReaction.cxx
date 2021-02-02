@@ -12,8 +12,8 @@
 #include <pqApplicationSettingsReaction.h>
 #include <pqUndoStack.h>
 
-#include <vtkSMPropertyLink.h>
 #include <vtkPVProxyDefinitionIterator.h>
+#include <vtkSMPropertyLink.h>
 #include <vtkSMProxy.h>
 #include <vtkSMProxyDefinitionManager.h>
 #include <vtkSMSessionProxyManager.h>
@@ -98,8 +98,7 @@ void LoadPaletteReaction::actionTriggered(QAction* action)
     // from the view background property. As a result, changes to the palette
     // do not update the view background. To solve this, we re-link the
     // palette background color property to the background.
-    auto palette =
-      vtkSMSettingsProxy::SafeDownCast(paletteProxy);
+    auto palette = vtkSMSettingsProxy::SafeDownCast(paletteProxy);
     Q_ASSERT(palette);
 
     auto view = pqActiveObjects::instance().activeView();

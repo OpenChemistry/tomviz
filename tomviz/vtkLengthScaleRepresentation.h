@@ -39,10 +39,10 @@ public:
   /**
    * Standard VTK methods.
    */
-  vtkTypeMacro(vtkLengthScaleRepresentation,
-               vtkDistanceRepresentation2D) void PrintSelf(ostream& os,
-                                                           vtkIndent indent)
-    override;
+  vtkTypeMacro(
+    vtkLengthScaleRepresentation,
+    vtkDistanceRepresentation2D) void PrintSelf(ostream& os,
+                                                vtkIndent indent) override;
   //@}
 
   //@{
@@ -122,8 +122,7 @@ protected:
   char* LengthUnit;
 
 private:
-  vtkLengthScaleRepresentation(const vtkLengthScaleRepresentation&)
-    = delete;
+  vtkLengthScaleRepresentation(const vtkLengthScaleRepresentation&) = delete;
   void operator=(const vtkLengthScaleRepresentation&) = delete;
 };
 

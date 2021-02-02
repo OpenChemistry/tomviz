@@ -81,8 +81,7 @@ protected:
   vtkTextActor* Label;
 
 private:
-  vtkVolumeScaleRepresentation(const vtkVolumeScaleRepresentation&)
-    = delete;
+  vtkVolumeScaleRepresentation(const vtkVolumeScaleRepresentation&) = delete;
   void operator=(const vtkVolumeScaleRepresentation&) = delete;
 };
 

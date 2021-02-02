@@ -13,8 +13,9 @@ class vtkOMETiffReader : public vtkImageReader2
 {
 public:
   static vtkOMETiffReader *New();
-  vtkTypeMacro(vtkOMETiffReader, vtkImageReader2)
-  void PrintSelf(ostream& os, vtkIndent indent) override;
+  vtkTypeMacro(vtkOMETiffReader,
+               vtkImageReader2) void PrintSelf(ostream& os,
+                                               vtkIndent indent) override;
 
   /**
    * Is the given file name a tiff file?
@@ -26,19 +27,13 @@ public:
    * Returns a string with a space separated list of extensions in
    * the format .extension
    */
-  const char* GetFileExtensions() override
-  {
-    return ".tif .tiff";
-  }
+  const char* GetFileExtensions() override { return ".tif .tiff"; }
 
   /**
    * Return a descriptive name for the file format that might be useful
    * in a GUI.
    */
-  const char* GetDescriptiveName() override
-  {
-    return "TIFF";
-  }
+  const char* GetDescriptiveName() override { return "TIFF"; }
 
 protected:
   vtkOMETiffReader();
@@ -47,7 +42,8 @@ protected:
   enum { NOFORMAT, RGB, GRAYSCALE, PALETTE_RGB, PALETTE_GRAYSCALE, OTHER };
 
   void ExecuteInformation() override;
-  void ExecuteDataWithInformation(vtkDataObject *out, vtkInformation *outInfo) override;
+  void ExecuteDataWithInformation(vtkDataObject* out,
+                                  vtkInformation* outInfo) override;
 
 private:
   vtkOMETiffReader(const vtkOMETiffReader&) = delete;
