@@ -6,6 +6,7 @@ if [[ $AGENT_OS == 'Linux' ]]; then
     ninja-build \
     qt5-default \
     libqt5x11extras5-dev \
+    libqt5svg5-dev \
     qttools5-dev \
     qtxmlpatterns5-dev-tools \
     libtbb-dev \
