@@ -11,7 +11,8 @@ if [[ $AGENT_OS == 'Linux' ]]; then
     qtxmlpatterns5-dev-tools \
     libtbb-dev \
     libxt-dev \
-    libgtest-dev
+    libgtest-dev \
+    libgl1-mesa-dev
 
   # We have to build gtest on ubuntu...
   cd /usr/src/gtest
