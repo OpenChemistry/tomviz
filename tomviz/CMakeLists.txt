@@ -660,7 +660,7 @@ target_link_libraries(tomvizlib
     VTK::RenderingVolumeOpenGL2
     Qt5::Network
   PRIVATE
-    ${PYTHON_LIBRARIES})
+    Python3::Python)
 if(WIN32)
   target_link_libraries(tomvizlib PUBLIC Qt5::WinMain)
 endif()
