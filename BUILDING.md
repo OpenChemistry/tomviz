@@ -57,7 +57,6 @@ with all prerequisites installed:
     cd paraview-build
     cmake -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo \
       -DBUILD_TESTING:BOOL=OFF \
-      -DPARAVIEW_USE_CATALYST:BOOL=OFF \
       -DPARAVIEW_USE_PYTHON:BOOL=ON \
       -DPARAVIEW_ENABLE_WEB:BOOL=OFF \
       -DPARAVIEW_ENABLE_EMBEDDED_DOCUMENTATION:BOOL=OFF\
