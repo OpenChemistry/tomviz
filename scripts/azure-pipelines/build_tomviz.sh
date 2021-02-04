@@ -4,7 +4,7 @@ if [[ $AGENT_OS == 'Darwin' ]]; then
   # CMake can't find Qt on mac os unless we do this
   CMAKE_EXTRA_ARGS="-DCMAKE_PREFIX_PATH=/usr/local/opt/qt/ "
   # Resort to brute force to get CMake to find the right library!
-  CMAKE_EXTRA_ARGS+="-DPython3_LIBRARY=/Users/runner/hostedtoolcache/Python/3.8.7/x64/lib/libpython3.8.dylib "
+  CMAKE_EXTRA_ARGS+="-DPython3_LIBRARY=$(dirname $(which python))/../lib/libpython3.8.dylib "
 elif [[ $AGENT_OS == 'Windows_NT' ]]; then
   export CC=cl
   export CXX=cl
