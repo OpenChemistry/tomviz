@@ -149,20 +149,20 @@ void AxesReaction::pickCenterOfRotation(int posx, int posy)
 void AxesReaction::addAllActionsToToolBar(QToolBar* toolBar)
 {
   QAction* showOrientationAxesAction =
-    toolBar->addAction(QIcon(":pqWidgets/Icons/pqShowOrientationAxes.png"),
+    toolBar->addAction(QIcon(":pqWidgets/Icons/pqShowOrientationAxes.svg"),
                        "Show Orientation Axes");
   showOrientationAxesAction->setCheckable(true);
   new AxesReaction(showOrientationAxesAction,
                    AxesReaction::SHOW_ORIENTATION_AXES);
   QAction* showCenterAxesAction = toolBar->addAction(
-    QIcon(":pqWidgets/Icons/pqShowCenterAxes.png"), "Show Center Axes");
+    QIcon(":pqWidgets/Icons/pqShowCenterAxes.svg"), "Show Center Axes");
   showCenterAxesAction->setCheckable(true);
   new AxesReaction(showCenterAxesAction, AxesReaction::SHOW_CENTER_AXES);
   QAction* resetCenterAction = toolBar->addAction(
-    QIcon(":pqWidgets/Icons/pqResetCenter.png"), "Reset Center");
+    QIcon(":pqWidgets/Icons/pqResetCenter.svg"), "Reset Center");
   new AxesReaction(resetCenterAction, AxesReaction::RESET_CENTER);
   QAction* pickCenterAction = toolBar->addAction(
-    QIcon(":pqWidgets/Icons/pqPickCenter.png"), "Pick Center");
+    QIcon(":pqWidgets/Icons/pqPickCenter.svg"), "Pick Center");
   pickCenterAction->setCheckable(true);
   new AxesReaction(pickCenterAction, AxesReaction::PICK_CENTER);
 }

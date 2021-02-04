@@ -201,8 +201,7 @@ void RecentFilesMenu::aboutToShowMenu()
       } else {
         toolTip = fileNames.join("\n");
       }
-      auto actn =
-        menu->addAction(QIcon(":/pqWidgets/Icons/pqInspect22.png"), label);
+      auto actn = menu->addAction(QIcon(":/icons/pqInspect.png"), label);
       actn->setToolTip(toolTip);
       actn->setData(index);
       connect(actn, &QAction::triggered, [this, actn, fileNames]() {

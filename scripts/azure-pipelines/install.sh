@@ -6,17 +6,19 @@ if [[ $AGENT_OS == 'Linux' ]]; then
     ninja-build \
     qt5-default \
     libqt5x11extras5-dev \
+    libqt5svg5-dev \
     qttools5-dev \
     qtxmlpatterns5-dev-tools \
     libtbb-dev \
     libxt-dev \
-    libgtest-dev
+    libgtest-dev \
+    libgl1-mesa-dev
 
   # We have to build gtest on ubuntu...
   cd /usr/src/gtest
   sudo cmake CMakeLists.txt
   sudo make
-  sudo cp *.a /usr/lib
+  sudo cp lib/*.a /usr/lib
 
 elif [[ $AGENT_OS == 'Darwin' ]]; then
   brew install \

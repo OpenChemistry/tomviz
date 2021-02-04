@@ -38,7 +38,7 @@ ModuleOutline::~ModuleOutline()
 
 QIcon ModuleOutline::icon() const
 {
-  return QIcon(":/icons/pqProbeLocation.png");
+  return QIcon(":/pqWidgets/Icons/pqProbeLocation.svg");
 }
 
 bool ModuleOutline::initialize(DataSource* data, vtkSMViewProxy* vtkView)

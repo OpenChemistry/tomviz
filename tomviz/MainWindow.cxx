@@ -500,7 +500,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
           SLOT(setMoveObjectsMode(bool)));
 
   QAction* loadPaletteAction = m_ui->utilitiesToolbar->addAction(
-    QIcon(":/icons/pqPalette.png"), "LoadPalette");
+    QIcon(":pqWidgets/Icons/pqPalette.svg"), "LoadPalette");
   new LoadPaletteReaction(loadPaletteAction);
 
   QToolButton* tb = qobject_cast<QToolButton*>(

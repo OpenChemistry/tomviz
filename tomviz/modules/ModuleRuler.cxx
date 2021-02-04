@@ -40,7 +40,7 @@ ModuleRuler::~ModuleRuler()
 
 QIcon ModuleRuler::icon() const
 {
-  return QIcon(":/icons/pqRuler.png");
+  return QIcon(":/pqWidgets/Icons/pqRuler.svg");
 }
 
 bool ModuleRuler::initialize(DataSource* data, vtkSMViewProxy* view)

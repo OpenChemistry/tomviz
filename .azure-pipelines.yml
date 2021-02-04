@@ -13,7 +13,7 @@ jobs:
   strategy:
     matrix:
       Linux:
-        imageName: 'ubuntu-18.04'
+        imageName: 'ubuntu-20.04'
       Mac:
         imageName: 'macos-10.14'
       Windows:
@@ -65,7 +65,7 @@ jobs:
   - task: Cache@2
     inputs:
       # Change the "v*" at the end to force a re-build
-      key: paraview | $(Agent.OS) | $(deps_md5sum) | v2
+      key: paraview | $(Agent.OS) | $(deps_md5sum) | v3-1
       path: $(PARAVIEW_BUILD_FOLDER)
       cacheHitVar: PARAVIEW_BUILD_RESTORED
     displayName: Restore ParaView Build

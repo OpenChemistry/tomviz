@@ -78,7 +78,7 @@ void DataTransformMenu::buildTransforms()
   menu->addSeparator();
   auto cloneAction = menu->addAction("Clone");
   auto deleteDataAction = menu->addAction(
-    QIcon(":/QtWidgets/Icons/pqDelete32.png"), "Delete Data and Modules");
+    QIcon(":/QtWidgets/Icons/pqDelete.svg"), "Delete Data and Modules");
   deleteDataAction->setToolTip("Delete Data");
 
   // Add our Python script reactions, these compose Python into menu entries.

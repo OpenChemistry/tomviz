@@ -79,7 +79,7 @@ CropOperator::CropOperator(QObject* p) : Operator(p)
 
 QIcon CropOperator::icon() const
 {
-  return QIcon(":/pqWidgets/Icons/pqExtractGrid24.png");
+  return QIcon(":/pqWidgets/Icons/pqExtractGrid.svg");
 }
 
 bool CropOperator::applyTransform(vtkDataObject* data)

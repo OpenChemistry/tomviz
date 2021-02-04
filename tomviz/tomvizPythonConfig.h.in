@@ -163,7 +163,7 @@ static void InitializePythonEnvironment(int argc, char** argv)
     self_dir = vtksys::SystemTools::GetFilenamePath(programname.c_str());
   } else {
     self_dir =
-      vtksys::SystemTools::GetCurrentWorkingDirectory(/*collapse=*/true);
+      vtksys::SystemTools::GetCurrentWorkingDirectory();
     programname = self_dir + "/unknown_exe";
   }
 

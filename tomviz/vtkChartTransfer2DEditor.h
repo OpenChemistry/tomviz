@@ -56,7 +56,7 @@ public:
    */
   void GenerateTransfer2D();
 
-  void SetInputData(vtkImageData* data, vtkIdType z = 0) VTK_OVERRIDE;
+  void SetInputData(vtkImageData* data, vtkIdType z = 0) override;
 
 protected:
   vtkChartTransfer2DEditor();

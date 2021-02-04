@@ -53,7 +53,7 @@ ModuleClip::~ModuleClip()
 
 QIcon ModuleClip::icon() const
 {
-  return QIcon(":/icons/pqClip.png");
+  return QIcon(":/pqWidgets/Icons/pqClip.svg");
 }
 
 bool ModuleClip::initialize(DataSource* data, vtkSMViewProxy* vtkView)

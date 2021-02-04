@@ -352,7 +352,7 @@ namespace {
 QIcon iconForDataObject(vtkDataObject* dataObject)
 {
   if (vtkTable::SafeDownCast(dataObject)) {
-    return QIcon(":/pqWidgets/Icons/pqSpreadsheet16.png");
+    return QIcon(":/pqWidgets/Icons/pqSpreadsheet.svg");
   } else if (vtkUnstructuredGrid::SafeDownCast(dataObject)) {
     return QIcon(":/pqWidgets/Icons/pqUnstructuredGrid16.png");
   } else if (vtkStructuredGrid::SafeDownCast(dataObject)) {
@@ -361,7 +361,7 @@ QIcon iconForDataObject(vtkDataObject* dataObject)
     return QIcon(":/pqWidgets/Icons/pqRectilinearGrid16.png");
   }
 
-  return QIcon(":/pqWidgets/Icons/pqView22.png");
+  return QIcon(":/icons/pqInspect.png");
 }
 
 QIcon iconForOperatorState(tomviz::OperatorState state)
@@ -477,9 +477,9 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
     } else if (index.column() == Column::state) {
       if (role == Qt::DecorationRole) {
         if (module->visibility()) {
-          return QIcon(":/icons/pqEyeball.png");
+          return QIcon(":/pqWidgets/Icons/pqEyeball.svg");
         } else {
-          return QIcon(":/icons/pqEyeballClosed.png");
+          return QIcon(":/pqWidgets/Icons/pqEyeballClosed.svg");
         }
       }
     }

@@ -86,7 +86,7 @@ HistogramWidget::HistogramWidget(QWidget* parent)
   vLayout->addStretch(1);
 
   auto button = new QToolButton;
-  button->setIcon(QIcon(":/icons/pqResetRange.png"));
+  button->setIcon(QIcon(":/pqWidgets/Icons/pqResetRange.svg"));
   button->setToolTip("Reset data range");
   connect(button, SIGNAL(clicked()), this, SLOT(onResetRangeClicked()));
   vLayout->addWidget(button);
@@ -98,28 +98,28 @@ HistogramWidget::HistogramWidget(QWidget* parent)
   vLayout->addWidget(button);
 
   button = new QToolButton;
-  button->setIcon(QIcon(":/icons/pqInvert.png"));
+  button->setIcon(QIcon(":/pqWidgets/Icons/pqInvert.svg"));
   button->setToolTip("Invert color map");
   connect(button, SIGNAL(clicked()), this, SLOT(onInvertClicked()));
   vLayout->addWidget(button);
 
   button = new QToolButton;
   m_colorMapSettingsButton = button;
-  button->setIcon(QIcon(":/pqWidgets/Icons/pqAdvanced26.png"));
+  button->setIcon(QIcon(":/pqWidgets/Icons/pqAdvanced.svg"));
   button->setToolTip("Edit color map settings");
   connect(button, &QToolButton::clicked, this,
           &HistogramWidget::onColorMapSettingsClicked);
   vLayout->addWidget(button);
 
   button = new QToolButton;
-  button->setIcon(QIcon(":/icons/pqFavorites.png"));
+  button->setIcon(QIcon(":/pqWidgets/Icons/pqFavorites.svg"));
   button->setToolTip("Choose preset color map");
   connect(button, SIGNAL(clicked()), this, SLOT(onPresetClicked()));
   vLayout->addWidget(button);
 
   button = new QToolButton;
   m_savePresetButton = button;
-  button->setIcon(QIcon(":/pqWidgets/Icons/pqSave16.png"));
+  button->setIcon(QIcon(":/pqWidgets/Icons/pqSave.svg"));
   button->setToolTip("Save current color map as a preset");
   button->setEnabled(false);
   connect(button, SIGNAL(clicked()), this, SLOT(onSaveToPresetClicked()));
@@ -127,7 +127,7 @@ HistogramWidget::HistogramWidget(QWidget* parent)
 
   button = new QToolButton;
   m_colorLegendToolButton = button;
-  button->setIcon(QIcon(":/pqWidgets/Icons/pqScalarBar24.png"));
+  button->setIcon(QIcon(":/pqWidgets/Icons/pqScalarBar.svg"));
   button->setToolTip("Show color legend in the 3D window");
   button->setEnabled(false);
   button->setCheckable(true);
