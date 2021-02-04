@@ -23,8 +23,6 @@
 
 namespace tomviz {
 
-const int MULTI_VOLUME_SWITCH = 2;
-
 class ViewVolumes
 {
 public:
@@ -234,6 +232,24 @@ void VolumeManager::allowMultiVolume(bool allowMultiVolume,
     this->d->views[view]->allowMultiVolume = allowMultiVolume;
     emit allowMultiVolumeChanged(view, allowMultiVolume);
   }
+}
+
+bool VolumeManager::allowMultiVolume(vtkSMViewProxy* view) const
+{
+  if (!this->d->views.contains(view)) {
+    return true;
+  }
+
+  return this->d->views[view]->usingMultiVolume;
+}
+
+int VolumeManager::volumeCount(vtkSMViewProxy* view) const
+{
+  if (!this->d->views.contains(view)) {
+    return 0;
+  }
+
+  return this->d->views[view]->volumePorts.size();
 }
 
 void VolumeManager::onVisibilityChanged(bool visible)

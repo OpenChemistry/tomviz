@@ -7,6 +7,7 @@
 #include "DataSource.h"
 #include "HistogramManager.h"
 #include "ScalarsComboBox.h"
+#include "VolumeManager.h"
 #include "vtkTransferFunctionBoxItem.h"
 
 #include <vtkColorTransferFunction.h>
@@ -443,6 +444,8 @@ void ModuleVolume::addToPanel(QWidget* panel)
           });
   connect(m_controllers, SIGNAL(solidityChanged(const double)), this,
           SLOT(setSolidity(const double)));
+  connect(m_controllers, &ModuleVolumeWidget::allowMultiVolumeToggled, this,
+          &ModuleVolume::onAllowMultiVolumeToggled);
 }
 
 void ModuleVolume::updatePanel()
@@ -463,6 +466,10 @@ void ModuleVolume::updatePanel()
   m_controllers->setSpecularPower(m_volumeProperty->GetSpecularPower());
   m_controllers->setInterpolationType(m_volumeProperty->GetInterpolationType());
   m_controllers->setSolidity(solidity());
+  m_controllers->setAllowMultiVolume(
+    VolumeManager::instance().allowMultiVolume(this->view()));
+  m_controllers->setEnableAllowMultiVolume(
+    VolumeManager::instance().volumeCount(this->view()) >= MULTI_VOLUME_SWITCH);
 
   m_controllers->setRgbaMappingAllowed(rgbaMappingAllowed());
   m_controllers->setUseRgbaMapping(useRgbaMapping());
@@ -502,6 +509,12 @@ void ModuleVolume::onRgbaMappingMaxChanged(const double value)
 {
   m_rgbaMappingRange[1] = value;
   updateRgbaMappingDataObject();
+  emit renderNeeded();
+}
+
+void ModuleVolume::onAllowMultiVolumeToggled(const bool value)
+{
+  VolumeManager::instance().allowMultiVolume(value, this->view());
   emit renderNeeded();
 }
 

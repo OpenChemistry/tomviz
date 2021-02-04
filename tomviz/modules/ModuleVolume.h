@@ -111,6 +111,7 @@ private slots:
   void onScalarArrayChanged();
   void setSolidity(const double value);
   int scalarsIndex();
+  void onAllowMultiVolumeToggled(const bool value);
 
   void onDataChanged();
 };

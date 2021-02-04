@@ -55,6 +55,10 @@ ModuleVolumeWidget::ModuleVolumeWidget(QWidget* parent_)
           SIGNAL(interpolationChanged(const int)));
   connect(m_ui->cbTransferMode, SIGNAL(currentIndexChanged(int)), this,
           SIGNAL(transferModeChanged(const int)));
+  connect(m_ui->cbMultiVolume, SIGNAL(toggled(bool)), this,
+          SIGNAL(allowMultiVolumeToggled(const bool)));
+  connect(m_ui->cbMultiVolume, &QCheckBox::toggled, this,
+          &ModuleVolumeWidget::setAllowMultiVolume);
 
   connect(m_ui->useRgbaMapping, &QCheckBox::toggled, this,
           &ModuleVolumeWidget::useRgbaMappingToggled);
@@ -181,6 +185,26 @@ void ModuleVolumeWidget::setRgbaMappingSliderRange(const double range[2])
   m_ui->sliRgbaMappingMin->setMaximum(max);
   m_ui->sliRgbaMappingMax->setMinimum(min);
   m_ui->sliRgbaMappingMax->setMaximum(max);
+}
+
+void ModuleVolumeWidget::setAllowMultiVolume(const bool checked)
+{
+  if (checked != m_ui->cbMultiVolume->isChecked()) {
+    m_ui->cbMultiVolume->setChecked(checked);
+  }
+
+  m_uiLighting->gbLighting->setEnabled(!checked ||
+                                       !m_ui->cbMultiVolume->isEnabled());
+}
+
+void ModuleVolumeWidget::setEnableAllowMultiVolume(const bool enable)
+{
+  if (enable != m_ui->cbMultiVolume->isEnabled()) {
+    m_ui->cbMultiVolume->setEnabled(enable);
+  }
+
+  m_uiLighting->gbLighting->setEnabled(!enable ||
+                                       !m_ui->cbMultiVolume->isChecked());
 }
 
 void ModuleVolumeWidget::onRgbaMappingMinChanged(double v)

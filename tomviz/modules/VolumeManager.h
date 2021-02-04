@@ -13,6 +13,8 @@ class vtkSMViewProxy;
 
 namespace tomviz {
 
+const int MULTI_VOLUME_SWITCH = 2;
+
 class Module;
 class ModuleVolume;
 
@@ -27,6 +29,8 @@ class VolumeManager : public QObject
 public:
   static VolumeManager& instance();
   void allowMultiVolume(bool allow, vtkSMViewProxy* view);
+  bool allowMultiVolume(vtkSMViewProxy* view) const;
+  int volumeCount(vtkSMViewProxy* view) const;
 
 signals:
   void volumeCountChanged(vtkSMViewProxy* view, int count);
