@@ -15,6 +15,7 @@ class vtkPVRenderView;
 
 class vtkImageClip;
 class vtkImageData;
+class vtkPiecewiseFunction;
 class vtkPlane;
 class vtkVolumeProperty;
 class vtkVolume;
@@ -66,6 +67,8 @@ public:
 
   double solidity() const;
 
+  vtkVolume* getVolume();
+
 protected:
   void updateColorMap() override;
 
@@ -76,6 +79,7 @@ private:
   vtkNew<vtkVolume> m_volume;
   vtkNew<SmartVolumeMapper> m_volumeMapper;
   vtkNew<vtkVolumeProperty> m_volumeProperty;
+  vtkNew<vtkPiecewiseFunction> m_gradientOpacity;
   QPointer<ModuleVolumeWidget> m_controllers;
   QPointer<ScalarsComboBox> m_scalarsCombo;
 
@@ -107,6 +111,7 @@ private slots:
   void onScalarArrayChanged();
   void setSolidity(const double value);
   int scalarsIndex();
+  void onAllowMultiVolumeToggled(const bool value);
 
   void onDataChanged();
 };

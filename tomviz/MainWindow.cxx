@@ -60,6 +60,7 @@
 #include "SetTiltAnglesReaction.h"
 #include "Utilities.h"
 #include "ViewMenuManager.h"
+#include "VolumeManager.h"
 #include "WelcomeDialog.h"
 #include "tomvizConfig.h"
 
@@ -110,6 +111,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     qtSettings->setValue("pqOutputWidget.ShowFullMessages", true);
   }
 
+  VolumeManager::instance();
   connect(&ModuleManager::instance(), &ModuleManager::enablePythonConsole, this,
           &MainWindow::setEnabledPythonConsole);
 

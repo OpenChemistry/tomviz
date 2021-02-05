@@ -7,6 +7,7 @@
 #include "DataSource.h"
 #include "HistogramManager.h"
 #include "ScalarsComboBox.h"
+#include "VolumeManager.h"
 #include "vtkTransferFunctionBoxItem.h"
 
 #include <vtkColorTransferFunction.h>
@@ -59,6 +60,9 @@ vtkStandardNewMacro(SmartVolumeMapper)
   ModuleVolume::ModuleVolume(QObject* parentObject)
   : Module(parentObject)
 {
+  // NOTE: Due to a bug in vtkMultiVolume, a gradient opacity function must be
+  // set or the shader will fail to compile.
+  m_gradientOpacity->AddPoint(0.0, 1.0);
   connect(&HistogramManager::instance(), &HistogramManager::histogram2DReady,
           this, [=](vtkSmartPointer<vtkImageData> image,
                     vtkSmartPointer<vtkImageData> histogram2D) {
@@ -272,7 +276,7 @@ void ModuleVolume::updateColorMap()
   const Module::TransferMode mode = getTransferMode();
   switch (mode) {
     case (Module::SCALAR):
-      m_volumeProperty->SetGradientOpacity(nullptr);
+      m_volumeProperty->SetGradientOpacity(m_gradientOpacity);
       break;
     case (Module::GRADIENT_1D):
       m_volumeProperty->SetGradientOpacity(gradientOpacityMap());
@@ -440,6 +444,8 @@ void ModuleVolume::addToPanel(QWidget* panel)
           });
   connect(m_controllers, SIGNAL(solidityChanged(const double)), this,
           SLOT(setSolidity(const double)));
+  connect(m_controllers, &ModuleVolumeWidget::allowMultiVolumeToggled, this,
+          &ModuleVolume::onAllowMultiVolumeToggled);
 }
 
 void ModuleVolume::updatePanel()
@@ -460,6 +466,10 @@ void ModuleVolume::updatePanel()
   m_controllers->setSpecularPower(m_volumeProperty->GetSpecularPower());
   m_controllers->setInterpolationType(m_volumeProperty->GetInterpolationType());
   m_controllers->setSolidity(solidity());
+  m_controllers->setAllowMultiVolume(
+    VolumeManager::instance().allowMultiVolume(this->view()));
+  m_controllers->setEnableAllowMultiVolume(
+    VolumeManager::instance().volumeCount(this->view()) >= MULTI_VOLUME_SWITCH);
 
   m_controllers->setRgbaMappingAllowed(rgbaMappingAllowed());
   m_controllers->setUseRgbaMapping(useRgbaMapping());
@@ -499,6 +509,12 @@ void ModuleVolume::onRgbaMappingMaxChanged(const double value)
 {
   m_rgbaMappingRange[1] = value;
   updateRgbaMappingDataObject();
+  emit renderNeeded();
+}
+
+void ModuleVolume::onAllowMultiVolumeToggled(const bool value)
+{
+  VolumeManager::instance().allowMultiVolume(value, this->view());
   emit renderNeeded();
 }
 
@@ -614,6 +630,11 @@ bool ModuleVolume::updateClippingPlane(vtkPlane* plane, bool newFilter)
   emit renderNeeded();
 
   return true;
+}
+
+vtkVolume* ModuleVolume::getVolume()
+{
+  return m_volume;
 }
 
 } // end of namespace tomviz

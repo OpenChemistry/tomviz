@@ -82,6 +82,16 @@
     </widget>
    </item>
    <item>
+    <widget class="QCheckBox" name="cbMultiVolume">
+     <property name="text">
+      <string>Allow Multi Volume</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QCheckBox" name="useRgbaMapping">
      <property name="toolTip">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This option is for 3-component data only. If checked, the three components will be mapped directly to RGB values, where the first, second, and third components are mapped to red, green, and blue, respectively, instead of using the color map to determine color. Additionally, the norm will be used along with the opacity editor to compute opacity.&lt;/p&gt;&lt;p&gt;The RGBA mapping range is used to determine the range of data values that get rescaled to the RGB color range.&lt;/p&gt;&lt;p&gt;If unchecked, the norm of the data is displayed instead.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
