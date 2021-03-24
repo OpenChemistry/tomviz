@@ -1312,6 +1312,19 @@ vtkImageData* DataSource::imageData() const
   return vtkImageData::SafeDownCast(dataObject());
 }
 
+QStringList DataSource::componentNames() const
+{
+  QStringList names;
+  auto* scalars = imageData()->GetPointData()->GetScalars();
+  auto hasNames = scalars->HasAComponentName();
+
+  for (int i = 0; i < scalars->GetNumberOfComponents(); ++i) {
+    names.append(hasNames ? scalars->GetComponentName(i) : "");
+  }
+
+  return names;
+}
+
 Pipeline* DataSource::pipeline() const
 {
   return qobject_cast<Pipeline*>(parent());

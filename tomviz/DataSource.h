@@ -86,6 +86,9 @@ public:
   /// Returns the image data associated with the proxy.
   vtkImageData* imageData() const;
 
+  /// Get the names of the components
+  QStringList componentNames() const;
+
   /// Returns a list of operators added to the DataSource.
   const QList<Operator*>& operators() const;
 
