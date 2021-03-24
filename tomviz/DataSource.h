@@ -86,6 +86,9 @@ public:
   /// Returns the image data associated with the proxy.
   vtkImageData* imageData() const;
 
+  /// Get the active scalars array
+  vtkDataArray* activeScalarsArray() const;
+
   /// Get the names of the components
   QStringList componentNames() const;
 
@@ -247,7 +250,7 @@ public:
   QStringList listScalars() const;
 
   // Get pointer to scalar array
-  vtkDataArray* getScalarsArray(const QString& arrayName);
+  vtkDataArray* getScalarsArray(const QString& arrayName) const;
 
   /// Returns the number of components in the dataset.
   unsigned int getNumberOfComponents();

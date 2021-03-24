@@ -866,7 +866,7 @@ void DataSource::renameScalarsArray(const QString& oldName,
   Internals->CurrentToOriginal[newName] = originalName;
 }
 
-vtkDataArray* DataSource::getScalarsArray(const QString& arrayName)
+vtkDataArray* DataSource::getScalarsArray(const QString& arrayName) const
 {
   vtkAlgorithm* alg = algorithm();
   if (alg == nullptr) {
@@ -1310,6 +1310,11 @@ vtkDataObject* DataSource::dataObject() const
 vtkImageData* DataSource::imageData() const
 {
   return vtkImageData::SafeDownCast(dataObject());
+}
+
+vtkDataArray* DataSource::activeScalarsArray() const
+{
+  return getScalarsArray(activeScalars());
 }
 
 QStringList DataSource::componentNames() const
