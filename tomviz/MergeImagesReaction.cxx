@@ -11,6 +11,9 @@
 #include <QFileInfo>
 #include <QSet>
 
+#include <vtkDataArray.h>
+#include <vtkImageData.h>
+#include <vtkPointData.h>
 #include <vtkPVArrayInformation.h>
 #include <vtkPVDataInformation.h>
 #include <vtkPVDataSetAttributesInformation.h>
@@ -126,6 +129,7 @@ DataSource* MergeImagesReaction::mergeComponents()
   }
 
   QList<DataSource*> sourceList = m_dataSources.toList();
+  QStringList sourceLabels;
 
   vtkSMSessionProxyManager* pxm = ActiveObjects::instance().proxyManager();
   vtkSMSourceProxy* filter = vtkSMSourceProxy::SafeDownCast(
@@ -148,6 +152,8 @@ DataSource* MergeImagesReaction::mergeComponents()
         expression << ", ";
       }
     }
+
+    sourceLabels.append(sourceList[i]->label());
   }
 
   // Arrange columns
@@ -167,6 +173,13 @@ DataSource* MergeImagesReaction::mergeComponents()
   DataSource* newSource = new DataSource(filter);
   newSource->setFileName("Merged Image");
   filter->Delete();
+
+  // Give the components names based off the labels of the data sources
+  // that were used to generate them.
+  auto* scalars = newSource->imageData()->GetPointData()->GetScalars();
+  for (int i = 0; i < sourceLabels.size(); ++i) {
+    scalars->SetComponentName(i, sourceLabels[i].toLatin1().data());
+  }
 
   return newSource;
 }
