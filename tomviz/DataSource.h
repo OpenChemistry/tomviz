@@ -89,8 +89,16 @@ public:
   /// Get the active scalars array
   vtkDataArray* scalars() const;
 
-  /// Get the names of the components
-  QStringList componentNames() const;
+  /// Get the names of the components.
+  /// Calls "ensureValidComponentNames()" first, and the names will be
+  /// modified if they are invalid.
+  QStringList componentNames();
+
+  /// Set the names of the components
+  void setComponentNames(const QStringList& names);
+
+  /// Ensure component names are valid, and modify them if they are not.
+  void ensureValidComponentNames();
 
   /// Returns a list of operators added to the DataSource.
   const QList<Operator*>& operators() const;

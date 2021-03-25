@@ -176,11 +176,7 @@ DataSource* MergeImagesReaction::mergeComponents()
 
   // Give the components names based off the labels of the data sources
   // that were used to generate them.
-  auto* scalars = newSource->imageData()->GetPointData()->GetScalars();
-  for (int i = 0; i < sourceLabels.size(); ++i) {
-    scalars->SetComponentName(i, sourceLabels[i].toLatin1().data());
-  }
-
+  newSource->setComponentNames(sourceLabels);
   return newSource;
 }
 

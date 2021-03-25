@@ -1317,17 +1317,44 @@ vtkDataArray* DataSource::scalars() const
   return getScalarsArray(activeScalars());
 }
 
-QStringList DataSource::componentNames() const
+QStringList DataSource::componentNames()
 {
-  QStringList names;
-  auto* scalars = imageData()->GetPointData()->GetScalars();
-  auto hasNames = scalars->HasAComponentName();
+  ensureValidComponentNames();
 
-  for (int i = 0; i < scalars->GetNumberOfComponents(); ++i) {
-    names.append(hasNames ? scalars->GetComponentName(i) : "");
+  QStringList names;
+  for (int i = 0; i < scalars()->GetNumberOfComponents(); ++i) {
+    names.append(scalars()->GetComponentName(i));
   }
 
   return names;
+}
+
+void DataSource::setComponentNames(const QStringList& names)
+{
+  for (int i = 0; i < scalars()->GetNumberOfComponents(); ++i) {
+    scalars()->SetComponentName(i, names[i].toLatin1().data());
+  }
+}
+
+void DataSource::ensureValidComponentNames()
+{
+  QStringList approvedNames;
+  for (int i = 0; i < scalars()->GetNumberOfComponents(); ++i) {
+    QString name = scalars()->GetComponentName(i);
+    if (name.isEmpty() || approvedNames.contains(name)) {
+      // If this name is empty or duplicated, rename it.
+      size_t counter = 0;
+      QString newName;
+      do {
+        newName = name + QString::number(++counter);
+      } while (approvedNames.contains(newName));
+
+      scalars()->SetComponentName(i, newName.toLatin1().data());
+      name = newName;
+    }
+
+    approvedNames.append(name);
+  }
 }
 
 Pipeline* DataSource::pipeline() const
