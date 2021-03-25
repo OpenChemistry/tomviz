@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>274</width>
-    <height>249</height>
+    <height>363</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -67,7 +67,7 @@
       </widget>
      </item>
      <item row="0" column="1">
-        <widget class="tomviz::DoubleSliderWidget" name="soliditySlider" native="true"/>
+      <widget class="tomviz::DoubleSliderWidget" name="soliditySlider" native="true"/>
      </item>
     </layout>
    </item>
@@ -110,25 +110,48 @@
       <string>RGBA Mapping Range</string>
      </property>
      <layout class="QGridLayout" name="gridLayout">
-      <item row="0" column="0">
+      <item row="2" column="1">
+       <widget class="tomviz::DoubleSliderWidget" name="sliRgbaMappingMin" native="true"/>
+      </item>
+      <item row="3" column="1">
+       <widget class="tomviz::DoubleSliderWidget" name="sliRgbaMappingMax" native="true"/>
+      </item>
+      <item row="1" column="1">
+       <widget class="QComboBox" name="rgbaMappingComponent"/>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="rgbaMappingComponentLabel">
+        <property name="text">
+         <string>Component:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
        <widget class="QLabel" name="rgbaMappingMinLabel">
         <property name="text">
          <string>Min:</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="0">
+      <item row="3" column="0">
        <widget class="QLabel" name="rgbaMappingMaxLabel">
         <property name="text">
          <string>Max:</string>
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
-       <widget class="tomviz::DoubleSliderWidget" name="sliRgbaMappingMin" native="true"/>
-      </item>
-      <item row="1" column="1">
-       <widget class="tomviz::DoubleSliderWidget" name="sliRgbaMappingMax" native="true"/>
+      <item row="0" column="0" colspan="2">
+       <widget class="QCheckBox" name="rgbaMappingCombineComponents">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked, a single range will be used for all components. &lt;/p&gt;&lt;p&gt;If unchecked, each component will have its own range.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Use range for all components</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>
@@ -148,7 +171,10 @@
   <tabstop>cbInterpolation</tabstop>
   <tabstop>cbBlending</tabstop>
   <tabstop>cbJittering</tabstop>
+  <tabstop>cbMultiVolume</tabstop>
   <tabstop>useRgbaMapping</tabstop>
+  <tabstop>rgbaMappingCombineComponents</tabstop>
+  <tabstop>rgbaMappingComponent</tabstop>
  </tabstops>
  <resources/>
  <connections>
@@ -165,6 +191,38 @@
     <hint type="destinationlabel">
      <x>136</x>
      <y>194</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>rgbaMappingCombineComponents</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>rgbaMappingComponent</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>136</x>
+     <y>250</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>196</x>
+     <y>280</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>rgbaMappingCombineComponents</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>rgbaMappingComponentLabel</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>136</x>
+     <y>250</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>77</x>
+     <y>280</y>
     </hint>
    </hints>
   </connection>

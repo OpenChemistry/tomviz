@@ -53,6 +53,9 @@ public:
   void setRgbaMappingMin(const double value);
   void setRgbaMappingMax(const double value);
   void setRgbaMappingSliderRange(const double range[2]);
+  void setRgbaMappingCombineComponents(const bool b);
+  void setRgbaMappingComponentOptions(const QStringList& list);
+  void setRgbaMappingComponent(const QString& component);
   void setAllowMultiVolume(const bool allow);
   void setEnableAllowMultiVolume(const bool enable);
   QFormLayout* formLayout();
@@ -74,8 +77,10 @@ signals:
   void transferModeChanged(const int mode);
   void solidityChanged(const double value);
   void useRgbaMappingToggled(const bool b);
+  void rgbaMappingCombineComponentsToggled(const bool b);
   void rgbaMappingMinChanged(const double value);
   void rgbaMappingMaxChanged(const double value);
+  void rgbaMappingComponentChanged(const QString& component);
   void allowMultiVolumeToggled(const bool state);
   //@}
 

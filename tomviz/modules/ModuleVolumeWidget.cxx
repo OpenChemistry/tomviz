@@ -63,6 +63,11 @@ ModuleVolumeWidget::ModuleVolumeWidget(QWidget* parent_)
   connect(m_ui->useRgbaMapping, &QCheckBox::toggled, this,
           &ModuleVolumeWidget::useRgbaMappingToggled);
 
+  connect(m_ui->rgbaMappingCombineComponents, &QCheckBox::toggled, this,
+          &ModuleVolumeWidget::rgbaMappingCombineComponentsToggled);
+  connect(m_ui->rgbaMappingComponent, &QComboBox::currentTextChanged, this,
+          &ModuleVolumeWidget::rgbaMappingComponentChanged);
+
   // Using QueuedConnections here to circumvent DoubleSliderWidget->BlockUpdate
   connect(m_ui->sliRgbaMappingMin, &DoubleSliderWidget::valueEdited, this,
           &ModuleVolumeWidget::onRgbaMappingMinChanged, Qt::QueuedConnection);
@@ -83,6 +88,8 @@ ModuleVolumeWidget::ModuleVolumeWidget(QWidget* parent_)
           SIGNAL(solidityChanged(const double)));
 
   m_ui->groupRgbaMappingRange->setVisible(false);
+  m_ui->rgbaMappingComponentLabel->setVisible(false);
+  m_ui->rgbaMappingComponent->setVisible(false);
 }
 
 ModuleVolumeWidget::~ModuleVolumeWidget() = default;
@@ -185,6 +192,25 @@ void ModuleVolumeWidget::setRgbaMappingSliderRange(const double range[2])
   m_ui->sliRgbaMappingMin->setMaximum(max);
   m_ui->sliRgbaMappingMax->setMinimum(min);
   m_ui->sliRgbaMappingMax->setMaximum(max);
+}
+
+void ModuleVolumeWidget::setRgbaMappingCombineComponents(const bool b)
+{
+  m_ui->rgbaMappingCombineComponents->setChecked(b);
+  m_ui->rgbaMappingComponent->setVisible(!b);
+  m_ui->rgbaMappingComponentLabel->setVisible(!b);
+}
+
+void ModuleVolumeWidget::setRgbaMappingComponentOptions(
+  const QStringList& components)
+{
+  m_ui->rgbaMappingComponent->clear();
+  m_ui->rgbaMappingComponent->addItems(components);
+}
+
+void ModuleVolumeWidget::setRgbaMappingComponent(const QString& component)
+{
+  m_ui->rgbaMappingComponent->setCurrentText(component);
 }
 
 void ModuleVolumeWidget::setAllowMultiVolume(const bool checked)

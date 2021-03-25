@@ -9,7 +9,10 @@
 #include <vtkNew.h>
 #include <vtkWeakPointer.h>
 
+#include <QMap>
 #include <QPointer>
+
+#include <array>
 
 class vtkPVRenderView;
 
@@ -52,7 +55,7 @@ public:
   bool useRgbaMapping();
   void updateMapperInput(DataSource* data = nullptr);
   void updateRgbaMappingDataObject();
-  void resetRgbaMappingRange();
+  void resetRgbaMappingRanges();
   void updateVectorMode();
 
   void dataSourceMoved(double newX, double newY, double newZ) override;
@@ -75,6 +78,16 @@ protected:
 private:
   Q_DISABLE_COPY(ModuleVolume)
 
+  QString rgbaMappingComponent();
+  bool rgbaMappingCombineComponents() const
+  {
+    return m_rgbaMappingCombineComponents;
+  }
+  std::array<double, 2> computeRange(const QString& component) const;
+  static void computeRange(vtkDataArray* array, double range[2]);
+  std::array<double, 2>& rangeForComponent(const QString& component);
+  std::vector<std::array<double, 2>> activeRgbaRanges();
+
   vtkWeakPointer<vtkPVRenderView> m_view;
   vtkNew<vtkVolume> m_volume;
   vtkNew<SmartVolumeMapper> m_volumeMapper;
@@ -87,9 +100,12 @@ private:
   vtkNew<vtkImageData> m_rgbaDataObject;
 
   bool m_useRgbaMapping = false;
+  bool m_rgbaMappingCombineComponents = true;
+  QString m_rgbaMappingComponent;
 
-  // Range used for Rgba data object
-  double m_rgbaMappingRange[2];
+  std::array<double, 2> m_rgbaMappingRangeAll;
+  // Ranges used for Rgba data object. QString is the component name.
+  QMap<QString, std::array<double, 2>> m_rgbaMappingRanges;
 
 private slots:
   /**
@@ -106,6 +122,8 @@ private slots:
   void onSpecularPowerChanged(const double value);
   void onTransferModeChanged(const int mode);
   void onRgbaMappingToggled(const bool b);
+  void onRgbaMappingCombineComponentsToggled(const bool b);
+  void onRgbaMappingComponentChanged(const QString& component);
   void onRgbaMappingMinChanged(const double value);
   void onRgbaMappingMaxChanged(const double value);
   void onScalarArrayChanged();
