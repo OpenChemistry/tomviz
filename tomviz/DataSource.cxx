@@ -1312,7 +1312,7 @@ vtkImageData* DataSource::imageData() const
   return vtkImageData::SafeDownCast(dataObject());
 }
 
-vtkDataArray* DataSource::activeScalarsArray() const
+vtkDataArray* DataSource::scalars() const
 {
   return getScalarsArray(activeScalars());
 }

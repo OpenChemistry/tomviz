@@ -87,7 +87,7 @@ public:
   vtkImageData* imageData() const;
 
   /// Get the active scalars array
-  vtkDataArray* activeScalarsArray() const;
+  vtkDataArray* scalars() const;
 
   /// Get the names of the components
   QStringList componentNames() const;
