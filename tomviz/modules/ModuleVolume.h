@@ -87,6 +87,7 @@ private:
   static void computeRange(vtkDataArray* array, double range[2]);
   std::array<double, 2>& rangeForComponent(const QString& component);
   std::vector<std::array<double, 2>> activeRgbaRanges();
+  void resetComponentNames();
 
   vtkWeakPointer<vtkPVRenderView> m_view;
   vtkNew<vtkVolume> m_volume;
@@ -106,6 +107,9 @@ private:
   std::array<double, 2> m_rgbaMappingRangeAll;
   // Ranges used for Rgba data object. QString is the component name.
   QMap<QString, std::array<double, 2>> m_rgbaMappingRanges;
+
+  // Keep track of the component names for renaming...
+  QStringList m_componentNames;
 
 private slots:
   /**
@@ -132,6 +136,7 @@ private slots:
   void onAllowMultiVolumeToggled(const bool value);
 
   void onDataChanged();
+  void onComponentNamesModified();
 };
 } // namespace tomviz
 

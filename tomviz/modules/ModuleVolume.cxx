@@ -133,6 +133,8 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   connect(data, &DataSource::dataChanged, this, &ModuleVolume::onDataChanged);
   connect(data, &DataSource::activeScalarsChanged, this,
           &ModuleVolume::onScalarArrayChanged);
+  connect(data, &DataSource::componentNamesModified, this,
+          &ModuleVolume::onComponentNamesModified);
 
   // Work around mapper bug on the mac, see the following issue for details:
   // https://github.com/OpenChemistry/tomviz/issues/1776
@@ -152,15 +154,21 @@ void ModuleVolume::resetRgbaMappingRanges()
   // Individual ranges
   m_rgbaMappingRanges.clear();
 
-  for (const auto& name : dataSource()->componentNames()) {
+  resetComponentNames();
+  for (const auto& name : m_componentNames) {
     m_rgbaMappingRanges[name] = computeRange(name);
   }
+}
+
+void ModuleVolume::resetComponentNames()
+{
+  m_componentNames = dataSource()->componentNames();
 }
 
 std::array<double, 2> ModuleVolume::computeRange(const QString& component) const
 {
   std::array<double, 2> result;
-  auto index = dataSource()->componentNames().indexOf(component);
+  auto index = m_componentNames.indexOf(component);
   dataSource()->scalars()->GetRange(result.data(), index);
   return result;
 }
@@ -180,7 +188,7 @@ std::vector<std::array<double, 2>> ModuleVolume::activeRgbaRanges()
       ret.push_back(m_rgbaMappingRangeAll);
     }
   } else {
-    for (auto& name : dataSource()->componentNames()) {
+    for (auto& name : m_componentNames) {
       ret.push_back(rangeForComponent(name));
     }
   }
@@ -210,6 +218,26 @@ void ModuleVolume::onDataChanged()
   if (useRgbaMapping()) {
     updateRgbaMappingDataObject();
   }
+  updatePanel();
+}
+
+void ModuleVolume::onComponentNamesModified()
+{
+  auto oldNames = m_componentNames;
+  resetComponentNames();
+  auto newNames = m_componentNames;
+
+  // Rename the map keys
+  for (int i = 0; i < oldNames.size(); ++i) {
+    if (newNames[i] != oldNames[i]) {
+      m_rgbaMappingRanges[newNames[i]] = m_rgbaMappingRanges.take(oldNames[i]);
+      if (m_rgbaMappingComponent == oldNames[i]) {
+        m_rgbaMappingComponent = newNames[i];
+      }
+    }
+  }
+
+  // Update the panel
   updatePanel();
 }
 
@@ -304,9 +332,9 @@ void ModuleVolume::updateRgbaMappingDataObject()
 
 QString ModuleVolume::rgbaMappingComponent()
 {
-  if (!dataSource()->componentNames().contains(m_rgbaMappingComponent)) {
+  if (!m_componentNames.contains(m_rgbaMappingComponent)) {
     // Set it to the first component
-    m_rgbaMappingComponent = dataSource()->componentNames()[0];
+    m_rgbaMappingComponent = m_componentNames[0];
   }
 
   return m_rgbaMappingComponent;
@@ -529,7 +557,7 @@ void ModuleVolume::updatePanel()
   m_controllers->setUseRgbaMapping(useRgbaMapping());
   if (useRgbaMapping()) {
     auto allComponents = rgbaMappingCombineComponents();
-    auto options = dataSource()->componentNames();
+    auto options = m_componentNames;
     auto component = rgbaMappingComponent();
 
     m_controllers->setRgbaMappingCombineComponents(allComponents);
