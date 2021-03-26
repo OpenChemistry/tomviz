@@ -42,6 +42,8 @@ set(SOURCES
   ColorMap.h
   ColorMapSettingsWidget.cxx
   ColorMapSettingsWidget.h
+  ComboTextEditor.cxx
+  ComboTextEditor.h
   ConvertToFloatReaction.cxx
   ConvertToFloatReaction.h
   CropReaction.cxx
