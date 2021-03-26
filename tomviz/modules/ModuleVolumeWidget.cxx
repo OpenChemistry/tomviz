@@ -10,6 +10,8 @@
 
 namespace tomviz {
 
+static const double RANGE_INCREMENT = 1000;
+
 ModuleVolumeWidget::ModuleVolumeWidget(QWidget* parent_)
   : QWidget(parent_), m_ui(new Ui::ModuleVolumeWidget),
     m_uiLighting(new Ui::LightingParametersForm)
@@ -235,27 +237,45 @@ void ModuleVolumeWidget::setEnableAllowMultiVolume(const bool enable)
 
 void ModuleVolumeWidget::onRgbaMappingMinChanged(double v)
 {
-  double max = m_ui->sliRgbaMappingMax->value();
-  if (v > max) {
-    // Don't allow the min to be greater than the max.
-    // This is better than modifying the ranges so the slider
-    // range doesn't visually change.
-    setRgbaMappingMin(max);
-    v = max;
+  // Compute an increment. Don't let the min value get closer
+  // than this to the maximum.
+  double fullRange[2] = { m_ui->sliRgbaMappingMax->minimum(),
+                          m_ui->sliRgbaMappingMax->maximum() };
+  double increment = (fullRange[1] - fullRange[0]) / RANGE_INCREMENT;
+  double trueMaximum = fullRange[1] - increment;
+  if (v > trueMaximum) {
+    setRgbaMappingMin(trueMaximum);
+    v = trueMaximum;
   }
+
+  double currentMax = m_ui->sliRgbaMappingMax->value();
+  if (v > currentMax) {
+    // Set the maximum to be an increment above...
+    setRgbaMappingMax(v + increment);
+  }
+
   emit rgbaMappingMinChanged(v);
 }
 
 void ModuleVolumeWidget::onRgbaMappingMaxChanged(double v)
 {
-  double min = m_ui->sliRgbaMappingMin->value();
-  if (v < min) {
-    // Don't allow the max to be less than the min.
-    // This is better than modifying the ranges so the slider
-    // range doesn't visually change.
-    setRgbaMappingMax(min);
-    v = min;
+  // Compute an increment. Don't let the max value get closer
+  // than this to the minimum.
+  double fullRange[2] = { m_ui->sliRgbaMappingMin->minimum(),
+                          m_ui->sliRgbaMappingMin->maximum() };
+  double increment = (fullRange[1] - fullRange[0]) / RANGE_INCREMENT;
+  double trueMinimum = fullRange[0] + increment;
+  if (v < trueMinimum) {
+    setRgbaMappingMax(trueMinimum);
+    v = trueMinimum;
   }
+
+  double currentMin = m_ui->sliRgbaMappingMin->value();
+  if (v < currentMin) {
+    // Set the minimum to be an increment below...
+    setRgbaMappingMin(v - increment);
+  }
+
   emit rgbaMappingMaxChanged(v);
 }
 
