@@ -97,6 +97,9 @@ public:
   /// Set the names of the components
   void setComponentNames(const QStringList& names);
 
+  /// Set the name of an individual component
+  void setComponentName(int index, const QString& name);
+
   /// Ensure component names are valid, and modify them if they are not.
   void ensureValidComponentNames();
 
@@ -352,6 +355,9 @@ signals:
   /// on their actors to match this so the effect of setting the position is
   /// to translate the dataset.
   void displayPositionChanged(double newX, double newY, double newZ);
+
+  /// Indicates the component names have been modified
+  void componentNamesModified();
 
 public slots:
   void dataModified();

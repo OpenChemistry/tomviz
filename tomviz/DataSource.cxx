@@ -1334,10 +1334,18 @@ void DataSource::setComponentNames(const QStringList& names)
   for (int i = 0; i < scalars()->GetNumberOfComponents(); ++i) {
     scalars()->SetComponentName(i, names[i].toLatin1().data());
   }
+  emit componentNamesModified();
+}
+
+void DataSource::setComponentName(int index, const QString& name)
+{
+  scalars()->SetComponentName(index, name.toLatin1().data());
+  emit componentNamesModified();
 }
 
 void DataSource::ensureValidComponentNames()
 {
+  bool modified = false;
   QStringList approvedNames;
   for (int i = 0; i < scalars()->GetNumberOfComponents(); ++i) {
     QString name = scalars()->GetComponentName(i);
@@ -1351,9 +1359,14 @@ void DataSource::ensureValidComponentNames()
 
       scalars()->SetComponentName(i, newName.toLatin1().data());
       name = newName;
+      modified = true;
     }
 
     approvedNames.append(name);
+  }
+
+  if (modified) {
+    emit componentNamesModified();
   }
 }
 
