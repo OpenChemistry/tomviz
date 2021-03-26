@@ -10,7 +10,14 @@
 
 namespace tomviz {
 
-static const double RANGE_INCREMENT = 1000;
+// If we make this bigger, such as 1000, and we make the max too
+// close to the data minimum or the min too close to the data maximum,
+// we run into errors like these:
+// ( 118.718s) [paraview        ]vtkOpenGLVolumeLookupTa:84    WARN|
+// vtkOpenGLVolumeRGBTable (0x55ba0c5cc970): This OpenGL implementation does not
+// support the required texture size of 65536, falling back to maximum allowed,
+// 32768.This may cause an incorrect lookup table mapping.
+static const double RANGE_INCREMENT = 500;
 
 ModuleVolumeWidget::ModuleVolumeWidget(QWidget* parent_)
   : QWidget(parent_), m_ui(new Ui::ModuleVolumeWidget),
