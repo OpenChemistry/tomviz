@@ -48,7 +48,7 @@
    <item>
     <layout class="QHBoxLayout" name="componentNamesLayout">
      <item>
-      <widget class="QLabel" name="componentNamesLabel">
+      <widget class="QLabel" name="componentNamesEditorLabel">
        <property name="text">
         <string>Component Names:</string>
        </property>

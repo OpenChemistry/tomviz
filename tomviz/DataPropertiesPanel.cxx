@@ -306,11 +306,19 @@ void DataPropertiesPanel::updateComponentsCombo()
     return;
   }
 
+  auto label = m_ui->componentNamesEditorLabel;
   auto combo = m_ui->componentNamesEditor;
   auto blocked = QSignalBlocker(combo);
 
-  combo->clear();
-  combo->addItems(dsource->componentNames());
+  // Only make this editor visible if there is more than one component
+  bool visible = dsource->scalars()->GetNumberOfComponents() > 1;
+  label->setVisible(visible);
+  combo->setVisible(visible);
+
+  if (visible) {
+    combo->clear();
+    combo->addItems(dsource->componentNames());
+  }
 }
 
 void DataPropertiesPanel::onTiltAnglesModified(int row, int column)
