@@ -11,9 +11,6 @@
 #include <QFileInfo>
 #include <QSet>
 
-#include <vtkDataArray.h>
-#include <vtkImageData.h>
-#include <vtkPointData.h>
 #include <vtkPVArrayInformation.h>
 #include <vtkPVDataInformation.h>
 #include <vtkPVDataSetAttributesInformation.h>
