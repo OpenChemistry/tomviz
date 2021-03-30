@@ -7,7 +7,6 @@
 #include "DataSource.h"
 #include "DockerExecutor.h"
 #include "DockerUtilities.h"
-#include "EmdFormat.h"
 #include "ExternalPythonExecutor.h"
 #include "ModuleManager.h"
 #include "Operator.h"
@@ -180,11 +179,13 @@ Pipeline::Future* Pipeline::execute(DataSource* dataSource)
 
   auto operators = dataSource->operators();
   if (operators.size() < 1) {
+    emit finished();
     return emptyFuture();
   }
 
   Operator* firstModifiedOperator = operators.first();
   if (!isModified(dataSource, &firstModifiedOperator)) {
+    emit finished();
     return emptyFuture();
   }
 
@@ -269,6 +270,37 @@ Pipeline::Future* Pipeline::execute(DataSource* ds, Operator* start,
 
   auto pipelineFuture = new PipelineFutureInternal(
     this, branchFuture->operators(), branchFuture, operators.last() == end);
+
+  // After the pipeline finishes, move the modules to the back and
+  // remove the old child data source.
+  // If the operator to be removed has a child, move those modules to
+  // the back. Otherwise, move the transformed data source modules.
+  DataSource* oldChild = nullptr;
+  if (m_lastOperatorChildRemoved) {
+    // This indicates that an operator was just removed. Use that.
+    oldChild = m_lastOperatorChildRemoved;
+    m_lastOperatorChildRemoved = nullptr;
+  } else {
+    // Get either the child data source of the last operator or the
+    // transformed data source (which could be the root data source).
+    auto lastOp = operators.last();
+    oldChild = lastOp->childDataSource() ? lastOp->childDataSource()
+                                         : transformedDataSource();
+  }
+
+  connect(pipelineFuture, &Pipeline::Future::finished, oldChild,
+          [this, oldChild]() {
+            auto newChild = transformedDataSource();
+            if (newChild != oldChild) {
+              // If the child is not the same, move the modules to the new one
+              ModuleManager::instance().moveModules(oldChild, newChild);
+              if (!oldChild->forkable()) {
+                // Remove the old child data source if it was not forkable
+                ModuleManager::instance().removeChildDataSource(oldChild);
+              }
+            }
+          });
+
   connect(pipelineFuture, &Pipeline::Future::finished, this,
           &Pipeline::finished);
 
@@ -355,56 +387,68 @@ void Pipeline::branchFinished()
   if (operators.isEmpty()) {
     return;
   }
-  auto start = future->operators().first()->dataSource();
+  auto start = operators.first()->dataSource();
   auto newData = future->result();
-  // We only add the transformed child data source if the last operator
-  // doesn't already have an explicit child data source i.e.
-  // hasChildDataSource is true.
+
+  // Set the output data on the final operator's child data source
   auto lastOp = start->operators().last();
-  if (!lastOp->hasChildDataSource()) {
-    DataSource* newChildDataSource = nullptr;
-    if (lastOp->childDataSource() == nullptr) {
-      newChildDataSource = new DataSource("Output");
-      newChildDataSource->setPersistenceState(
-        tomviz::DataSource::PersistenceState::Transient);
-      newChildDataSource->setForkable(false);
-      newChildDataSource->setParent(this);
-      lastOp->setChildDataSource(newChildDataSource);
-      auto rootDataSource = dataSource();
-      // connect signal to flow units and spacing to child data source.
-      connect(dataSource(), &DataSource::dataPropertiesChanged,
-              [rootDataSource, newChildDataSource]() {
-                // Only flow the properties if no user modifications have been
-                // made.
-                if (!newChildDataSource->unitsModified()) {
-                  newChildDataSource->setUnits(rootDataSource->getUnits(),
-                                               false);
-                  double spacing[3];
-                  rootDataSource->getSpacing(spacing);
-                  newChildDataSource->setSpacing(spacing, false);
-                }
-              });
-    }
+  QString label = "Output";
 
-    // Update the type if necessary
-    DataSource::DataSourceType type = DataSource::hasTiltAngles(newData)
-                                        ? DataSource::TiltSeries
-                                        : DataSource::Volume;
-    lastOp->childDataSource()->setData(newData);
-    lastOp->childDataSource()->setType(type);
-    lastOp->childDataSource()->dataModified();
+  auto child = lastOp->childDataSource();
+  if (child) {
+    // Remove the old child, and create a new one from the output data.
+    // We will always use the output data for the final output.
+    label = child->label();
+    ModuleManager::instance().removeChildDataSource(child);
+    lastOp->setChildDataSource(nullptr);
+  }
 
-    if (newChildDataSource != nullptr) {
-      emit lastOp->newChildDataSource(newChildDataSource);
-      // Move modules from root data source.
-      moveModulesDown(newChildDataSource);
+  // Remove any children produced by the operators. We currently do not
+  // support intermediate data sources.
+  for (auto op : operators) {
+    if (op->childDataSource()) {
+      ModuleManager::instance().removeChildDataSource(op->childDataSource());
+      op->setChildDataSource(nullptr);
     }
   }
-  else {
-    // If this is the only operator, make sure the modules are moved down.
-    if (start->operators().size() == 1)
-      moveModulesDown(lastOp->childDataSource());
-  }
+
+  // Create one
+  child = new DataSource(label);
+  child->setPersistenceState(tomviz::DataSource::PersistenceState::Transient);
+  lastOp->setChildDataSource(child);
+
+  // TODO: the following should be set to this, once we get
+  // intermediate datasets working.
+  // child->setForkable(hasChildDataSource());
+  child->setForkable(false);
+
+  // TODO: when we get intermediate datasets working, this data source
+  // should have the same pipeline, with pauses in the pipeline at
+  // forkable data sources.
+  child->setParent(this);
+
+  auto rootDataSource = dataSource();
+  // connect signal to flow units and spacing to child data source.
+  connect(dataSource(), &DataSource::dataPropertiesChanged, child,
+          [rootDataSource, child]() {
+            // Only flow the properties if no user modifications have been
+            // made.
+            if (!child->unitsModified()) {
+              child->setUnits(rootDataSource->getUnits(), false);
+              double spacing[3];
+              rootDataSource->getSpacing(spacing);
+              child->setSpacing(spacing, false);
+            }
+          });
+
+  DataSource::DataSourceType type = DataSource::hasTiltAngles(newData)
+                                      ? DataSource::TiltSeries
+                                      : DataSource::Volume;
+  child->setData(newData);
+  child->setType(type);
+  child->dataModified();
+
+  emit lastOp->newChildDataSource(child);
 }
 
 void Pipeline::pause()
@@ -482,22 +526,18 @@ void Pipeline::addDataSource(DataSource* dataSource)
               &Operator::newChildDataSource),
             [this](DataSource* ds) { addDataSource(ds); });
 
-    // We need to ensure we move add datasource to the end of the branch
-    auto operators = op->dataSource()->operators();
-    if (operators.size() > 1) {
-      auto transformedDataSourceOp =
-        findTransformedDataSourceOperator(op->dataSource());
-      if (transformedDataSourceOp != nullptr) {
-        auto transformedDataSource = transformedDataSourceOp->childDataSource();
-        transformedDataSourceOp->setChildDataSource(nullptr);
-        op->setChildDataSource(transformedDataSource);
-        emit operatorAdded(op, transformedDataSource);
-      } else {
-        emit operatorAdded(op);
-      }
-    } else {
-      emit operatorAdded(op);
-    }
+    // This might also be the root datasource, which is okay
+    auto oldChild = transformedDataSource(op->dataSource());
+
+    // This is just to make the modules "move down" in the view before
+    // the operator is ran.
+    DataSource* outputDS = nullptr;
+    auto transformedDataSourceOp =
+      findTransformedDataSourceOperator(op->dataSource());
+    if (transformedDataSourceOp)
+      outputDS = oldChild;
+
+    emit operatorAdded(op, outputDS);
   });
   // Wire up operatorRemoved. TODO We need to check the branch of the
   // pipeline we are currently executing.
@@ -508,21 +548,16 @@ void Pipeline::addDataSource(DataSource* dataSource)
     if (!op->isNew()) {
       m_operatorsDeleted = true;
     }
-    if (op->childDataSource() != nullptr) {
-      auto transformedDataSource = op->childDataSource();
-      auto operators = op->dataSource()->operators();
-      // We have an operator to move it to.
-      if (!operators.isEmpty()) {
-        auto newOp = operators.last();
-        op->setChildDataSource(nullptr);
-        newOp->setChildDataSource(transformedDataSource);
-        emit newOp->dataSourceMoved(transformedDataSource);
-      }
-      // Clean it up
-      else {
-        transformedDataSource->removeAllOperators();
-        transformedDataSource->deleteLater();
-      }
+
+    if (op->dataSource()->operators().isEmpty() && op->childDataSource()) {
+      // The last operator was removed. Move all the modules to the root.
+      ModuleManager::instance().moveModules(op->childDataSource(),
+                                            op->dataSource());
+      ModuleManager::instance().removeChildDataSource(op->childDataSource());
+    } else if (op->childDataSource()) {
+      // Save this so we can move the modules from it and delete it
+      // later.
+      m_lastOperatorChildRemoved = op->childDataSource();
     }
 
     // If pipeline is running see if we can safely remove the operator
@@ -605,24 +640,6 @@ Pipeline::Future* Pipeline::emptyFuture()
   QTimer::singleShot(0, [future] { emit future->finished(); });
 
   return future;
-}
-
-void Pipeline::moveModulesDown(DataSource* newChildDataSource)
-{
-  bool oldMoveObjectsEnabled =
-    ActiveObjects::instance().moveObjectsEnabled();
-  ActiveObjects::instance().setMoveObjectsMode(false);
-  auto view = ActiveObjects::instance().activeView();
-  foreach (Module* module, ModuleManager::instance().findModules<Module*>(
-           dataSource(), nullptr)) {
-    // TODO: We should really copy the module properties as well.
-    auto newModule = ModuleManager::instance().createAndAddModule(
-      module->label(), newChildDataSource, view);
-    // Copy over properties using the serialization code.
-    newModule->deserialize(module->serialize());
-    ModuleManager::instance().removeModule(module);
-  }
-  ActiveObjects::instance().setMoveObjectsMode(oldMoveObjectsEnabled);
 }
 
 #include "Pipeline.moc"

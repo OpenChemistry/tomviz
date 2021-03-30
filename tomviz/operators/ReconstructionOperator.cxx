@@ -36,7 +36,6 @@ ReconstructionOperator::ReconstructionOperator(DataSource* source, QObject* p)
   }
   setSupportsCancel(true);
   setTotalProgressSteps(m_extent[1] - m_extent[0] + 1);
-  setHasChildDataSource(true);
   connect(
     this,
     static_cast<void (Operator::*)(const QString&,
@@ -144,7 +143,7 @@ bool ReconstructionOperator::applyTransform(vtkDataObject* dataObject)
   if (isCanceled()) {
     return false;
   }
-  emit newChildDataSource("Reconstruction", reconstructionImage);
+  dataObject->ShallowCopy(reconstructionImage);
   return true;
 }
 } // namespace tomviz

@@ -442,6 +442,21 @@ QList<Module*> ModuleManager::findModulesGeneric(
   return modules;
 }
 
+void ModuleManager::moveModules(DataSource* from, DataSource* to)
+{
+  bool oldMoveObjectsEnabled = ActiveObjects::instance().moveObjectsEnabled();
+  ActiveObjects::instance().setMoveObjectsMode(false);
+  auto view = ActiveObjects::instance().activeView();
+  for (auto* module : findModules<Module*>(from, nullptr)) {
+    // TODO: We should really copy the module properties as well.
+    auto* newModule = createAndAddModule(module->label(), to, view);
+    // Copy over properties using the serialization code.
+    newModule->deserialize(module->serialize());
+    removeModule(module);
+  }
+  ActiveObjects::instance().setMoveObjectsMode(oldMoveObjectsEnabled);
+}
+
 QJsonArray jsonArrayFromXml(pugi::xml_node node)
 {
   // Simple function, just iterates through the elements and fills the array.

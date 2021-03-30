@@ -115,6 +115,9 @@ public:
     Dict(const Dict& other);
     Dict(const Object& obj);
     Dict& operator=(const Object& other);
+    long long size() const;
+    QStringList keys() const;
+    bool delItem(const QString& key);
     Object operator[](const QString& key);
     Object operator[](const std::string& key);
     Object operator[](const char* key);

@@ -170,6 +170,7 @@ DataSource::DataSource(const QString& label, DataSourceType dataType,
 
 DataSource::~DataSource()
 {
+  ModuleManager::instance().removeAllModules(this);
   if (this->Internals->ProducerProxy) {
     vtkNew<vtkSMParaViewPipelineController> controller;
     controller->UnRegisterProxy(this->Internals->ProducerProxy);

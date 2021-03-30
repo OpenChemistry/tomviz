@@ -204,8 +204,6 @@ bool PipelineModel::TreeItem::remove(DataSource* source)
         // Resume but don't execute as we are removing this data source.
         pipeline->resume();
       }
-    } else if (childItem->module()) {
-      ModuleManager::instance().removeModule(childItem->module());
     }
   }
   if (parent()) {
@@ -778,14 +776,6 @@ void PipelineModel::dataSourceAdded(DataSource* dataSource)
   auto pipeline = dataSource->pipeline();
   connect(pipeline, &Pipeline::operatorAdded, this,
           &PipelineModel::operatorAdded, Qt::UniqueConnection);
-
-  // Fire signal to indicate that the transformed data source has been modified
-  // when the pipeline has been executed.
-  // TODO This should probably be move else where!
-  connect(pipeline, &Pipeline::finished, [this, pipeline]() {
-    auto transformed = pipeline->transformedDataSource();
-    emit dataSourceModified(transformed);
-  });
 
   // When restoring a data source from a state file it will have its operators
   // before we can listen to the signal above. Display those operators.

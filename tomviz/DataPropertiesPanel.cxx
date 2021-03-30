@@ -157,11 +157,15 @@ QList<ArrayInfo> DataPropertiesPanel::getArraysInfo(DataSource* dataSource)
 {
   QList<ArrayInfo> arraysInfo;
 
+  // If the number of scalar arrays has changed, reset the indexes.
+  auto scalars = dataSource->listScalars();
+  if (scalars.size() != m_scalarIndexes.size())
+    m_scalarIndexes.clear();
+
   // If we don't have the scalar indexes, we sort the names and then save the
   // indexes, these will be used to preserve the displayed order even after
   // a rename.
   if (m_scalarIndexes.isEmpty()) {
-    auto scalars = dataSource->listScalars();
     auto sortedScalars = scalars;
 
     // sort the scalars names

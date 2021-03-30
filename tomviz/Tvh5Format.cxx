@@ -180,7 +180,6 @@ bool Tvh5Format::loadDataSource(h5::H5ReadWrite& reader,
   if (parent) {
     // This is a child data source. Hook it up to the operator parent.
     parent->setChildDataSource(dataSource);
-    parent->setHasChildDataSource(true);
     parent->newChildDataSource(dataSource);
     // If it has a parent, it will be deserialized later.
   } else {
