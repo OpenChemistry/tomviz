@@ -106,6 +106,8 @@ set(SOURCES
   ImageStackModel.cxx
   InterfaceBuilder.h
   InterfaceBuilder.cxx
+  InternalPythonHelper.h
+  InternalPythonHelper.cxx
   IntSliderWidget.cxx
   IntSliderWidget.h
   LoadDataReaction.cxx
