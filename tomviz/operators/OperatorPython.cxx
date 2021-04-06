@@ -66,6 +66,14 @@ public:
       layout->addStretch();
       m_ui.argumentsWidget->setLayout(layout);
     }
+
+    onScriptModified();
+    setupConnections();
+  }
+  void setupConnections()
+  {
+    connect(m_ui.script, &QTextEdit::textChanged, this,
+            &EditPythonOperatorWidget::onScriptModified);
   }
   void setViewMode(const QString& mode) override
   {
@@ -86,6 +94,13 @@ public:
         QMap<QString, QVariant> args = m_opWidget->values();
         m_op->setArguments(args);
       }
+    }
+  }
+  void onScriptModified()
+  {
+    // Update any objects that need an up-to-date script...
+    if (m_customWidget) {
+      m_customWidget->setScript(m_ui.script->toPlainText());
     }
   }
 

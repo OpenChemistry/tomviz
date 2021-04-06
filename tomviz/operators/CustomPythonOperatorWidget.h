@@ -18,6 +18,13 @@ public:
 
   virtual void getValues(QMap<QString, QVariant>& map) = 0;
   virtual void setValues(const QMap<QString, QVariant>& map) = 0;
+
+  // Keep a copy of the current script (including edits) in case the
+  // custom python operator needs to use it.
+  virtual void setScript(const QString& script) { m_script = script; }
+
+protected:
+  QString m_script;
 };
 } // namespace tomviz
 
