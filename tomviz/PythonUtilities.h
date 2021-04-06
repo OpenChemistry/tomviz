@@ -140,6 +140,7 @@ public:
     Function();
     Function(PyObject* obj);
     Function(const Function& other);
+    Function& operator=(const Function& other);
     Function& operator=(const Object& other);
 
     Object call();

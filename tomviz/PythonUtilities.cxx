@@ -372,6 +372,13 @@ Python::Function::Function(PyObject* obj) : Object(obj) {}
 
 Python::Function::Function(const Python::Function& other) : Object(other) {}
 
+Python::Function& Python::Function::operator=(const Python::Function& other)
+{
+  Object::operator=(other);
+
+  return *this;
+}
+
 Python::Function& Python::Function::operator=(const Python::Object& other)
 {
   Object::operator=(other);
