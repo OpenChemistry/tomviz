@@ -145,6 +145,7 @@ public:
 
     Object call();
     Object call(Tuple& args);
+    Object call(Dict& kwargs);
     Object call(Tuple& args, Dict& kwargs);
     QString toString();
   };

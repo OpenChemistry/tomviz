@@ -398,6 +398,12 @@ Python::Object Python::Function::call(Tuple& args)
   return call(args, empty);
 }
 
+Python::Object Python::Function::call(Dict& kwargs)
+{
+  Python::Tuple empty(0);
+  return call(empty, kwargs);
+}
+
 Python::Object Python::Function::call(Tuple& args, Dict& kwargs)
 {
   Python::Object result =
