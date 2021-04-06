@@ -88,6 +88,8 @@ set(SOURCES
   FileFormatManager.h
   FxiFormat.cxx
   FxiFormat.h
+  FxiWorkflowWidget.cxx
+  FxiWorkflowWidget.h
   GenericHDF5Format.cxx
   GenericHDF5Format.h
   GradientOpacityWidget.h
@@ -410,6 +412,7 @@ set(python_files
   Recon_SIRT.py
   Recon_TV_minimization.py
   Recon_tomopy_gridrec.py
+  Recon_tomopy_fxi.py
   FFT_AbsLog.py
   Shift_Stack_Uniformly.py
   Shift3D.py
@@ -485,6 +488,7 @@ set(json_files
   Recon_DFT_constraint.json
   Recon_TV_minimization.json
   Recon_tomopy_gridrec.json
+  Recon_tomopy_fxi.json
   Recon_SIRT.json
   Recon_WBP.json
   Shift3D.json
