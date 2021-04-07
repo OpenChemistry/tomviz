@@ -1491,7 +1491,7 @@ void removePointsOutOfRange(vtkColorTransferFunction* lut, DataSource* ds)
   }
 
   lut->AddRGBPoint(range[0], startColor[0], startColor[1], startColor[2]);
-  lut->AddRGBPoint(range[1], endColor[1], endColor[2], endColor[3]);
+  lut->AddRGBPoint(range[1], endColor[0], endColor[1], endColor[2]);
 }
 
 void removePointsOutOfRange(vtkPiecewiseFunction* opacity, DataSource* ds)
