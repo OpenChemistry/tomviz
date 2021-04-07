@@ -114,37 +114,9 @@ void SliceViewDialog::updateLUTRange()
   // Decrement the reference count
   lut->Delete();
 
-  // Create the input for vtkRescaleControlPoints
-  // Points are XRGB
-  std::vector<vtkTuple<double, 4>> points;
-  for (int i = 0; i < lut->GetSize(); ++i) {
-    points.push_back(vtkTuple<double, 4>());
-
-    // Values are XRGB, followed by sharpness and mid point
-    double values[6];
-    lut->GetNodeValue(i, values);
-    // Copy over the first four values (XRGB) into the point data
-    std::copy(values, values + 4, points.back().GetData());
-  }
-
   // Rescale the points
   double* range = image->GetScalarRange();
-  vtkRescaleControlPoints(points, range[0], range[1]);
-
-  // Now set the results back on the LUT
-  for (int i = 0; i < lut->GetSize(); ++i) {
-    // Values are XRGB, followed by sharpness and mid point
-    double values[6];
-    lut->GetNodeValue(i, values);
-
-    // Copy over the result XRGB
-    for (int j = 0; j < 4; ++j) {
-      values[j] = points[i][j];
-    }
-
-    // Set it on the LUT
-    lut->SetNodeValue(i, values);
-  }
+  rescaleLut(lut, range[0], range[1]);
 }
 
 void SliceViewDialog::switchToDark()

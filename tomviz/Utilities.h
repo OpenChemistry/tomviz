@@ -237,6 +237,9 @@ void openHelpUrl(const QString& path = "");
 bool vtkRescaleControlPoints(std::vector<vtkTuple<double, 4>>& cntrlPoints,
                              double rangeMin, double rangeMax);
 
+void rescaleLut(vtkColorTransferFunction* lut, double rangeMin,
+                double rangeMax);
+
 /// Get the value of a voxel at the given world coordinates
 double getVoxelValue(vtkImageData* data, const vtkVector3d& point,
                      vtkVector3i& ijk, bool& ok);
