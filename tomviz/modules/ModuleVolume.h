@@ -20,6 +20,7 @@ class vtkImageClip;
 class vtkImageData;
 class vtkPiecewiseFunction;
 class vtkPlane;
+class vtkTriangleBar;
 class vtkVolumeProperty;
 class vtkVolume;
 
@@ -94,6 +95,7 @@ private:
   vtkNew<SmartVolumeMapper> m_volumeMapper;
   vtkNew<vtkVolumeProperty> m_volumeProperty;
   vtkNew<vtkPiecewiseFunction> m_gradientOpacity;
+  vtkNew<vtkTriangleBar> m_triangleBar;
   QPointer<ModuleVolumeWidget> m_controllers;
   QPointer<ScalarsComboBox> m_scalarsCombo;
 

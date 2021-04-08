@@ -9,6 +9,7 @@
 #include "ScalarsComboBox.h"
 #include "VolumeManager.h"
 #include "vtkTransferFunctionBoxItem.h"
+#include "vtkTriangleBar.h"
 
 #include <vtkColorTransferFunction.h>
 #include <vtkDataArray.h>
@@ -124,6 +125,7 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 
   resetRgbaMappingRanges();
   onRgbaMappingToggled(false);
+  onComponentNamesModified();
   updateColorMap();
 
   m_view = vtkPVRenderView::SafeDownCast(vtkView->GetClientSideView());
@@ -205,8 +207,14 @@ void ModuleVolume::onRgbaMappingToggled(bool b)
   if (useRgbaMapping()) {
     updateRgbaMappingDataObject();
     m_volumeProperty->IndependentComponentsOff();
+    if (m_view) {
+      m_view->AddPropToRenderer(m_triangleBar);
+    }
   } else {
     m_volumeProperty->IndependentComponentsOn();
+    if (m_view) {
+      m_view->RemovePropFromRenderer(m_triangleBar);
+    }
   }
   updatePanel();
 
@@ -235,6 +243,13 @@ void ModuleVolume::onComponentNamesModified()
         m_rgbaMappingComponent = newNames[i];
       }
     }
+  }
+
+  // Set labels on the triangle bar
+  if (newNames.size() >= 3) {
+    m_triangleBar->SetLabels(newNames[0].toLatin1().data(),
+                             newNames[1].toLatin1().data(),
+                             newNames[2].toLatin1().data());
   }
 
   // Update the panel
@@ -395,6 +410,7 @@ bool ModuleVolume::finalize()
 {
   if (m_view) {
     m_view->RemovePropFromRenderer(m_volume);
+    m_view->RemovePropFromRenderer(m_triangleBar);
   }
 
   return true;
@@ -403,6 +419,7 @@ bool ModuleVolume::finalize()
 bool ModuleVolume::setVisibility(bool val)
 {
   m_volume->SetVisibility(val ? 1 : 0);
+  m_triangleBar->SetVisibility(val ? 1 : 0);
 
   Module::setVisibility(val);
 
