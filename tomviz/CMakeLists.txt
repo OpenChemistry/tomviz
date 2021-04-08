@@ -234,6 +234,8 @@ set(SOURCES
   vtkNonOrthoImagePlaneWidget.h
   vtkOMETiffReader.cxx
   vtkOMETiffReader.h
+  vtkTriangleBar.cxx
+  vtkTriangleBar.h
   vtkVolumeScaleRepresentation.h
   vtkVolumeScaleRepresentation.cxx
   WebExportWidget.cxx
