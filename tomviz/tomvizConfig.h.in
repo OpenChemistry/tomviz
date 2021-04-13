@@ -6,5 +6,6 @@
 
 #define TOMVIZ_VERSION "@tomviz_version@"
 #define TOMVIZ_VERSION_EXTRA "@tomviz_version_extra@"
+#define TOMVIZ_PLUGIN_PATHS "@tomviz_PLUGIN_PATHS@"
 
 #endif

@@ -7,11 +7,14 @@
 #include <pqApplicationCore.h>
 #include <pqObjectBuilder.h>
 #include <pqOutputWidget.h>
+#include <pqPluginDockWidgetsBehavior.h>
 #include <pqSaveAnimationReaction.h>
 #include <pqSettings.h>
 #include <pqView.h>
 #include <vtkPVRenderView.h>
+#include <vtkSMPluginManager.h>
 #include <vtkSMPropertyHelper.h>
+#include <vtkSMProxyManager.h>
 #include <vtkSMSettings.h>
 #include <vtkSMViewProxy.h>
 #include <vtkVector.h>
@@ -559,6 +562,19 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
 
   auto pythonFuture = QtConcurrent::run(initPython);
   pythonWatcher->setFuture(pythonFuture);
+
+  // Load plugins
+  new pqPluginDockWidgetsBehavior(this);
+
+  // TOMVIZ_PLUGIN_PATHS is a semicolon delimited list of plugins to load
+  QStringList pluginPaths =
+    QString(TOMVIZ_PLUGIN_PATHS).split(';', QString::SkipEmptyParts);
+  auto pluginManager = vtkSMProxyManager::GetProxyManager()->GetPluginManager();
+  for (const auto& path : pluginPaths) {
+    if (!pluginManager->LoadLocalPlugin(path.toLatin1().data())) {
+      qCritical() << "Failed to load plugin:" << path;
+    }
+  }
 }
 
 MainWindow::~MainWindow()
