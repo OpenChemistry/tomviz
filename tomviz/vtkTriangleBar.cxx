@@ -52,7 +52,7 @@ vtkStandardNewMacro(vtkTriangleBar)
   this->LabelActor1->GetTextProperty()->SetVerticalJustificationToTop();
   this->LabelActor2->GetTextProperty()->SetVerticalJustificationToBottom();
 
-  this->SetLabels("Foo", "Bar", "Baz");
+  this->SetLabels("", "", "");
 }
 
 vtkTriangleBar::~vtkTriangleBar() {}
@@ -164,7 +164,6 @@ void vtkTriangleBar::ReleaseGraphicsResources(vtkWindow* w)
 int vtkTriangleBar::RenderOpaqueGeometry(vtkViewport* v)
 {
   int count = 0;
-  // this->BuildRepresentation();
   count += this->BarActor->RenderOpaqueGeometry(v);
   count += this->LabelActor0->RenderOpaqueGeometry(v);
   count += this->LabelActor1->RenderOpaqueGeometry(v);
@@ -177,7 +176,6 @@ int vtkTriangleBar::RenderOpaqueGeometry(vtkViewport* v)
 int vtkTriangleBar::RenderTranslucentPolygonalGeometry(vtkViewport* v)
 {
   int count = 0;
-  // this->UpdateRepresentation();
   count += this->BarActor->RenderTranslucentPolygonalGeometry(v);
   count += this->LabelActor0->RenderTranslucentPolygonalGeometry(v);
   count += this->LabelActor1->RenderTranslucentPolygonalGeometry(v);
@@ -203,7 +201,6 @@ int vtkTriangleBar::RenderOverlay(vtkViewport* v)
 vtkTypeBool vtkTriangleBar::HasTranslucentPolygonalGeometry()
 {
   int result = 0;
-  // this->BuildRepresentation();
   result |= this->BarActor->HasTranslucentPolygonalGeometry();
   result |= this->LabelActor0->HasTranslucentPolygonalGeometry();
   result |= this->LabelActor1->HasTranslucentPolygonalGeometry();

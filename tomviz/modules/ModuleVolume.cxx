@@ -250,6 +250,9 @@ void ModuleVolume::onComponentNamesModified()
     m_triangleBar->SetLabels(newNames[0].toLatin1().data(),
                              newNames[1].toLatin1().data(),
                              newNames[2].toLatin1().data());
+    if (m_useRgbaMapping) {
+      emit renderNeeded();
+    }
   }
 
   // Update the panel
