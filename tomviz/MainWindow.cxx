@@ -575,6 +575,20 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
       qCritical() << "Failed to load plugin:" << path;
     }
   }
+
+  // Hide dock widgets that have these names as their actions.
+  // This is primarily needed to hide dock widgets loaded from plugins,
+  // which are more difficult to access.
+  QStringList hideDockWidgets = {
+    "Looking Glass",
+  };
+
+  for (auto* dockWidget : findChildren<QDockWidget*>()) {
+    auto actionText = dockWidget->toggleViewAction()->text();
+    if (hideDockWidgets.contains(actionText)) {
+      dockWidget->hide();
+    }
+  }
 }
 
 MainWindow::~MainWindow()
