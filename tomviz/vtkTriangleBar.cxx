@@ -13,9 +13,9 @@
 #include <vtkVertexGlyphFilter.h>
 #include <vtkViewport.h>
 
-vtkStandardNewMacro(vtkTriangleBar);
+vtkStandardNewMacro(vtkTriangleBar)
 
-vtkTriangleBar::vtkTriangleBar()
+  vtkTriangleBar::vtkTriangleBar()
   : HorizontalPos(Position::End), VerticalPos(Position::Start), Edge(120)
 {
   auto colors = vtkSmartPointer<vtkFloatArray>::New();
@@ -75,7 +75,7 @@ void vtkTriangleBar::SetLabels(const char* label0, const char* label1,
   this->LabelActor2->SetInput(label2);
 }
 
-void vtkTriangleBar::SetPosition(Position horizontalPos, Position verticalPos)
+void vtkTriangleBar::SetAlignment(Position horizontalPos, Position verticalPos)
 {
   this->HorizontalPos = horizontalPos;
   this->VerticalPos = verticalPos;
@@ -84,13 +84,11 @@ void vtkTriangleBar::SetPosition(Position horizontalPos, Position verticalPos)
 void vtkTriangleBar::updateRepresentation(vtkViewport* v)
 {
   if (v->GetMTime() > this->updateTime) {
-    double barSize[2] = { 0, 0 };
+    int barSize[2] = { 0, 0 };
     barSize[0] = this->Edge;
     barSize[1] = sqrt(0.75 * this->Edge * this->Edge);
     const int margin = 15;
     const int labelMargin = 5;
-
-    double totalSize[2] = { barSize[0], barSize[1] };
 
     double labelSize0[3];
     double labelSize1[3];
@@ -103,7 +101,7 @@ void vtkTriangleBar::updateRepresentation(vtkViewport* v)
     int p0[2] = { 0, 0 };
 
     if (this->HorizontalPos == Position::Start) {
-      p0[0] = margin + labelSize0[0] * 0.5;
+      p0[0] = margin + labelSize0[0] / 2;
     } else if (this->HorizontalPos == Position::Middle) {
       p0[0] = (displaySize[0] - barSize[0]) / 2;
     } else if (this->HorizontalPos == Position::End) {
@@ -120,7 +118,7 @@ void vtkTriangleBar::updateRepresentation(vtkViewport* v)
     }
 
     int p1[2] = { p0[0] + this->Edge, p0[1] };
-    int p2[2] = { p0[0] + 0.5 * this->Edge, p0[1] + barSize[1] };
+    int p2[2] = { p0[0] + this->Edge / 2, p0[1] + barSize[1] };
 
     this->Points->SetPoint(0, p0[0], p0[1], 0);
     this->Points->SetPoint(1, p1[0], p1[1], 0);

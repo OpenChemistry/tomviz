@@ -27,12 +27,11 @@ class vtkTextActor;
 class vtkTriangleBar : public vtkActor2D
 {
 public:
-  vtkTypeMacro(vtkTriangleBar, vtkActor2D);
-  static vtkTriangleBar* New();
+  vtkTypeMacro(vtkTriangleBar, vtkActor2D) static vtkTriangleBar* New();
 
   void SetColors(double color0[3], double color1[3], double color2[3]);
   void SetLabels(const char* label0, const char* label1, const char* label2);
-  void SetPosition(Position horizontalPos, Position verticalPos);
+  void SetAlignment(Position horizontalPos, Position verticalPos);
 
   void GetActors(vtkPropCollection* pc) override;
   void GetActors2D(vtkPropCollection* pc) override;
