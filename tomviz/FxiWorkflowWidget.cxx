@@ -29,12 +29,47 @@
 #include <vtkScalarsToColors.h>
 
 #include <QDebug>
+#include <QFutureWatcher>
 #include <QKeyEvent>
 #include <QMessageBox>
+#include <QProgressDialog>
+#include <QtConcurrent>
 
 #include <algorithm>
 
 namespace tomviz {
+
+class InternalProgressDialog : public QProgressDialog
+{
+public:
+  InternalProgressDialog(QWidget* parent = nullptr) : QProgressDialog(parent)
+  {
+    setWindowTitle("Tomviz");
+    setLabelText("Generating test images...");
+    setMinimum(0);
+    setMaximum(0);
+    setWindowModality(Qt::WindowModal);
+
+    // No cancel button
+    setCancelButton(nullptr);
+
+    // No close button in the corner
+    setWindowFlags((windowFlags() | Qt::CustomizeWindowHint) &
+                   ~Qt::WindowCloseButtonHint);
+
+    reset();
+  }
+
+  void keyPressEvent(QKeyEvent* e) override
+  {
+    // Do not let the user close the dialog by pressing escape
+    if (e->key() == Qt::Key_Escape) {
+      return;
+    }
+
+    QProgressDialog::keyPressEvent(e);
+  }
+};
 
 class FxiWorkflowWidget::Internal : public QObject
 {
@@ -55,6 +90,8 @@ public:
   QPointer<FxiWorkflowWidget> parent;
   QPointer<DataSource> dataSource;
   int sliceNumber = 0;
+  QScopedPointer<InternalProgressDialog> progressDialog;
+  QFutureWatcher<void> futureWatcher;
 
   Internal(Operator* o, vtkSmartPointer<vtkImageData> img, FxiWorkflowWidget* p)
     : op(o), image(img)
@@ -108,6 +145,8 @@ public:
     ui.sliceStart->setMaximum(dims[1] - 1);
     ui.sliceStop->setMaximum(dims[1]);
 
+    progressDialog.reset(new InternalProgressDialog(parent));
+
     updateControls();
     setupConnections();
   }
@@ -115,9 +154,13 @@ public:
   void setupConnections()
   {
     connect(ui.testRotations, &QPushButton::pressed, this,
-            &Internal::generateTestImages);
+            &Internal::startGeneratingTestImages);
     connect(ui.imageViewSlider, &IntSliderWidget::valueEdited, this,
             &Internal::sliderEdited);
+    connect(&futureWatcher, &QFutureWatcher<void>::finished, this,
+            &Internal::testImagesGenerated);
+    connect(&futureWatcher, &QFutureWatcher<void>::finished,
+            progressDialog.data(), &QProgressDialog::accept);
   }
 
   void setupRenderer() { tomviz::setupRenderer(renderer, mapper, axesActor); }
@@ -190,6 +233,19 @@ public:
   {
     return { ui.start,          ui.stop,       ui.steps,    ui.slice,
              ui.rotationCenter, ui.sliceStart, ui.sliceStop };
+  }
+
+  void startGeneratingTestImages()
+  {
+    progressDialog->show();
+    auto future = QtConcurrent::run(this, &Internal::generateTestImages);
+    futureWatcher.setFuture(future);
+  }
+
+  void testImagesGenerated()
+  {
+    updateImageViewSlider();
+    render();
   }
 
   void generateTestImages()
@@ -270,9 +326,6 @@ public:
 
     // Save these settings in case the user wants to use them again...
     writeTestSettings();
-
-    updateImageViewSlider();
-    render();
   }
 
   void setRotationData(vtkImageData* data)
