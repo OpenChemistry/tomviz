@@ -145,6 +145,15 @@ public:
     ui.sliceStart->setMaximum(dims[1] - 1);
     ui.sliceStop->setMaximum(dims[1]);
 
+    // Get the slice start to default to 0, and the slice stop
+    // to default to dims[1], despite whatever settings they read in.
+    ui.sliceStart->setValue(0);
+    ui.sliceStop->setValue(dims[1]);
+
+    // Indicate what the max is via a tooltip.
+    auto toolTip = "Max: " + QString::number(dims[1]);
+    ui.sliceStop->setToolTip(toolTip);
+
     progressDialog.reset(new InternalProgressDialog(parent));
 
     updateControls();
