@@ -83,6 +83,9 @@ jobs:
   - bash: scripts/azure-pipelines/run_pytest.sh
     displayName: Run PyTest
 
+  - bash: scripts/azure-pipelines/clean_memory.sh
+    displayName: Clean up memory (for uploading ParaView cache)
+
 - job: clang_format
   pool:
     vmImage: 'ubuntu-18.04'
