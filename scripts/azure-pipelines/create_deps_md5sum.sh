@@ -8,7 +8,7 @@ if [[ $AGENT_OS == 'Windows_NT' ]]; then
   # Windows just has it labelled "python". Mac requires "python3".
   PYTHON_EXE=python
 elif [[ $AGENT_OS == 'Darwin' ]]; then
-  QMAKE_EXE=/usr/local/opt/qt/bin/qmake
+  QMAKE_EXE=/usr/local/opt/qt@5/bin/qmake
   # Need '-r' for md5sum-like-output
   MD5SUM_EXE='md5 -r'
 fi
