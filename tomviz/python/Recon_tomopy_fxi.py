@@ -104,7 +104,7 @@ def test_rotations(dataset, start=None, stop=None, steps=None, sli=0):
 
     return_values = {}
     return_values['images'] = child
-    return_values['centers'] = centers.tolist()
+    return_values['centers'] = centers.astype(float).tolist()
     return return_values
 
 

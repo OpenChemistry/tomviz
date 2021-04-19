@@ -324,7 +324,7 @@ public:
       }
 
       for (int i = 0; i < pyRotations.length(); ++i) {
-        rotations.append(pyRotations[i].toLong());
+        rotations.append(pyRotations[i].toDouble());
       }
       setRotationData(imageData);
     }
