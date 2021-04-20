@@ -49,7 +49,7 @@ macro(create_test_executable name)
 
   add_executable(${name} ${_test_srcs})
   target_link_libraries(${name} tomvizlib
-    ${GTEST_LIBRARY} ${GTEST_MAIN_LIBRARY} ${EXTRA_LINK_LIB})
+    GTest::gtest GTest::gtest_main ${EXTRA_LINK_LIB})
 
   foreach(_test_name ${_tomviz_cxx_tests})
     add_test(NAME "${_test_name}"
