@@ -20,12 +20,15 @@ else
   BUILD_TYPE='RelWithDebInfo'
 fi
 
+# Get the location of paraview-config.cmake
+PARAVIEW_DIR=$(find $PARAVIEW_INSTALL_FOLDER -name "paraview-config.cmake" -or -name "ParaViewConfig.cmake" | head -n 1 | xargs dirname)
+
 cd $BUILD_BINARIESDIRECTORY
 
 cmake $BUILD_SOURCESDIRECTORY \
   -DCMAKE_BUILD_TYPE:STRING=$BUILD_TYPE \
   -DENABLE_TESTING:BOOL=ON \
-  -DParaView_DIR:PATH=$PARAVIEW_BUILD_FOLDER \
+  -DParaView_DIR:PATH=$PARAVIEW_DIR \
   -DSKIP_PARAVIEW_ITK_PYTHON_CHECKS=ON \
   -DPython3_EXECUTABLE=$(which python) \
   $CMAKE_EXTRA_ARGS \

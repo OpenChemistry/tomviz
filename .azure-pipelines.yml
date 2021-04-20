@@ -5,6 +5,7 @@ variables:
   # It's important to put these in a path that won't change
   PARAVIEW_SOURCE_FOLDER: /tmp/paraview_source
   PARAVIEW_BUILD_FOLDER: /tmp/paraview_build
+  PARAVIEW_INSTALL_FOLDER: /tmp/paraview_install
 
 jobs:
 - job: Build
@@ -23,6 +24,7 @@ jobs:
         # But the C:\ drive has a lot of free space, around 150 GB.
         PARAVIEW_SOURCE_FOLDER: 'C:\paraview_source'
         PARAVIEW_BUILD_FOLDER: 'C:\paraview_build'
+        PARAVIEW_INSTALL_FOLDER: 'C:\paraview_install'
 
   pool:
     vmImage: $(imageName)
@@ -65,13 +67,13 @@ jobs:
   - task: Cache@2
     inputs:
       # Change the "v*" at the end to force a re-build
-      key: paraview | $(Agent.OS) | $(deps_md5sum) | v3-1
-      path: $(PARAVIEW_BUILD_FOLDER)
-      cacheHitVar: PARAVIEW_BUILD_RESTORED
-    displayName: Restore ParaView Build
+      key: paraview | $(Agent.OS) | $(deps_md5sum) | v1
+      path: $(PARAVIEW_INSTALL_FOLDER)
+      cacheHitVar: PARAVIEW_INSTALL_RESTORED
+    displayName: Restore ParaView Install
 
   - bash: scripts/azure-pipelines/build_paraview.sh
-    condition: ne(variables.PARAVIEW_BUILD_RESTORED, 'true')
+    condition: ne(variables.PARAVIEW_INSTALL_RESTORED, 'true')
     displayName: Build ParaView
 
   - bash: scripts/azure-pipelines/build_tomviz.sh
