@@ -38,3 +38,10 @@ cmake $PARAVIEW_SOURCE_FOLDER \
 
 cmake --build .
 cmake --install .
+
+# DIRTY: copy the tiffconf.h file to the install tree
+# Otherwise, tomviz can't build against the install tree because
+# tomviz includes "vtk_tiff.h".
+TIFFCONF_PATH=$(find $PARAVIEW_BUILD_FOLDER -name "tiffconf.h" | head -n 1)
+VTKTIFF_PATH=$(find $PARAVIEW_INSTALL_FOLDER -name "vtk_tiff.h" | head -n 1)
+cp $TIFFCONF_PATH $(dirname $VTKTIFF_PATH)
