@@ -67,7 +67,7 @@ jobs:
   - task: Cache@2
     inputs:
       # Change the "v*" at the end to force a re-build
-      key: paraview | $(Agent.OS) | $(deps_md5sum) | v1
+      key: paraview | $(Agent.OS) | $(deps_md5sum) | v2
       path: $(PARAVIEW_INSTALL_FOLDER)
       cacheHitVar: PARAVIEW_INSTALL_RESTORED
     displayName: Restore ParaView Install
