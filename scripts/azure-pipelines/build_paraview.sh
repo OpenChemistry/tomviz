@@ -19,6 +19,7 @@ mkdir -p $PARAVIEW_BUILD_FOLDER
 cd $PARAVIEW_BUILD_FOLDER
 
 cmake $PARAVIEW_SOURCE_FOLDER \
+  -DCMAKE_INSTALL_PREFIX=$PARAVIEW_INSTALL_FOLDER \
   -DCMAKE_BUILD_TYPE:STRING=$BUILD_TYPE \
   -DBUILD_TESTING:BOOL=OFF \
   -DPARAVIEW_USE_PYTHON:BOOL=ON \
@@ -36,3 +37,11 @@ cmake $PARAVIEW_SOURCE_FOLDER \
   -G Ninja
 
 cmake --build .
+cmake --install .
+
+# DIRTY: copy the tiffconf.h file to the install tree
+# Otherwise, tomviz can't build against the install tree because
+# tomviz includes "vtk_tiff.h".
+TIFFCONF_PATH=$(find $PARAVIEW_BUILD_FOLDER -name "tiffconf.h" | head -n 1)
+VTKTIFF_PATH=$(find $PARAVIEW_INSTALL_FOLDER -name "vtk_tiff.h" | head -n 1)
+cp $TIFFCONF_PATH $(dirname $VTKTIFF_PATH)
