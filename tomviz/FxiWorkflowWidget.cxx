@@ -15,14 +15,16 @@
 #include <pqApplicationCore.h>
 #include <pqSettings.h>
 
-#include <vtkCubeAxesActor.h>
+#include <vtkCallbackCommand.h>
 #include <vtkColorTransferFunction.h>
+#include <vtkCubeAxesActor.h>
 #include <vtkImageData.h>
 #include <vtkImageProperty.h>
 #include <vtkImageSlice.h>
 #include <vtkImageSliceMapper.h>
-#include <vtkInteractorStyleRubberBand2D.h>
+#include <vtkInteractorStyleImage.h>
 #include <vtkNew.h>
+#include <vtkObjectFactory.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
@@ -71,7 +73,38 @@ public:
   }
 };
 
-class FxiWorkflowWidget::Internal : public QObject
+class InteractorStyle : public vtkInteractorStyleImage
+{
+  // Our customized 2D interactor style class
+public:
+  static InteractorStyle* New();
+
+  InteractorStyle() { this->SetInteractionModeToImage2D(); }
+
+  void OnLeftButtonDown() override
+  {
+    // Override this to not do window level events, and instead do panning.
+    int x = this->Interactor->GetEventPosition()[0];
+    int y = this->Interactor->GetEventPosition()[1];
+
+    this->FindPokedRenderer(x, y);
+    if (this->CurrentRenderer == nullptr) {
+      return;
+    }
+
+    this->GrabFocus(this->EventCallbackCommand);
+    if (!this->Interactor->GetShiftKey() &&
+        !this->Interactor->GetControlKey()) {
+      this->StartPan();
+    } else {
+      this->Superclass::OnLeftButtonDown();
+    }
+  }
+};
+
+vtkStandardNewMacro(InteractorStyle)
+
+  class FxiWorkflowWidget::Internal : public QObject
 {
   Q_OBJECT
 
@@ -111,9 +144,8 @@ public:
     renderer->AddViewProp(slice);
     ui.sliceView->renderWindow()->AddRenderer(renderer);
 
-    vtkNew<vtkInteractorStyleRubberBand2D> interatorStyle;
-    interatorStyle->SetRenderOnMouseMove(true);
-    ui.sliceView->interactor()->SetInteractorStyle(interatorStyle);
+    vtkNew<InteractorStyle> interactorStyle;
+    ui.sliceView->interactor()->SetInteractorStyle(interactorStyle);
     setRotationData(vtkImageData::New());
 
     // Use a child data source if one is available so the color map will match
