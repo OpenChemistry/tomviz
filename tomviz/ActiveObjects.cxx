@@ -239,11 +239,11 @@ void ActiveObjects::setActiveViewToFirstRenderView()
   }
 }
 
-void ActiveObjects::setMoveObjectsMode(bool moveObjectsOn)
+void ActiveObjects::setMoveObjectsMode(TransformType transform)
 {
-  if (m_moveObjectsEnabled != moveObjectsOn) {
-    m_moveObjectsEnabled = moveObjectsOn;
-    emit moveObjectsModeChanged(moveObjectsOn);
+  if (m_moveObjectsMode != transform) {
+    m_moveObjectsMode = transform;
+    emit moveObjectsModeChanged(transform);
   }
 }
 

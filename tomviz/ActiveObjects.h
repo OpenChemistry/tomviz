@@ -8,6 +8,7 @@
 #include <QPointer>
 
 #include "DataSource.h"
+#include "Enums.h"
 #include "Module.h"
 #include "MoleculeSource.h"
 #include "Operator.h"
@@ -74,7 +75,7 @@ public:
   /// often.
   vtkSMSessionProxyManager* proxyManager() const;
 
-  bool moveObjectsEnabled() { return m_moveObjectsEnabled; }
+  TransformType moveObjectsMode() { return m_moveObjectsMode; }
 
   /// Returns the active pipelines.
   Pipeline* activePipeline() const;
@@ -120,7 +121,7 @@ public slots:
 
   /// Set the active mode (true for the mode where objects can
   /// be moved via MoveActiveObject)
-  void setMoveObjectsMode(bool moveObjectsOn);
+  void setMoveObjectsMode(TransformType transform);
 
 signals:
   /// Fired whenever the active view changes.
@@ -162,7 +163,7 @@ signals:
   void resultActivated(OperatorResult*);
 
   /// Fired when the mode changes
-  void moveObjectsModeChanged(bool moveObjectsOn);
+  void moveObjectsModeChanged(TransformType transform);
 
   /// Fired whenever the color map has changed
   void colorMapChanged(DataSource*);
@@ -190,7 +191,7 @@ protected:
   QPointer<Module> m_activeModule = nullptr;
   QPointer<Operator> m_activeOperator = nullptr;
   QPointer<OperatorResult> m_activeOperatorResult = nullptr;
-  bool m_moveObjectsEnabled = false;
+  TransformType m_moveObjectsMode = TransformType::None;
 
 private:
   Q_DISABLE_COPY(ActiveObjects)

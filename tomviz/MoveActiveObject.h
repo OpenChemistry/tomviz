@@ -12,8 +12,10 @@
 #include <vtkNew.h>
 #include <vtkVector.h>
 
+#include "Enums.h"
+
 class pqDataRepresentation;
-class vtkBoxRepresentation;
+class vtkCustomBoxRepresentation;
 class vtkBoxWidget2;
 class vtkEventQtSlotConnect;
 class vtkObject;
@@ -34,21 +36,23 @@ public:
 
 private slots:
   void dataSourceActivated(DataSource* ds);
+  void onDataPropertiesChanged();
+  void onDataPositionChanged(double x, double y, double z);
 
   void updateForNewDataSource(DataSource* newDS);
-  void hideMoveObjectWidget();
   void onViewChanged(vtkSMViewProxy* newView);
   void interactionEnd(vtkObject* obj);
-  void setMoveEnabled(bool enable);
+  void setTransformType(TransformType transform);
 
 private:
   Q_DISABLE_COPY(MoveActiveObject)
-  vtkNew<vtkBoxRepresentation> BoxRep;
+  vtkNew<vtkCustomBoxRepresentation> BoxRep;
   vtkNew<vtkBoxWidget2> BoxWidget;
   vtkNew<vtkEventQtSlotConnect> EventLink;
   QPointer<pqView> View;
   vtkVector3d DataLocation;
-  bool MoveEnabled;
+  TransformType Transform;
+  DataSource* currentDataSource;
 };
 } // namespace tomviz
 

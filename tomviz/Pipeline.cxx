@@ -8,6 +8,7 @@
 #include "DockerExecutor.h"
 #include "DockerUtilities.h"
 #include "EmdFormat.h"
+#include "Enums.h"
 #include "ExternalPythonExecutor.h"
 #include "ModuleManager.h"
 #include "Operator.h"
@@ -543,8 +544,8 @@ void Pipeline::addDefaultModules(DataSource* dataSource)
 {
   // Note: In the future we can pull this out into a setting.
   QStringList defaultModules = { "Outline", "Slice" };
-  bool oldMoveObjectsEnabled = ActiveObjects::instance().moveObjectsEnabled();
-  ActiveObjects::instance().setMoveObjectsMode(false);
+  auto oldMoveObjectsMode = ActiveObjects::instance().moveObjectsMode();
+  ActiveObjects::instance().setMoveObjectsMode(TransformType::None);
   auto view = ActiveObjects::instance().activeView();
 
   if (view == nullptr || !view->IsA("vtkSMRenderViewProxy")) {
@@ -557,7 +558,7 @@ void Pipeline::addDefaultModules(DataSource* dataSource)
       ModuleManager::instance().createAndAddModule(name, dataSource, view);
   }
   ActiveObjects::instance().setActiveModule(module);
-  ActiveObjects::instance().setMoveObjectsMode(oldMoveObjectsEnabled);
+  ActiveObjects::instance().setMoveObjectsMode(oldMoveObjectsMode);
 
   auto pqview = tomviz::convert<pqView*>(view);
   pqview->resetDisplay();
@@ -609,9 +610,8 @@ Pipeline::Future* Pipeline::emptyFuture()
 
 void Pipeline::moveModulesDown(DataSource* newChildDataSource)
 {
-  bool oldMoveObjectsEnabled =
-    ActiveObjects::instance().moveObjectsEnabled();
-  ActiveObjects::instance().setMoveObjectsMode(false);
+  auto oldMoveObjectsMode = ActiveObjects::instance().moveObjectsMode();
+  ActiveObjects::instance().setMoveObjectsMode(TransformType::None);
   auto view = ActiveObjects::instance().activeView();
   foreach (Module* module, ModuleManager::instance().findModules<Module*>(
            dataSource(), nullptr)) {
@@ -622,7 +622,7 @@ void Pipeline::moveModulesDown(DataSource* newChildDataSource)
     newModule->deserialize(module->serialize());
     ModuleManager::instance().removeModule(module);
   }
-  ActiveObjects::instance().setMoveObjectsMode(oldMoveObjectsEnabled);
+  ActiveObjects::instance().setMoveObjectsMode(oldMoveObjectsMode);
 }
 
 #include "Pipeline.moc"
