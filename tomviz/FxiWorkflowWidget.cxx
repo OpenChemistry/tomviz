@@ -8,6 +8,7 @@
 #include "ColorMap.h"
 #include "DataSource.h"
 #include "InternalPythonHelper.h"
+#include "PresetDialog.h"
 #include "Utilities.h"
 
 #include <cmath>
@@ -113,6 +114,8 @@ public:
   QPointer<Operator> op;
   vtkSmartPointer<vtkImageData> image;
   vtkSmartPointer<vtkImageData> rotationImages;
+  vtkSmartPointer<vtkSMProxy> colorMap;
+  vtkSmartPointer<vtkScalarsToColors> lut;
   QList<double> rotations;
   vtkNew<vtkImageSlice> slice;
   vtkNew<vtkImageSliceMapper> mapper;
@@ -157,16 +160,8 @@ public:
       dataSource = ActiveObjects::instance().activeDataSource();
     }
 
-    auto lut = vtkScalarsToColors::SafeDownCast(
-      dataSource->colorMap()->GetClientSideObject());
-    if (lut) {
-      // Make a deep copy so we can modify it
-      auto* newLut = lut->NewInstance();
-      newLut->DeepCopy(lut);
-      slice->GetProperty()->SetLookupTable(newLut);
-      // Decrement the reference count
-      newLut->FastDelete();
-    }
+    colorMap = dataSource->colorMap();
+    resetLut();
 
     for (auto* w : inputWidgets()) {
       w->installEventFilter(this);
@@ -202,6 +197,8 @@ public:
             &Internal::testImagesGenerated);
     connect(&futureWatcher, &QFutureWatcher<void>::finished,
             progressDialog.data(), &QProgressDialog::accept);
+    connect(ui.colorPresetButton, &QToolButton::clicked, this,
+            &Internal::onColorPresetClicked);
   }
 
   void setupRenderer() { tomviz::setupRenderer(renderer, mapper, axesActor); }
@@ -381,8 +378,7 @@ public:
 
   void rescaleColors()
   {
-    auto* lut = slice->GetProperty()->GetLookupTable();
-    if (!lut) {
+    if (!rotationDataValid() || !lut) {
       return;
     }
 
@@ -428,9 +424,7 @@ public:
     auto blocked = QSignalBlocker(ui.imageViewSlider);
 
     bool enable = rotationDataValid();
-    ui.imageViewSlider->setVisible(enable);
-    ui.currentRotationLabel->setVisible(enable);
-    ui.currentRotation->setVisible(enable);
+    ui.testRotationsSettingsGroup->setVisible(enable);
     if (!enable) {
       return;
     }
@@ -473,6 +467,39 @@ public:
       }
     }
     return QObject::eventFilter(o, e);
+  }
+
+  void resetLut()
+  {
+    auto dsLut =
+      vtkScalarsToColors::SafeDownCast(colorMap->GetClientSideObject());
+    if (!dsLut) {
+      return;
+    }
+
+    // Make a deep copy so we can modify it
+    // NOTE: the main color map will still change, but all rescaling
+    // will be done internally.
+    lut = dsLut->NewInstance();
+    lut->DeepCopy(dsLut);
+    slice->GetProperty()->SetLookupTable(lut);
+    rescaleColors();
+  }
+
+  void onColorPresetClicked()
+  {
+    if (!colorMap) {
+      qCritical() << "No color map found!";
+      return;
+    }
+
+    PresetDialog dialog(tomviz::mainWidget());
+    connect(&dialog, &PresetDialog::applyPreset, this, [this, &dialog]() {
+      ColorMap::instance().applyPreset(dialog.presetName(), colorMap);
+      resetLut();
+      render();
+    });
+    dialog.exec();
   }
 
   void setRotationCenter(double center) { ui.rotationCenter->setValue(center); }
