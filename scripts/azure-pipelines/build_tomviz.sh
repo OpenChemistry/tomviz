@@ -21,7 +21,7 @@ else
 fi
 
 # Get the location of paraview-config.cmake
-PARAVIEW_DIR=$(find $PARAVIEW_INSTALL_FOLDER -name "paraview-config.cmake" -or -name "ParaViewConfig.cmake" | head -n 1 | xargs dirname)
+PARAVIEW_DIR=$(find $PARAVIEW_DIR -name "paraview-config.cmake" -or -name "ParaViewConfig.cmake" | head -n 1 | xargs dirname)
 
 cd $BUILD_BINARIESDIRECTORY
 

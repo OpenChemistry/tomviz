@@ -6,6 +6,7 @@ variables:
   PARAVIEW_SOURCE_FOLDER: /tmp/paraview_source
   PARAVIEW_BUILD_FOLDER: /tmp/paraview_build
   PARAVIEW_INSTALL_FOLDER: /tmp/paraview_install
+  PARAVIEW_DIR: $(PARAVIEW_INSTALL_FOLDER)
 
 jobs:
 - job: Build
@@ -25,6 +26,11 @@ jobs:
         PARAVIEW_SOURCE_FOLDER: 'C:\paraview_source'
         PARAVIEW_BUILD_FOLDER: 'C:\paraview_build'
         PARAVIEW_INSTALL_FOLDER: 'C:\paraview_install'
+        # Building tomviz from the paraview install directory on Linux
+        # and Mac seems to work fine. However, on Windows, there are
+        # some segmentation faults when running the tests. For now, let's
+        # use the paraview build directory to build and run tomviz.
+        PARAVIEW_DIR: $(PARAVIEW_BUILD_FOLDER)
 
   pool:
     vmImage: $(imageName)
@@ -67,13 +73,13 @@ jobs:
   - task: Cache@2
     inputs:
       # Change the "v*" at the end to force a re-build
-      key: paraview | $(Agent.OS) | $(deps_md5sum) | v2
-      path: $(PARAVIEW_INSTALL_FOLDER)
-      cacheHitVar: PARAVIEW_INSTALL_RESTORED
-    displayName: Restore ParaView Install
+      key: paraview | $(Agent.OS) | $(deps_md5sum) | v3
+      path: $(PARAVIEW_DIR)
+      cacheHitVar: PARAVIEW_DIR_RESTORED
+    displayName: Restore ParaView Dir
 
   - bash: scripts/azure-pipelines/build_paraview.sh
-    condition: ne(variables.PARAVIEW_INSTALL_RESTORED, 'true')
+    condition: ne(variables.PARAVIEW_DIR_RESTORED, 'true')
     displayName: Build ParaView
 
   - bash: scripts/azure-pipelines/build_tomviz.sh
