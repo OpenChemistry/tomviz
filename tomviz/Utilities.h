@@ -277,6 +277,12 @@ void rescaleNodes(vtkColorTransferFunction* lut, double newMin, double newMax);
 void rescaleNodes(vtkPiecewiseFunction* opacity, double newMin, double newMax);
 void removePointsOutOfRange(vtkColorTransferFunction* lut, DataSource* ds);
 void removePointsOutOfRange(vtkPiecewiseFunction* opacity, DataSource* ds);
+
+// Load a plugin by path
+bool loadPlugin(const QString& path);
+
+// Automatically load plugins specified in the TOMVIZ_PLUGIN_PATHS macro
+bool loadPlugins();
 } // namespace tomviz
 
 #endif

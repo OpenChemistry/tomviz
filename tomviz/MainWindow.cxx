@@ -12,9 +12,7 @@
 #include <pqSettings.h>
 #include <pqView.h>
 #include <vtkPVRenderView.h>
-#include <vtkSMPluginManager.h>
 #include <vtkSMPropertyHelper.h>
-#include <vtkSMProxyManager.h>
 #include <vtkSMSettings.h>
 #include <vtkSMViewProxy.h>
 #include <vtkVector.h>
@@ -565,16 +563,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
 
   // Load plugins
   new pqPluginDockWidgetsBehavior(this);
-
-  // TOMVIZ_PLUGIN_PATHS is a semicolon delimited list of plugins to load
-  QStringList pluginPaths =
-    QString(TOMVIZ_PLUGIN_PATHS).split(';', QString::SkipEmptyParts);
-  auto pluginManager = vtkSMProxyManager::GetProxyManager()->GetPluginManager();
-  for (const auto& path : pluginPaths) {
-    if (!pluginManager->LoadLocalPlugin(path.toLatin1().data())) {
-      qCritical() << "Failed to load plugin:" << path;
-    }
-  }
+  loadPlugins();
 
   // Hide dock widgets that have these names as their actions.
   // This is primarily needed to hide dock widgets loaded from plugins,

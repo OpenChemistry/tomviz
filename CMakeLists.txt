@@ -132,9 +132,12 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/thirdparty/pybind11)
 
 option(tomviz_ENABLE_LOOKING_GLASS "Enable the looking glass plugin" OFF)
 if (tomviz_ENABLE_LOOKING_GLASS)
-    set(LOOKING_GLASS_PLUGIN_PATH
-        "${ParaView_DIR}/lib/${PARAVIEW_PLUGIN_SUBDIR}/LookingGlass/LookingGlass.so")
-    list(APPEND tomviz_PLUGIN_PATHS ${LOOKING_GLASS_PLUGIN_PATH})
+  if (NOT DEFINED tomviz_LOOKING_GLASS_PLUGIN_PATH)
+    message(FATAL_ERROR
+        " tomviz_ENABLE_LOOKING_GLASS is ON, but"
+        " tomviz_LOOKING_GLASS_PLUGIN_PATH was not specified")
+  endif()
+  list(APPEND tomviz_PLUGIN_PATHS ${tomviz_LOOKING_GLASS_PLUGIN_PATH})
 endif()
 
 add_subdirectory(tomviz)
