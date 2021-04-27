@@ -55,7 +55,9 @@ vtkStandardNewMacro(vtkTriangleBar)
   this->SetLabels("", "", "");
 }
 
-vtkTriangleBar::~vtkTriangleBar() {}
+vtkTriangleBar::~vtkTriangleBar()
+{
+}
 
 void vtkTriangleBar::SetColors(double color0[3], double color1[3],
                                double color2[3])
