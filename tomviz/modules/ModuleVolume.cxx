@@ -9,6 +9,7 @@
 #include "ScalarsComboBox.h"
 #include "VolumeManager.h"
 #include "vtkTransferFunctionBoxItem.h"
+#include "vtkTriangleBar.h"
 
 #include <vtkColorTransferFunction.h>
 #include <vtkDataArray.h>
@@ -33,13 +34,12 @@
 
 #include <QCheckBox>
 #include <QFormLayout>
+#include <QSignalBlocker>
 #include <QVBoxLayout>
 
 #include <cmath>
 
 namespace tomviz {
-
-static void computeRange(vtkDataArray* array, double range[2]);
 
 // Subclass vtkSmartVolumeMapper so we can have a little more customization
 class SmartVolumeMapper : public vtkSmartVolumeMapper
@@ -123,8 +123,9 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   m_volumeProperty->SetSpecular(1.0);
   m_volumeProperty->SetSpecularPower(100.0);
 
-  resetRgbaMappingRange();
+  resetRgbaMappingRanges();
   onRgbaMappingToggled(false);
+  onComponentNamesModified();
   updateColorMap();
 
   m_view = vtkPVRenderView::SafeDownCast(vtkView->GetClientSideView());
@@ -134,6 +135,8 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   connect(data, &DataSource::dataChanged, this, &ModuleVolume::onDataChanged);
   connect(data, &DataSource::activeScalarsChanged, this,
           &ModuleVolume::onScalarArrayChanged);
+  connect(data, &DataSource::componentNamesModified, this,
+          &ModuleVolume::onComponentNamesModified);
 
   // Work around mapper bug on the mac, see the following issue for details:
   // https://github.com/OpenChemistry/tomviz/issues/1776
@@ -145,10 +148,54 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   return true;
 }
 
-void ModuleVolume::resetRgbaMappingRange()
+void ModuleVolume::resetRgbaMappingRanges()
 {
-  computeRange(dataSource()->imageData()->GetPointData()->GetScalars(),
-               m_rgbaMappingRange);
+  // Combined range
+  computeRange(dataSource()->scalars(), m_rgbaMappingRangeAll.data());
+
+  // Individual ranges
+  m_rgbaMappingRanges.clear();
+
+  resetComponentNames();
+  for (const auto& name : m_componentNames) {
+    m_rgbaMappingRanges[name] = computeRange(name);
+  }
+}
+
+void ModuleVolume::resetComponentNames()
+{
+  m_componentNames = dataSource()->componentNames();
+}
+
+std::array<double, 2> ModuleVolume::computeRange(const QString& component) const
+{
+  std::array<double, 2> result;
+  auto index = m_componentNames.indexOf(component);
+  dataSource()->scalars()->GetRange(result.data(), index);
+  return result;
+}
+
+std::array<double, 2>& ModuleVolume::rangeForComponent(const QString& component)
+{
+  return m_rgbaMappingRanges[component];
+}
+
+std::vector<std::array<double, 2>> ModuleVolume::activeRgbaRanges()
+{
+  std::vector<std::array<double, 2>> ret;
+  if (rgbaMappingCombineComponents()) {
+    // We are using one combined range
+    auto scalars = dataSource()->scalars();
+    for (int i = 0; i < scalars->GetNumberOfComponents(); ++i) {
+      ret.push_back(m_rgbaMappingRangeAll);
+    }
+  } else {
+    for (auto& name : m_componentNames) {
+      ret.push_back(rangeForComponent(name));
+    }
+  }
+
+  return ret;
 }
 
 void ModuleVolume::onRgbaMappingToggled(bool b)
@@ -160,8 +207,14 @@ void ModuleVolume::onRgbaMappingToggled(bool b)
   if (useRgbaMapping()) {
     updateRgbaMappingDataObject();
     m_volumeProperty->IndependentComponentsOff();
+    if (m_view) {
+      m_view->AddPropToRenderer(m_triangleBar);
+    }
   } else {
     m_volumeProperty->IndependentComponentsOn();
+    if (m_view) {
+      m_view->RemovePropFromRenderer(m_triangleBar);
+    }
   }
   updatePanel();
 
@@ -176,6 +229,36 @@ void ModuleVolume::onDataChanged()
   updatePanel();
 }
 
+void ModuleVolume::onComponentNamesModified()
+{
+  auto oldNames = m_componentNames;
+  resetComponentNames();
+  auto newNames = m_componentNames;
+
+  // Rename the map keys
+  for (int i = 0; i < oldNames.size(); ++i) {
+    if (newNames[i] != oldNames[i]) {
+      m_rgbaMappingRanges[newNames[i]] = m_rgbaMappingRanges.take(oldNames[i]);
+      if (m_rgbaMappingComponent == oldNames[i]) {
+        m_rgbaMappingComponent = newNames[i];
+      }
+    }
+  }
+
+  // Set labels on the triangle bar
+  if (newNames.size() >= 3) {
+    m_triangleBar->SetLabels(newNames[0].toLatin1().data(),
+                             newNames[1].toLatin1().data(),
+                             newNames[2].toLatin1().data());
+    if (m_useRgbaMapping) {
+      emit renderNeeded();
+    }
+  }
+
+  // Update the panel
+  updatePanel();
+}
+
 void ModuleVolume::updateMapperInput(DataSource* data)
 {
   if (useRgbaMapping()) {
@@ -186,7 +269,7 @@ void ModuleVolume::updateMapperInput(DataSource* data)
   }
 }
 
-static void computeRange(vtkDataArray* array, double range[2])
+void ModuleVolume::computeRange(vtkDataArray* array, double range[2])
 {
   range[0] = DBL_MAX;
   range[1] = -DBL_MAX;
@@ -216,7 +299,7 @@ static double rescale(double val, double* oldRange, double* newRange)
 void ModuleVolume::updateVectorMode()
 {
   int vectorMode = vtkSmartVolumeMapper::DISABLED;
-  auto* array = dataSource()->imageData()->GetPointData()->GetScalars();
+  auto* array = dataSource()->scalars();
   if (array->GetNumberOfComponents() > 1 && !useRgbaMapping()) {
     vectorMode = vtkSmartVolumeMapper::MAGNITUDE;
   }
@@ -226,7 +309,7 @@ void ModuleVolume::updateVectorMode()
 
 bool ModuleVolume::rgbaMappingAllowed()
 {
-  auto* array = dataSource()->imageData()->GetPointData()->GetScalars();
+  auto* array = dataSource()->scalars();
   return array->GetNumberOfComponents() == 3;
 }
 
@@ -242,7 +325,7 @@ bool ModuleVolume::useRgbaMapping()
 void ModuleVolume::updateRgbaMappingDataObject()
 {
   auto* imageData = dataSource()->imageData();
-  auto* input = imageData->GetPointData()->GetScalars();
+  auto* input = dataSource()->scalars();
 
   // FIXME: we should probably do a filter instead of an object.
   m_rgbaDataObject->SetDimensions(imageData->GetDimensions());
@@ -252,17 +335,27 @@ void ModuleVolume::updateRgbaMappingDataObject()
 
   // Rescale from 0 to 1 for the coloring.
   double newRange[2] = { 0.0, 1.0 };
-  double oldRange[2] = { m_rgbaMappingRange[0], m_rgbaMappingRange[1] };
+  auto oldRanges = activeRgbaRanges();
   for (int i = 0; i < input->GetNumberOfTuples(); ++i) {
     for (int j = 0; j < 3; ++j) {
       double oldVal = input->GetComponent(i, j);
-      double newVal = rescale(oldVal, oldRange, newRange);
+      double newVal = rescale(oldVal, oldRanges[j].data(), newRange);
       output->SetComponent(i, j, newVal);
     }
     auto* vals = input->GetTuple3(i);
     auto norm = computeNorm(vals, 3);
     output->SetComponent(i, 3, norm);
   }
+}
+
+QString ModuleVolume::rgbaMappingComponent()
+{
+  if (!m_componentNames.contains(m_rgbaMappingComponent)) {
+    // Set it to the first component
+    m_rgbaMappingComponent = m_componentNames[0];
+  }
+
+  return m_rgbaMappingComponent;
 }
 
 void ModuleVolume::updateColorMap()
@@ -320,6 +413,7 @@ bool ModuleVolume::finalize()
 {
   if (m_view) {
     m_view->RemovePropFromRenderer(m_volume);
+    m_view->RemovePropFromRenderer(m_triangleBar);
   }
 
   return true;
@@ -328,6 +422,7 @@ bool ModuleVolume::finalize()
 bool ModuleVolume::setVisibility(bool val)
 {
   m_volume->SetVisibility(val ? 1 : 0);
+  m_triangleBar->SetVisibility(val ? 1 : 0);
 
   Module::setVisibility(val);
 
@@ -433,6 +528,11 @@ void ModuleVolume::addToPanel(QWidget* panel)
           SLOT(onTransferModeChanged(const int)));
   connect(m_controllers, &ModuleVolumeWidget::useRgbaMappingToggled, this,
           &ModuleVolume::onRgbaMappingToggled);
+  connect(m_controllers,
+          &ModuleVolumeWidget::rgbaMappingCombineComponentsToggled, this,
+          &ModuleVolume::onRgbaMappingCombineComponentsToggled);
+  connect(m_controllers, &ModuleVolumeWidget::rgbaMappingComponentChanged, this,
+          &ModuleVolume::onRgbaMappingComponentChanged);
   connect(m_controllers, &ModuleVolumeWidget::rgbaMappingMinChanged, this,
           &ModuleVolume::onRgbaMappingMinChanged);
   connect(m_controllers, &ModuleVolumeWidget::rgbaMappingMaxChanged, this,
@@ -456,6 +556,8 @@ void ModuleVolume::updatePanel()
       !m_scalarsCombo) {
     return;
   }
+  auto blocked = QSignalBlocker(m_controllers);
+
   m_controllers->setJittering(
     static_cast<bool>(m_volumeMapper->GetUseJittering()));
   m_controllers->setLighting(static_cast<bool>(m_volumeProperty->GetShade()));
@@ -474,13 +576,26 @@ void ModuleVolume::updatePanel()
   m_controllers->setRgbaMappingAllowed(rgbaMappingAllowed());
   m_controllers->setUseRgbaMapping(useRgbaMapping());
   if (useRgbaMapping()) {
-    m_controllers->setRgbaMappingMin(m_rgbaMappingRange[0]);
-    m_controllers->setRgbaMappingMax(m_rgbaMappingRange[1]);
+    auto allComponents = rgbaMappingCombineComponents();
+    auto options = m_componentNames;
+    auto component = rgbaMappingComponent();
 
-    double sliderRange[2];
-    computeRange(dataSource()->imageData()->GetPointData()->GetScalars(),
-                 sliderRange);
-    m_controllers->setRgbaMappingSliderRange(sliderRange);
+    m_controllers->setRgbaMappingCombineComponents(allComponents);
+    m_controllers->setRgbaMappingComponentOptions(options);
+    m_controllers->setRgbaMappingComponent(component);
+
+    std::array<double, 2> minmax, sliderRange;
+    if (allComponents) {
+      minmax = m_rgbaMappingRangeAll;
+      computeRange(dataSource()->scalars(), sliderRange.data());
+    } else {
+      minmax = rangeForComponent(component);
+      sliderRange = computeRange(component);
+    }
+
+    m_controllers->setRgbaMappingMin(minmax[0]);
+    m_controllers->setRgbaMappingMax(minmax[1]);
+    m_controllers->setRgbaMappingSliderRange(sliderRange.data());
   }
 
   const auto tfMode = getTransferMode();
@@ -498,16 +613,41 @@ void ModuleVolume::onTransferModeChanged(const int mode)
   emit renderNeeded();
 }
 
+void ModuleVolume::onRgbaMappingCombineComponentsToggled(const bool b)
+{
+  m_rgbaMappingCombineComponents = b;
+  updatePanel();
+
+  updateRgbaMappingDataObject();
+  emit renderNeeded();
+}
+
+void ModuleVolume::onRgbaMappingComponentChanged(const QString& component)
+{
+  m_rgbaMappingComponent = component;
+  updatePanel();
+}
+
 void ModuleVolume::onRgbaMappingMinChanged(const double value)
 {
-  m_rgbaMappingRange[0] = value;
+  if (m_rgbaMappingCombineComponents) {
+    m_rgbaMappingRangeAll[0] = value;
+  } else {
+    rangeForComponent(rgbaMappingComponent())[0] = value;
+  }
+
   updateRgbaMappingDataObject();
   emit renderNeeded();
 }
 
 void ModuleVolume::onRgbaMappingMaxChanged(const double value)
 {
-  m_rgbaMappingRange[1] = value;
+  if (m_rgbaMappingCombineComponents) {
+    m_rgbaMappingRangeAll[1] = value;
+  } else {
+    rangeForComponent(rgbaMappingComponent())[1] = value;
+  }
+
   updateRgbaMappingDataObject();
   emit renderNeeded();
 }

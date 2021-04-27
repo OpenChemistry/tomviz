@@ -86,6 +86,23 @@ public:
   /// Returns the image data associated with the proxy.
   vtkImageData* imageData() const;
 
+  /// Get the active scalars array
+  vtkDataArray* scalars() const;
+
+  /// Get the names of the components.
+  /// Calls "ensureValidComponentNames()" first, and the names will be
+  /// modified if they are invalid.
+  QStringList componentNames();
+
+  /// Set the names of the components
+  void setComponentNames(const QStringList& names);
+
+  /// Set the name of an individual component
+  void setComponentName(int index, const QString& name);
+
+  /// Ensure component names are valid, and modify them if they are not.
+  void ensureValidComponentNames();
+
   /// Returns a list of operators added to the DataSource.
   const QList<Operator*>& operators() const;
 
@@ -244,7 +261,7 @@ public:
   QStringList listScalars() const;
 
   // Get pointer to scalar array
-  vtkDataArray* getScalarsArray(const QString& arrayName);
+  vtkDataArray* getScalarsArray(const QString& arrayName) const;
 
   /// Returns the number of components in the dataset.
   unsigned int getNumberOfComponents();
@@ -338,6 +355,9 @@ signals:
   /// on their actors to match this so the effect of setting the position is
   /// to translate the dataset.
   void displayPositionChanged(double newX, double newY, double newZ);
+
+  /// Indicates the component names have been modified
+  void componentNamesModified();
 
 public slots:
   void dataModified();

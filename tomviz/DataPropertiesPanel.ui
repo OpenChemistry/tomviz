@@ -46,6 +46,20 @@
     <widget class="QComboBox" name="ActiveScalars"/>
    </item>
    <item>
+    <layout class="QHBoxLayout" name="componentNamesLayout">
+     <item>
+      <widget class="QLabel" name="componentNamesEditorLabel">
+       <property name="text">
+        <string>Component Names:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="tomviz::ComboTextEditor" name="componentNamesEditor"/>
+     </item>
+    </layout>
+   </item>
+   <item>
     <widget class="QLabel" name="DataRange">
      <property name="text">
       <string>DataRange</string>
@@ -231,8 +245,18 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>tomviz::ComboTextEditor</class>
+   <extends>QComboBox</extends>
+   <header>ComboTextEditor.h</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>FileName</tabstop>
+  <tabstop>ActiveScalars</tabstop>
+  <tabstop>componentNamesEditor</tabstop>
+  <tabstop>ScalarsTable</tabstop>
   <tabstop>xLengthBox</tabstop>
   <tabstop>yLengthBox</tabstop>
   <tabstop>zLengthBox</tabstop>

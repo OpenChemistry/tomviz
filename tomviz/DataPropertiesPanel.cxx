@@ -39,6 +39,7 @@
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QMimeData>
+#include <QSignalBlocker>
 
 namespace tomviz {
 
@@ -91,6 +92,8 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
           &DataPropertiesPanel::setActiveScalars);
   connect(&m_scalarsTableModel, &DataPropertiesModel::activeScalarsChanged,
           this, &DataPropertiesPanel::setActiveScalars);
+  connect(m_ui->componentNamesEditor, &ComboTextEditor::itemEdited, this,
+          &DataPropertiesPanel::componentNameEdited);
 }
 
 DataPropertiesPanel::~DataPropertiesPanel() {}
@@ -291,7 +294,31 @@ void DataPropertiesPanel::updateData()
   connect(m_ui->TiltAnglesTable, SIGNAL(cellChanged(int, int)),
           SLOT(onTiltAnglesModified(int, int)));
 
+  updateComponentsCombo();
+
   m_updateNeeded = false;
+}
+
+void DataPropertiesPanel::updateComponentsCombo()
+{
+  DataSource* dsource = m_currentDataSource;
+  if (!dsource) {
+    return;
+  }
+
+  auto label = m_ui->componentNamesEditorLabel;
+  auto combo = m_ui->componentNamesEditor;
+  auto blocked = QSignalBlocker(combo);
+
+  // Only make this editor visible if there is more than one component
+  bool visible = dsource->scalars()->GetNumberOfComponents() > 1;
+  label->setVisible(visible);
+  combo->setVisible(visible);
+
+  if (visible) {
+    combo->clear();
+    combo->addItems(dsource->componentNames());
+  }
 }
 
 void DataPropertiesPanel::onTiltAnglesModified(int row, int column)
@@ -530,6 +557,15 @@ void DataPropertiesPanel::setActiveScalars(const QString& activeScalars)
       m_currentDataSource->activeScalars() != activeScalars) {
     m_currentDataSource->setActiveScalars(activeScalars);
   }
+}
+
+void DataPropertiesPanel::componentNameEdited(int index, const QString& name)
+{
+  if (!m_currentDataSource) {
+    return;
+  }
+
+  m_currentDataSource->setComponentName(index, name);
 }
 
 void DataPropertiesPanel::clear()

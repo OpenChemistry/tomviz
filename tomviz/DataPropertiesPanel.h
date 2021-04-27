@@ -41,6 +41,7 @@ public:
 protected:
   void paintEvent(QPaintEvent*) override;
   void updateData();
+  void updateComponentsCombo();
 
 private slots:
   void setDataSource(DataSource*);
@@ -56,6 +57,8 @@ private slots:
   void updateAxesGridLabels();
 
   void setActiveScalars(const QString& activeScalars);
+
+  void componentNameEdited(int index, const QString& name);
 
 signals:
   void colorMapUpdated();

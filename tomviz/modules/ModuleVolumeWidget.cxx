@@ -10,6 +10,15 @@
 
 namespace tomviz {
 
+// If we make this bigger, such as 1000, and we make the max too
+// close to the data minimum or the min too close to the data maximum,
+// we run into errors like these:
+// ( 118.718s) [paraview        ]vtkOpenGLVolumeLookupTa:84    WARN|
+// vtkOpenGLVolumeRGBTable (0x55ba0c5cc970): This OpenGL implementation does not
+// support the required texture size of 65536, falling back to maximum allowed,
+// 32768.This may cause an incorrect lookup table mapping.
+static const double RANGE_INCREMENT = 500;
+
 ModuleVolumeWidget::ModuleVolumeWidget(QWidget* parent_)
   : QWidget(parent_), m_ui(new Ui::ModuleVolumeWidget),
     m_uiLighting(new Ui::LightingParametersForm)
@@ -63,6 +72,11 @@ ModuleVolumeWidget::ModuleVolumeWidget(QWidget* parent_)
   connect(m_ui->useRgbaMapping, &QCheckBox::toggled, this,
           &ModuleVolumeWidget::useRgbaMappingToggled);
 
+  connect(m_ui->rgbaMappingCombineComponents, &QCheckBox::toggled, this,
+          &ModuleVolumeWidget::rgbaMappingCombineComponentsToggled);
+  connect(m_ui->rgbaMappingComponent, &QComboBox::currentTextChanged, this,
+          &ModuleVolumeWidget::rgbaMappingComponentChanged);
+
   // Using QueuedConnections here to circumvent DoubleSliderWidget->BlockUpdate
   connect(m_ui->sliRgbaMappingMin, &DoubleSliderWidget::valueEdited, this,
           &ModuleVolumeWidget::onRgbaMappingMinChanged, Qt::QueuedConnection);
@@ -83,6 +97,8 @@ ModuleVolumeWidget::ModuleVolumeWidget(QWidget* parent_)
           SIGNAL(solidityChanged(const double)));
 
   m_ui->groupRgbaMappingRange->setVisible(false);
+  m_ui->rgbaMappingComponentLabel->setVisible(false);
+  m_ui->rgbaMappingComponent->setVisible(false);
 }
 
 ModuleVolumeWidget::~ModuleVolumeWidget() = default;
@@ -187,6 +203,25 @@ void ModuleVolumeWidget::setRgbaMappingSliderRange(const double range[2])
   m_ui->sliRgbaMappingMax->setMaximum(max);
 }
 
+void ModuleVolumeWidget::setRgbaMappingCombineComponents(const bool b)
+{
+  m_ui->rgbaMappingCombineComponents->setChecked(b);
+  m_ui->rgbaMappingComponent->setVisible(!b);
+  m_ui->rgbaMappingComponentLabel->setVisible(!b);
+}
+
+void ModuleVolumeWidget::setRgbaMappingComponentOptions(
+  const QStringList& components)
+{
+  m_ui->rgbaMappingComponent->clear();
+  m_ui->rgbaMappingComponent->addItems(components);
+}
+
+void ModuleVolumeWidget::setRgbaMappingComponent(const QString& component)
+{
+  m_ui->rgbaMappingComponent->setCurrentText(component);
+}
+
 void ModuleVolumeWidget::setAllowMultiVolume(const bool checked)
 {
   if (checked != m_ui->cbMultiVolume->isChecked()) {
@@ -209,27 +244,45 @@ void ModuleVolumeWidget::setEnableAllowMultiVolume(const bool enable)
 
 void ModuleVolumeWidget::onRgbaMappingMinChanged(double v)
 {
-  double max = m_ui->sliRgbaMappingMax->value();
-  if (v > max) {
-    // Don't allow the min to be greater than the max.
-    // This is better than modifying the ranges so the slider
-    // range doesn't visually change.
-    setRgbaMappingMin(max);
-    v = max;
+  // Compute an increment. Don't let the min value get closer
+  // than this to the maximum.
+  double fullRange[2] = { m_ui->sliRgbaMappingMax->minimum(),
+                          m_ui->sliRgbaMappingMax->maximum() };
+  double increment = (fullRange[1] - fullRange[0]) / RANGE_INCREMENT;
+  double trueMaximum = fullRange[1] - increment;
+  if (v > trueMaximum) {
+    setRgbaMappingMin(trueMaximum);
+    v = trueMaximum;
   }
+
+  double currentMax = m_ui->sliRgbaMappingMax->value();
+  if (v > currentMax) {
+    // Set the maximum to be an increment above...
+    setRgbaMappingMax(v + increment);
+  }
+
   emit rgbaMappingMinChanged(v);
 }
 
 void ModuleVolumeWidget::onRgbaMappingMaxChanged(double v)
 {
-  double min = m_ui->sliRgbaMappingMin->value();
-  if (v < min) {
-    // Don't allow the max to be less than the min.
-    // This is better than modifying the ranges so the slider
-    // range doesn't visually change.
-    setRgbaMappingMax(min);
-    v = min;
+  // Compute an increment. Don't let the max value get closer
+  // than this to the minimum.
+  double fullRange[2] = { m_ui->sliRgbaMappingMin->minimum(),
+                          m_ui->sliRgbaMappingMin->maximum() };
+  double increment = (fullRange[1] - fullRange[0]) / RANGE_INCREMENT;
+  double trueMinimum = fullRange[0] + increment;
+  if (v < trueMinimum) {
+    setRgbaMappingMax(trueMinimum);
+    v = trueMinimum;
   }
+
+  double currentMin = m_ui->sliRgbaMappingMin->value();
+  if (v < currentMin) {
+    // Set the minimum to be an increment below...
+    setRgbaMappingMin(v - increment);
+  }
+
   emit rgbaMappingMaxChanged(v);
 }
 

@@ -126,6 +126,7 @@ DataSource* MergeImagesReaction::mergeComponents()
   }
 
   QList<DataSource*> sourceList = m_dataSources.toList();
+  QStringList sourceLabels;
 
   vtkSMSessionProxyManager* pxm = ActiveObjects::instance().proxyManager();
   vtkSMSourceProxy* filter = vtkSMSourceProxy::SafeDownCast(
@@ -148,6 +149,8 @@ DataSource* MergeImagesReaction::mergeComponents()
         expression << ", ";
       }
     }
+
+    sourceLabels.append(sourceList[i]->label());
   }
 
   // Arrange columns
@@ -168,6 +171,9 @@ DataSource* MergeImagesReaction::mergeComponents()
   newSource->setFileName("Merged Image");
   filter->Delete();
 
+  // Give the components names based off the labels of the data sources
+  // that were used to generate them.
+  newSource->setComponentNames(sourceLabels);
   return newSource;
 }
 

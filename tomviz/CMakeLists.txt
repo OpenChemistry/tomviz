@@ -42,6 +42,8 @@ set(SOURCES
   ColorMap.h
   ColorMapSettingsWidget.cxx
   ColorMapSettingsWidget.h
+  ComboTextEditor.cxx
+  ComboTextEditor.h
   ConvertToFloatReaction.cxx
   ConvertToFloatReaction.h
   CropReaction.cxx
@@ -232,6 +234,8 @@ set(SOURCES
   vtkNonOrthoImagePlaneWidget.h
   vtkOMETiffReader.cxx
   vtkOMETiffReader.h
+  vtkTriangleBar.cxx
+  vtkTriangleBar.h
   vtkVolumeScaleRepresentation.h
   vtkVolumeScaleRepresentation.cxx
   WebExportWidget.cxx

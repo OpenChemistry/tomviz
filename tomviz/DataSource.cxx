@@ -866,7 +866,7 @@ void DataSource::renameScalarsArray(const QString& oldName,
   Internals->CurrentToOriginal[newName] = originalName;
 }
 
-vtkDataArray* DataSource::getScalarsArray(const QString& arrayName)
+vtkDataArray* DataSource::getScalarsArray(const QString& arrayName) const
 {
   vtkAlgorithm* alg = algorithm();
   if (alg == nullptr) {
@@ -1310,6 +1310,64 @@ vtkDataObject* DataSource::dataObject() const
 vtkImageData* DataSource::imageData() const
 {
   return vtkImageData::SafeDownCast(dataObject());
+}
+
+vtkDataArray* DataSource::scalars() const
+{
+  return getScalarsArray(activeScalars());
+}
+
+QStringList DataSource::componentNames()
+{
+  ensureValidComponentNames();
+
+  QStringList names;
+  for (int i = 0; i < scalars()->GetNumberOfComponents(); ++i) {
+    names.append(scalars()->GetComponentName(i));
+  }
+
+  return names;
+}
+
+void DataSource::setComponentNames(const QStringList& names)
+{
+  for (int i = 0; i < scalars()->GetNumberOfComponents(); ++i) {
+    scalars()->SetComponentName(i, names[i].toLatin1().data());
+  }
+  emit componentNamesModified();
+}
+
+void DataSource::setComponentName(int index, const QString& name)
+{
+  scalars()->SetComponentName(index, name.toLatin1().data());
+  emit componentNamesModified();
+}
+
+void DataSource::ensureValidComponentNames()
+{
+  bool modified = false;
+  QStringList approvedNames;
+  for (int i = 0; i < scalars()->GetNumberOfComponents(); ++i) {
+    QString name = scalars()->GetComponentName(i);
+    if (name.isEmpty() || approvedNames.contains(name)) {
+      // If this name is empty or duplicated, rename it.
+      size_t counter = 0;
+      QString newName;
+      do {
+        newName = name + QString::number(++counter);
+      } while (approvedNames.contains(newName));
+
+      scalars()->SetComponentName(i, newName.toLatin1().data());
+      name = newName;
+      modified = true;
+    }
+
+    approvedNames.append(name);
+  }
+
+  if (modified) {
+    emit componentNamesModified();
+  }
 }
 
 Pipeline* DataSource::pipeline() const
