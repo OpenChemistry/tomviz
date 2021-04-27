@@ -10,9 +10,12 @@
 vtkStandardNewMacro(vtkCustomBoxRepresentation)
 
   vtkCustomBoxRepresentation::vtkCustomBoxRepresentation()
-{}
+{
+}
 
-vtkCustomBoxRepresentation::~vtkCustomBoxRepresentation() {}
+vtkCustomBoxRepresentation::~vtkCustomBoxRepresentation()
+{
+}
 
 vtkActor** vtkCustomBoxRepresentation::GetHandle()
 {

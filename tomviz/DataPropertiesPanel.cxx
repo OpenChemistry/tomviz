@@ -126,7 +126,7 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
   });
 
   connect(&ActiveObjects::instance(), &ActiveObjects::moveObjectsModeChanged,
-          [this](TransformType transform) {
+          this, [this](TransformType transform) {
             switch (transform) {
               case TransformType::Translate: {
                 m_sizeCheckbox->setChecked(false);

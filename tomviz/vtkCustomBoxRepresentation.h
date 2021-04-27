@@ -22,8 +22,8 @@ protected:
   virtual ~vtkCustomBoxRepresentation();
 
 private:
-  vtkCustomBoxRepresentation(const vtkCustomBoxRepresentation&);
-  void operator=(const vtkCustomBoxRepresentation&);
+  vtkCustomBoxRepresentation(const vtkCustomBoxRepresentation&) = delete;
+  void operator=(const vtkCustomBoxRepresentation&) = delete;
 };
 
 #endif
