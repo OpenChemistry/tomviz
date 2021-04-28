@@ -128,6 +128,8 @@ public:
   int sliceNumber = 0;
   QScopedPointer<InternalProgressDialog> progressDialog;
   QFutureWatcher<void> futureWatcher;
+  bool testRotationsSuccess = false;
+  QString testRotationsErrorMessage;
 
   Internal(Operator* o, vtkSmartPointer<vtkImageData> img, FxiWorkflowWidget* p)
     : op(o), image(img)
@@ -161,11 +163,13 @@ public:
     }
 
     colorMap = dataSource->colorMap();
-    resetLut();
 
     for (auto* w : inputWidgets()) {
       w->installEventFilter(this);
     }
+
+    // This isn't always working in Qt designer, so set it here as well
+    ui.colorPresetButton->setIcon(QIcon(":/pqWidgets/Icons/pqFavorites.svg"));
 
     auto* dims = image->GetDimensions();
     ui.slice->setMaximum(dims[1] - 1);
@@ -199,6 +203,10 @@ public:
             progressDialog.data(), &QProgressDialog::accept);
     connect(ui.colorPresetButton, &QToolButton::clicked, this,
             &Internal::onColorPresetClicked);
+    connect(ui.previewMin, &DoubleSliderWidget::valueEdited, this,
+            &Internal::onPreviewRangeEdited);
+    connect(ui.previewMax, &DoubleSliderWidget::valueEdited, this,
+            &Internal::onPreviewRangeEdited);
   }
 
   void setupRenderer() { tomviz::setupRenderer(renderer, mapper, axesActor); }
@@ -283,28 +291,36 @@ public:
   void testImagesGenerated()
   {
     updateImageViewSlider();
-    render();
+    if (!testRotationsSuccess) {
+      auto msg = testRotationsErrorMessage;
+      qCritical() << msg;
+      QMessageBox::critical(parent, "Tomviz", msg);
+      return;
+    }
+
+    if (rotationDataValid()) {
+      resetColorRange();
+      render();
+    }
   }
 
   void generateTestImages()
   {
+    testRotationsSuccess = false;
     rotations.clear();
 
     {
       Python python;
       auto module = pythonHelper.loadModule(script);
       if (!module.isValid()) {
-        QString msg = "Failed to load script";
-        qCritical() << msg;
-        QMessageBox::critical(parent, "Tomviz", msg);
+        testRotationsErrorMessage = "Failed to load script";
         return;
       }
 
       auto func = module.findFunction("test_rotations");
       if (!func.isValid()) {
-        QString msg = "Failed to find function \"test_rotations\"";
-        qCritical() << msg;
-        QMessageBox::critical(parent, "Tomviz", msg);
+        testRotationsErrorMessage =
+          "Failed to find function \"test_rotations\"";
         return;
       }
 
@@ -320,35 +336,30 @@ public:
       auto ret = func.call(kwargs);
       auto result = ret.toDict();
       if (!result.isValid()) {
-        QString msg = "Failed to execute test_rotations()";
-        qCritical() << msg;
-        QMessageBox::critical(parent, "Tomviz", msg);
+        testRotationsErrorMessage = "Failed to execute test_rotations()";
         return;
       }
 
       auto pyImages = result["images"];
       auto* object = Python::VTK::convertToDataObject(pyImages);
       if (!object) {
-        QString msg = "No image data was returned from test_rotations()";
-        qCritical() << msg;
-        QMessageBox::critical(parent, "Tomviz", msg);
+        testRotationsErrorMessage =
+          "No image data was returned from test_rotations()";
         return;
       }
 
       auto* imageData = vtkImageData::SafeDownCast(object);
       if (!imageData) {
-        QString msg = "No image data was returned from test_rotations()";
-        qCritical() << msg;
-        QMessageBox::critical(parent, "Tomviz", msg);
+        testRotationsErrorMessage =
+          "No image data was returned from test_rotations()";
         return;
       }
 
       auto centers = result["centers"];
       auto pyRotations = centers.toList();
       if (!pyRotations.isValid() || pyRotations.length() <= 0) {
-        QString msg = "No rotations returned from test_rotations()";
-        qCritical() << msg;
-        QMessageBox::critical(parent, "Tomviz", msg);
+        testRotationsErrorMessage =
+          "No rotations returned from test_rotations()";
         return;
       }
 
@@ -364,6 +375,7 @@ public:
 
     // Save these settings in case the user wants to use them again...
     writeTestSettings();
+    testRotationsSuccess = true;
   }
 
   void setRotationData(vtkImageData* data)
@@ -372,13 +384,37 @@ public:
     mapper->SetInputData(rotationImages);
     mapper->SetSliceNumber(0);
     mapper->Update();
-    rescaleColors();
     setupRenderer();
   }
 
-  void rescaleColors()
+  void resetColorRange()
   {
-    if (!rotationDataValid() || !lut) {
+    if (!rotationDataValid()) {
+      return;
+    }
+
+    auto* range = rotationImages->GetScalarRange();
+
+    auto blocked1 = QSignalBlocker(ui.previewMin);
+    auto blocked2 = QSignalBlocker(ui.previewMax);
+    ui.previewMin->setMinimum(range[0]);
+    ui.previewMin->setMaximum(range[1]);
+    ui.previewMin->setValue(range[0]);
+    ui.previewMax->setMinimum(range[0]);
+    ui.previewMax->setMaximum(range[1]);
+    ui.previewMax->setValue(range[1]);
+
+    rescaleColors(range);
+  }
+
+  void rescaleColors(double* range)
+  {
+    // Always perform a deep copy of the original color map
+    // If we always modify the control points of the same LUT,
+    // the control points will often change and we will end up
+    // with a very different LUT than we had originally.
+    resetLut();
+    if (!lut) {
       return;
     }
 
@@ -387,8 +423,38 @@ public:
       return;
     }
 
-    auto* newRange = rotationImages->GetScalarRange();
-    rescaleLut(tf, newRange[0], newRange[1]);
+    rescaleLut(tf, range[0], range[1]);
+  }
+
+  void onPreviewRangeEdited()
+  {
+    if (!rotationDataValid() || !lut) {
+      return;
+    }
+
+    auto* maxRange = rotationImages->GetScalarRange();
+
+    double range[2];
+    range[0] = ui.previewMin->value();
+    range[1] = ui.previewMax->value();
+
+    auto minDiff = (maxRange[1] - maxRange[0]) / 1000;
+    if (range[1] - range[0] < minDiff) {
+      if (sender() == ui.previewMin) {
+        // Move the max
+        range[1] = range[0] + minDiff;
+        auto blocked = QSignalBlocker(ui.previewMax);
+        ui.previewMax->setValue(range[1]);
+      } else {
+        // Move the min
+        range[0] = range[1] - minDiff;
+        auto blocked = QSignalBlocker(ui.previewMin);
+        ui.previewMin->setValue(range[0]);
+      }
+    }
+
+    rescaleColors(range);
+    render();
   }
 
   void updateControls()
@@ -477,13 +543,10 @@ public:
       return;
     }
 
-    // Make a deep copy so we can modify it
-    // NOTE: the main color map will still change, but all rescaling
-    // will be done internally.
+    // Make a deep copy to modify
     lut = dsLut->NewInstance();
     lut->DeepCopy(dsLut);
     slice->GetProperty()->SetLookupTable(lut);
-    rescaleColors();
   }
 
   void onColorPresetClicked()
@@ -496,7 +559,11 @@ public:
     PresetDialog dialog(tomviz::mainWidget());
     connect(&dialog, &PresetDialog::applyPreset, this, [this, &dialog]() {
       ColorMap::instance().applyPreset(dialog.presetName(), colorMap);
-      resetLut();
+      // Keep the range the same
+      double range[2];
+      range[0] = ui.previewMin->value();
+      range[1] = ui.previewMax->value();
+      rescaleColors(range);
       render();
     });
     dialog.exec();

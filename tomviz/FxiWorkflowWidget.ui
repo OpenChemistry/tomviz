@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>891</width>
+    <width>895</width>
     <height>679</height>
    </rect>
   </property>
@@ -34,66 +34,6 @@
      <item row="5" column="0">
       <layout class="QHBoxLayout" name="rotationLabelLayout"/>
      </item>
-     <item row="1" column="0">
-      <widget class="QGroupBox" name="testRotationsSettingsGroup">
-       <property name="styleSheet">
-        <string notr="true">QGroupBox{padding-top:15px; margin-top:-15px}</string>
-       </property>
-       <property name="title">
-        <string/>
-       </property>
-       <layout class="QGridLayout" name="gridLayout_2">
-        <item row="2" column="0">
-         <widget class="QLabel" name="currentRotationLabel">
-          <property name="text">
-           <string>Rotation:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="5" column="0" colspan="2">
-         <widget class="tomviz::IntSliderWidget" name="imageViewSlider" native="true"/>
-        </item>
-        <item row="2" column="1">
-         <widget class="QDoubleSpinBox" name="currentRotation">
-          <property name="enabled">
-           <bool>true</bool>
-          </property>
-          <property name="styleSheet">
-           <string notr="true">background-color: #F0F0F0</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-          </property>
-          <property name="readOnly">
-           <bool>true</bool>
-          </property>
-          <property name="buttonSymbols">
-           <enum>QAbstractSpinBox::NoButtons</enum>
-          </property>
-          <property name="decimals">
-           <number>3</number>
-          </property>
-          <property name="maximum">
-           <double>1000000.000000000000000</double>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="2">
-         <widget class="QToolButton" name="colorPresetButton">
-          <property name="toolTip">
-           <string>Choose preset color map</string>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-          <property name="icon">
-           <iconset theme=":/pqWidgets/Icons/pqFavorites.svg"/>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-     </item>
      <item row="0" column="1" rowspan="8">
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <property name="spacing">
@@ -105,7 +45,7 @@
        <item>
         <widget class="QGroupBox" name="testRotationCentersGroup">
          <property name="styleSheet">
-          <string notr="true">QGroupBox{padding-top:15px; margin-top:-15px}</string>
+          <string notr="true">QGroupBox{padding-top:20px; margin-top:-20px}</string>
          </property>
          <property name="title">
           <string/>
@@ -216,9 +156,118 @@
         </widget>
        </item>
        <item>
+        <widget class="QGroupBox" name="testRotationsSettingsGroup">
+         <property name="styleSheet">
+          <string notr="true">QGroupBox{padding-top:15px; margin-top:-15px}</string>
+         </property>
+         <property name="title">
+          <string/>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_2">
+          <item row="3" column="2">
+           <widget class="QToolButton" name="colorPresetButton">
+            <property name="toolTip">
+             <string>Choose preset color map</string>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset theme=":/pqWidgets/Icons/pqFavorites.svg">
+              <normaloff>.</normaloff>.</iconset>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QDoubleSpinBox" name="currentRotation">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">background-color: #F0F0F0</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+            </property>
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+            <property name="buttonSymbols">
+             <enum>QAbstractSpinBox::NoButtons</enum>
+            </property>
+            <property name="decimals">
+             <number>3</number>
+            </property>
+            <property name="maximum">
+             <double>1000000.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="0" colspan="3">
+           <widget class="tomviz::IntSliderWidget" name="imageViewSlider" native="true"/>
+          </item>
+          <item row="7" column="0" colspan="3">
+           <widget class="QGroupBox" name="previewRangesGroup">
+            <property name="title">
+             <string/>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_5">
+             <item row="1" column="1">
+              <widget class="tomviz::DoubleSliderWidget" name="previewMin" native="true"/>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="previewMaxLabel">
+               <property name="text">
+                <string>Max:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <widget class="tomviz::DoubleSliderWidget" name="previewMax" native="true"/>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="previewMinLabel">
+               <property name="text">
+                <string>Min:</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="currentRotationLabel">
+            <property name="text">
+             <string>Rotation:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0" colspan="3">
+           <widget class="QLabel" name="testRotationCentersLabel_2">
+            <property name="minimumSize">
+             <size>
+              <width>450</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;h3 style=&quot; margin-top:4px; margin-bottom:4px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:large; font-weight:600;&quot;&gt;Rotations Preview Settings&lt;/span&gt;&lt;/h3&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
         <spacer name="verticalSpacer_1">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Fixed</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -376,12 +425,21 @@
    <header>IntSliderWidget.h</header>
    <container>1</container>
   </customwidget>
+  <customwidget>
+   <class>tomviz::DoubleSliderWidget</class>
+   <extends>QWidget</extends>
+   <header>DoubleSliderWidget.h</header>
+   <container>1</container>
+  </customwidget>
  </customwidgets>
  <tabstops>
   <tabstop>start</tabstop>
   <tabstop>stop</tabstop>
   <tabstop>steps</tabstop>
   <tabstop>slice</tabstop>
+  <tabstop>testRotations</tabstop>
+  <tabstop>currentRotation</tabstop>
+  <tabstop>colorPresetButton</tabstop>
   <tabstop>rotationCenter</tabstop>
   <tabstop>sliceStart</tabstop>
   <tabstop>sliceStop</tabstop>
