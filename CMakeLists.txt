@@ -130,6 +130,16 @@ set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE} CACHE PATH "Tomviz")
 set(PYBIND11_CPP_STANDARD "-std=c++11" CACHE STRING "")
 add_subdirectory(${PROJECT_SOURCE_DIR}/thirdparty/pybind11)
 
+option(tomviz_ENABLE_LOOKING_GLASS "Enable the looking glass plugin" OFF)
+if (tomviz_ENABLE_LOOKING_GLASS)
+  if (NOT DEFINED tomviz_LOOKING_GLASS_PLUGIN_PATH)
+    message(FATAL_ERROR
+        " tomviz_ENABLE_LOOKING_GLASS is ON, but"
+        " tomviz_LOOKING_GLASS_PLUGIN_PATH was not specified")
+  endif()
+  list(APPEND tomviz_PLUGIN_PATHS ${tomviz_LOOKING_GLASS_PLUGIN_PATH})
+endif()
+
 add_subdirectory(tomviz)
 
 option(ENABLE_TESTING "Enable testing and building the tests." OFF)

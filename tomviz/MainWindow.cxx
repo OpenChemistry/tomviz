@@ -7,6 +7,7 @@
 #include <pqApplicationCore.h>
 #include <pqObjectBuilder.h>
 #include <pqOutputWidget.h>
+#include <pqPluginDockWidgetsBehavior.h>
 #include <pqSaveAnimationReaction.h>
 #include <pqSettings.h>
 #include <pqView.h>
@@ -559,6 +560,24 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
 
   auto pythonFuture = QtConcurrent::run(initPython);
   pythonWatcher->setFuture(pythonFuture);
+
+  // Load plugins
+  new pqPluginDockWidgetsBehavior(this);
+  loadPlugins();
+
+  // Hide dock widgets that have these names as their actions.
+  // This is primarily needed to hide dock widgets loaded from plugins,
+  // which are more difficult to access.
+  QStringList hideDockWidgets = {
+    "Looking Glass",
+  };
+
+  for (auto* dockWidget : findChildren<QDockWidget*>()) {
+    auto actionText = dockWidget->toggleViewAction()->text();
+    if (hideDockWidgets.contains(actionText)) {
+      dockWidget->hide();
+    }
+  }
 }
 
 MainWindow::~MainWindow()

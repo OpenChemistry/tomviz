@@ -4,6 +4,7 @@
 #include "Utilities.h"
 
 #include "DataSource.h"
+#include "tomvizConfig.h"
 
 #include <pqAnimationCue.h>
 #include <pqAnimationManager.h>
@@ -18,7 +19,9 @@
 #include <vtkPVXMLElement.h>
 #include <vtkPVXMLParser.h>
 #include <vtkSMNamedPropertyIterator.h>
+#include <vtkSMPluginManager.h>
 #include <vtkSMPropertyHelper.h>
+#include <vtkSMProxyManager.h>
 #include <vtkSMRenderViewProxy.h>
 #include <vtkSMTransferFunctionManager.h>
 #include <vtkSMTransferFunctionProxy.h>
@@ -1522,6 +1525,36 @@ void removePointsOutOfRange(vtkPiecewiseFunction* opacity, DataSource* ds)
 
   opacity->AddPoint(range[0], startY);
   opacity->AddPoint(range[1], endY);
+}
+
+bool loadPlugin(const QString& path)
+{
+  auto pluginManager = vtkSMProxyManager::GetProxyManager()->GetPluginManager();
+  bool success = pluginManager->LoadLocalPlugin(path.toLatin1().data());
+  if (!success) {
+    qCritical() << "Failed to load plugin:" << path;
+  }
+  return success;
+}
+
+bool loadPlugins()
+{
+  bool success = true;
+
+  // TOMVIZ_PLUGIN_PATHS is a semicolon delimited list of plugins to load
+  auto pluginPaths =
+    QString(TOMVIZ_PLUGIN_PATHS).split(';', QString::SkipEmptyParts);
+  for (auto path : pluginPaths) {
+    if (!path.startsWith("/")) {
+      // A relative path. Prepend it with the application directory path.
+      path = QApplication::applicationDirPath() + "/" + path;
+    }
+    if (!loadPlugin(path)) {
+      success = false;
+    }
+  }
+
+  return success;
 }
 
 } // namespace tomviz
