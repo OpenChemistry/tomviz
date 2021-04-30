@@ -6,6 +6,7 @@
 
 #include <QDialog>
 
+#include <QDate>
 #include <QList>
 #include <QScopedPointer>
 #include <QVariantMap>
@@ -48,9 +49,13 @@ private:
   QString m_selectedRunUid;
   QString m_selectedTable;
   QString m_selectedVariable;
+  QDate m_fromDate;
+  QDate m_toDate;
+  bool m_dateFilter;
 
   void loadCatalogs();
-  void loadRuns(const QString& catalog);
+  void loadRuns(const QString& catalog, bool dateFilter, const QDate& fromDate,
+                const QDate& toDate);
   void loadTables(const QString& catalog, const QString& runUid);
   void loadVariables(const QString& catalog, const QString& runUid,
                      const QString& table);
@@ -62,11 +67,16 @@ private:
   void setLabel(const QString& label);
   void setEnabledResetButton(bool enable);
   void setEnabledOkButton(bool enable);
+  void allowFilter(bool allow);
   void beginCall();
   void endCall();
   void setErrorMessage(const QString& errorMessage);
   void clearErrorMessage();
   void connectErrorSignal(ListResourceCall* call);
+
+private slots:
+  void enableFilter(bool enable);
+  void applyFilter();
 };
 } // namespace tomviz
 

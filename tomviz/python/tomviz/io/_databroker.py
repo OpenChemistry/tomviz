@@ -7,6 +7,7 @@ from vtk import vtkImageData
 _installed = False
 try:
     from databroker import catalog
+    from databroker.queries import TimeRange
     _installed = True
 except ImportError:
     pass
@@ -29,9 +30,15 @@ def catalogs():
     return cats
 
 
-def runs(catalog_name):
+def runs(catalog_name, since, until):
     runs = []
-    for uid, run in catalog[catalog_name].items():
+
+    cat = catalog[catalog_name]
+
+    if since != "" and until != "":
+        cat = cat.search(TimeRange(since=since, until=until))
+
+    for uid, run in cat.items():
         runs.append({
             "uid": uid,
             "name": run.name,
