@@ -149,16 +149,25 @@ void DataBrokerLoadDialog::showRuns()
 
   tree->setColumnCount(3);
 
-  QStringList headers = { "UID", "Name", "Date" };
+  QStringList headers = { "UID", "Name", "Start", "Stop" };
   tree->setHeaderLabels(headers);
 
   QList<QTreeWidgetItem*> items;
   for (auto run : m_runs) {
-    auto seconds = run["time"].toDouble();
-    auto mseconds = seconds * 1000;
-    auto dateTime = QDateTime::fromMSecsSinceEpoch(mseconds);
+    QDateTime startTime;
+    QDateTime stopTime;
+    {
+      auto seconds = run["startTime"].toDouble();
+      auto mseconds = seconds * 1000;
+      startTime = QDateTime::fromMSecsSinceEpoch(mseconds);
+    }
+    {
+      auto seconds = run["stopTime"].toDouble();
+      auto mseconds = seconds * 1000;
+      stopTime = QDateTime::fromMSecsSinceEpoch(mseconds);
+    }
     QStringList row = { run["uid"].toString(), run["name"].toString(),
-                        dateTime.toString(Qt::TextDate) };
+                        startTime.toString(Qt::TextDate), stopTime.toString(Qt::TextDate) };
 
     items.append(new QTreeWidgetItem(tree, row));
   }

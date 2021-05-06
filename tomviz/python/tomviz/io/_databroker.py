@@ -42,7 +42,8 @@ def runs(catalog_name, since, until):
         runs.append({
             "uid": uid,
             "name": run.name,
-            "time": run.updated
+            "startTime": run.metadata['start']['time'],
+            "stopTime": run.metadata['stop']['time'],
         })
 
     runs = sorted(runs, key=lambda r: r['name'])
