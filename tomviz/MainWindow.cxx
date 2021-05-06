@@ -499,8 +499,26 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     "Enable to allow moving of the selected dataset in the scene");
   moveObjects->setCheckable(true);
 
-  connect(moveObjects, SIGNAL(triggered(bool)), &ActiveObjects::instance(),
-          SLOT(setMoveObjectsMode(bool)));
+  connect(moveObjects, &QAction::triggered, [](bool checked) {
+    ActiveObjects::instance().setMoveObjectsMode(
+      checked ? TransformType::Translate : TransformType::None);
+  });
+
+  connect(&ActiveObjects::instance(), &ActiveObjects::moveObjectsModeChanged,
+          [moveObjects](TransformType transform) {
+            switch (transform) {
+              case TransformType::Translate:
+              case TransformType::Resize: {
+                moveObjects->setChecked(true);
+                break;
+              }
+              case TransformType::None:
+              default: {
+                moveObjects->setChecked(false);
+                break;
+              }
+            }
+          });
 
   QAction* loadPaletteAction = m_ui->utilitiesToolbar->addAction(
     QIcon(":pqWidgets/Icons/pqPalette.svg"), "LoadPalette");

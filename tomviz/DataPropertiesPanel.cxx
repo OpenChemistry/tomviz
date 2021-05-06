@@ -32,6 +32,7 @@
 #include <vtkFieldData.h>
 #include <vtkSMSourceProxy.h>
 
+#include <QCheckBox>
 #include <QClipboard>
 #include <QDebug>
 #include <QDoubleValidator>
@@ -68,8 +69,16 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
   l->insertWidget(l->indexOf(m_ui->DataRange), separator);
 
   separator = pqProxyWidget::newGroupLabelWidget("Units and Size", this);
+  m_sizeCheckbox = new QCheckBox("Interactive edit");
+  auto index = l->indexOf(m_ui->LengthWidget);
+  l->insertWidget(index, separator);
+  l->insertWidget(index + 2, m_sizeCheckbox);
 
-  l->insertWidget(l->indexOf(m_ui->LengthWidget), separator);
+  separator = pqProxyWidget::newGroupLabelWidget("Origin", this);
+  m_originCheckbox = new QCheckBox("Interactive edit");
+  index = l->indexOf(m_ui->OriginWidget);
+  l->insertWidget(index, separator);
+  l->insertWidget(index + 2, m_originCheckbox);
 
   m_tiltAnglesSeparator =
     pqProxyWidget::newGroupLabelWidget("Tilt Angles", this);
@@ -85,15 +94,58 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
           SLOT(updateAxesGridLabels()));
   connect(m_ui->SetTiltAnglesButton, SIGNAL(clicked()), SLOT(setTiltAngles()));
   connect(m_ui->unitBox, SIGNAL(editingFinished()), SLOT(updateUnits()));
-  connect(m_ui->xLengthBox, SIGNAL(editingFinished()), SLOT(updateXLength()));
-  connect(m_ui->yLengthBox, SIGNAL(editingFinished()), SLOT(updateYLength()));
-  connect(m_ui->zLengthBox, SIGNAL(editingFinished()), SLOT(updateZLength()));
+  connect(m_ui->xLengthBox, &QLineEdit::editingFinished,
+          [this]() { this->updateLength(m_ui->xLengthBox, 0); });
+  connect(m_ui->yLengthBox, &QLineEdit::editingFinished,
+          [this]() { this->updateLength(m_ui->yLengthBox, 1); });
+  connect(m_ui->zLengthBox, &QLineEdit::editingFinished,
+          [this]() { this->updateLength(m_ui->zLengthBox, 2); });
+
+  connect(m_ui->xOriginBox, &QLineEdit::editingFinished,
+          [this]() { this->updateOrigin(m_ui->xOriginBox, 0); });
+  connect(m_ui->yOriginBox, &QLineEdit::editingFinished,
+          [this]() { this->updateOrigin(m_ui->yOriginBox, 1); });
+  connect(m_ui->zOriginBox, &QLineEdit::editingFinished,
+          [this]() { this->updateOrigin(m_ui->zOriginBox, 2); });
+
   connect(m_ui->ActiveScalars, &QComboBox::currentTextChanged, this,
           &DataPropertiesPanel::setActiveScalars);
   connect(&m_scalarsTableModel, &DataPropertiesModel::activeScalarsChanged,
           this, &DataPropertiesPanel::setActiveScalars);
   connect(m_ui->componentNamesEditor, &ComboTextEditor::itemEdited, this,
           &DataPropertiesPanel::componentNameEdited);
+
+  connect(m_sizeCheckbox, &QCheckBox::clicked, [](bool checked) {
+    ActiveObjects::instance().setMoveObjectsMode(checked ? TransformType::Resize
+                                                         : TransformType::None);
+  });
+
+  connect(m_originCheckbox, &QCheckBox::clicked, [](bool checked) {
+    ActiveObjects::instance().setMoveObjectsMode(
+      checked ? TransformType::Translate : TransformType::None);
+  });
+
+  connect(&ActiveObjects::instance(), &ActiveObjects::moveObjectsModeChanged,
+          this, [this](TransformType transform) {
+            switch (transform) {
+              case TransformType::Translate: {
+                m_sizeCheckbox->setChecked(false);
+                m_originCheckbox->setChecked(true);
+                break;
+              }
+              case TransformType::Resize: {
+                m_sizeCheckbox->setChecked(true);
+                m_originCheckbox->setChecked(false);
+                break;
+              }
+              case TransformType::None:
+              default: {
+                m_sizeCheckbox->setChecked(false);
+                m_originCheckbox->setChecked(false);
+                break;
+              }
+            }
+          });
 }
 
 DataPropertiesPanel::~DataPropertiesPanel() {}
@@ -114,11 +166,48 @@ void DataPropertiesPanel::setDataSource(DataSource* dsource)
   if (dsource) {
     connect(dsource, SIGNAL(dataChanged()), SLOT(scheduleUpdate()),
             Qt::UniqueConnection);
+    connect(dsource, &DataSource::dataPropertiesChanged, this,
+            &DataPropertiesPanel::onDataPropertiesChanged);
+    connect(dsource, &DataSource::displayPositionChanged, this,
+            &DataPropertiesPanel::onDataPositionChanged);
     connect(&m_scalarsTableModel, &DataPropertiesModel::scalarsRenamed, dsource,
             &DataSource::renameScalarsArray);
   }
   m_scalarIndexes.clear();
   scheduleUpdate();
+}
+
+void DataPropertiesPanel::onDataPropertiesChanged()
+{
+  if (!m_currentDataSource) {
+    return;
+  }
+
+  int extent[6];
+  double spacing[3];
+  double length[3];
+
+  m_currentDataSource->getExtent(extent);
+  m_currentDataSource->getSpacing(spacing);
+  auto origin = m_currentDataSource->displayPosition();
+
+  for (int axis = 0; axis < 3; ++axis) {
+    length[axis] =
+      spacing[axis] * (extent[2 * axis + 1] - extent[2 * axis] + 1);
+  }
+
+  m_ui->xLengthBox->setText(QString("%1").arg(length[0]));
+  m_ui->yLengthBox->setText(QString("%1").arg(length[1]));
+  m_ui->zLengthBox->setText(QString("%1").arg(length[2]));
+
+  m_ui->xOriginBox->setText(QString("%1").arg(origin[0]));
+  m_ui->yOriginBox->setText(QString("%1").arg(origin[1]));
+  m_ui->zOriginBox->setText(QString("%1").arg(origin[2]));
+}
+
+void DataPropertiesPanel::onDataPositionChanged(double, double, double)
+{
+  this->onDataPropertiesChanged();
 }
 
 namespace {
@@ -254,16 +343,8 @@ void DataPropertiesPanel::updateData()
   m_ui->NumVoxels->setText(getNumVoxelsString(dsource->proxy()));
   m_ui->MemSize->setText(getMemSizeString(dsource->proxy()));
 
-  int extent[6];
-  double spacing[3];
-  dsource->getExtent(extent);
-  dsource->getSpacing(spacing);
-  m_ui->xLengthBox->setText(
-    QString("%1").arg(spacing[0] * (extent[1] - extent[0] + 1)));
-  m_ui->yLengthBox->setText(
-    QString("%1").arg(spacing[1] * (extent[3] - extent[2] + 1)));
-  m_ui->zLengthBox->setText(
-    QString("%1").arg(spacing[2] * (extent[5] - extent[4] + 1)));
+  this->onDataPropertiesChanged();
+
   m_ui->unitBox->setText(m_currentDataSource->getUnits());
 
   auto sourceProxy = vtkSMSourceProxy::SafeDownCast(dsource->proxy());
@@ -456,16 +537,28 @@ void DataPropertiesPanel::updateUnits()
   }
 }
 
-void DataPropertiesPanel::updateXLength()
+bool DataPropertiesPanel::parseField(QLineEdit* widget, double& value)
 {
-  const QString& text = m_ui->xLengthBox->text();
-  auto ok = false;
-  double newLength = text.toDouble(&ok);
+  const QString& text = widget->text();
+  bool ok = false;
+  value = text.toDouble(&ok);
   if (!ok) {
-    qWarning() << "Failed to parse X Length string";
+    qWarning() << "Failed to parse string";
+  }
+
+  return ok;
+}
+
+void DataPropertiesPanel::updateLength(QLineEdit* widget, int axis)
+{
+  double newLength;
+  bool ok = DataPropertiesPanel::parseField(widget, newLength);
+
+  if (!ok) {
     return;
   }
-  updateSpacing(0, newLength);
+
+  updateSpacing(axis, newLength);
   updateData();
   DataSource* dsource = m_currentDataSource;
   if (!dsource) {
@@ -475,42 +568,24 @@ void DataPropertiesPanel::updateXLength()
   emit dsource->dataPropertiesChanged();
 }
 
-void DataPropertiesPanel::updateYLength()
+void DataPropertiesPanel::updateOrigin(QLineEdit* widget, int axis)
 {
-  const QString& text = m_ui->yLengthBox->text();
-  auto ok = false;
-  double newLength = text.toDouble(&ok);
-  if (!ok) {
-    qWarning() << "Failed to parse Y Length string";
-    return;
-  }
-  updateSpacing(1, newLength);
-  updateData();
-  DataSource* dsource = m_currentDataSource;
-  if (!dsource) {
-    return;
-  }
-  resetCamera();
-  emit dsource->dataPropertiesChanged();
-}
+  double newValue;
+  bool ok = DataPropertiesPanel::parseField(widget, newValue);
 
-void DataPropertiesPanel::updateZLength()
-{
-  const QString& text = m_ui->zLengthBox->text();
-  auto ok = false;
-  double newLength = text.toDouble(&ok);
   if (!ok) {
-    qWarning() << "Failed to parse Z Length string";
     return;
   }
-  updateSpacing(2, newLength);
-  updateData();
+
   DataSource* dsource = m_currentDataSource;
   if (!dsource) {
     return;
   }
-  resetCamera();
-  emit dsource->dataPropertiesChanged();
+
+  auto origin = dsource->displayPosition();
+  double newOrigin[3] = { origin[0], origin[1], origin[2] };
+  newOrigin[axis] = newValue;
+  dsource->setDisplayPosition(newOrigin);
 }
 
 void DataPropertiesPanel::resetCamera()

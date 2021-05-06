@@ -224,6 +224,8 @@ set(SOURCES
   vtkChartTransfer2DEditor.h
   vtkTransferFunctionBoxItem.h
   vtkTransferFunctionBoxItem.cxx
+  vtkCustomBoxRepresentation.cxx
+  vtkCustomBoxRepresentation.h
   vtkCustomPiecewiseControlPointsItem.cxx
   vtkCustomPiecewiseControlPointsItem.h
   vtkLengthScaleRepresentation.h

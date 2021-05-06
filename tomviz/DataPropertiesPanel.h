@@ -12,7 +12,9 @@
 #include <QScopedPointer>
 
 class pqProxyWidget;
+class QCheckBox;
 class QComboBox;
+class QLineEdit;
 class QTableView;
 class vtkPVDataInformation;
 
@@ -42,17 +44,19 @@ protected:
   void paintEvent(QPaintEvent*) override;
   void updateData();
   void updateComponentsCombo();
+  static bool parseField(QLineEdit* widget, double& value);
+  void updateLength(QLineEdit* widget, int axis);
+  void updateOrigin(QLineEdit* widget, int axis);
 
 private slots:
   void setDataSource(DataSource*);
   void onTiltAnglesModified(int row, int column);
   void setTiltAngles();
   void scheduleUpdate();
+  void onDataPropertiesChanged();
+  void onDataPositionChanged(double, double, double);
 
   void updateUnits();
-  void updateXLength();
-  void updateYLength();
-  void updateZLength();
 
   void updateAxesGridLabels();
 
@@ -71,6 +75,8 @@ private:
   QPointer<DataSource> m_currentDataSource;
   QPointer<pqProxyWidget> m_colorMapWidget;
   QPointer<QWidget> m_tiltAnglesSeparator;
+  QPointer<QCheckBox> m_sizeCheckbox;
+  QPointer<QCheckBox> m_originCheckbox;
   DataPropertiesModel m_scalarsTableModel;
   // Hold the order (the indexes into the field data), so we can preserve
   // the order during a rename.
