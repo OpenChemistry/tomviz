@@ -5,6 +5,7 @@
 
 #include "ActiveObjects.h"
 #include "AddRenderViewContextMenuBehavior.h"
+#include "FxiWorkflowWidget.h"
 #include "MoveActiveObject.h"
 #include "OperatorPython.h"
 #include "RotateAlignWidget.h"
@@ -100,6 +101,8 @@ void Behaviors::registerCustomOperatorUIs()
 {
   OperatorPython::registerCustomWidget("RotationAlignWidget", true,
                                        RotateAlignWidget::New);
+  OperatorPython::registerCustomWidget("FxiWorkflowWidget", true,
+                                       FxiWorkflowWidget::New);
 }
 
 } // end of namespace tomviz

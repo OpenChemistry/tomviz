@@ -1,0 +1,38 @@
+{
+  "name" : "FXI TomoPy Reconstruction",
+  "label" : "FXI TomoPy Reconstruction",
+  "description" : "Run FXI TomoPy Reconstruction on a dataset",
+  "widget": "FxiWorkflowWidget",
+  "externalCompatible": false,
+  "parameters" : [
+    {
+      "name" : "rotation_center",
+      "label" : "Rotation Center",
+      "description" : "The center of rotation of the dataset",
+      "type" : "double",
+      "default" : 0.0,
+      "precision" : 3
+    },
+    {
+      "name" : "slice_start",
+      "label" : "Slice Start",
+      "description" : "The first slice to use for reconstruction",
+      "type" : "int",
+      "default" : 0
+    },
+    {
+      "name" : "slice_stop",
+      "label" : "Slice Stop",
+      "description" : "The last slice to use for reconstruction",
+      "type" : "int",
+      "default" : 0
+    }
+  ],
+  "children": [
+    {
+      "name": "reconstruction",
+      "label": "Reconstruction",
+      "type": "reconstruction"
+    }
+  ]
+}

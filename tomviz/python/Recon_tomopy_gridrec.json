@@ -19,6 +19,13 @@
       "default" : true
     }
   ],
+  "children": [
+    {
+      "name": "reconstruction",
+      "label": "Reconstruction",
+      "type": "reconstruction"
+    }
+  ],
   "help" : {
     "url": "reconstruction/#tomopy"
   }

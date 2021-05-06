@@ -140,10 +140,12 @@ public:
     Function();
     Function(PyObject* obj);
     Function(const Function& other);
+    Function& operator=(const Function& other);
     Function& operator=(const Object& other);
 
     Object call();
     Object call(Tuple& args);
+    Object call(Dict& kwargs);
     Object call(Tuple& args, Dict& kwargs);
     QString toString();
   };

@@ -372,6 +372,13 @@ Python::Function::Function(PyObject* obj) : Object(obj) {}
 
 Python::Function::Function(const Python::Function& other) : Object(other) {}
 
+Python::Function& Python::Function::operator=(const Python::Function& other)
+{
+  Object::operator=(other);
+
+  return *this;
+}
+
 Python::Function& Python::Function::operator=(const Python::Object& other)
 {
   Object::operator=(other);
@@ -389,6 +396,12 @@ Python::Object Python::Function::call(Tuple& args)
 {
   Python::Dict empty;
   return call(args, empty);
+}
+
+Python::Object Python::Function::call(Dict& kwargs)
+{
+  Python::Tuple empty(0);
+  return call(empty, kwargs);
 }
 
 Python::Object Python::Function::call(Tuple& args, Dict& kwargs)
