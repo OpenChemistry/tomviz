@@ -509,6 +509,9 @@ public:
     sliceNumber = ui.imageViewSlider->value();
     if (sliceNumber < rotations.size()) {
       ui.currentRotation->setValue(rotations[sliceNumber]);
+
+      // For convenience, also set the rotation center for reconstruction
+      ui.rotationCenter->setValue(rotations[sliceNumber]);
     } else {
       qCritical() << sliceNumber
                   << "is greater than the rotations size:" << rotations.size();
