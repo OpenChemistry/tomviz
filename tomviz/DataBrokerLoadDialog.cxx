@@ -167,7 +167,8 @@ void DataBrokerLoadDialog::showRuns()
       stopTime = QDateTime::fromMSecsSinceEpoch(mseconds);
     }
     QStringList row = { run["uid"].toString(), run["name"].toString(),
-                        startTime.toString(Qt::TextDate), stopTime.toString(Qt::TextDate) };
+                        startTime.toString(Qt::TextDate),
+                        stopTime.toString(Qt::TextDate) };
 
     items.append(new QTreeWidgetItem(tree, row));
   }
@@ -351,12 +352,7 @@ QString DataBrokerLoadDialog::selectedVariable()
 
 void DataBrokerLoadDialog::allowFilter(bool allow)
 {
-  for (int i = 0; i < m_ui->filterLayout->count(); ++i) {
-    auto w = m_ui->filterLayout->itemAt(i)->widget();
-    if (w) {
-      w->setVisible(allow);
-    }
-  }
+  m_ui->filterWidget->setVisible(allow);
 }
 
 void DataBrokerLoadDialog::enableFilter(bool enable)
