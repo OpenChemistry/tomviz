@@ -20,6 +20,13 @@ DataBrokerLoadDialog::DataBrokerLoadDialog(DataBroker* dataBroker,
     m_dataBroker(dataBroker)
 {
   m_ui->setupUi(this);
+  allowFilter(false);
+  enableFilter(false);
+  m_ui->fromDateEdit->setCalendarPopup(true);
+  m_ui->toDateEdit->setCalendarPopup(true);
+  m_ui->fromDateEdit->setDate(QDate::currentDate().addDays(-365));
+  m_ui->toDateEdit->setDate(QDate::currentDate().addDays(1));
+
   auto tree = m_ui->treeWidget;
   tree->setExpandsOnDoubleClick(false);
   tree->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
@@ -30,6 +37,22 @@ DataBrokerLoadDialog::DataBrokerLoadDialog(DataBroker* dataBroker,
     clearErrorMessage();
     this->loadCatalogs();
   });
+
+  connect(m_ui->filterButton, &QPushButton::toggled, this, [this](bool enable) {
+    this->enableFilter(enable);
+    if (!enable) {
+      this->applyFilter();
+    }
+  });
+
+  connect(m_ui->fromDateEdit, &QDateEdit::dateChanged, this,
+          [this](QDate date) { m_fromDate = date; });
+
+  connect(m_ui->toDateEdit, &QDateEdit::dateChanged, this,
+          [this](QDate date) { m_toDate = date; });
+
+  connect(m_ui->applyFilterButton, &QPushButton::clicked, this,
+          &DataBrokerLoadDialog::applyFilter);
 
   setEnabledOkButton(false);
 
@@ -61,11 +84,14 @@ void DataBrokerLoadDialog::showCatalogs()
   tree->clear();
   disconnect(tree, &QTreeWidget::itemDoubleClicked, nullptr, nullptr);
 
+  allowFilter(false);
+
   connect(tree, &QTreeWidget::itemDoubleClicked, this,
           [this](QTreeWidgetItem* item, int column) {
             Q_UNUSED(column);
             m_selectedCatalog = item->data(0, Qt::DisplayRole).toString();
-            this->loadRuns(m_selectedCatalog);
+            this->loadRuns(m_selectedCatalog, m_dateFilter, m_fromDate,
+                           m_toDate);
           });
 
   tree->setColumnCount(2);
@@ -85,11 +111,15 @@ void DataBrokerLoadDialog::showCatalogs()
   tree->insertTopLevelItems(0, items);
 }
 
-void DataBrokerLoadDialog::loadRuns(const QString& catalog)
+void DataBrokerLoadDialog::loadRuns(const QString& catalog, bool dateFilter,
+                                    const QDate& fromDate, const QDate& toDate)
 {
   beginCall();
 
-  auto call = m_dataBroker->runs(catalog);
+  auto call = dateFilter
+                ? m_dataBroker->runs(catalog, fromDate.toString(Qt::ISODate),
+                                     toDate.toString(Qt::ISODate))
+                : m_dataBroker->runs(catalog, QString(""), QString(""));
   connect(call, &ListResourceCall::complete, call,
           [this, call](QList<QVariantMap> runs) {
             this->m_runs = runs;
@@ -108,6 +138,8 @@ void DataBrokerLoadDialog::showRuns()
   tree->clear();
   disconnect(tree, &QTreeWidget::itemDoubleClicked, nullptr, nullptr);
 
+  allowFilter(true);
+
   connect(tree, &QTreeWidget::itemDoubleClicked, this,
           [this](QTreeWidgetItem* item, int column) {
             Q_UNUSED(column);
@@ -117,16 +149,26 @@ void DataBrokerLoadDialog::showRuns()
 
   tree->setColumnCount(3);
 
-  QStringList headers = { "UID", "Name", "Date" };
+  QStringList headers = { "UID", "Name", "Start", "Stop" };
   tree->setHeaderLabels(headers);
 
   QList<QTreeWidgetItem*> items;
   for (auto run : m_runs) {
-    auto seconds = run["time"].toDouble();
-    auto mseconds = seconds * 1000;
-    auto dateTime = QDateTime::fromMSecsSinceEpoch(mseconds);
+    QDateTime startTime;
+    QDateTime stopTime;
+    {
+      auto seconds = run["startTime"].toDouble();
+      auto mseconds = seconds * 1000;
+      startTime = QDateTime::fromMSecsSinceEpoch(mseconds);
+    }
+    {
+      auto seconds = run["stopTime"].toDouble();
+      auto mseconds = seconds * 1000;
+      stopTime = QDateTime::fromMSecsSinceEpoch(mseconds);
+    }
     QStringList row = { run["uid"].toString(), run["name"].toString(),
-                        dateTime.toString(Qt::TextDate) };
+                        startTime.toString(Qt::TextDate),
+                        stopTime.toString(Qt::TextDate) };
 
     items.append(new QTreeWidgetItem(tree, row));
   }
@@ -156,6 +198,8 @@ void DataBrokerLoadDialog::showTables()
   auto tree = m_ui->treeWidget;
   tree->clear();
   disconnect(tree, &QTreeWidget::itemDoubleClicked, nullptr, nullptr);
+
+  allowFilter(false);
 
   connect(tree, &QTreeWidget::itemDoubleClicked, this,
           [this](QTreeWidgetItem* item, int column) {
@@ -202,6 +246,8 @@ void DataBrokerLoadDialog::showVariables()
   auto tree = m_ui->treeWidget;
   tree->clear();
   disconnect(tree, &QTreeWidget::itemDoubleClicked, nullptr, nullptr);
+
+  allowFilter(false);
 
   connect(tree, &QTreeWidget::itemClicked, this,
           [this](QTreeWidgetItem* item, int column) {
@@ -302,6 +348,26 @@ QString DataBrokerLoadDialog::selectedTable()
 QString DataBrokerLoadDialog::selectedVariable()
 {
   return m_selectedVariable;
+}
+
+void DataBrokerLoadDialog::allowFilter(bool allow)
+{
+  m_ui->filterWidget->setVisible(allow);
+}
+
+void DataBrokerLoadDialog::enableFilter(bool enable)
+{
+  m_dateFilter = enable;
+  m_ui->fromDateEdit->setEnabled(enable);
+  m_ui->toDateEdit->setEnabled(enable);
+  m_ui->applyFilterButton->setEnabled(enable);
+}
+
+void DataBrokerLoadDialog::applyFilter()
+{
+  m_fromDate = m_ui->fromDateEdit->date();
+  m_toDate = m_ui->toDateEdit->date();
+  this->loadRuns(m_selectedCatalog, m_dateFilter, m_fromDate, m_toDate);
 }
 
 } // namespace tomviz
