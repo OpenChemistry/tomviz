@@ -81,7 +81,22 @@ void ProgressDialogManager::operationStarted()
     layout->addWidget(progressBar);
   }
   layout->addWidget(progressWidget);
-  if (op->supportsCancelingMidTransform()) {
+  if (op->supportsDoneingMidTransform()) {
+    // Unless widget has custom progress handling, can't done it
+    QDialogButtonBox* dialogButtons = new QDialogButtonBox( QDialogButtonBox::Ok
+      | QDialogButtonBox::Cancel, Qt::Horizontal, progressDialog);
+    layout->addWidget(dialogButtons);
+    QObject::connect(progressDialog, &QDialog::rejected, op,
+                     &Operator::cancelTransform);
+    QObject::connect(dialogButtons, &QDialogButtonBox::rejected, progressDialog,
+                     &QDialog::reject);
+
+    QObject::connect(progressDialog, &QDialog::accepted, op,
+                      &Operator::doneTransform);
+    QObject::connect(dialogButtons, &QDialogButtonBox::accepted, progressDialog,
+                      &QDialog::accept);
+  }
+  else if (op->supportsCancelingMidTransform()) {
     // Unless the widget has custom progress handling, you can't cancel it.
     QDialogButtonBox* dialogButtons = new QDialogButtonBox(
       QDialogButtonBox::Cancel, Qt::Horizontal, progressDialog);

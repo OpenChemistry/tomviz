@@ -34,7 +34,8 @@ enum class OperatorState
   Complete,
   Canceled,
   Error,
-  Edit
+  Edit,
+  Done
 };
 
 enum class TransformResult
@@ -145,6 +146,11 @@ public:
   /// can be set by the setSupportsCancel(bool) method by subclasses.
   bool supportsCancelingMidTransform() const { return m_supportsCancel; }
 
+  /// Returns true if the operation supports doneing midway through the
+  /// applyTransform function via the cancelTransform slot.  Defaults to false,
+  /// can be set by the setSupportsDone(bool) method by subclasses.
+  bool supportsDoneingMidTransform() const { return m_supportsDone; }
+
   /// Return the total number of progress updates (assuming each update
   /// increments the progress from 0 to some maximum.  If the operator doesn't
   /// support incremental progress updates, leave value set to zero
@@ -234,13 +240,24 @@ signals:
   // a request to cancel this operator has been issued.
   void transformCanceled();
 
+  // Emitted when the operator is accepted before reaching a completed transform.
+  // The operator will still be running, so there has to be a request to cancel
+  // the operator as well as encourage the next operator to run.
+  void transformDone();
+
 public slots:
   /// Called when the 'Cancel' button is pressed on the progress dialog.
   /// Subclasses overriding this method should call the base implementation
   /// to ensure the operator is marked as canceled.
   /// TODO: Not sure we need this/want this virtual anymore?
   virtual void cancelTransform();
+  virtual void doneTransform();
   bool isCanceled() { return m_state == OperatorState::Canceled; }
+  bool isDone()
+  {
+    return m_state == OperatorState::Done ||
+           m_state == OperatorState::Complete;
+  }
   bool isFinished()
   {
     return m_state == OperatorState::Complete ||
@@ -274,11 +291,17 @@ protected:
   /// the cancelTransform slot to listen for the cancel signal and handle it.
   void setSupportsCancel(bool b) { m_supportsCancel = b; }
 
+  /// Method to set whether the operator supports doneing midway through the
+  /// transform method call.  If you set this to true, you should also override
+  /// the doneTransform slot to listen for the done signal and handle it.
+  void setSupportsDone(bool b) { m_supportsDone = b; }
+
 private:
   Q_DISABLE_COPY(Operator)
 
   QList<OperatorResult*> m_results;
   bool m_supportsCancel = false;
+  bool m_supportsDone = false;
   bool m_hasChildDataSource = false;
   bool m_modified = true;
   bool m_new = true;

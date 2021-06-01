@@ -18,6 +18,11 @@ bool OperatorPythonWrapper::canceled()
   return m_op->canceled();
 }
 
+bool OperatorPythonWrapper::done()
+{
+  return m_op->done();
+}
+
 void OperatorPythonWrapper::setTotalProgressSteps(int progress)
 {
   m_op->setTotalProgressSteps(progress);

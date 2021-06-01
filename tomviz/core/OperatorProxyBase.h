@@ -19,6 +19,8 @@ public:
 
   virtual bool canceled() = 0;
 
+  virtual bool done() = 0;
+
   virtual void setTotalProgressSteps(int progress) = 0;
 
   virtual int totalProgressSteps() = 0;

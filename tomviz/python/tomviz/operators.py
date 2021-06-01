@@ -112,3 +112,18 @@ class CancelableOperator(Operator):
         :returns True if the operator has been canceled, False otherwise.
         """
         return self._operator_wrapper.canceled
+
+class DoneableOperator(CancelableOperator):
+    """
+    A doneable operator allows a user to interrupt the execution of an operator
+    using either "cancel" or "done". The doneable property can be used in the
+    transform(...) method to break out when an operator is finished early, like
+    if an iterative algorithm is a reasonable quality before the designated
+    iterations are reached. Use similar to "cancel", but be sure to return data.
+    """
+    @property
+    def done(self):
+        """
+        :returns True if the operator is Done (from Button), False otherwise
+        """
+        return self._operator_wrapper.done

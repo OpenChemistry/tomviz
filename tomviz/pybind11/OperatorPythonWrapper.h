@@ -17,6 +17,7 @@ struct OperatorPythonWrapper
 {
   OperatorPythonWrapper(void* o);
   bool canceled();
+  bool done();
   void setTotalProgressSteps(int progress);
   int totalProgressSteps();
   void setProgressStep(int progress);

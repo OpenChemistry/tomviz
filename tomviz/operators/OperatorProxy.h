@@ -18,6 +18,8 @@ public:
 
   bool canceled() override;
 
+  bool done() override;
+
   void setTotalProgressSteps(int progress) override;
 
   int totalProgressSteps() override;
