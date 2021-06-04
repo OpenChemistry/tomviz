@@ -113,6 +113,7 @@ class CancelableOperator(Operator):
         """
         return self._operator_wrapper.canceled
 
+
 class DoneableOperator(CancelableOperator):
     """
     A doneable operator allows a user to interrupt the execution of an operator

@@ -80,6 +80,7 @@ def is_cancelable(transform_module):
     return cls is not None and issubclass(cls,
                                           tomviz.operators.CancelableOperator)
 
+
 def is_doneable(transform_module):
     cls = find_operator_class(transform_module)
 
@@ -91,7 +92,6 @@ def is_doneable(transform_module):
 
     return cls is not None and issubclass(cls,
                                           tomviz.operators.DoneableOperator)
-
 
 
 def find_transform_function(transform_module, op=None):

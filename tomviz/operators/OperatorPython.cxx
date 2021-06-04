@@ -161,7 +161,7 @@ OperatorPython::OperatorPython(DataSource* parentObject)
       qCritical() << "Unable to locate is_cancelable.";
     }
 
-   d->IsDoneableFunction = d->InternalModule.findFunction("is_doneable");
+    d->IsDoneableFunction = d->InternalModule.findFunction("is_doneable");
     if (!d->IsDoneableFunction.isValid()) {
       qCritical() << "Unable to locate is_doneable.";
     }
