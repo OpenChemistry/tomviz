@@ -240,9 +240,9 @@ signals:
   // a request to cancel this operator has been issued.
   void transformCanceled();
 
-  // Emitted when the operator is accepted before reaching a completed 
-  // transform. The operator will still be running, so there has to be 
-  // a request to cancel the operator as well as encourage the next 
+  // Emitted when the operator is accepted before reaching a completed
+  // transform. The operator will still be running, so there has to be
+  // a request to cancel the operator as well as encourage the next
   // operator to run.
   void transformDone();
 
