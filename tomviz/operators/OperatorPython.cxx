@@ -55,7 +55,7 @@ public:
     if (!o->script().isEmpty()) {
       m_ui.script->setPlainText(o->script());
     }
-    new pqPythonSyntaxHighlighter(m_ui.script, this);
+    new pqPythonSyntaxHighlighter(this, *m_ui.script);
     if (customWidget) {
       QVBoxLayout* layout = new QVBoxLayout();
       m_customWidget->setupUI(m_op);
