@@ -7,7 +7,9 @@
 #include "ActiveObjects.h"
 #include "ColorMap.h"
 #include "DataSource.h"
+#include "InterfaceBuilder.h"
 #include "InternalPythonHelper.h"
+#include "OperatorPython.h"
 #include "PresetDialog.h"
 #include "Utilities.h"
 
@@ -125,11 +127,13 @@ public:
   InternalPythonHelper pythonHelper;
   QPointer<FxiWorkflowWidget> parent;
   QPointer<DataSource> dataSource;
+  QPointer<InterfaceBuilder> interfaceBuilder;
   int sliceNumber = 0;
   QScopedPointer<InternalProgressDialog> progressDialog;
   QFutureWatcher<void> futureWatcher;
   bool testRotationsSuccess = false;
   QString testRotationsErrorMessage;
+  QStringList additionalParameterNames;
 
   Internal(Operator* o, vtkSmartPointer<vtkImageData> img, FxiWorkflowWidget* p)
     : op(o), image(img)
@@ -185,6 +189,9 @@ public:
     auto toolTip = "Max: " + QString::number(dims[1]);
     ui.sliceStop->setToolTip(toolTip);
 
+    // Hide the additional parameters label unless the user adds some
+    ui.additionalParametersLayoutLabel->hide();
+
     progressDialog.reset(new InternalProgressDialog(parent));
 
     updateControls();
@@ -207,6 +214,98 @@ public:
             &Internal::onPreviewRangeEdited);
     connect(ui.previewMax, &DoubleSliderWidget::valueEdited, this,
             &Internal::onPreviewRangeEdited);
+  }
+
+  void setupUI(OperatorPython* pythonOp)
+  {
+    if (!pythonOp) {
+      return;
+    }
+
+    // If the user added extra parameters, add them here
+    auto json = QJsonDocument::fromJson(pythonOp->JSONDescription().toLatin1());
+    if (json.isNull() || !json.isObject()) {
+      return;
+    }
+
+    DataSource* ds = nullptr;
+    if (pythonOp->hasChildDataSource()) {
+      ds = pythonOp->childDataSource();
+    } else {
+      ds = qobject_cast<DataSource*>(pythonOp->parent());
+    }
+
+    if (!ds) {
+      ds = ActiveObjects::instance().activeDataSource();
+    }
+
+    QJsonObject root = json.object();
+
+    // Get the parameters for the operator
+    QJsonValueRef parametersNode = root["parameters"];
+    if (parametersNode.isUndefined() || !parametersNode.isArray()) {
+      return;
+    }
+    auto parameters = parametersNode.toArray();
+
+    // Here is the list of parameters for which we already have widgets
+    QStringList knownParameters = {
+      "rotation_center", "slice_start", "slice_stop",
+    };
+
+    additionalParameterNames.clear();
+    int i = 0;
+    while (i < parameters.size()) {
+      QJsonValueRef parameterNode = parameters[i];
+      QJsonObject parameterObject = parameterNode.toObject();
+      QJsonValueRef nameValue = parameterObject["name"];
+      if (knownParameters.contains(nameValue.toString())) {
+        // This parameter is already known. Remove it.
+        parameters.removeAt(i);
+      } else {
+        i += 1;
+        additionalParameterNames.append(nameValue.toString());
+      }
+    }
+
+    if (parameters.isEmpty()) {
+      return;
+    }
+
+    // If we get to this point, we have some extra parameters.
+    // Show the additional parameters label, and add the parameters.
+    ui.additionalParametersLayoutLabel->show();
+    auto layout = ui.additionalParametersLayout;
+
+    if (interfaceBuilder) {
+      interfaceBuilder->deleteLater();
+      interfaceBuilder = nullptr;
+    }
+
+    interfaceBuilder = new InterfaceBuilder(this, ds);
+    interfaceBuilder->setParameterValues(pythonOp->arguments());
+    interfaceBuilder->buildParameterInterface(layout, parameters);
+  }
+
+  void setAdditionalParameterValues(QMap<QString, QVariant> values)
+  {
+    if (!interfaceBuilder) {
+      return;
+    }
+
+    auto parentWidget = ui.additionalParametersLayout->parentWidget();
+    interfaceBuilder->setParameterValues(values);
+    interfaceBuilder->updateWidgetValues(parentWidget);
+  }
+
+  QVariantMap additionalParametersValues()
+  {
+    if (!interfaceBuilder) {
+      return QVariantMap();
+    }
+
+    auto parentWidget = ui.additionalParametersLayout->parentWidget();
+    return interfaceBuilder->parameterValues(parentWidget);
   }
 
   void setupRenderer() { tomviz::setupRenderer(renderer, mapper, axesActor); }
@@ -599,6 +698,11 @@ void FxiWorkflowWidget::getValues(QMap<QString, QVariant>& map)
   map.insert("rotation_center", m_internal->rotationCenter());
   map.insert("slice_start", m_internal->sliceStart());
   map.insert("slice_stop", m_internal->sliceStop());
+
+  auto extraParamsMap = m_internal->additionalParametersValues();
+  for (auto it = extraParamsMap.cbegin(); it != extraParamsMap.cend(); ++it) {
+    map.insert(it.key(), it.value());
+  }
 }
 
 void FxiWorkflowWidget::setValues(const QMap<QString, QVariant>& map)
@@ -612,12 +716,20 @@ void FxiWorkflowWidget::setValues(const QMap<QString, QVariant>& map)
   if (map.contains("slice_stop")) {
     m_internal->setSliceStop(map["slice_stop"].toInt());
   }
+
+  m_internal->setAdditionalParameterValues(map);
 }
 
 void FxiWorkflowWidget::setScript(const QString& script)
 {
   Superclass::setScript(script);
   m_internal->script = script;
+}
+
+void FxiWorkflowWidget::setupUI(OperatorPython* op)
+{
+  Superclass::setupUI(op);
+  m_internal->setupUI(op);
 }
 
 } // namespace tomviz

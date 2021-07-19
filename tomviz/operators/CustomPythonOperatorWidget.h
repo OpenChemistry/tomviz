@@ -8,6 +8,8 @@
 
 namespace tomviz {
 
+class OperatorPython;
+
 class CustomPythonOperatorWidget : public QWidget
 {
   Q_OBJECT
@@ -22,6 +24,9 @@ public:
   // Keep a copy of the current script (including edits) in case the
   // custom python operator needs to use it.
   virtual void setScript(const QString& script) { m_script = script; }
+
+  // Subclasses can perform some UI setup when this is called, if needed
+  virtual void setupUI(OperatorPython*) {}
 
 protected:
   QString m_script;

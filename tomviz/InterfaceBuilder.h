@@ -38,6 +38,8 @@ public:
 
   static QMap<QString, QVariant> parameterValues(const QObject* parent);
 
+  void updateWidgetValues(const QObject* parent);
+
 private:
   Q_DISABLE_COPY(InterfaceBuilder)
 

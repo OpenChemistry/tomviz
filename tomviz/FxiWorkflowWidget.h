@@ -32,6 +32,7 @@ public:
   void setValues(const QMap<QString, QVariant>& map) override;
 
   void setScript(const QString& script) override;
+  void setupUI(OperatorPython* op) override;
 
 private:
   Q_DISABLE_COPY(FxiWorkflowWidget)

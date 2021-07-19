@@ -55,6 +55,7 @@ public:
     new pqPythonSyntaxHighlighter(m_ui.script, this);
     if (customWidget) {
       QVBoxLayout* layout = new QVBoxLayout();
+      m_customWidget->setupUI(m_op);
       m_customWidget->setValues(m_op->arguments());
       layout->addWidget(m_customWidget);
       m_ui.argumentsWidget->setLayout(layout);
