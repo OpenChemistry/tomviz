@@ -5,6 +5,7 @@
 
 #include "ActiveObjects.h"
 #include "CloneDataReaction.h"
+#include "ConformVolumeReaction.h"
 #include "DuplicateModuleReaction.h"
 #include "EditOperatorDialog.h"
 #include "ExportDataReaction.h"
@@ -279,6 +280,9 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
     QAction* mergeImageAction = contextMenu.addAction("Merge Images");
     auto micReaction = new MergeImagesReaction(mergeImageAction);
 
+    auto conformVolumeAction = contextMenu.addAction("Conform Volume");
+    auto cvReaction = new ConformVolumeReaction(conformVolumeAction);
+
     // Set the selected data sources in the merge components reaction
     QModelIndexList indexList = selectedIndexes();
     QSet<DataSource*> selectedDataSources;
@@ -289,7 +293,7 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
       }
     }
     micReaction->updateDataSources(selectedDataSources);
-
+    cvReaction->updateDataSources(selectedDataSources);
   }
 
   // Allow pipeline to be re-executed if we are dealing with a canceled
