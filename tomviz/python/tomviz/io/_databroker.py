@@ -41,12 +41,13 @@ def runs(catalog_name, since, until):
     for uid, run in cat.items():
         runs.append({
             "uid": uid,
-            "name": run.name,
+            "planName": run.metadata['start']['plan_name'],
+            "scanId": run.metadata['start']['scan_id'],
             "startTime": run.metadata['start']['time'],
             "stopTime": run.metadata['stop']['time'],
         })
 
-    runs = sorted(runs, key=lambda r: r['name'])
+    runs = sorted(runs, key=lambda r: r['uid'])
 
     return runs
 
