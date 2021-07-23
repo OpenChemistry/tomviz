@@ -575,9 +575,53 @@ QLayout* InterfaceBuilder::buildInterface() const
   return verticalLayout;
 }
 
+static bool setWidgetValue(QObject* o, const QVariant& v)
+{
+  // Returns true if the widget type was found, false otherwise.
+
+  if (auto cb = qobject_cast<QCheckBox*>(o)) {
+    cb->setChecked(v.toBool());
+  } else if (auto sb = qobject_cast<tomviz::SpinBox*>(o)) {
+    sb->setValue(v.toInt());
+  } else if (auto dsb = qobject_cast<tomviz::DoubleSpinBox*>(o)) {
+    dsb->setValue(v.toDouble());
+  } else if (auto combo = qobject_cast<QComboBox*>(o)) {
+    combo->setCurrentText(v.toString());
+  } else if (auto le = qobject_cast<QLineEdit*>(o)) {
+    le->setText(v.toString());
+  } else {
+    return false;
+  }
+
+  return true;
+}
+
 void InterfaceBuilder::setParameterValues(QMap<QString, QVariant> values)
 {
   m_parameterValues = values;
+}
+
+void InterfaceBuilder::updateWidgetValues(const QObject* parent)
+{
+  static const QStringList skipTypes = {
+    "QLabel",
+  };
+
+  for (auto* child : parent->findChildren<QWidget*>()) {
+    if (skipTypes.contains(child->metaObject()->className())) {
+      // Skip this type...
+      continue;
+    }
+
+    const auto& name = child->objectName();
+    if (!m_parameterValues.contains(name)) {
+      continue;
+    }
+
+    if (!setWidgetValue(child, m_parameterValues[name])) {
+      qDebug() << "Failed to set value for child: " << child;
+    }
+  }
 }
 
 QVariantMap InterfaceBuilder::parameterValues(const QObject* parent)

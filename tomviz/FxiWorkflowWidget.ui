@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>895</width>
+    <width>992</width>
     <height>679</height>
    </rect>
   </property>
@@ -288,13 +288,43 @@
          <layout class="QGridLayout" name="gridLayout_4">
           <item row="0" column="0">
            <layout class="QGridLayout" name="reconstructionLayout">
-            <item row="3" column="1">
-             <widget class="QSpinBox" name="sliceStop">
-              <property name="keyboardTracking">
-               <bool>false</bool>
+            <item row="2" column="0">
+             <widget class="QLabel" name="sliceStartLabel">
+              <property name="text">
+               <string>Slice Start:</string>
               </property>
-              <property name="maximum">
-               <number>10000</number>
+             </widget>
+            </item>
+            <item row="3" column="0">
+             <widget class="QLabel" name="sliceStopLabel">
+              <property name="text">
+               <string>Slice Stop:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0" colspan="2">
+             <widget class="QLabel" name="label">
+              <property name="minimumSize">
+               <size>
+                <width>450</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="mouseTracking">
+               <bool>true</bool>
+              </property>
+              <property name="text">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:large; font-weight:600;&quot;&gt;Reconstruction&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="wordWrap">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="rotationCenterLabel">
+              <property name="text">
+               <string>Rotation Center:</string>
               </property>
              </widget>
             </item>
@@ -308,24 +338,13 @@
               </property>
              </widget>
             </item>
-            <item row="3" column="0">
-             <widget class="QLabel" name="sliceStopLabel">
-              <property name="text">
-               <string>Slice Stop:</string>
+            <item row="3" column="1">
+             <widget class="QSpinBox" name="sliceStop">
+              <property name="keyboardTracking">
+               <bool>false</bool>
               </property>
-             </widget>
-            </item>
-            <item row="1" column="0">
-             <widget class="QLabel" name="rotationCenterLabel">
-              <property name="text">
-               <string>Rotation Center:</string>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="0">
-             <widget class="QLabel" name="sliceStartLabel">
-              <property name="text">
-               <string>Slice Start:</string>
+              <property name="maximum">
+               <number>10000</number>
               </property>
              </widget>
             </item>
@@ -348,23 +367,29 @@
               </property>
              </widget>
             </item>
-            <item row="0" column="0" colspan="2">
-             <widget class="QLabel" name="label">
-              <property name="minimumSize">
-               <size>
-                <width>450</width>
-                <height>0</height>
-               </size>
-              </property>
-              <property name="mouseTracking">
-               <bool>true</bool>
-              </property>
-              <property name="text">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:large; font-weight:600;&quot;&gt;Reconstruction&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-              <property name="wordWrap">
-               <bool>true</bool>
-              </property>
+            <item row="4" column="0" colspan="2">
+             <widget class="QWidget" name="additionalParametersLayoutWidget" native="true">
+              <layout class="QGridLayout" name="additionalParametersLayout">
+               <item row="0" column="0">
+                <widget class="QLabel" name="additionalParametersLayoutLabel">
+                 <property name="minimumSize">
+                  <size>
+                   <width>450</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                 <property name="mouseTracking">
+                  <bool>true</bool>
+                 </property>
+                 <property name="text">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:large; font-weight:600;&quot;&gt;Additional Parameters&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
+                 <property name="wordWrap">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+              </layout>
              </widget>
             </item>
            </layout>
