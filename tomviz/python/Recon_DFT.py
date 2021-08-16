@@ -76,7 +76,7 @@ class ReconDFMOperator(tomviz.operators.CancelableOperator):
                 sz = abs(np.floor(kz_new) - kz_new)
                 for b in range(1, 5): #bilinear extrapolation
                     pz, py, weight = bilinear(kz_new, ky_new, sz, sy, Ny, b)
-                    if (py >= 0 and py < Ny and pz >= 0 and pz < Nz / 2 + 1):
+                    if (py >= 0 and py < Ny and pz >= 0 and pz < np.floor( Nz / 2 + 1 )):
                         w[:, py, pz] = w[:, py, pz] + weight
                         v[:, py, pz] = v[:, py, pz] + \
                             weight * pF[:, i]
