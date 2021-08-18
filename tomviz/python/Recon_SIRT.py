@@ -4,7 +4,7 @@ import tomviz.operators
 import time
 
 
-class ReconSirtOperator(tomviz.operators.DoneableOperator):
+class ReconSirtOperator(tomviz.operators.EarlyCompletableOperator):
 
     def transform(self, dataset, Niter=10, stepSize=0.0001,
                   updateMethodIndex=0, Nupdates=0):
@@ -65,14 +65,14 @@ class ReconSirtOperator(tomviz.operators.DoneableOperator):
 
         for i in range(Niter):
 
-            if self.done:
+            if self.early_completed:
                 break
 
             for s in range(Nslice):
 
                 if self.canceled:
                     return
-                elif self.done:
+                elif self.early_completed:
                     break
 
                 self.progress.message = 'Iteration No.%d/%d,Slice No.%d/%d.' % (
