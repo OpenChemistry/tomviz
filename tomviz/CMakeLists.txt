@@ -3,7 +3,8 @@ find_package(OpenGL REQUIRED)
 include_directories(SYSTEM
   ${Qt5Widgets_INCLUDE_DIRS}
   ${Qt5Concurrent_INCLUDE_DIRS}
-  ${PROJECT_SOURCE_DIR}/thirdparty/pybind11/include)
+  ${PROJECT_SOURCE_DIR}/thirdparty/pybind11/include
+  ${ParaView_DIR}/VTK/ThirdParty/eigen)
 
 add_subdirectory(core)
 add_subdirectory(pvextensions)
@@ -462,6 +463,7 @@ set(python_files
   TV_Filter.py
   PoreSizeDistribution.py
   Tortuosity.py
+  Real_Time_Tomography.py
   )
 
 set(json_files
@@ -510,6 +512,7 @@ set(json_files
   TV_Filter.json
   PoreSizeDistribution.json
   Tortuosity.json
+  Real_Time_Tomography.json
   )
 
 set(resource_files
@@ -577,6 +580,9 @@ set(tomviz_python_modules
   web.py
   modules.py
   views.py
+  logger.py
+  pytvlib.py
+  wbp.py
 )
 
 file(MAKE_DIRECTORY "${tomviz_python_binary_dir}/tomviz")
@@ -596,6 +602,8 @@ set(tomviz_python_io_modules
   __init__.py
   _internal.py
   _databroker.py
+  ser.py
+  dm.py
 )
 
 file(MAKE_DIRECTORY "${tomviz_python_binary_dir}/tomviz/io")

@@ -1,10 +1,12 @@
+include_directories(SYSTEM ${ParaView_DIR}/VTK/ThirdParty/eigen)
+
 set(CMAKE_MODULE_LINKER_FLAGS "")
 pybind11_add_module(_wrapping
   OperatorPythonWrapper.cxx
   PipelineStateManager.cxx
   Wrapping.cxx)
 target_link_libraries(_wrapping
-  PRIVATE tomvizcore VTK::CommonDataModel VTK::WrappingPythonCore)
+  PRIVATE tomvizcore VTK::CommonDataModel VTK::WrappingPythonCore VTK::eigen)
 
 set_target_properties(_wrapping PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY "${tomviz_python_binary_dir}/tomviz"
