@@ -1,5 +1,9 @@
 include_directories(SYSTEM ${ParaView_DIR}/VTK/ThirdParty/eigen)
 
+find_package(tbb)
+link_directories(tbb)
+include_directories(tbb)
+
 set(CMAKE_MODULE_LINKER_FLAGS "")
 pybind11_add_module(_wrapping
   OperatorPythonWrapper.cxx
