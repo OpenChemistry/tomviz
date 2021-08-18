@@ -81,7 +81,7 @@ def is_cancelable(transform_module):
                                           tomviz.operators.CancelableOperator)
 
 
-def is_doneable(transform_module):
+def is_early_completable(transform_module):
     cls = find_operator_class(transform_module)
 
     if cls is None:
@@ -91,7 +91,7 @@ def is_doneable(transform_module):
         raise Exception('Unable to locate function or operator class.')
 
     return cls is not None and issubclass(cls,
-                                          tomviz.operators.DoneableOperator)
+                                          tomviz.operators.EarlyCompletableOperator)
 
 
 def find_transform_function(transform_module, op=None):

@@ -218,9 +218,9 @@ void Operator::cancelTransform()
   emit transformCanceled();
 }
 
-void Operator::doneTransform()
+void Operator::earlyCompletionTransform()
 {
-  m_state = OperatorState::Done;
-  emit transformDone();
+  m_state = OperatorState::Complete;
+  emit transformEarlyCompleted();
 }
 } // namespace tomviz

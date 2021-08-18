@@ -18,7 +18,7 @@ public:
 
   bool canceled() override;
 
-  bool done() override;
+  bool earlyCompleted() override;
 
   void setTotalProgressSteps(int progress) override;
 
