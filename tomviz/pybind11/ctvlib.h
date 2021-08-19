@@ -10,9 +10,10 @@
 #ifndef ctvlib_h
 #define ctvlib_h
 
-#include <Eigen/Core>
-#include <Eigen/SparseCore>
-#include <pybind11/eigen.h>
+#include <vtk_eigen.h>
+
+#include VTK_EIGEN(CORE)
+#include VTK_EIGEN(SparseCore)
 
 class ctvlib 
 {

@@ -9,15 +9,16 @@
 
 #include "ctvlib.h"
 
+#include <vtk_eigen.h>
+
+#include VTK_EIGEN(CORE)
+#include VTK_EIGEN(SparseCore)
+
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_reduce.h>
 
 #include <cmath>
 #include <random>
-
-#include <Eigen/Core>
-#include <Eigen/SparseCore>
-#include <pybind11/eigen.h>
 
 using namespace Eigen;
 using namespace std;
