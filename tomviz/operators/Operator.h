@@ -146,9 +146,13 @@ public:
   bool supportsCancelingMidTransform() const { return m_supportsCancel; }
 
   /// Returns true if the operation supports early completion midway through the
-  /// applyTransform function via the cancelTransform slot.  Defaults to false,
-  /// can be set by the setSupportsEarlyCompletion(bool) method by subclasses.
-  bool supportsEarlyCompletionMidTransform() const { return m_supportsEarlyCompletion; }
+  /// applyTransform function via the cancelTransform slot.
+  /// Defaults to false, can be set by the setSupportsEarlyCompletion(bool)
+  /// method by subclasses.
+  bool supportsEarlyCompletionMidTransform() const
+  {
+    return m_supportsEarlyCompletion;
+  }
 
   /// Return the total number of progress updates (assuming each update
   /// increments the progress from 0 to some maximum.  If the operator doesn't
@@ -254,11 +258,9 @@ public slots:
   virtual void earlyCompletionTransform();
   bool isCanceled() { return m_state == OperatorState::Canceled; }
 
-  /// Distinction between this and isFinished is necessary to prevent cascading errors
-  bool isEarlyCompleted()
-  {
-    return m_state == OperatorState::Complete;
-  }
+  /// Distinction between this and isFinished is necessary to prevent cascading
+  /// errors
+  bool isEarlyCompleted() { return m_state == OperatorState::Complete; }
   bool isFinished()
   {
     return m_state == OperatorState::Complete ||
@@ -292,9 +294,11 @@ protected:
   /// the cancelTransform slot to listen for the cancel signal and handle it.
   void setSupportsCancel(bool b) { m_supportsCancel = b; }
 
-  /// Method to set whether the operator supports early completion midway through the
-  /// transform method call.  If you set this to true, you should also override
-  /// the earlyCompletionTransform slot to listen for the done signal and handle it.
+  /// Method to set whether the operator supports early completion midway
+  /// through the transform method call.
+  /// If you set this to true, you should also override the
+  /// earlyCompletionTransform slot to listen for the done signal and handle
+  /// it.
   void setSupportsEarlyCompletion(bool b) { m_supportsEarlyCompletion = b; }
 
 private:

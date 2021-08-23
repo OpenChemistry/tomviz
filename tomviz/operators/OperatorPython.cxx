@@ -161,7 +161,8 @@ OperatorPython::OperatorPython(DataSource* parentObject)
       qCritical() << "Unable to locate is_cancelable.";
     }
 
-    d->IsEarlyCompletableFunction = d->InternalModule.findFunction("is_early_completable");
+    d->IsEarlyCompletableFunction =
+      d->InternalModule.findFunction("is_early_completable");
     if (!d->IsEarlyCompletableFunction.isValid()) {
       qCritical() << "Unable to locate is_early_completeable.";
       return;
