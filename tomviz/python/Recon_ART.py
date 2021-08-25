@@ -66,7 +66,7 @@ class ReconARTOperator(tomviz.operators.EarlyCompletableOperator):
                     return
                 elif self.early_completed:
                     break
-                
+
                 self.progress.message = 'Iteration No.%d/%d,Slice No.%d/%d.' % (
                     i + 1, Niter, s + 1, Nslice) + etcMessage
 

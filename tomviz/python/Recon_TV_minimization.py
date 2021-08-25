@@ -57,7 +57,7 @@ class ReconTVOperator(tomviz.operators.EarlyCompletableOperator):
 
             if self.early_completed:
                 break
-            
+
             recon_temp = recon.copy()
 
             #ART recon

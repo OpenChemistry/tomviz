@@ -25,7 +25,7 @@ PYBIND11_PLUGIN(_wrapping)
     .def(py::init([](void* op) { return new OperatorPythonWrapper(op); }))
     .def_property_readonly("canceled", &OperatorPythonWrapper::canceled)
     .def_property_readonly("early_completed",
-                  &OperatorPythonWrapper::earlyCompleted)
+                           &OperatorPythonWrapper::earlyCompleted)
     .def_property("progress_maximum",
                   &OperatorPythonWrapper::totalProgressSteps,
                   &OperatorPythonWrapper::setTotalProgressSteps)
