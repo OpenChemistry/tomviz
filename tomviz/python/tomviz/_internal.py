@@ -91,7 +91,7 @@ def is_early_completable(transform_module):
         raise Exception('Unable to locate function or operator class.')
 
     return cls is not None and issubclass(cls,
-                                          tomviz.operators.EarlyCompletableOperator)
+                                    tomviz.operators.EarlyCompletableOperator)
 
 
 def find_transform_function(transform_module, op=None):
