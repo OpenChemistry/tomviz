@@ -6,7 +6,7 @@ import time
 
 class ReconTVOperator(tomviz.operators.EarlyCompletableOperator):
 
-    def transform(self, dataset, Niter=10, Nupdates=0):
+    def transform(self, dataset, Niter=10, Nupdates=0): # noqa
         """3D Reconstruct from a tilt series using simple TV minimzation"""
         self.progress.maximum = 1
 
@@ -55,8 +55,8 @@ class ReconTVOperator(tomviz.operators.EarlyCompletableOperator):
 
         for i in range(Niter): #main loop
 
-            if self.early_completed: # noqa
-                break                # noqa
+            if self.early_completed:
+                break               
 
             recon_temp = recon.copy()
 
@@ -64,8 +64,8 @@ class ReconTVOperator(tomviz.operators.EarlyCompletableOperator):
             for s in range(Nslice): #
                 if self.canceled: #In case canceled during ART.
                     return
-                elif self.early_completed: # noqa
-                    break                  # noqa
+                elif self.early_completed:
+                    break                 
 
                 self.progress.message = 'Slice No.%d/%d, Iteration No.%d/%d. '\
                     % (s + 1, Nslice, i + 1, Niter) + etcMessage
