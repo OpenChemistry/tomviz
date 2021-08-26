@@ -24,7 +24,7 @@ elif [[ $AGENT_OS == 'Darwin' ]]; then
   brew install \
     ninja \
     qt5 \
-    tbb
+    tbb@2020
 
   # Install gtest
   cd $PIPELINE_WORKSPACE
