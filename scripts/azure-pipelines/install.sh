@@ -26,6 +26,10 @@ elif [[ $AGENT_OS == 'Darwin' ]]; then
     qt5 \
     tbb@2020
 
+  # TBB 2020 and deprecated and doesn't get symlinked automatically.
+  # Symlink it ourselves...
+  brew link --force tbb@2020
+
   # Install gtest
   cd $PIPELINE_WORKSPACE
   git clone --branch release-1.8.1 --depth 1 https://github.com/google/googletest
