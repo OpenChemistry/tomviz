@@ -56,7 +56,7 @@ class ReconTVOperator(tomviz.operators.EarlyCompletableOperator):
         for i in range(Niter): #main loop
 
             if self.early_completed:
-                break               
+                break
 
             recon_temp = recon.copy()
 
@@ -65,7 +65,7 @@ class ReconTVOperator(tomviz.operators.EarlyCompletableOperator):
                 if self.canceled: #In case canceled during ART.
                     return
                 elif self.early_completed:
-                    break                 
+                    break
 
                 self.progress.message = 'Slice No.%d/%d, Iteration No.%d/%d. '\
                     % (s + 1, Nslice, i + 1, Niter) + etcMessage
