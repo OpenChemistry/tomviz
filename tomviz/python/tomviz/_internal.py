@@ -81,7 +81,7 @@ def is_cancelable(transform_module):
                                           tomviz.operators.CancelableOperator)
 
 
-def is_early_completable(transform_module):
+def is_completable(transform_module):
     cls = find_operator_class(transform_module)
 
     if cls is None:
@@ -92,7 +92,7 @@ def is_early_completable(transform_module):
 
     return cls is not None and issubclass(
         cls,
-        tomviz.operators.EarlyCompletableOperator
+        tomviz.operators.CompletableOperator
     )
 
 

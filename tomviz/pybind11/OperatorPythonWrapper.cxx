@@ -18,9 +18,9 @@ bool OperatorPythonWrapper::canceled()
   return m_op->canceled();
 }
 
-bool OperatorPythonWrapper::earlyCompleted()
+bool OperatorPythonWrapper::completed()
 {
-  return m_op->earlyCompleted();
+  return m_op->completed();
 }
 
 void OperatorPythonWrapper::setTotalProgressSteps(int progress)

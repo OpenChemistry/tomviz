@@ -147,11 +147,11 @@ public:
 
   /// Returns true if the operation supports early completion midway through the
   /// applyTransform function via the cancelTransform slot.
-  /// Defaults to false, can be set by the setSupportsEarlyCompletion(bool)
+  /// Defaults to false, can be set by the setSupportsCompletion(bool)
   /// method by subclasses.
-  bool supportsEarlyCompletionMidTransform() const
+  bool supportsCompletionMidTransform() const
   {
-    return m_supportsEarlyCompletion;
+    return m_supportsCompletion;
   }
 
   /// Return the total number of progress updates (assuming each update
@@ -247,7 +247,7 @@ signals:
   // transform. The operator will still be running, so there has to be
   // a request to cancel the operator as well as encourage the next
   // operator to run.
-  void transformEarlyCompleted();
+  void transformCompleted();
 
 public slots:
   /// Called when the 'Cancel' button is pressed on the progress dialog.
@@ -255,12 +255,12 @@ public slots:
   /// to ensure the operator is marked as canceled.
   /// TODO: Not sure we need this/want this virtual anymore?
   virtual void cancelTransform();
-  virtual void earlyCompletionTransform();
+  virtual void completionTransform();
   bool isCanceled() { return m_state == OperatorState::Canceled; }
 
   /// Distinction between this and isFinished is necessary to prevent cascading
   /// errors
-  bool isEarlyCompleted() { return m_state == OperatorState::Complete; }
+  bool isCompleted() { return m_state == OperatorState::Complete; }
   bool isFinished()
   {
     return m_state == OperatorState::Complete ||
@@ -297,16 +297,16 @@ protected:
   /// Method to set whether the operator supports early completion midway
   /// through the transform method call.
   /// If you set this to true, you should also override the
-  /// earlyCompletionTransform slot to listen for the done signal and handle
+  /// completionTransform slot to listen for the done signal and handle
   /// it.
-  void setSupportsEarlyCompletion(bool b) { m_supportsEarlyCompletion = b; }
+  void setSupportsCompletion(bool b) { m_supportsCompletion = b; }
 
 private:
   Q_DISABLE_COPY(Operator)
 
   QList<OperatorResult*> m_results;
   bool m_supportsCancel = false;
-  bool m_supportsEarlyCompletion = false;
+  bool m_supportsCompletion = false;
   bool m_hasChildDataSource = false;
   bool m_modified = true;
   bool m_new = true;

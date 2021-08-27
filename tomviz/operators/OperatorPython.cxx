@@ -134,7 +134,7 @@ public:
   Python::Module InternalModule;
   Python::Function FindTransformFunction;
   Python::Function IsCancelableFunction;
-  Python::Function IsEarlyCompletableFunction;
+  Python::Function IsCompletableFunction;
   Python::Function DeleteModuleFunction;
 };
 
@@ -161,10 +161,10 @@ OperatorPython::OperatorPython(DataSource* parentObject)
       qCritical() << "Unable to locate is_cancelable.";
     }
 
-    d->IsEarlyCompletableFunction =
-      d->InternalModule.findFunction("is_early_completable");
-    if (!d->IsEarlyCompletableFunction.isValid()) {
-      qCritical() << "Unable to locate is_early_completeable.";
+    d->IsCompletableFunction =
+      d->InternalModule.findFunction("is_completable");
+    if (!d->IsCompletableFunction.isValid()) {
+      qCritical() << "Unable to locate is_completable.";
       return;
     }
 
@@ -321,7 +321,7 @@ void OperatorPython::setScript(const QString& str)
     m_script = str;
 
     Python::Object result;
-    Python::Object resultEarlyComplete;
+    Python::Object resultComplete;
     {
       Python python;
       QString moduleName = QString("tomviz_%1").arg(label());
@@ -363,15 +363,15 @@ void OperatorPython::setScript(const QString& str)
         return;
       }
 
-      resultEarlyComplete = d->IsEarlyCompletableFunction.call(isArgs);
-      if (!resultEarlyComplete.isValid()) {
-        qCritical("Error calling is_early_completable.");
+      resultComplete = d->IsCompletableFunction.call(isArgs);
+      if (!resultComplete.isValid()) {
+        qCritical("Error calling is_completable.");
         return;
       }
     }
 
     setSupportsCancel(result.toBool());
-    setSupportsEarlyCompletion(resultEarlyComplete.toBool());
+    setSupportsCompletion(resultComplete.toBool());
 
     emit transformModified();
   }

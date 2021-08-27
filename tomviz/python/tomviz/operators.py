@@ -114,19 +114,19 @@ class CancelableOperator(Operator):
         return self._operator_wrapper.canceled
 
 
-class EarlyCompletableOperator(CancelableOperator):
+class CompletableOperator(CancelableOperator):
     """
-    An early completable operator allows a user to interrupt the execution of
-    an operator using either "cancel" or "early complete". The early
+    A completable operator allows a user to interrupt the execution of
+    an operator using either "cancel" or "complete". The
     completable property can be used in the transform(...) method to break out
     when an operator is finished early, like if an iterative algorithm is a
     reasonable quality before the designated iterations are reached. Use
     similar to "cancel", but be sure to return data.
     """
     @property
-    def early_completed(self):
+    def completed(self):
         """
         :returns True if the operator is early completed (from Button),
         False otherwise
         """
-        return self._operator_wrapper.early_completed
+        return self._operator_wrapper.completed

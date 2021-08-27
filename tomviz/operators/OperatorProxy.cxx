@@ -21,9 +21,9 @@ bool OperatorProxy::canceled()
   return m_op->isCanceled();
 }
 
-bool OperatorProxy::earlyCompleted()
+bool OperatorProxy::completed()
 {
-  return m_op->isEarlyCompleted();
+  return m_op->isCompleted();
 }
 
 void OperatorProxy::setTotalProgressSteps(int progress)

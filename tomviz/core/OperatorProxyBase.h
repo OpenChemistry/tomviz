@@ -19,7 +19,7 @@ public:
 
   virtual bool canceled() = 0;
 
-  virtual bool earlyCompleted() = 0;
+  virtual bool completed() = 0;
 
   virtual void setTotalProgressSteps(int progress) = 0;
 
