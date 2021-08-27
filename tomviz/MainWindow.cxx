@@ -334,6 +334,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     m_ui->menuTomography->addAction("TV Minimization Method");
   QAction* reconTomoPyGridRecAction =
     m_ui->menuTomography->addAction("TomoPy Gridrec Method");
+  QAction* reconRealTimeAction =
+    m_ui->menuTomography->addAction("Real Time Reconstruction");
   QAction* fxiWorkflowAction = m_ui->menuTomography->addAction("FXI Workflow");
   m_ui->menuTomography->addSeparator();
 
@@ -428,6 +430,10 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     reconTomoPyGridRecAction, "Reconstruct (TomoPy Gridrec)",
     readInPythonScript("Recon_tomopy_gridrec"), true, false, false,
     readInJSONDescription("Recon_tomopy_gridrec"));
+  new AddPythonTransformReaction(
+    reconRealTimeAction, "Real Time Reconstruction",
+    readInPythonScript("Recon_real_time_tomography"), true, false, false,
+    readInJSONDescription("Recon_real_time_tomography"));
   new AddPythonTransformReaction(
     fxiWorkflowAction, "Reconstruct (FXI Workflow)",
     readInPythonScript("Recon_tomopy_fxi"), true, false, false,

@@ -462,6 +462,7 @@ set(python_files
   TV_Filter.py
   PoreSizeDistribution.py
   Tortuosity.py
+  Recon_real_time_tomography.py 
   )
 
 set(json_files
@@ -510,6 +511,7 @@ set(json_files
   TV_Filter.json
   PoreSizeDistribution.json
   Tortuosity.json
+  Recon_real_time_tomography.json
   )
 
 set(resource_files
@@ -577,6 +579,9 @@ set(tomviz_python_modules
   web.py
   modules.py
   views.py
+  logger.py
+  pytvlib.py
+  wbp.py
 )
 
 file(MAKE_DIRECTORY "${tomviz_python_binary_dir}/tomviz")
@@ -596,6 +601,8 @@ set(tomviz_python_io_modules
   __init__.py
   _internal.py
   _databroker.py
+  ser.py
+  dm.py
 )
 
 file(MAKE_DIRECTORY "${tomviz_python_binary_dir}/tomviz/io")
