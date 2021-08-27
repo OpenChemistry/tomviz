@@ -161,8 +161,7 @@ OperatorPython::OperatorPython(DataSource* parentObject)
       qCritical() << "Unable to locate is_cancelable.";
     }
 
-    d->IsCompletableFunction =
-      d->InternalModule.findFunction("is_completable");
+    d->IsCompletableFunction = d->InternalModule.findFunction("is_completable");
     if (!d->IsCompletableFunction.isValid()) {
       qCritical() << "Unable to locate is_completable.";
       return;

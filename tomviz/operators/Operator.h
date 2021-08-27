@@ -149,10 +149,7 @@ public:
   /// applyTransform function via the cancelTransform slot.
   /// Defaults to false, can be set by the setSupportsCompletion(bool)
   /// method by subclasses.
-  bool supportsCompletionMidTransform() const
-  {
-    return m_supportsCompletion;
-  }
+  bool supportsCompletionMidTransform() const { return m_supportsCompletion; }
 
   /// Return the total number of progress updates (assuming each update
   /// increments the progress from 0 to some maximum.  If the operator doesn't
