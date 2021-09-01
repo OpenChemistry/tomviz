@@ -55,7 +55,7 @@ To run autopep8 using the project configuration file.
 
 ```shell
 cd <tomviz_source_dir>
-# It is recommended to run it on specfic file(s) you have changed, for example.
+# It is recommended to run it on specific file(s) you have changed, for example.
 autopep8 --ignore E262,E261,E265 --global-config flake8.cfg --in-place tomviz/python/InvertData.py
 ```
 

@@ -14,7 +14,7 @@
  * \brief Box representation of a transfer function.
  *
  * Holds a color/opacity transfer functions. The box or any of its corners
- * can be draged to either change its position or size.  The parent chart
+ * can be dragged to either change its position or size.  The parent chart
  * uses its defined rectangle and transfer functions to raster a 2D transfer
  * function. This item is intended to be used as a selection item in
  * vtkChartTransfer2DEditor.
@@ -49,7 +49,7 @@ public:
   //@}
 
   /**
-   * Returns the curren box as [x0, y0, width, height].
+   * Returns the current box as [x0, y0, width, height].
    */
   const vtkRectd& GetBox();
 

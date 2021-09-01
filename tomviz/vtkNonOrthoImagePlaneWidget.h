@@ -169,7 +169,7 @@ public:
   void GetNormal(double xyz[3]);
 
   // Description:
-  // Set/Get the diplay offset.  This translates the entire widget by the vector
+  // Set/Get the display offset.  This translates the entire widget by the vector
   // given.
   void SetDisplayOffset(const double xyz[3]);
   const double* GetDisplayOffset();
@@ -451,7 +451,7 @@ protected:
   double DisplayOffset[3];
   vtkTransform* DisplayTransform;
 
-  // The geometric represenation of the plane and it's outline
+  // The geometric representation of the plane and it's outline
   vtkPlaneSource* PlaneSource;
   vtkPolyData* PlaneOutlinePolyData;
   vtkActor* PlaneOutlineActor;

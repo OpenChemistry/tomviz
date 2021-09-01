@@ -268,7 +268,7 @@ class PipelineSchema(Schema):
     # The following @pre_load and @post_dump are need to allow use to have
     # a Pipeline object with a datasource attribute. The JSON object in
     # the serialized state that represents a pipeline has not such attribute.
-    # Using these two hooks allows use to acheive the object graph we want from
+    # Using these two hooks allows use to achieve the object graph we want from
     # the serialize state.
     @pre_load
     def wrap_datasource(self, data, **kwargs):

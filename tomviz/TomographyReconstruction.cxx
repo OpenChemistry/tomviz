@@ -96,7 +96,7 @@ void unweightedBackProjection2(float* sinogram, double* tiltAngles,
                                            // reconstructed image (y-z plane for
                                            // a tilt series)
       for (int iz = 0; iz < numOfRays; ++iz) {
-        // Calcualte y,z coord.
+        // Calculate y,z coord.
         double y = iy + 0.5 - ((double)numOfRays) / 2.0;
         double z = iz + 0.5 - ((double)numOfRays) / 2.0;
         // Calculate ray coord.

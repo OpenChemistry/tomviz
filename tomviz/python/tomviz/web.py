@@ -294,7 +294,7 @@ def get_volume_lookuptable_section(view):
     for volume in renderer.GetVolumes():
         if volume.GetClassName() == 'vtkVolume':
             array = volume.GetMapper().GetInput().GetPointData().GetScalars()
-            fielName = array.GetName()
+            fileName = array.GetName()
             lut = volume.GetProperty().GetRGBTransferFunction()
             controlpoints = []
             tupleHolder = list(range(6))
@@ -314,7 +314,7 @@ def get_volume_lookuptable_section(view):
             for node in controlpoints:
                 node['x'] = (node['x'] - minValue) / dataRange
 
-            return {fielName: {'controlpoints': controlpoints}}
+            return {fileName: {'controlpoints': controlpoints}}
     return {}
 
 
@@ -424,7 +424,7 @@ def export_volume_exploration_images(destinationPath, camera, **kwargs):
             idb.writeImages()
         idb.stop()
 
-        # Reset to original piecewise funtion
+        # Reset to original piecewise function
         pvw.RemoveAllPoints()
         for node in savedNodes:
             pvw.AddPoint(node[0], node[1], node[2], node[3])

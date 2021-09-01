@@ -244,7 +244,7 @@ public:
     return result;
   }
 
-  // void* data needs to be of the appropiate type and size.
+  // void* data needs to be of the appropriate type and size.
   // start and counts, if set, get forwarded directly to
   // H5Sselect_hyperslab().
   bool readData(const string& path, hid_t dataTypeId, hid_t memTypeId,

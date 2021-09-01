@@ -95,7 +95,7 @@ Pipeline::Future* ExternalPythonExecutor::execute(vtkDataObject* data,
 
   // We have to get the process environment and unset TOMVIZ_APPLICATION and
   // set that as the process environment for the process, otherwise the
-  // python package will think its running in the applicaton.
+  // python package will think its running in the application.
   auto processEnv = QProcessEnvironment::systemEnvironment();
   processEnv.remove("TOMVIZ_APPLICATION");
   // Remove vars related to python environment

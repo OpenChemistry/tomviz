@@ -102,7 +102,7 @@ void getSinogram(vtkImageData* tiltSeries, int sliceNumber, float* sinogram,
   {
     for (int r = 0; r < Nray; ++r) // Loop through rays (y-direction)
     {
-      if (z == 0) { // Initialize weights and indicies
+      if (z == 0) { // Initialize weights and indices
         double rayCoord = (double)(r - Nray / 2) * rayWidth + axisPosition;
         index1[r] = floor(rayCoord) + tiltAxDim / 2;
         index2[r] = index1[r] + 1;

@@ -117,7 +117,7 @@ Disconnect from the instrument
 }
 
 ```
-### Reponse
+### Response
 
 Return the current title parameters
 
@@ -143,7 +143,7 @@ Return the current title parameters
 }
 
 ```
-### Reponse
+### Response
 
 Return the current acquisition parameters
 
@@ -168,7 +168,7 @@ Return the current acquisition parameters
 }
 
 ```
-### Reponse
+### Response
 
 ```json
 {
@@ -181,7 +181,7 @@ Return the current acquisition parameters
 Where ```url``` is URL that can be used to fetch th 2D TIFF
 
 
-## STEM accquire
+## STEM acquire
 
 ### Request
 
@@ -193,7 +193,7 @@ Where ```url``` is URL that can be used to fetch th 2D TIFF
 }
 
 ```
-### Reponse
+### Response
 
 ```json
 {

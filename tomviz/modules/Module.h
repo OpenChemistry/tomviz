@@ -164,7 +164,7 @@ signals:
   /// Emitted when the represented DataSource is updated.
   void dataSourceChanged();
 
-  /// Emitted when the UseDetachedColorMap state changes or the detatched color
+  /// Emitted when the UseDetachedColorMap state changes or the detached color
   /// map is modified
   void colorMapChanged();
 

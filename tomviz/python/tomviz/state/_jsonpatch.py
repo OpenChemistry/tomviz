@@ -609,7 +609,7 @@ def module_remove_from_python(patch_op, removed_cache):
     # Remove from data source
     ds.modules.remove(mod)
 
-    # Add to cache, incase we need to resurrect it
+    # Add to cache, in case we need to resurrect it
     add_mod_to_removed_cache(removed_cache, mod)
 
     # Kill it

@@ -38,7 +38,7 @@ void SaveScreenshotReaction::saveScreenshot(MainWindow* mw)
 {
   auto view = pqActiveObjects::instance().activeView();
   if (!view) {
-    qDebug() << "Cannnot save image. No active view.";
+    qDebug() << "Cannot save image. No active view.";
     return;
   }
   QSize viewSize = view->getSize();

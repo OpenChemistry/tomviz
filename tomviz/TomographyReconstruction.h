@@ -18,7 +18,7 @@ void weightedBackProjection3(vtkImageData* tiltSeries,
                              vtkImageData* recon); // 3D WBP recon
 
 // This function takes a y-z slice (sinogram) and the tilt angles as input and
-// creates a slice throught the reconstruction space.  The numOfTilts parameter
+// creates a slice through the reconstruction space.  The numOfTilts parameter
 // is the size of the z dimension.
 //
 // The numOfRays parameter is the size in the y dimension.  The tilt angles is a

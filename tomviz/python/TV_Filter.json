@@ -13,7 +13,7 @@
     },
     {
       "name" : "kmin",
-      "label" : "Miniumum Frequency to Start the Missing Wedge",
+      "label" : "Minimum Frequency to Start the Missing Wedge",
       "type" : "double",
       "default" : 5.0,
       "minimum" : 0.0,

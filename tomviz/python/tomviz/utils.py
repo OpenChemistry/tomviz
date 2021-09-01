@@ -81,7 +81,7 @@ def array_names(dataobject):
 @with_vtk_dataobject
 def arrays(dataobject):
     """
-    Iterate over (name, array) for the arrays in this datset.
+    Iterate over (name, array) for the arrays in this dataset.
 
     :param dataobject The incoming dataset
     :type: vtkDataObject
