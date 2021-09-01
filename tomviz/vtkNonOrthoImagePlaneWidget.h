@@ -169,8 +169,8 @@ public:
   void GetNormal(double xyz[3]);
 
   // Description:
-  // Set/Get the display offset.  This translates the entire widget by the vector
-  // given.
+  // Set/Get the display offset.  This translates the entire widget by the
+  // vector given.
   void SetDisplayOffset(const double xyz[3]);
   const double* GetDisplayOffset();
   void GetDisplayOffset(double xyz[3]);

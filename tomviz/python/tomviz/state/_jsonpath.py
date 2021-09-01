@@ -51,7 +51,7 @@ def find_datasource(path):
 
         return pipeline.dataSource
 
-    # Find the operator (the child data source has to be associated with one ...)
+    # Find the operator (the child data source must be associated with one ...)
     op = find_operator(path)
     del path[:2]
 
