@@ -6,7 +6,7 @@ import time
 
 class ReconTVOperator(tomviz.operators.CompletableOperator):
 
-    def transform(self, dataset, Niter=10, Nupdates=0): # noqa
+    def transform(self, dataset, Niter=10, Nupdates=0):  # noqa: X123
         """3D Reconstruct from a tilt series using simple TV minimzation"""
         self.progress.maximum = 1
 

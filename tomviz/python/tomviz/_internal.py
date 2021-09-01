@@ -86,9 +86,8 @@ def is_completable(transform_module):
 
     if cls is None:
         function = find_transform_from_module(transform_module)
-
-    if cls is None and function is None:
-        raise Exception('Unable to locate function or operator class.')
+        if not function:
+            raise Exception('Unable to locate function or operator class.')
 
     return cls is not None and issubclass(
         cls,
