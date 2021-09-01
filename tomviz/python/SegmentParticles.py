@@ -51,6 +51,7 @@ def threshold(operator, step_pct, input_image):
     import itkExtras
     import itkTypes
 
+    thresholded = None
     otsu_filter = \
         itk.OtsuMultipleThresholdsImageFilter.New(Input=input_image)
     otsu_filter.SetNumberOfThresholds(1)

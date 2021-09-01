@@ -320,7 +320,7 @@ class FilesProgress(WriteToFileMixin, JsonProgress):
         with open(file_path, 'w') as f:
             json.dump(data, f)
 
-        return filename
+        return file_path
 
 
 def _progress(progress_method, progress_path):
@@ -644,7 +644,7 @@ def _execute_transform(operator_label, transform, arguments, input, progress):
         # Now run the operator
         result = transform(input, **arguments)
     if spinner is not None:
-        update_spinner.cancel()
+        spinner.cancel()
         spinner.finish()
 
     return result
@@ -772,7 +772,3 @@ def execute(operators, start_at, data_file_path, output_file_path,
             _write_emd(output_file_path, child_data, dims)
         logger.info('Write complete.')
         progress.finished()
-
-
-if __name__ == '__main__':
-    main()
