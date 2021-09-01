@@ -151,7 +151,6 @@ def initialize_algorithm(tomo, alg, Nray, tiltAngles, angleStart=0):
             tomo.load_A(A)
         else:
             tomo.update_proj_angles(A, tiltAngles.shape[0])
-            tomo.restart_recon()
 
         if alg == 'ART' or alg == 'randART':
             tomo.row_inner_product()

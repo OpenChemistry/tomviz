@@ -32,13 +32,12 @@ class logger:
         """Append stored files for each new element"""
         # Separate new files to be loaded
         FoI = list(set(self.listen_files)-set(self.log_files))
-        FoI.sort(key=lambda x: x[:3])
+        # FoI.sort(key=lambda x: x[:3])
         for file in FoI:
             print("Loading {}".format(file))
             filePath = "{}/{}".format(self.listenDir, file)
 
             try:
-
                 (newProj, newAngle) = self.read_projection_image(filePath)
 
                 self.log_tilts = np.append(self.log_tilts, newAngle)
@@ -87,9 +86,17 @@ class logger:
         elif self.fileExt == 'ser':
             file = ser.serReader(fname)
             return (file['data'], file['metadata']['Stage A [deg]'])
-        else: # Stage Alpha isn't stored in metadata for dm3 or tif
+        # Stage Alpha isn't stored in metadata for dm3 or tif
+        elif self.fileExt == 'dm3': 
             # Parse fname for stage alpha
-            print('<<<<<TBD>>>>>')
+            file = dm.fileDM(fname)
+
+            match = 'degrees'
+            tags = fname.split('_')
+
+            angle = [tag for tag in tags if match in tag][0]
+            angleInd = angle.find(match)
+            return (file.getDataset(0)['data'], float(angle[:angleInd]))
 
     def load_tilt_series(self, tomo, alg):
 
