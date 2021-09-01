@@ -134,6 +134,7 @@ public:
   Python::Module InternalModule;
   Python::Function FindTransformFunction;
   Python::Function IsCancelableFunction;
+  Python::Function IsCompletableFunction;
   Python::Function DeleteModuleFunction;
 };
 
@@ -158,6 +159,12 @@ OperatorPython::OperatorPython(DataSource* parentObject)
     d->IsCancelableFunction = d->InternalModule.findFunction("is_cancelable");
     if (!d->IsCancelableFunction.isValid()) {
       qCritical() << "Unable to locate is_cancelable.";
+    }
+
+    d->IsCompletableFunction = d->InternalModule.findFunction("is_completable");
+    if (!d->IsCompletableFunction.isValid()) {
+      qCritical() << "Unable to locate is_completable.";
+      return;
     }
 
     d->FindTransformFunction =
@@ -313,6 +320,7 @@ void OperatorPython::setScript(const QString& str)
     m_script = str;
 
     Python::Object result;
+    Python::Object resultComplete;
     {
       Python python;
       QString moduleName = QString("tomviz_%1").arg(label());
@@ -353,9 +361,16 @@ void OperatorPython::setScript(const QString& str)
         qCritical("Error calling is_cancelable.");
         return;
       }
+
+      resultComplete = d->IsCompletableFunction.call(isArgs);
+      if (!resultComplete.isValid()) {
+        qCritical("Error calling is_completable.");
+        return;
+      }
     }
 
     setSupportsCancel(result.toBool());
+    setSupportsCompletion(resultComplete.toBool());
 
     emit transformModified();
   }
