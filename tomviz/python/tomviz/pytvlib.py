@@ -1,5 +1,5 @@
 import numpy as np
-import time 
+import time
 
 
 def parallelRay(Nside, angles):
@@ -96,9 +96,10 @@ def parallelRay(Nside, angles):
                     midpoints_x = rmepsilon(0.5 * (xx[0:-1] + xx[1:]))
                     midpoints_y = rmepsilon(0.5 * (yy[0:-1] + yy[1:]))
                     #Calculate the pixel index for mid points
-                    pixelIndicex = ((np.floor(Nside / 2.0 - midpoints_y / pixelWidth)) *
-                                    Nside + (np.floor(midpoints_x /
-                                             pixelWidth + Nside / 2.0)))
+                    pixelIndicex = \
+                        (np.floor(Nside / 2.0 - midpoints_y / pixelWidth)) * \
+                        Nside + (np.floor(midpoints_x /
+                                          pixelWidth + Nside / 2.0))
                     # Create the indices to store the values to the measurement
                     # matrix
                     idxstart = idxend

@@ -1,6 +1,6 @@
 import tomviz._wrapping as wrap
 from tomviz import logger, wbp
-from tomviz.pytvlib import *
+from tomviz import pytvlib
 import tomviz.operators
 import numpy as np
 import time
@@ -46,7 +46,7 @@ class RealTimeTomography(tomviz.operators.CancelableOperator):
 
         # Generate measurement matrix (if Iterative Algorithm)
         self.progress.message = 'Generating measurement matrix'
-        initialize_algorithm(tomo, alg, Nray, tomoLogger.log_tilts)
+        pytvlib.initialize_algorithm(tomo, alg, Nray, tomoLogger.log_tilts)
 
         # Descent Parameter Initialization
         if alg == 'SIRT':
@@ -73,7 +73,7 @@ class RealTimeTomography(tomviz.operators.CancelableOperator):
                     % (jj + 1, maxIter) + etcMessage
 
                 # Run Reconstruction Algorithm
-                run(tomo, alg, beta, jj)
+                pytvlib.run(tomo, alg, beta, jj)
 
                 # Decay Descent Parameter if ART.
                 if artBool:
@@ -98,8 +98,8 @@ class RealTimeTomography(tomviz.operators.CancelableOperator):
                 # Update tomo (C++) with new projections / tilt Angles.
                 self.progress.message = 'Generating measurement matrix'
                 prevTilt = np.int(tomoLogger.log_tilts[-1])
-                initialize_algorithm(tomo, alg, Nray,
-                                     tomoLogger.log_tilts, prevTilt)
+                pytvlib.initialize_algorithm(tomo, alg, Nray,
+                                             tomoLogger.log_tilts, prevTilt)
                 tomoLogger.load_tilt_series(tomo, alg)
 
                 # Recalculate Lipschitz Constant or Reset Descent Parameter
@@ -109,7 +109,7 @@ class RealTimeTomography(tomviz.operators.CancelableOperator):
                     beta = beta0
 
         # One last update of the child data.
-        child.active_scalars = get_recon((Nslice, Nray), tomo)
+        child.active_scalars = pytvlib.get_recon((Nslice, Nray), tomo)
         self.progress.data = child
 
         returnValues = {}

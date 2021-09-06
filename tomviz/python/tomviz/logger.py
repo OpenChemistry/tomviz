@@ -24,7 +24,8 @@ class logger:
 
     def listen_files_list(self, directory):
         """Grab current files in listen directory"""
-        files = [f for f in os.listdir(directory) if f[-len(self.fileExt):] == self.fileExt]
+        files = [f for f in os.listdir(directory) if
+                 f[-len(self.fileExt):] == self.fileExt]
         files.sort(key=lambda x: x[:3])
         return files
 
@@ -42,7 +43,8 @@ class logger:
 
                 self.log_tilts = np.append(self.log_tilts, newAngle)
 
-                newProj = self.center_of_mass_align(self.background_subtract(newProj))
+                newProj = self.background_subtract(newProj)
+                newProj = self.center_of_mass_align(newProj)
 
                 # Account for Python's disdain for AxAx1 arrays
                 # (compresses to 2D)
@@ -81,13 +83,14 @@ class logger:
 
         if self.fileExt == 'dm4':
             file = dm.fileDM(fname)
-            alphaTag = ".ImageList.2.ImageTags.Microscope Info.Stage Position.Stage Alpha"
+            alphaTag = '.ImageList.2.ImageTags.Microscope Info.'\
+                       'Stage Position.Stage Alpha'
             return (file.getDataset(0)['data'], file.allTags[alphaTag])
         elif self.fileExt == 'ser':
             file = ser.serReader(fname)
             return (file['data'], file['metadata']['Stage A [deg]'])
         # Stage Alpha isn't stored in metadata for dm3 or tif
-        elif self.fileExt == 'dm3': 
+        elif self.fileExt == 'dm3':
             # Parse fname for stage alpha
             file = dm.fileDM(fname)
 
