@@ -15,7 +15,7 @@
 #include <pybind11/numpy.h>
 
 #if defined(__INTEL_COMPILER)
-#pragma warning(disable : 1682) // implicit conversion of a 64-bit integral type                               // to a smaller
+#pragma warning(disable : 1682) // implicit conversion of a 64-bit integral type                               // // to a smaller
                                 // integral type (potential portability problem)
 #elif defined(__GNUG__) || defined(__clang__)
 #pragma GCC diagnostic push
@@ -182,7 +182,7 @@ struct EigenProps
   static constexpr EigenIndex
     inner_stride = if_zero<StrideType::InnerStrideAtCompileTime, 1>::value,
     outer_stride = if_zero < StrideType::OuterStrideAtCompileTime,
-    vector      ? size : row_major ? cols : rows > ::value;
+    vector ? size : row_major ? cols : rows > ::value;
   static constexpr bool dynamic_stride =
     inner_stride == Eigen::Dynamic && outer_stride == Eigen::Dynamic;
   static constexpr bool requires_row_major =
