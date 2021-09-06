@@ -15,9 +15,8 @@
 #include <pybind11/numpy.h>
 
 #if defined(__INTEL_COMPILER)
-#pragma warning(                                                               \
-  disable : 1682) // implicit conversion of a 64-bit integral type to a smaller
-                  // integral type (potential portability problem)
+#pragma warning(disable : 1682) // implicit conversion of a 64-bit integral type                               // to a smaller
+                                // integral type (potential portability problem)
 #elif defined(__GNUG__) || defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
@@ -124,7 +123,8 @@ struct EigenConformable
   EigenConformable(EigenIndex r, EigenIndex c, EigenIndex stride)
     : EigenConformable(r, c, r == 1 ? c * stride : stride,
                        c == 1 ? r : r * stride)
-  {}
+  {
+  }
 
   template <typename props>
   bool stride_compatible() const
@@ -132,10 +132,9 @@ struct EigenConformable
     // To have compatible strides, we need (on both dimensions) one of fully
     // dynamic strides, matching strides, or a dimension size of 1 (in which
     // case the stride value is irrelevant)
-    return !negativestrides &&
-           (props::inner_stride == Eigen::Dynamic ||
-            props::inner_stride == stride.inner() ||
-            (EigenRowMajor ? cols : rows) == 1) &&
+    return !negativestrides && (props::inner_stride == Eigen::Dynamic ||
+                                props::inner_stride == stride.inner() ||
+                                (EigenRowMajor ? cols : rows) == 1) &&
            (props::outer_stride == Eigen::Dynamic ||
             props::outer_stride == stride.outer() ||
             (EigenRowMajor ? rows : cols) == 1);
@@ -173,7 +172,8 @@ struct EigenProps
     row_major = Type::IsRowMajor,
     vector =
       Type::IsVectorAtCompileTime, // At least one dimension has fixed size 1
-    fixed_rows = rows != Eigen::Dynamic, fixed_cols = cols != Eigen::Dynamic,
+    fixed_rows = rows != Eigen::Dynamic,
+    fixed_cols = cols != Eigen::Dynamic,
     fixed = size != Eigen::Dynamic,       // Fully-fixed size
     dynamic = !fixed_rows && !fixed_cols; // Fully-dynamic size
 
@@ -182,9 +182,7 @@ struct EigenProps
   static constexpr EigenIndex
     inner_stride = if_zero<StrideType::InnerStrideAtCompileTime, 1>::value,
     outer_stride = if_zero < StrideType::OuterStrideAtCompileTime,
-    vector      ? size
-    : row_major ? cols
-                : rows > ::value;
+    vector      ? size : row_major ? cols : rows > ::value;
   static constexpr bool dynamic_stride =
     inner_stride == Eigen::Dynamic && outer_stride == Eigen::Dynamic;
   static constexpr bool requires_row_major =
@@ -434,7 +432,7 @@ public:
 
   operator Type*() { return &value; }
   operator Type&() { return value; }
-  operator Type&&() && { return std::move(value); }
+  operator Type &&() && { return std::move(value); }
   template <typename T>
   using cast_op_type = movable_cast_op_type<T>;
 
@@ -494,7 +492,8 @@ public:
 template <typename Type>
 struct type_caster<Type, enable_if_t<is_eigen_dense_map<Type>::value>>
   : eigen_map_caster<Type>
-{};
+{
+};
 
 // Loader for Ref<...> arguments.  See the documentation for info on how to make
 // this work without copying (it requires some extra effort in many cases).
@@ -514,9 +513,9 @@ private:
     array::forcecast |
       ((props::row_major ? props::inner_stride : props::outer_stride) == 1
          ? array::c_style
-       : (props::row_major ? props::outer_stride : props::inner_stride) == 1
-         ? array::f_style
-         : 0)>;
+         : (props::row_major ? props::outer_stride : props::inner_stride) == 1
+             ? array::f_style
+             : 0)>;
   static constexpr bool need_writeable = is_eigen_mutable_map<Type>::value;
   // Delay construction (these have no default constructor)
   std::unique_ptr<MapType> map;
