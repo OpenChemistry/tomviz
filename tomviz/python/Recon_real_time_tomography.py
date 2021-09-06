@@ -81,12 +81,12 @@ class RealTimeTomography(tomviz.operators.CancelableOperator):
 
                 # Progress Bar
                 self.progress.value = jj + 1
-                (etcMessage, counter) = timer(t0, counter, maxIter)
+                (etcMessage, counter) = pytvlib.timer(t0, counter, maxIter)
 
             # Return a Current Iterate
             self.progress.message = 'Updating Tomogram Visualization'
             if alg != 'WBP':
-                child.active_scalars = get_recon((Nslice, Nray), tomo)
+                child.active_scalars = pytvlib.get_recon((Nslice, Nray), tomo)
             else:
                 child.active_scalars = tomo.recon
             self.progress.data = child

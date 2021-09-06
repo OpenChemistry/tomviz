@@ -15,7 +15,6 @@
 #include <pybind11/numpy.h>
 
 #if defined(__INTEL_COMPILER)
-#pragma warning(disable : 1682) // implicit conversion of a 64-bit integral type   
 #elif defined(__GNUG__) || defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
