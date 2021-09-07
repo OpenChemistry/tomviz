@@ -31,6 +31,7 @@ ctvlib::ctvlib(int Ns, int Nray, int Nproj)
   Nrow = Nray * Nproj;
   Ncol = Ny * Nz;
     
+    
   A.resize(Nrow, Ncol);
   b.resize(Nslice, Nrow);
   g.resize(Nslice, Nrow);
@@ -309,6 +310,6 @@ Mat ctvlib::get_projections()
 void ctvlib::restart_recon()
 {
   for (int s = 0; s < Nslice; s++) {
-      recon[s].setZero();
+     recon[s].setZero();
   }
 }
