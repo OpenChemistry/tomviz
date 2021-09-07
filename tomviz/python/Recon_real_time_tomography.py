@@ -2,11 +2,10 @@ import tomviz._wrapping as wrap
 from tomviz import logger, wbp
 from tomviz import pytvlib
 import tomviz.operators
-import numpy as np
 import time
 
 
-class RealTimeTomography(tomviz.operators.CancelableOperator):
+class RealTimeTomography(tomviz.operators.CompletableOperator):
 
     def transform(self, dataset, localDirectory=None, alg=None,
                   maxIter=None, fileExt=None):
@@ -30,7 +29,7 @@ class RealTimeTomography(tomviz.operators.CancelableOperator):
             if tomoLogger.monitor():
                 break
 
-        (Nslice, Nray, Nproj) = tomoLogger.log_projs.shape
+        (Nslice, Nray, Nproj) = tomoLogger.logTiltSeries.shape
 
         # Initialize C++ Object..
         if alg != 'WBP':
@@ -46,7 +45,7 @@ class RealTimeTomography(tomviz.operators.CancelableOperator):
 
         # Generate measurement matrix (if Iterative Algorithm)
         self.progress.message = 'Generating measurement matrix'
-        pytvlib.initialize_algorithm(tomo, alg, Nray, tomoLogger.log_tilts)
+        pytvlib.initialize_algorithm(tomo, alg, Nray, tomoLogger.logTiltAngles)
 
         # Descent Parameter Initialization
         if alg == 'SIRT':
@@ -66,7 +65,7 @@ class RealTimeTomography(tomviz.operators.CancelableOperator):
             #Main Reconstruction Loop
             for jj in range(maxIter):
 
-                if self.canceled:
+                if self.completed:
                     break
 
                 self.progress.message = 'Iteration No.%d/%d. '\
@@ -97,9 +96,8 @@ class RealTimeTomography(tomviz.operators.CancelableOperator):
 
                 # Update tomo (C++) with new projections / tilt Angles.
                 self.progress.message = 'Generating measurement matrix'
-                prevTilt = np.int(tomoLogger.log_tilts[-1])
                 pytvlib.initialize_algorithm(tomo, alg, Nray,
-                                             tomoLogger.log_tilts, prevTilt)
+                                             tomoLogger.logTiltAngles, 1)
                 tomoLogger.load_tilt_series(tomo, alg)
 
                 # Recalculate Lipschitz Constant or Reset Descent Parameter

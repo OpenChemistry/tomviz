@@ -156,6 +156,8 @@ def initialize_algorithm(tomo, alg, Nray, tiltAngles, angleStart=0):
         if alg == 'ART' or alg == 'randART':
             tomo.row_inner_product()
 
+        tomo.restart_recon()
+
 
 def get_recon(meta, tomo): # Return reconsturction from C to Python
 

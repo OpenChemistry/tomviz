@@ -19,7 +19,7 @@ class logger:
         self.fileExt = fileExtension
 
         self.listenFiles = self.listen_files_list(self.listenDir)
-        self.logFiles, self.log_projs, self.logTiltAngles = [], [], []
+        self.logFiles, self.logTiltSeries, self.logTiltAngles = [], [], []
         print("Listener on {} created.".format(self.listenDir))
 
     def listen_files_list(self, directory):
@@ -48,13 +48,14 @@ class logger:
 
                 # Account for Python's disdain for AxAx1 arrays
                 # (compresses to 2D)
-                if(len(self.log_projs) == 0):
+                if(len(self.logTiltSeries) == 0):
                     dataDim = np.shape(newProj)
-                    self.log_projs = np.zeros([dataDim[0], dataDim[1], 1])
-                    self.log_projs[:, :, 0] = newProj
+                    self.logTiltSeries = np.zeros([dataDim[0], dataDim[1], 1])
+                    self.logTiltSeries[:, :, 0] = newProj
                 else:
-                    self.log_projs = np.dstack((self.log_projs, newProj))
-                    np.save('tiltSeries.npy', self.log_projs)
+                    self.logTiltSeries = np.dstack((self.logTiltSeries,
+                                                    newProj))
+                    np.save('tiltSeries.npy', self.logTiltSeries)
 
                 self.logFiles = np.append(self.logFiles, file)
 
@@ -104,13 +105,13 @@ class logger:
     def load_tilt_series(self, tomo, alg):
 
         if alg != 'WBP':
-            (Nslice, Nray, Nproj) = self.log_projs.shape
+            (Nslice, Nray, Nproj) = self.logTiltSeries.shape
             b = np.zeros([Nslice, Nray * Nproj], dtype=np.float32)
             for s in range(Nslice):
-                b[s, :] = self.log_projs[s, :, :].transpose().ravel()
+                b[s, :] = self.logTiltSeries[s, :, :].transpose().ravel()
             tomo.set_tilt_series(b)
         else:
-            tomo.set_tilt_series(self.log_projs, self.logTiltAngles)
+            tomo.set_tilt_series(self.logTiltSeries, self.logTiltAngles)
 
     # Shift Image so that the center of mass is at the origin"
     # Automatically align tilt images by center of mass method

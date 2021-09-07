@@ -437,8 +437,8 @@ class fileDM:
                 'Maximum tag group depth of {} reached. \
                 This file is most likely corrupt.'.format(self._maxDepth))
 
-        self._curGroupAtLevelX[self._curGroupLevel] = \
-            self._curGroupAtLevelX[self._curGroupLevel] + 1
+        ind = self._curGroupLevel
+        self._curGroupAtLevelX[ind] = self._curGroupAtLevelX[ind] + 1
         self._curTagAtLevelX[self._curGroupLevel] = 0
 
         aa = self.fromfile(self.fid, dtype=[('IsOpenSorted', '2<i1'),
@@ -506,10 +506,13 @@ class fileDM:
         """Determine the type of tag: Regular data, string, struct, or array.
 
         """
+
         # Need to read 8 bytes before %%%% delimiter.
         # Unknown part of DM4 tag structure
         if self._dmType == 4:
-            temp1 = self.fromfile(self.fid, dtype=self._specialType, count=1)[0]
+            temp1 = self.fromfile(self.fid, # noqa: F841
+                                  dtype=self._specialType,
+                                  count=1)[0]
 
         delim = self.fromfile(self.fid, dtype='<i1', count=4)
 
@@ -520,7 +523,8 @@ class fileDM:
                    {}'.format(self._bin2str(delim)))
 
         # nInTag: unnecessary redundant info
-        nInTag = self.fromfile(self.fid, dtype=self._specialType, count=1)[0]
+        nInTag = self.fromfile(self.fid, # noqa: F841
+                               dtype=self._specialType, count=1)[0]
 
         # Determine the type of the data in the tag
         # specifies data type: int8, uint16, float32, etc.
@@ -673,7 +677,7 @@ class fileDM:
         struct = np.zeros(structTypes.shape[0])
         for ii, encodedType in enumerate(structTypes):
             # the size of the data type
-            etSize = self._encodedTypeSize(encodedType)
+            # etSize = self._encodedTypeSize(encodedType)
             # read this type of data
             struct[ii] = self._readNativeData(encodedType)
         return struct
@@ -793,7 +797,9 @@ class fileDM:
 
             # Catch useful tags for images and spectra (nm, eV, etc.)
             fullTagName = self._curGroupNameAtLevelX + '.' + self._curTagName
-            if (fullTagName.find('Dimension') > -1) & (fullTagName.find('Units') > -1):
+            tagDimension = fullTagName.find('Dimension')
+            tagUnits = fullTagName.find('Units')
+            if (tagDimension > -1) & (tagUnits > -1):
                 self.scale.append(self._scale_temp)
                 self.scaleUnit.append(arrOut)
                 self.origin.append(self._origin_temp)
@@ -853,6 +859,10 @@ class fileDM:
         if totalTag.find('ImageData.Calibrations.Dimension.1.Scale') > -1:
             self.numObjects += 1  # data is contained in this file
 
+        tagDimension = totalTag.find('Dimension.')
+        tagScale = totalTag.find('.Scale')
+        tagOrigin = totalTag.find('.Origin')
+
         if curTagName.find('Data.arraySize') > -1:
             self.dataSize.append(curTagValue)
         elif curTagName.find('Data.arrayOffset') > -1:
@@ -874,9 +884,9 @@ class fileDM:
         elif totalTag.find('Dimensions.4') > -1:
             self.zSize2[-1] = curTagValue
             self.dataShape[-1] = 4  # indicate as at least 3D data
-        elif (totalTag.find('Dimension.') > -1) & (totalTag.find('.Scale') > -1):
+        elif (tagDimension > -1) & (tagScale > -1):
             self._scale_temp = curTagValue
-        elif (totalTag.find('Dimension.') > -1) & (totalTag.find('.Origin') > -1):
+        elif (tagDimension > -1) & (tagOrigin > -1):
             self._origin_temp = curTagValue
         else:
             pass
@@ -889,7 +899,8 @@ class fileDM:
         Parameters
         ----------
             new_folder_path_for_tags : str or pathlib.Path, Optional
-                Allow user to define a different path than the directory of the current file.
+            Allow user to define a different path than the directory
+            of the current file.
 
         """
         file_name = Path(self.filename)
@@ -911,14 +922,12 @@ class fileDM:
                     try:
                         combined_tag = '{} = {}'.format(nn, self.allTags[nn])
                         fid_out.write(combined_tag)
-                    except:
+                    except Exception:
                         fid_out.write('{} = dm.py write error'.format(nn))
                     fid_out.write('\n')
         except IOError:
             print("ncempy: Issue opening DM tags output file.")
             raise
-        # except:
-        #     raise
 
     def _checkIndex(self, i):
         """Check index i for sanity, otherwise raise Exception.
@@ -964,9 +973,9 @@ class fileDM:
             Type = None
             raise IOError('Unsupported binary data type during conversion \
                            to numpy dtype. DM dataType == {}'.format(dd))
-        # except:
-        #     Type = None
-        #     raise
+        except Exception:
+            Type = None
+            raise
         return Type
 
     def getDataset(self, index):
@@ -1023,7 +1032,13 @@ class fileDM:
         # Parse the dataset to see what type it is
         # (image, image series, spectra, etc.)
         if self.xSize[ii] > 0:
-            pixelCount = int(self.xSize[ii]) * int(self.ySize[ii]) * int(self.zSize[ii]) * int(self.zSize2[ii])
+            xSizeLocal = int(self.xSize[ii])
+            ySizeLocal = int(self.ySize[ii])
+            zSizeLocal = int(self.zSize[ii])
+            zSize2Local = int(self.zSize2[ii])
+
+            pixelCount = xSizeLocal * ySizeLocal * zSizeLocal * zSize2Local
+
             jj = 0  # counter to determine where the first scale value starts
             for nn in self.dataShape[0:ii]:
                 # sum up all number of dimensions for previous datasets
@@ -1032,33 +1047,50 @@ class fileDM:
             if self.zSize[ii] == 1:
                 # 2D data and 1D spectra
                 outputDict['data'] = self.fromfile(self.fid, count=pixelCount,
-                                                   dtype=self._DM2NPDataType(self.dataType[ii])).reshape(
-                                                   (self.ySize[ii], self.xSize[ii]))
+                                                   dtype=self._DM2NPDataType(
+                                                       self.dataType[ii])
+                                                   ).reshape(
+                                                  (self.ySize[ii],
+                                                   self.xSize[ii]))
 
                 # Reverse the order to match the C-ordering of the data
-                outputDict['pixelUnit'] = self.scaleUnit[jj:jj + self.dataShape[ii]][::-1]
-                outputDict['pixelSize'] = self.scale[jj:jj + self.dataShape[ii]][::-1]
-                outputDict['pixelOrigin'] = self.origin[jj:jj + self.dataShape[ii]][::-1]
+                outputDict['pixelUnit'] = self.scaleUnit[
+                    jj:jj + self.dataShape[ii]][::-1]
+                outputDict['pixelSize'] = self.scale[
+                    jj:jj + self.dataShape[ii]][::-1]
+                outputDict['pixelOrigin'] = self.origin[
+                    jj:jj + self.dataShape[ii]][::-1]
 
                 # Match size of meta data if necessary
                 if outputDict['data'].ndim > len(outputDict['pixelOrigin']):
                     outputDict['data'] = np.squeeze(outputDict['data'])
             elif self.zSize2[ii] > 1:  # 4D data
                 outputDict['data'] = self.fromfile(self.fid, count=pixelCount,
-                                                   dtype=self._DM2NPDataType(self.dataType[ii])).reshape(
-                    (self.zSize2[ii], self.zSize[ii], self.ySize[ii], self.xSize[ii]))
+                                                   dtype=self._DM2NPDataType(
+                                                       self.dataType[ii])
+                                                   ).reshape(
+                    (self.zSize2[ii], self.zSize[ii],
+                        self.ySize[ii], self.xSize[ii]))
                 # Reverse the order to match the C-ordering of the data
-                outputDict['pixelUnit'] = self.scaleUnit[jj:jj + self.dataShape[ii]][::-1]
-                outputDict['pixelSize'] = self.scale[jj:jj + self.dataShape[ii]][::-1]
-                outputDict['pixelOrigin'] = self.origin[jj:jj + self.dataShape[ii]][::-1]
+                outputDict['pixelUnit'] = self.scaleUnit[
+                    jj:jj + self.dataShape[ii]][::-1]
+                outputDict['pixelSize'] = self.scale[
+                    jj:jj + self.dataShape[ii]][::-1]
+                outputDict['pixelOrigin'] = self.origin[
+                    jj:jj + self.dataShape[ii]][::-1]
             else:  # 3D array
                 outputDict['data'] = self.fromfile(self.fid, count=pixelCount,
-                                                   dtype=self._DM2NPDataType(self.dataType[ii])).reshape(
+                                                   dtype=self._DM2NPDataType(
+                                                       self.dataType[ii])
+                                                   ).reshape(
                     (self.zSize[ii], self.ySize[ii], self.xSize[ii]))
                 # Reverse the order to match the C-ordering of the data
-                outputDict['pixelUnit'] = self.scaleUnit[jj:jj + self.dataShape[ii]][::-1]
-                outputDict['pixelSize'] = self.scale[jj:jj + self.dataShape[ii]][::-1]
-                outputDict['pixelOrigin'] = self.origin[jj:jj + self.dataShape[ii]][::-1]
+                outputDict['pixelUnit'] = self.scaleUnit[
+                    jj:jj + self.dataShape[ii]][::-1]
+                outputDict['pixelSize'] = self.scale[
+                    jj:jj + self.dataShape[ii]][::-1]
+                outputDict['pixelOrigin'] = self.origin[
+                    jj:jj + self.dataShape[ii]][::-1]
 
         # Ensure the data is loaded into memory from the buffer
         if self._on_memory:
@@ -1107,7 +1139,7 @@ class fileDM:
         # Check that the dataset exists.
         try:
             self._checkIndex(ii)
-        except:
+        except Exception:
             raise
 
         # Check sliceZ and sliceZ2 are within the data array size bounds
@@ -1130,27 +1162,37 @@ class fileDM:
         if self.xSize[ii] > 0:
             # determine the number of bytes to skip
             pixelCount = int(self.xSize[ii]) * int(self.ySize[ii])
-            byteCount = pixelCount * np.dtype(self._DM2NPDataType(self.dataType[ii])).itemsize
+            byteCount = pixelCount * np.dtype(self._DM2NPDataType(
+                                              self.dataType[ii])).itemsize
             jj = 0  # counter to determine where the first scale value starts
             for nn in self.dataShape[0:ii]:
                 # sum up all number of dimensions for previous datasets
                 jj += nn
             if self.zSize[ii] == 1:  # 2D data
                 outputDict['data'] = self.fromfile(self.fid, count=pixelCount,
-                                                   dtype=self._DM2NPDataType(self.dataType[ii])).reshape(
-                                                   (self.ySize[ii], self.xSize[ii]))
+                                                   dtype=self._DM2NPDataType(
+                                                       self.dataType[ii])
+                                                   ).reshape(
+                                                  (self.ySize[ii],
+                                                   self.xSize[ii]))
             elif self.zSize2[ii] > 1:  # 4D data
                 # skip ahead from current position
                 self.seek(self.fid, sliceZ * sliceZ2 * byteCount, 1)
                 outputDict['data'] = self.fromfile(self.fid, count=pixelCount,
-                                                   dtype=self._DM2NPDataType(self.dataType[ii])).reshape(
-                                                   (self.ySize[ii], self.xSize[ii]))
+                                                   dtype=self._DM2NPDataType(
+                                                       self.dataType[ii])
+                                                   ).reshape(
+                                                  (self.ySize[ii],
+                                                   self.xSize[ii]))
             else:  # 3D array
                 # skip ahead from current position
                 self.seek(self.fid, sliceZ * byteCount, 1)
                 outputDict['data'] = self.fromfile(self.fid, count=pixelCount,
-                                                   dtype=self._DM2NPDataType(self.dataType[ii])).reshape(
-                                                   (self.ySize[ii], self.xSize[ii]))
+                                                   dtype=self._DM2NPDataType(
+                                                       self.dataType[ii])
+                                                   ).reshape(
+                                                  (self.ySize[ii],
+                                                   self.xSize[ii]))
 
             # Return the proper meta data for this one image
             # need to reverse the order to match the C-ordering of the data
@@ -1210,7 +1252,7 @@ class fileDM:
         # Check that the dataset exists.
         try:
             self._checkIndex(ii)
-        except:
+        except Exception:
             raise
 
         # Create a memmap
@@ -1218,7 +1260,8 @@ class fileDM:
         sh0 = (self.zSize2[ii], self.zSize[ii], self.ySize[ii], self.xSize[ii])
         sh1 = tuple([ii for ii in sh0 if ii > 1])  # shape must be a tuple
 
-        mm = np.memmap(self.filename, dtype=self._DM2NPDataType(self.dataType[ii]), mode='r',
+        mm = np.memmap(self.filename,
+                       dtype=self._DM2NPDataType(self.dataType[ii]), mode='r',
                        offset=self.dataOffset[ii], shape=sh1)
 
         return mm
@@ -1278,7 +1321,8 @@ def dmReader(filename, dSetNum=0, verbose=False, on_memory=True):
         else:
             # Multiply by pixelSize to get the correct origin
             pixel_origin = np.abs(round(pixel_origin * pixel_size, ndigits=4))
-            eLoss = np.round(np.linspace(0, pixel_size * (sh - 1), sh) + pixel_origin, decimals=4)
+            eLoss = np.round(np.linspace(0, pixel_size * (sh - 1), sh) +
+                             pixel_origin, decimals=4)
             coords.append(eLoss)
     im1['coords'] = coords
 

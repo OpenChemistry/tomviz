@@ -17,11 +17,7 @@
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_reduce.h>
 
-#include <cmath>
 #include <random>
-
-using namespace Eigen;
-using namespace std;
 
 typedef Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
   Mat;
@@ -34,8 +30,8 @@ ctvlib::ctvlib(int Ns, int Nray, int Nproj)
   Nz = Nray;
   Nrow = Nray * Nproj;
   Ncol = Ny * Nz;
+    
   A.resize(Nrow, Ncol);
-
   b.resize(Nslice, Nrow);
   g.resize(Nslice, Nrow);
 
@@ -118,8 +114,8 @@ std::vector<int> ctvlib::calc_proj_order(int n)
     a[i] = i;
   }
 
-  random_device rd;
-  mt19937 gRd(rd());
+  std::random_device rd;
+  std::mt19937 gRd(rd());
   shuffle(a.begin(), a.end(), gRd);
 
   return a;
@@ -128,7 +124,7 @@ std::vector<int> ctvlib::calc_proj_order(int n)
 // Calculate Lipshits Gradient (for SIRT).
 float ctvlib::lipschits()
 {
-  VectorXf f = VectorXf::Random(Ncol);
+  Eigen::VectorXf f = Eigen::VectorXf::Random(Ncol);
   for (int i = 0; i < 15; i++) {
     f = A.transpose() * (A * f) / f.norm();
   }
@@ -210,7 +206,6 @@ void ctvlib::loadA(Eigen::Ref<Mat> pyA)
 
 void ctvlib::update_proj_angles(Eigen::Ref<Mat> pyA, int Nproj)
 {
-
   Nrow = Ny * Nproj;
 
   A.resize(Nrow, Ncol);
@@ -314,6 +309,6 @@ Mat ctvlib::get_projections()
 void ctvlib::restart_recon()
 {
   for (int s = 0; s < Nslice; s++) {
-    recon[s].setZero();
+      recon[s].setZero();
   }
 }
