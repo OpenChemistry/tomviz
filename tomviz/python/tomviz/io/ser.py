@@ -159,7 +159,7 @@ class fileSER:
     def __str__(self):
         return 'ncempy SER data set'
 
-    def readHeader(self, verbose=False):
+    def readHeader(self, verbose=False): # noqa: C901
         """Read and return the SER files header.
 
         Parameters
@@ -349,7 +349,7 @@ class fileSER:
 
         return
 
-    def getDataset(self, index, verbose=False):
+    def getDataset(self, index, verbose=False): # noqa: C901
         """ Retrieve data and meta data for one image or spectra
         from the file.
 
@@ -371,7 +371,7 @@ class fileSER:
         # check index, will raise Exceptions if not
         try:
             self._checkIndex(index)
-        except:
+        except Exception:
             raise
 
         # go to dataset in file
@@ -485,7 +485,7 @@ class fileSER:
         # check index, will raise Exceptions if not
         try:
             self._checkIndex(index)
-        except:
+        except Exception:
             raise
 
         tag = {}
@@ -526,7 +526,7 @@ class fileSER:
             else:
                 # otherwise raise to get to default tag
                 raise
-        except:
+        except Exception:
             tag['TagTypeID'] = 0
             tag['Time'] = 0
             tag['PositionX'] = np.nan
@@ -612,7 +612,7 @@ def read_emi(filename):
     except IOError:
         print('Error reading file: "{}"'.format(filename))
         raise
-    except:
+    except Exception:
         raise
 
     # dict to store _emi stuff

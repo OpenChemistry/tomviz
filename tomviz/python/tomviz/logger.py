@@ -18,8 +18,8 @@ class logger:
         self.listenDir = listenDirectory
         self.fileExt = fileExtension
 
-        self.listen_files = self.listen_files_list(self.listenDir)
-        self.log_files, self.log_projs, self.log_tilts = [], [], []
+        self.listenFiles = self.listen_files_list(self.listenDir)
+        self.logFiles, self.log_projs, self.logTiltAngles = [], [], []
         print("Listener on {} created.".format(self.listenDir))
 
     def listen_files_list(self, directory):
@@ -32,7 +32,7 @@ class logger:
     def CHANGE_appendAll(self):
         """Append stored files for each new element"""
         # Separate new files to be loaded
-        FoI = list(set(self.listen_files)-set(self.log_files))
+        FoI = list(set(self.listenFiles)-set(self.logFiles))
         # FoI.sort(key=lambda x: x[:3])
         for file in FoI:
             print("Loading {}".format(file))
@@ -41,7 +41,7 @@ class logger:
             try:
                 (newProj, newAngle) = self.read_projection_image(filePath)
 
-                self.log_tilts = np.append(self.log_tilts, newAngle)
+                self.logTiltAngles = np.append(self.logTiltAngles, newAngle)
 
                 newProj = self.background_subtract(newProj)
                 newProj = self.center_of_mass_align(newProj)
@@ -56,9 +56,9 @@ class logger:
                     self.log_projs = np.dstack((self.log_projs, newProj))
                     np.save('tiltSeries.npy', self.log_projs)
 
-                self.log_files = np.append(self.log_files, file)
+                self.logFiles = np.append(self.logFiles, file)
 
-            except:
+            except Exception:
                 print('Could not read : {}, will preceed with reconstruction\
                         and re-download on next pass'.format(file))
                 break
@@ -68,8 +68,8 @@ class logger:
         NOTE: Lazy Scheme is used (set difference), can update """
 
         for ts in range(0, seconds):
-            self.listen_files = self.listen_files_list(self.listenDir)
-            FoI = list(set(self.listen_files)-set(self.log_files))
+            self.listenFiles = self.listen_files_list(self.listenDir)
+            FoI = list(set(self.listenFiles)-set(self.logFiles))
             if len(FoI) == 0:
                 time.sleep(1)
             else:
@@ -110,7 +110,7 @@ class logger:
                 b[s, :] = self.log_projs[s, :, :].transpose().ravel()
             tomo.set_tilt_series(b)
         else:
-            tomo.set_tilt_series(self.log_projs, self.log_tilts)
+            tomo.set_tilt_series(self.log_projs, self.logTiltAngles)
 
     # Shift Image so that the center of mass is at the origin"
     # Automatically align tilt images by center of mass method
