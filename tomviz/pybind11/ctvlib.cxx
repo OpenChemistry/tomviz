@@ -30,8 +30,7 @@ ctvlib::ctvlib(int Ns, int Nray, int Nproj)
   Nz = Nray;
   Nrow = Nray * Nproj;
   Ncol = Ny * Nz;
-    
-    
+
   A.resize(Nrow, Ncol);
   b.resize(Nslice, Nrow);
   g.resize(Nslice, Nrow);
