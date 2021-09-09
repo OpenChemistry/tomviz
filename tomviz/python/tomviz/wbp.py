@@ -2,7 +2,7 @@ from scipy.interpolate import interp1d
 import numpy as np
 
 
-class wbp:
+class WBP:
 
     def __init__(self, Nx, Ny, Nz):
 

@@ -32,7 +32,7 @@ from os.path import basename as os_basename
 import numpy as np
 
 
-class fileDM:
+class FileDM:
     """Opens the file and reads in the header.
     Data is loaded using the getDataset method.
 

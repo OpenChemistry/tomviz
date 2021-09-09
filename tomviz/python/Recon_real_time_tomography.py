@@ -22,7 +22,7 @@ class RealTimeTomography(tomviz.operators.CompletableOperator):
         child = dataset.create_child_dataset()
 
         # Logger to Read Directory
-        tomoLogger = logger.logger(localDirectory, fileExtensions[fileExt])
+        tomoLogger = logger.Logger(localDirectory, fileExtensions[fileExt])
 
         # Keep Checking Directory until a projection is read.
         while True:
@@ -35,7 +35,7 @@ class RealTimeTomography(tomviz.operators.CompletableOperator):
         if alg != 'WBP':
             tomo = wrap.ctvlib(Nslice, Nray, Nproj)
         else:
-            tomo = wbp.wbp(Nslice, Nray, Nproj)
+            tomo = wbp.WBP(Nslice, Nray, Nproj)
             beta = 0
             maxIter = Nslice
         tomoLogger.load_tilt_series(tomo, alg)

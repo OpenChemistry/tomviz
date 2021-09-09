@@ -36,7 +36,7 @@ class NotSERError(Exception):
     pass
 
 
-class fileSER:
+class FileSER:
     """ Class to represent SER files (read only).
 
     Attributes

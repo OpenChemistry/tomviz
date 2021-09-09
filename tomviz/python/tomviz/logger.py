@@ -6,7 +6,7 @@ import os
 
 
 # Class for listening and logging new files for real-time reconstruction
-class logger:
+class Logger:
 
     def __init__(self, listenDirectory, fileExtension):
 
@@ -83,17 +83,17 @@ class logger:
         """Acquires angles from metadata of .dm4 files"""
 
         if self.fileExt == 'dm4':
-            file = dm.fileDM(fname)
+            file = dm.FileDM(fname)
             alphaTag = '.ImageList.2.ImageTags.Microscope Info.'\
                        'Stage Position.Stage Alpha'
             return (file.getDataset(0)['data'], file.allTags[alphaTag])
         elif self.fileExt == 'ser':
-            file = ser.serReader(fname)
+            file = ser.SerReader(fname)
             return (file['data'], file['metadata']['Stage A [deg]'])
         # Stage Alpha isn't stored in metadata for dm3 or tif
         elif self.fileExt == 'dm3':
             # Parse fname for stage alpha
-            file = dm.fileDM(fname)
+            file = dm.FileDM(fname)
 
             match = 'degrees'
             tags = fname.split('_')

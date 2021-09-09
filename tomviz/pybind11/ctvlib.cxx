@@ -1,11 +1,4 @@
-
-//
-//  ctvlib.cpp
-//
-//
-//  Created by Hovden Group on 5/6/19.
-//  Copyright © 2019 Jonathan Schwartz. All rights reserved.
-//
+/* This source file is part of the Tomviz project, https://tomviz.org/. It is released under the 3-Clause BSD License, see "LICENSE". */
 
 #include "ctvlib.h"
 
