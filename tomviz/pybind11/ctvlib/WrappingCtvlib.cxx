@@ -12,7 +12,7 @@ namespace py = pybind11;
 PYBIND11_PLUGIN(ctvlib)
 {
   py::module m("ctvlib", "C++ Tomography Reconstruction Scripts");
-    
+
   py::class_<ctvlib>(m, "ctvlib")
     .def(pybind11::init<int, int, int>())
     .def("Nslice", &ctvlib::get_Nslice, "Get Nslice")
