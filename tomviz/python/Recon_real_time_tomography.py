@@ -1,4 +1,4 @@
-import tomviz._wrapping as wrap
+import tomviz.ctvlib as ctvlib
 from tomviz import logger, wbp
 from tomviz import pytvlib
 import tomviz.operators
@@ -33,7 +33,7 @@ class RealTimeTomography(tomviz.operators.CompletableOperator):
 
         # Initialize C++ Object..
         if alg != 'WBP':
-            tomo = wrap.ctvlib(Nslice, Nray, Nproj)
+            tomo = ctvlib.ctvlib(Nslice, Nray, Nproj)
         else:
             tomo = wbp.WBP(Nslice, Nray, Nproj)
             beta = 0
