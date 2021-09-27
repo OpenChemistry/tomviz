@@ -6,7 +6,7 @@
 
 #include <vtk_eigen.h>
 
-#include VTK_EIGEN(CORE)
+#include VTK_EIGEN(Core)
 #include VTK_EIGEN(SparseCore)
 
 class ctvlib

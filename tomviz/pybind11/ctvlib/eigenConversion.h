@@ -37,7 +37,7 @@
 
 #include <vtk_eigen.h>
 
-#include VTK_EIGEN(CORE)
+#include VTK_EIGEN(Core)
 #include VTK_EIGEN(SparseCore)
 
 // Eigen prior to 3.2.7 doesn't have proper move constructors--but worse, some
