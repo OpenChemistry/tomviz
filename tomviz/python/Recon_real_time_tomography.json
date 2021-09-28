@@ -14,7 +14,7 @@
       "name" : "localDirectory",
       "label" : "Monitoring Directory",
       "type" : "string",
-      "default" : "/Users/jonathanschwartz/Desktop/demo_real_time"
+      "default" : ""
     },
     {
       "name" : "alg",
