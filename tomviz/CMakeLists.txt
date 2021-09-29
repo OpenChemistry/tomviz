@@ -597,7 +597,7 @@ set(tomviz_real_time_files
 file(MAKE_DIRECTORY "${tomviz_python_binary_dir}/tomviz")
 foreach(file ${tomviz_real_time_files})
   execute_process(COMMAND ${CMAKE_COMMAND} -E ${script_cmd}
-    "${tomviz_SOURCE_DIR}/tomviz/python/tomviz/realtime/${file}"
+    "${tomviz_SOURCE_DIR}/tomviz/python/tomviz/_realtime/${file}"
     "${tomviz_python_binary_dir}/tomviz/${file}")
 endforeach()
 
