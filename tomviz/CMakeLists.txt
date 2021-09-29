@@ -463,6 +463,9 @@ set(python_files
   PoreSizeDistribution.py
   Tortuosity.py
   Recon_real_time_tomography.py 
+  logger.py
+  pytvlib.py
+  wbp.py 
   )
 
 set(json_files
@@ -585,19 +588,6 @@ file(MAKE_DIRECTORY "${tomviz_python_binary_dir}/tomviz")
 foreach(file ${tomviz_python_modules})
   execute_process(COMMAND ${CMAKE_COMMAND} -E ${script_cmd}
     "${tomviz_SOURCE_DIR}/tomviz/python/tomviz/${file}"
-    "${tomviz_python_binary_dir}/tomviz/${file}")
-endforeach()
-
-set(tomviz_python_modules
-  logger.py
-  pytvlib.py
-  wbp.py
-)
-
-file(MAKE_DIRECTORY "${tomviz_python_binary_dir}/tomviz")
-foreach(file ${tomviz_python_modules})
-  execute_process(COMMAND ${CMAKE_COMMAND} -E ${script_cmd}
-    "${tomviz_SOURCE_DIR}/tomviz/python/${file}"
     "${tomviz_python_binary_dir}/tomviz/${file}")
 endforeach()
 
