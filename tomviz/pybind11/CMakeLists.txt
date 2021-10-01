@@ -33,6 +33,6 @@ set_target_properties(_wrapping ctvlib PROPERTIES
 )
 
 target_compile_options(_wrapping PRIVATE -D__TBB_NO_IMPLICIT_LINKAGE=1)
-install(TARGETS _wrapping
+install(TARGETS _wrapping ctvlib
     DESTINATION "${tomviz_python_install_dir}/tomviz"
     COMPONENT runtime)
