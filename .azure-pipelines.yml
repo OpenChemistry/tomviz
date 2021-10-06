@@ -50,6 +50,9 @@ jobs:
   - bash: scripts/azure-pipelines/install_python_deps.sh
     displayName: Install Python Dependencies
 
+  - script: git config --global http.sslVerify false
+    displayName: Temporarily disable SSL cert verification
+
   # Use the OS's native script language for this command
   - script: git clone --recursive https://github.com/openchemistry/paraview $(PARAVIEW_SOURCE_FOLDER)
     displayName: Clone ParaView
