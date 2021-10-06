@@ -22,9 +22,11 @@
 #include <vtkTextProperty.h>
 
 #include <QCheckBox>
+#include <QGroupBox>
 #include <QHBoxLayout>
 #include <QJsonArray>
 #include <QLabel>
+#include <QLineEdit>
 #include <QVBoxLayout>
 
 namespace tomviz {
@@ -112,6 +114,11 @@ QJsonObject ModuleOutline::serialize() const
   color << rgb[0] << rgb[1] << rgb[2];
   props["gridColor"] = color;
 
+  props["useCustomAxesTitles"] = m_useCustomAxesTitles;
+  props["customXTitle"] = m_customXTitle;
+  props["customYTitle"] = m_customYTitle;
+  props["customZTitle"] = m_customZTitle;
+
   json["properties"] = props;
   return json;
 }
@@ -129,6 +136,18 @@ bool ModuleOutline::deserialize(const QJsonObject& json)
     double rgb[3] = { color[0].toDouble(), color[1].toDouble(),
                       color[2].toDouble() };
     updateGridAxesColor(rgb);
+
+    m_useCustomAxesTitles = props["useCustomAxesTitles"].toBool();
+    if (props.contains("customXTitle")) {
+      m_customXTitle = props["customXTitle"].toString();
+    }
+    if (props.contains("customYTitle")) {
+      m_customYTitle = props["customYTitle"].toString();
+    }
+    if (props.contains("customZTitle")) {
+      m_customZTitle = props["customZTitle"].toString();
+    }
+    updateGridAxesTitles();
     return true;
   }
   return false;
@@ -184,6 +203,63 @@ void ModuleOutline::addToPanel(QWidget* panel)
 
   showGridLayout->addWidget(showGrid);
 
+  // Custom axes titles
+  auto* customAxesTitlesGroupBox = new QGroupBox(panel);
+  auto* customAxesTitlesLayout = new QVBoxLayout(customAxesTitlesGroupBox);
+
+  auto* customXTitleLayout = new QHBoxLayout;
+  auto* customYTitleLayout = new QHBoxLayout;
+  auto* customZTitleLayout = new QHBoxLayout;
+  customAxesTitlesLayout->addLayout(customXTitleLayout);
+  customAxesTitlesLayout->addLayout(customYTitleLayout);
+  customAxesTitlesLayout->addLayout(customZTitleLayout);
+
+  customXTitleLayout->addWidget(new QLabel("X:"));
+  customYTitleLayout->addWidget(new QLabel("Y:"));
+  customZTitleLayout->addWidget(new QLabel("Z:"));
+
+  auto* customXTitleEditor = new QLineEdit(m_customXTitle);
+  auto* customYTitleEditor = new QLineEdit(m_customYTitle);
+  auto* customZTitleEditor = new QLineEdit(m_customZTitle);
+
+  customXTitleLayout->addWidget(customXTitleEditor);
+  customYTitleLayout->addWidget(customYTitleEditor);
+  customZTitleLayout->addWidget(customZTitleEditor);
+
+  connect(customXTitleEditor, &QLineEdit::textChanged, this,
+          [this](const QString& text) {
+            m_customXTitle = text;
+            updateGridAxesTitles();
+            emit renderNeeded();
+          });
+
+  connect(customYTitleEditor, &QLineEdit::textChanged, this,
+          [this](const QString& text) {
+            m_customYTitle = text;
+            updateGridAxesTitles();
+            emit renderNeeded();
+          });
+
+  connect(customZTitleEditor, &QLineEdit::textChanged, this,
+          [this](const QString& text) {
+            m_customZTitle = text;
+            updateGridAxesTitles();
+            emit renderNeeded();
+          });
+
+  // Use custom axes titles?
+  auto* useCustomAxesTitlesLayout = new QHBoxLayout;
+  auto* useCustomAxesTitles = new QCheckBox("Custom Axes Titles");
+  useCustomAxesTitles->setChecked(m_useCustomAxesTitles);
+  useCustomAxesTitlesLayout->addWidget(useCustomAxesTitles);
+  connect(useCustomAxesTitles, &QCheckBox::toggled, this,
+          [this, customAxesTitlesGroupBox](bool b) {
+            m_useCustomAxesTitles = b;
+            customAxesTitlesGroupBox->setVisible(b);
+            updateGridAxesTitles();
+            emit renderNeeded();
+          });
+
   // Show Axes?
   QHBoxLayout* showAxesLayout = new QHBoxLayout;
   QCheckBox* showAxes = new QCheckBox(QString("Show Axes"));
@@ -191,18 +267,20 @@ void ModuleOutline::addToPanel(QWidget* panel)
   // Disable "Show Grid" if axes not enabled
   if (!showAxes->isChecked()) {
     showGrid->setEnabled(false);
+    useCustomAxesTitles->setEnabled(false);
+    customAxesTitlesGroupBox->setVisible(false);
   }
   connect(showAxes, &QCheckBox::stateChanged, this,
-          [this, showGrid](int state) {
+          [this, showGrid, useCustomAxesTitles](int state) {
             m_gridAxes->SetVisibility(state == Qt::Checked);
             m_axesVisibility = state == Qt::Checked;
             // Uncheck "Show Grid" and disable it
             if (state == Qt::Unchecked) {
               showGrid->setChecked(false);
-              showGrid->setEnabled(false);
-            } else {
-              showGrid->setEnabled(true);
+              useCustomAxesTitles->setChecked(false);
             }
+            showGrid->setEnabled(state == Qt::Checked);
+            useCustomAxesTitles->setEnabled(state == Qt::Checked);
 
             emit renderNeeded();
           });
@@ -212,6 +290,8 @@ void ModuleOutline::addToPanel(QWidget* panel)
   panelLayout->addItem(layout);
   panelLayout->addItem(showAxesLayout);
   panelLayout->addItem(showGridLayout);
+  panelLayout->addItem(useCustomAxesTitlesLayout);
+  panelLayout->addWidget(customAxesTitlesGroupBox);
   panelLayout->addStretch();
   panel->setLayout(panelLayout);
 
@@ -291,7 +371,7 @@ void ModuleOutline::initializeGridAxes(DataSource* data,
   prop->SetBackfaceCulling(0);
 
   // Set the titles
-  updateGridAxesUnit(data);
+  updateGridAxesTitles();
 
   m_view = vtkPVRenderView::SafeDownCast(vtkView->GetClientSideView());
   m_view->GetRenderer()->AddActor(m_gridAxes);
@@ -299,7 +379,7 @@ void ModuleOutline::initializeGridAxes(DataSource* data,
   connect(data, &DataSource::dataPropertiesChanged, this, [this]() {
     auto dataSource = qobject_cast<DataSource*>(sender());
     updateGridAxesBounds(dataSource);
-    updateGridAxesUnit(dataSource);
+    updateGridAxesTitles();
     dataSource->proxy()->MarkModified(nullptr);
     dataSource->proxy()->UpdatePipeline();
     emit renderNeeded();
@@ -319,11 +399,20 @@ void ModuleOutline::updateGridAxesColor(double* color)
   m_outlineRepresentation->UpdateVTKObjects();
 }
 
-void ModuleOutline::updateGridAxesUnit(DataSource* dataSource)
+void ModuleOutline::updateGridAxesTitles()
 {
-  QString xTitle = QString("X (%1)").arg(dataSource->getUnits());
-  QString yTitle = QString("Y (%1)").arg(dataSource->getUnits());
-  QString zTitle = QString("Z (%1)").arg(dataSource->getUnits());
+  QString xTitle, yTitle, zTitle;
+  if (m_useCustomAxesTitles) {
+    xTitle = m_customXTitle;
+    yTitle = m_customYTitle;
+    zTitle = m_customZTitle;
+  } else {
+    auto units = dataSource()->getUnits();
+    xTitle = QString("X (%1)").arg(units);
+    yTitle = QString("Y (%1)").arg(units);
+    zTitle = QString("Z (%1)").arg(units);
+  }
+
   m_gridAxes->SetXTitle(xTitle.toUtf8().data());
   m_gridAxes->SetYTitle(yTitle.toUtf8().data());
   m_gridAxes->SetZTitle(zTitle.toUtf8().data());
