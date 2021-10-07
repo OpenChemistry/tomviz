@@ -3,6 +3,7 @@
 
 #include "OperatorPython.h"
 
+#include <QFileDialog>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -71,17 +72,22 @@ public:
     onScriptModified();
     setupConnections();
   }
+
   void setupConnections()
   {
     connect(m_ui.script, &QTextEdit::textChanged, this,
             &EditPythonOperatorWidget::onScriptModified);
+    connect(m_ui.saveScript, &QPushButton::clicked, this,
+            &EditPythonOperatorWidget::saveScript);
   }
+
   void setViewMode(const QString& mode) override
   {
     if (mode == QStringLiteral("viewCode")) {
       m_ui.tabWidget->setCurrentWidget(m_ui.scriptTab);
     }
   }
+
   void applyChangesToOperator() override
   {
     if (m_op) {
@@ -97,12 +103,38 @@ public:
       }
     }
   }
+
   void onScriptModified()
   {
     // Update any objects that need an up-to-date script...
     if (m_customWidget) {
       m_customWidget->setScript(m_ui.script->toPlainText());
     }
+  }
+
+  void saveScript()
+  {
+    QString name = QFileDialog::getSaveFileName(
+      this, "Save Script", tomviz::userDataPath(), "Python scripts (*.py)");
+    if (name.isEmpty()) {
+      return;
+    }
+
+    QFile file(name, this);
+    if (file.exists()) {
+      file.remove();
+    }
+
+    if (!file.open(QIODevice::WriteOnly)) {
+      qDebug() << "Failed to open file: " << name;
+      return;
+    }
+
+    if (file.write(m_ui.script->toPlainText().toLatin1()) == -1) {
+      qDebug() << "Failed to write to file: " << name;
+    }
+
+    file.close();
   }
 
 private:
