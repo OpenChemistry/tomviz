@@ -101,7 +101,7 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   m_ui->setupUi(this);
 
   // Setup the view for the list of 2D transfer functions. This functionality
-  // is work-in-progress and currenlty hidden.
+  // is work-in-progress and currently hidden.
   m_ui->tvTransfer2DSelection->setModel(m_transfer2DModel);
   m_ui->wTransfer2DSelection->hide();
 
@@ -118,7 +118,7 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
     bool resize = settings->value("Tomviz.firstCentralWidget", true).toBool();
     settings->setValue("Tomviz.firstCentralWidget", false);
     if (resize) {
-      // Allocate maximum to the 3D widget, addded a fallback so both are shown.
+      // Allocate maximum to the 3D widget, added a fallback so both are shown.
       int mainWidgetSize = m_ui->splitter->size().height() - 150;
       if (mainWidgetSize < 650) {
         mainWidgetSize = 650;

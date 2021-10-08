@@ -93,7 +93,7 @@ DataSource* MergeImagesReaction::mergeArrays()
 
   QList<DataSource*> sourceList = m_dataSources.toList();
 
-  // Eventually, we'll offer the option to merge compontents in a single array.
+  // Eventually, we'll offer the option to merge components in a single array.
   // For now, we will simply append the point data arrays.
   vtkSMSessionProxyManager* pxm = ActiveObjects::instance().proxyManager();
   vtkSMSourceProxy* filter = vtkSMSourceProxy::SafeDownCast(

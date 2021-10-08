@@ -51,7 +51,7 @@ def find_datasource(path):
 
         return pipeline.dataSource
 
-    # Find the operator (the child data source has to be assocated with one ...)
+    # Find the operator (the child data source must be associated with one ...)
     op = find_operator(path)
     del path[:2]
 
@@ -94,7 +94,7 @@ def find_removed_object_id(path):
 
 def _path(path, obj_type):
     path = path.split('/')
-    # Find last occurence
+    # Find last occurrence
     index = len(path) - 1 - path[::-1].index(obj_type)
     path = path[0:index+2]
 

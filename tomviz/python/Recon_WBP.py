@@ -78,7 +78,7 @@ def wbp2(sinogram, angles, N=None, filter="ramp", interp="linear"):
     interpolation_methods = ('linear', 'nearest', 'spline', 'cubic')
     if interp not in interpolation_methods:
         raise ValueError("Unknown interpolation: %s" % interp)
-    if not N:  # if ouput size is not given
+    if not N:  # if output size is not given
         N = int(np.floor(np.sqrt(Nray**2 / 2.0)))
 
     ang = np.double(angles) * np.pi / 180.0

@@ -17,7 +17,7 @@ def transform(dataset, threshold=None):
 
         medianI = scipy.ndimage.filters.median_filter(I_pad, 2)[1:-1, 1:-1]
 
-        #identiy bad pixels
+        #identify bad pixels
         badPixelsMask = abs(I - medianI) > std * threshold
 
         I[badPixelsMask] = medianI[badPixelsMask]

@@ -166,7 +166,7 @@ DataSource* findDataSource(QStringList& path, QString id = QString())
     return dataSource;
   }
 
-  // Find the operator (the child data source has to be assocated with one ...)
+  // Find the operator (the child data source has to be associated with one ...)
   auto op = findOperator(path);
   if (op == nullptr) {
     qCritical() << "Unable to find operator.";

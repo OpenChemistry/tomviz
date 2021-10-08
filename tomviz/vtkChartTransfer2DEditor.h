@@ -48,7 +48,7 @@ public:
   vtkIdType AddFunction(vtkTransferFunctionBoxItem* boxItem);
 
   /**
-   * Allocates and clears Transfer2D to be updated, the dimenions of the
+   * Allocates and clears Transfer2D to be updated, the dimensions of the
    * histogram (e.g. number of bins) are used as dimensions for the transfer
    * function. Calls Utilities::rasterTransferFunction2DBox for the actual
    * update. It invokes vtkCommand::EndEvent after the update, this signal

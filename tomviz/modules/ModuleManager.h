@@ -69,7 +69,7 @@ public:
   /// Save the application state as JSON, use stateDir as the base for relative
   /// paths.
   bool serialize(QJsonObject& doc, const QDir& stateDir,
-                 bool interative = true) const;
+                 bool interactive = true) const;
   bool deserialize(const QJsonObject& doc, const QDir& stateDir,
                    bool loadDataSources = true);
 

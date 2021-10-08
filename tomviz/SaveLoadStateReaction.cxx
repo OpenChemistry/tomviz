@@ -158,7 +158,7 @@ bool SaveLoadStateReaction::loadTvsm(const QString& filename)
 
   if (doc.isObject()) {
     // This needs to run here, but needs to run after the dialog is connected
-    // and execed.  Otherwise we miss singals fired from within deserialize.
+    // and execed.  Otherwise we miss signals fired from within deserialize.
     // So put it on a timer.
     QTimer::singleShot(0, [doc, filename]() {
       ModuleManager::instance().deserialize(doc.object(),

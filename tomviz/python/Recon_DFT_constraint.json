@@ -30,7 +30,7 @@
     },
     {
       "name" : "supportSigma",
-      "label" : "Sigma multiplier for Fourier Guassian filter",
+      "label" : "Sigma multiplier for Fourier Gaussian filter",
       "type" : "double",
       "default" : 0.1,
       "minimum" : 0,
