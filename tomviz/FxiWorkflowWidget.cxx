@@ -290,8 +290,12 @@ public:
       QJsonValueRef parameterNode = parameters[i];
       QJsonObject parameterObject = parameterNode.toObject();
       QJsonValueRef nameValue = parameterObject["name"];
+      auto tagValue = parameterObject["tag"];
       if (knownParameters.contains(nameValue.toString())) {
         // This parameter is already known. Remove it.
+        parameters.removeAt(i);
+      } else if (tagValue.toString("") != "") {
+        // Not the right tag. Remove it.
         parameters.removeAt(i);
       } else {
         i += 1;
