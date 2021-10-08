@@ -588,6 +588,12 @@ foreach(file ${tomviz_python_modules})
     "${tomviz_python_binary_dir}/tomviz/${file}")
 endforeach()
 
+# Install the tomviz Python files.
+install(DIRECTORY "${tomviz_SOURCE_DIR}/tomviz/python/tomviz"
+        DESTINATION "${tomviz_python_install_dir}"
+        USE_SOURCE_PERMISSIONS
+        COMPONENT runtime)
+
 set(tomviz_real_time_files
   logger.py
   pytvlib.py
@@ -601,8 +607,7 @@ foreach(file ${tomviz_real_time_files})
 endforeach()
 
 # Install the tomviz Python files.
-install(DIRECTORY "${tomviz_SOURCE_DIR}/tomviz/python/tomviz"
-        DIRECTORY "${tomviz_SOURCE_DIR}/tomviz/python/tomviz/_realtime"
+install(DIRECTORY "${tomviz_SOURCE_DIR}/tomviz/python/tomviz/_realtime"
         DESTINATION "${tomviz_python_install_dir}"
         USE_SOURCE_PERMISSIONS
         COMPONENT runtime)
