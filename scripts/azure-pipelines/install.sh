@@ -46,19 +46,19 @@ elif [[ $AGENT_OS == 'Windows_NT' ]]; then
   choco install ninja
 
   # tbb
-  wget -nv https://data.kitware.com/api/v1/file/5dbb4f19e3566bda4b49e6e9/download -O tbb.zip
+  wget --no-check-certificate -nv https://data.kitware.com/api/v1/file/5dbb4f19e3566bda4b49e6e9/download -O tbb.zip
   unzip -q tbb.zip
   rm tbb.zip
   mv tbb $PIPELINE_WORKSPACE
 
   # Qt
-  wget -nv https://data.kitware.com/api/v1/file/5dbb2210e3566bda4b495afa/download -O Qt5.12.3_msvc2017_64.zip
+  wget --no-check-certificate -nv https://data.kitware.com/api/v1/file/5dbb2210e3566bda4b495afa/download -O Qt5.12.3_msvc2017_64.zip
   unzip -q Qt5.12.3_msvc2017_64.zip
   rm Qt5.12.3_msvc2017_64.zip
   mv Qt5.12.3_msvc2017_64 $PIPELINE_WORKSPACE
 
   # google-test
-  wget -nv https://data.kitware.com/api/v1/file/58a3436c8d777f0721a61036/download -O googletest-install.zip
+  wget --no-check-certificate -nv https://data.kitware.com/api/v1/file/58a3436c8d777f0721a61036/download -O googletest-install.zip
   unzip -q googletest-install.zip
   rm googletest-install.zip
   mv googletest-install $PIPELINE_WORKSPACE

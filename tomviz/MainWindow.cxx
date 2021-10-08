@@ -344,6 +344,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
 
   QAction* randomShiftsAction =
     m_ui->menuTomography->addAction("Shift Tilt Series Randomly");
+  QAction* reconRealTimeAction =
+    m_ui->menuTomography->addAction("Initialize Real-Time Tomography");
   QAction* addPoissonNoiseAction =
     m_ui->menuTomography->addAction("Add Poisson Noise");
 
@@ -439,6 +441,10 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     randomShiftsAction, "Shift Tilt Series Randomly",
     readInPythonScript("ShiftTiltSeriesRandomly"), true, false, false,
     readInJSONDescription("ShiftTiltSeriesRandomly"));
+  new AddPythonTransformReaction(
+    reconRealTimeAction, "Initialize Real-Time Tomography",
+    readInPythonScript("Recon_real_time_tomography"), true, false, false,
+    readInJSONDescription("Recon_real_time_tomography"));
   new AddPythonTransformReaction(addPoissonNoiseAction, "Add Poisson Noise",
                                  readInPythonScript("AddPoissonNoise"), true,
                                  false, false,

@@ -462,6 +462,7 @@ set(python_files
   TV_Filter.py
   PoreSizeDistribution.py
   Tortuosity.py
+  Recon_real_time_tomography.py 
   )
 
 set(json_files
@@ -510,6 +511,7 @@ set(json_files
   TV_Filter.json
   PoreSizeDistribution.json
   Tortuosity.json
+  Recon_real_time_tomography.json
   )
 
 set(resource_files
@@ -586,6 +588,19 @@ foreach(file ${tomviz_python_modules})
     "${tomviz_python_binary_dir}/tomviz/${file}")
 endforeach()
 
+set(tomviz_real_time_files
+  logger.py
+  pytvlib.py
+  wbp.py 
+)
+
+file(MAKE_DIRECTORY "${tomviz_python_binary_dir}/tomviz")
+foreach(file ${tomviz_real_time_files})
+  execute_process(COMMAND ${CMAKE_COMMAND} -E ${script_cmd}
+    "${tomviz_SOURCE_DIR}/tomviz/python/tomviz/_realtime/${file}"
+    "${tomviz_python_binary_dir}/tomviz/${file}")
+endforeach()
+
 # Install the tomviz Python files.
 install(DIRECTORY "${tomviz_SOURCE_DIR}/tomviz/python/tomviz"
        DESTINATION "${tomviz_python_install_dir}"
@@ -596,6 +611,8 @@ set(tomviz_python_io_modules
   __init__.py
   _internal.py
   _databroker.py
+  ser.py
+  dm.py
 )
 
 file(MAKE_DIRECTORY "${tomviz_python_binary_dir}/tomviz/io")
