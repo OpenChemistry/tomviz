@@ -117,7 +117,7 @@ vtkStandardNewMacro(InteractorStyle)
   return ret;
 }
 
-  class FxiWorkflowWidget::Internal : public QObject
+class FxiWorkflowWidget::Internal : public QObject
 {
   Q_OBJECT
 
