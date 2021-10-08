@@ -485,13 +485,21 @@ void InterfaceBuilder::setJSONDescription(const QJsonDocument& description)
 }
 
 QLayout* InterfaceBuilder::buildParameterInterface(QGridLayout* layout,
-                                                   QJsonArray& parameters) const
+                                                   QJsonArray& parameters,
+                                                   const QString& tag) const
 {
 
   QJsonObject::size_type numParameters = parameters.size();
   for (QJsonObject::size_type i = 0; i < numParameters; ++i) {
     QJsonValueRef parameterNode = parameters[i];
     QJsonObject parameterObject = parameterNode.toObject();
+
+    QString tagValue = parameterObject["tag"].toString("");
+    if (tagValue != tag) {
+      // The tag doesn't match, skip over this one.
+      continue;
+    }
+
     QJsonValueRef typeValue = parameterObject["type"];
 
     if (typeValue.isUndefined()) {

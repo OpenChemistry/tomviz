@@ -28,6 +28,10 @@ public:
   // Subclasses can perform some UI setup when this is called, if needed
   virtual void setupUI(OperatorPython*) {}
 
+  // Subclasses can write settings when this is called, if needed.
+  // This is called when the operator is applied.
+  virtual void writeSettings() {}
+
 protected:
   QString m_script;
 };

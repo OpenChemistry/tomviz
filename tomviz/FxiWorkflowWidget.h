@@ -34,6 +34,8 @@ public:
   void setScript(const QString& script) override;
   void setupUI(OperatorPython* op) override;
 
+  void writeSettings() override;
+
 private:
   Q_DISABLE_COPY(FxiWorkflowWidget)
 

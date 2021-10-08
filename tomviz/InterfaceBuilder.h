@@ -30,8 +30,8 @@ public:
 
   /// Build the interface, returning it in a QWidget.
   QLayout* buildInterface() const;
-  QLayout* buildParameterInterface(QGridLayout* layout,
-                                   QJsonArray& parameters) const;
+  QLayout* buildParameterInterface(QGridLayout* layout, QJsonArray& parameters,
+                                   const QString& tag = "") const;
 
   /// Set the parameter values
   void setParameterValues(QMap<QString, QVariant> values);

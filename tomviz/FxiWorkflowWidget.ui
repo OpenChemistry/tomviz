@@ -145,6 +145,31 @@
             </item>
            </layout>
           </item>
+          <item row="3" column="0">
+           <widget class="QWidget" name="testRotationsExtraParamsLayoutWidget" native="true">
+            <layout class="QGridLayout" name="testRotationsExtraParamsLayout">
+             <item row="0" column="0">
+              <widget class="QLabel" name="testRotationsExtraParamsLayoutLabel">
+               <property name="minimumSize">
+                <size>
+                 <width>450</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="mouseTracking">
+                <bool>true</bool>
+               </property>
+               <property name="text">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:large; font-weight:600;&quot;&gt;Additional Parameters&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="wordWrap">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
           <item row="2" column="0">
            <widget class="QPushButton" name="testRotations">
             <property name="text">
@@ -368,10 +393,10 @@
              </widget>
             </item>
             <item row="4" column="0" colspan="2">
-             <widget class="QWidget" name="additionalParametersLayoutWidget" native="true">
-              <layout class="QGridLayout" name="additionalParametersLayout">
+             <widget class="QWidget" name="reconExtraParamsLayoutWidget" native="true">
+              <layout class="QGridLayout" name="reconExtraParamsLayout">
                <item row="0" column="0">
-                <widget class="QLabel" name="additionalParametersLayoutLabel">
+                <widget class="QLabel" name="reconExtraParamsLayoutLabel">
                  <property name="minimumSize">
                   <size>
                    <width>450</width>

@@ -107,7 +107,17 @@ public:
 
 vtkStandardNewMacro(InteractorStyle)
 
-  class FxiWorkflowWidget::Internal : public QObject
+  template <typename Key, typename T>
+  QMap<Key, T> unite(const QMap<Key, T>& map1, const QMap<Key, T>& map2)
+{
+  auto ret = map1;
+  for (const auto& k : map2.keys()) {
+    ret[k] = map2[k];
+  }
+  return ret;
+}
+
+class FxiWorkflowWidget::Internal : public QObject
 {
   Q_OBJECT
 
@@ -128,12 +138,13 @@ public:
   QPointer<FxiWorkflowWidget> parent;
   QPointer<DataSource> dataSource;
   QPointer<InterfaceBuilder> interfaceBuilder;
+  QVariantMap customReconSettings;
+  QVariantMap customTestRotationSettings;
   int sliceNumber = 0;
   QScopedPointer<InternalProgressDialog> progressDialog;
   QFutureWatcher<void> futureWatcher;
   bool testRotationsSuccess = false;
   QString testRotationsErrorMessage;
-  QStringList additionalParameterNames;
 
   Internal(Operator* o, vtkSmartPointer<vtkImageData> img, FxiWorkflowWidget* p)
     : op(o), image(img)
@@ -190,7 +201,8 @@ public:
     ui.sliceStop->setToolTip(toolTip);
 
     // Hide the additional parameters label unless the user adds some
-    ui.additionalParametersLayoutLabel->hide();
+    ui.reconExtraParamsLayoutWidget->hide();
+    ui.testRotationsExtraParamsLayoutWidget->hide();
 
     progressDialog.reset(new InternalProgressDialog(parent));
 
@@ -248,12 +260,31 @@ public:
     }
     auto parameters = parametersNode.toArray();
 
+    // Set up the interface builder
+    if (interfaceBuilder) {
+      interfaceBuilder->deleteLater();
+      interfaceBuilder = nullptr;
+    }
+
+    interfaceBuilder = new InterfaceBuilder(this, ds);
+    interfaceBuilder->setParameterValues(pythonOp->arguments());
+
+    // Add any extra parameter widgets
+    addReconExtraParamWidgets(parameters);
+    addTestRotationExtraParamWidgets(parameters);
+
+    // Modify the extra param widgets with any saved settings
+    setReconExtraParamValues(customReconSettings);
+    setTestRotationExtraParamValues(customTestRotationSettings);
+  }
+
+  void addReconExtraParamWidgets(QJsonArray parameters)
+  {
     // Here is the list of parameters for which we already have widgets
     QStringList knownParameters = {
       "rotation_center", "slice_start", "slice_stop",
     };
 
-    additionalParameterNames.clear();
     int i = 0;
     while (i < parameters.size()) {
       QJsonValueRef parameterNode = parameters[i];
@@ -264,7 +295,6 @@ public:
         parameters.removeAt(i);
       } else {
         i += 1;
-        additionalParameterNames.append(nameValue.toString());
       }
     }
 
@@ -274,37 +304,87 @@ public:
 
     // If we get to this point, we have some extra parameters.
     // Show the additional parameters label, and add the parameters.
-    ui.additionalParametersLayoutLabel->show();
-    auto layout = ui.additionalParametersLayout;
-
-    if (interfaceBuilder) {
-      interfaceBuilder->deleteLater();
-      interfaceBuilder = nullptr;
-    }
-
-    interfaceBuilder = new InterfaceBuilder(this, ds);
-    interfaceBuilder->setParameterValues(pythonOp->arguments());
+    ui.reconExtraParamsLayoutWidget->show();
+    auto layout = ui.reconExtraParamsLayout;
     interfaceBuilder->buildParameterInterface(layout, parameters);
   }
 
-  void setAdditionalParameterValues(QMap<QString, QVariant> values)
+  void addTestRotationExtraParamWidgets(QJsonArray parameters)
+  {
+    QString tag = "test_rotations";
+    bool show = false;
+
+    for (auto node : parameters) {
+      auto obj = node.toObject();
+      if (obj["tag"].toString("") == tag) {
+        show = true;
+        break;
+      }
+    }
+
+    if (!show) {
+      // Nothing to show
+      return;
+    }
+
+    // If we get to this point, we have some extra parameters.
+    // Show the additional parameters label, and add the parameters.
+    ui.testRotationsExtraParamsLayoutWidget->show();
+    auto layout = ui.testRotationsExtraParamsLayout;
+    interfaceBuilder->buildParameterInterface(layout, parameters,
+                                              "test_rotations");
+  }
+
+  void setExtraParamValues(QVariantMap values)
+  {
+    setReconExtraParamValues(values);
+    setTestRotationExtraParamValues(values);
+  }
+
+  void setReconExtraParamValues(QVariantMap values)
   {
     if (!interfaceBuilder) {
       return;
     }
 
-    auto parentWidget = ui.additionalParametersLayout->parentWidget();
+    auto parentWidget = ui.reconExtraParamsLayoutWidget;
     interfaceBuilder->setParameterValues(values);
     interfaceBuilder->updateWidgetValues(parentWidget);
   }
 
-  QVariantMap additionalParametersValues()
+  void setTestRotationExtraParamValues(QVariantMap values)
+  {
+    if (!interfaceBuilder) {
+      return;
+    }
+
+    auto parentWidget = ui.testRotationsExtraParamsLayoutWidget;
+    interfaceBuilder->setParameterValues(values);
+    interfaceBuilder->updateWidgetValues(parentWidget);
+  }
+
+  QVariantMap extraParamValues()
+  {
+    return unite(reconExtraParamValues(), testRotationsExtraParamValues());
+  }
+
+  QVariantMap reconExtraParamValues()
   {
     if (!interfaceBuilder) {
       return QVariantMap();
     }
 
-    auto parentWidget = ui.additionalParametersLayout->parentWidget();
+    auto parentWidget = ui.reconExtraParamsLayoutWidget;
+    return interfaceBuilder->parameterValues(parentWidget);
+  }
+
+  QVariantMap testRotationsExtraParamValues()
+  {
+    if (!interfaceBuilder) {
+      return QVariantMap();
+    }
+
+    auto parentWidget = ui.testRotationsExtraParamsLayoutWidget;
     return interfaceBuilder->parameterValues(parentWidget);
   }
 
@@ -326,6 +406,7 @@ public:
     setRotationCenter(settings->value("rotationCenter", 600).toDouble());
     setSliceStart(settings->value("sliceStart", 0).toInt());
     setSliceStop(settings->value("sliceStop", 1).toInt());
+    customReconSettings = settings->value("extraParams").toMap();
     settings->endGroup();
     settings->endGroup();
   }
@@ -339,6 +420,7 @@ public:
     ui.stop->setValue(settings->value("stop", 650).toDouble());
     ui.steps->setValue(settings->value("steps", 26).toInt());
     ui.slice->setValue(settings->value("sli", 0).toInt());
+    customTestRotationSettings = settings->value("extraParams").toMap();
     settings->endGroup();
     settings->endGroup();
   }
@@ -357,6 +439,7 @@ public:
     settings->setValue("rotationCenter", rotationCenter());
     settings->setValue("sliceStart", sliceStart());
     settings->setValue("sliceStop", sliceStop());
+    settings->setValue("extraParams", reconExtraParamValues());
     settings->endGroup();
     settings->endGroup();
   }
@@ -370,6 +453,7 @@ public:
     settings->setValue("stop", ui.stop->value());
     settings->setValue("steps", ui.steps->value());
     settings->setValue("sli", ui.slice->value());
+    settings->setValue("extraParams", testRotationsExtraParamValues());
     settings->endGroup();
     settings->endGroup();
   }
@@ -431,6 +515,12 @@ public:
       kwargs.set("stop", ui.stop->value());
       kwargs.set("steps", ui.steps->value());
       kwargs.set("sli", ui.slice->value());
+
+      // Add extra parameters
+      auto extraParams = testRotationsExtraParamValues();
+      for (const auto& k : extraParams.keys()) {
+        kwargs.set(k, toVariant(extraParams[k]));
+      }
 
       auto ret = func.call(kwargs);
       auto result = ret.toDict();
@@ -564,11 +654,6 @@ public:
     }
 
     updateImageViewSlider();
-
-    // It would be nice if we could only write the settings when the
-    // widget is accepted, but I don't immediately see an easy way
-    // to do that.
-    writeSettings();
   }
 
   bool rotationDataValid()
@@ -693,19 +778,15 @@ FxiWorkflowWidget::FxiWorkflowWidget(Operator* op,
 
 FxiWorkflowWidget::~FxiWorkflowWidget() = default;
 
-void FxiWorkflowWidget::getValues(QMap<QString, QVariant>& map)
+void FxiWorkflowWidget::getValues(QVariantMap& map)
 {
   map.insert("rotation_center", m_internal->rotationCenter());
   map.insert("slice_start", m_internal->sliceStart());
   map.insert("slice_stop", m_internal->sliceStop());
-
-  auto extraParamsMap = m_internal->additionalParametersValues();
-  for (auto it = extraParamsMap.cbegin(); it != extraParamsMap.cend(); ++it) {
-    map.insert(it.key(), it.value());
-  }
+  map = unite(map, m_internal->reconExtraParamValues());
 }
 
-void FxiWorkflowWidget::setValues(const QMap<QString, QVariant>& map)
+void FxiWorkflowWidget::setValues(const QVariantMap& map)
 {
   if (map.contains("rotation_center")) {
     m_internal->setRotationCenter(map["rotation_center"].toDouble());
@@ -717,7 +798,7 @@ void FxiWorkflowWidget::setValues(const QMap<QString, QVariant>& map)
     m_internal->setSliceStop(map["slice_stop"].toInt());
   }
 
-  m_internal->setAdditionalParameterValues(map);
+  m_internal->setReconExtraParamValues(map);
 }
 
 void FxiWorkflowWidget::setScript(const QString& script)
@@ -730,6 +811,12 @@ void FxiWorkflowWidget::setupUI(OperatorPython* op)
 {
   Superclass::setupUI(op);
   m_internal->setupUI(op);
+}
+
+void FxiWorkflowWidget::writeSettings()
+{
+  Superclass::writeSettings();
+  m_internal->writeSettings();
 }
 
 } // namespace tomviz
