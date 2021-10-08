@@ -97,6 +97,7 @@ public:
         QMap<QString, QVariant> args;
         m_customWidget->getValues(args);
         m_op->setArguments(args);
+        m_customWidget->writeSettings();
       } else if (m_opWidget) {
         QMap<QString, QVariant> args = m_opWidget->values();
         m_op->setArguments(args);
