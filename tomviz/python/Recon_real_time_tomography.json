@@ -1,0 +1,50 @@
+{
+  "name" : "LiveTomo",
+  "label" : "Live Tomography Visualization",
+  "description" : "Real-Time Tomography Application\nTomviz will monitor a directory and begin a reconstruction.\nTo simulate an experiment, drag micrographs into the defined directory",
+  "children": [
+    {
+      "name": "reconstruction",
+      "label": "Reconstruction",
+      "type": "reconstruction"
+    }
+  ],
+  "parameters" : [
+    {
+      "name" : "localDirectory",
+      "label" : "Monitoring Directory",
+      "type" : "string",
+      "default" : ""
+    },
+    {
+      "name" : "alg",
+      "label" : "Reconstruction Algorithm",
+      "type" : "enumeration",
+      "default" : 0,
+      "options" : [
+        {"ART" : 0},
+        {"randART" : 1},
+        {"SIRT" : 2},
+        {"WBP" : 3}
+      ]
+    },
+    {
+      "name" : "maxIter",
+      "label" : "Total Iterations",
+      "type" : "int",
+      "default" : 50
+    },
+    {
+      "name" : "fileExt",
+      "label" : "File Extension",
+      "type" : "enumeration",
+      "default" : 0,
+      "options" : [
+        {"dm4" : 0},
+        {"dm3" : 1},
+        {"ser" : 2},
+        {"tif" : 3}
+      ]
+    }
+  ]
+}

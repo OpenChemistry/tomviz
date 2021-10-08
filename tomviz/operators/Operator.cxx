@@ -217,4 +217,10 @@ void Operator::cancelTransform()
   m_state = OperatorState::Canceled;
   emit transformCanceled();
 }
+
+void Operator::completionTransform()
+{
+  m_state = OperatorState::Complete;
+  emit transformCompleted();
+}
 } // namespace tomviz

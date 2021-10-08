@@ -4,10 +4,11 @@ import tomviz.operators
 import time
 
 
-class ReconTVOperator(tomviz.operators.CancelableOperator):
+class ReconTVOperator(tomviz.operators.CompletableOperator):
 
-    def transform(self, dataset, Niter=10, Nupdates=0):
+    def transform(self, dataset, Niter=10, Nupdates=0):  # noqa: C901
         """3D Reconstruct from a tilt series using simple TV minimization"""
+
         self.progress.maximum = 1
 
         # Get Tilt angles
@@ -55,12 +56,17 @@ class ReconTVOperator(tomviz.operators.CancelableOperator):
 
         for i in range(Niter): #main loop
 
+            if self.completed:
+                break
+
             recon_temp = recon.copy()
 
             #ART recon
             for s in range(Nslice): #
                 if self.canceled: #In case canceled during ART.
                     return
+                elif self.completed:
+                    break
 
                 self.progress.message = 'Slice No.%d/%d, Iteration No.%d/%d. '\
                     % (s + 1, Nslice, i + 1, Niter) + etcMessage
