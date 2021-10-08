@@ -45,7 +45,7 @@ private slots:
   void initializeGridAxes(DataSource* dataSource, vtkSMViewProxy* vtkView);
   void updateGridAxesBounds(DataSource* dataSource);
   void updateGridAxesColor(double* color);
-  void updateGridAxesUnit(DataSource* dataSource);
+  void updateGridAxesTitles();
 
 private:
   Q_DISABLE_COPY(ModuleOutline)
@@ -54,7 +54,12 @@ private:
   vtkWeakPointer<vtkPVRenderView> m_view;
   vtkNew<vtkGridAxes3DActor> m_gridAxes;
   pqPropertyLinks m_links;
+
   bool m_axesVisibility = false;
+  bool m_useCustomAxesTitles = false;
+  QString m_customXTitle = "X";
+  QString m_customYTitle = "Y";
+  QString m_customZTitle = "Z";
 };
 } // namespace tomviz
 
