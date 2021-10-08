@@ -136,6 +136,28 @@ public:
     }
 
     file.close();
+
+    // If there is a JSON description, and the file does not exist,
+    // write that out too.
+    if (m_op->JSONDescription().isEmpty()) {
+      return;
+    }
+
+    // Use the same name with a ".json" extension.
+    QFileInfo info(name);
+    auto descriptionFilename = info.path() + "/" + info.baseName() + ".json";
+    QFile descriptionFile(descriptionFilename, this);
+    if (descriptionFile.exists()) {
+      // It already exists. Let's not bother over-writing it.
+      return;
+    }
+
+    if (!descriptionFile.open(QIODevice::WriteOnly)) {
+      return;
+    }
+
+    descriptionFile.write(m_op->JSONDescription().toLatin1());
+    descriptionFile.close();
   }
 
 private:
