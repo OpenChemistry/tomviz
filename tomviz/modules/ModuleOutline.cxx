@@ -205,6 +205,7 @@ void ModuleOutline::addToPanel(QWidget* panel)
 
   // Custom axes titles
   auto* customAxesTitlesGroupBox = new QGroupBox(panel);
+  customAxesTitlesGroupBox->setVisible(m_useCustomAxesTitles);
   auto* customAxesTitlesLayout = new QVBoxLayout(customAxesTitlesGroupBox);
 
   auto* customXTitleLayout = new QHBoxLayout;
