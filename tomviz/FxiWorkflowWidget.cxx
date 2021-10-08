@@ -138,6 +138,7 @@ public:
   QPointer<FxiWorkflowWidget> parent;
   QPointer<DataSource> dataSource;
   QPointer<InterfaceBuilder> interfaceBuilder;
+  QVariantMap customReconSettings;
   QVariantMap customTestRotationSettings;
   int sliceNumber = 0;
   QScopedPointer<InternalProgressDialog> progressDialog;
@@ -273,6 +274,7 @@ public:
     addTestRotationExtraParamWidgets(parameters);
 
     // Modify the extra param widgets with any saved settings
+    setReconExtraParamValues(customReconSettings);
     setTestRotationExtraParamValues(customTestRotationSettings);
   }
 
@@ -314,20 +316,9 @@ public:
 
     for (auto node : parameters) {
       auto obj = node.toObject();
-      if (obj["tag"].toString("") != tag) {
-        continue;
-      }
-
-      show = true;
-
-      // Check the settings to see if we loaded a setting for this.
-      // Override the default if we did.
-      auto name = obj["name"].toString();
-      auto defaultType = obj["default"].toVariant().type();
-      if (customTestRotationSettings.contains(name) &&
-          customTestRotationSettings[name].type() != defaultType) {
-        // Remove this setting as it does not match the type
-        customTestRotationSettings.remove(name);
+      if (obj["tag"].toString("") == tag) {
+        show = true;
+        break;
       }
     }
 
@@ -356,7 +347,7 @@ public:
       return;
     }
 
-    auto parentWidget = ui.reconExtraParamsLayout->parentWidget();
+    auto parentWidget = ui.reconExtraParamsLayoutWidget;
     interfaceBuilder->setParameterValues(values);
     interfaceBuilder->updateWidgetValues(parentWidget);
   }
@@ -367,7 +358,7 @@ public:
       return;
     }
 
-    auto parentWidget = ui.testRotationsExtraParamsLayout->parentWidget();
+    auto parentWidget = ui.testRotationsExtraParamsLayoutWidget;
     interfaceBuilder->setParameterValues(values);
     interfaceBuilder->updateWidgetValues(parentWidget);
   }
@@ -383,7 +374,7 @@ public:
       return QVariantMap();
     }
 
-    auto parentWidget = ui.reconExtraParamsLayout->parentWidget();
+    auto parentWidget = ui.reconExtraParamsLayoutWidget;
     return interfaceBuilder->parameterValues(parentWidget);
   }
 
@@ -393,7 +384,7 @@ public:
       return QVariantMap();
     }
 
-    auto parentWidget = ui.testRotationsExtraParamsLayout->parentWidget();
+    auto parentWidget = ui.testRotationsExtraParamsLayoutWidget;
     return interfaceBuilder->parameterValues(parentWidget);
   }
 
@@ -415,6 +406,7 @@ public:
     setRotationCenter(settings->value("rotationCenter", 600).toDouble());
     setSliceStart(settings->value("sliceStart", 0).toInt());
     setSliceStop(settings->value("sliceStop", 1).toInt());
+    customReconSettings = settings->value("extraParams").toMap();
     settings->endGroup();
     settings->endGroup();
   }
@@ -428,7 +420,7 @@ public:
     ui.stop->setValue(settings->value("stop", 650).toDouble());
     ui.steps->setValue(settings->value("steps", 26).toInt());
     ui.slice->setValue(settings->value("sli", 0).toInt());
-    customTestRotationSettings = settings->value("extra_params").toMap();
+    customTestRotationSettings = settings->value("extraParams").toMap();
     settings->endGroup();
     settings->endGroup();
   }
@@ -447,6 +439,7 @@ public:
     settings->setValue("rotationCenter", rotationCenter());
     settings->setValue("sliceStart", sliceStart());
     settings->setValue("sliceStop", sliceStop());
+    settings->setValue("extraParams", reconExtraParamValues());
     settings->endGroup();
     settings->endGroup();
   }
@@ -460,7 +453,7 @@ public:
     settings->setValue("stop", ui.stop->value());
     settings->setValue("steps", ui.steps->value());
     settings->setValue("sli", ui.slice->value());
-    settings->setValue("extra_params", testRotationsExtraParamValues());
+    settings->setValue("extraParams", testRotationsExtraParamValues());
     settings->endGroup();
     settings->endGroup();
   }
@@ -661,11 +654,6 @@ public:
     }
 
     updateImageViewSlider();
-
-    // It would be nice if we could only write the settings when the
-    // widget is accepted, but I don't immediately see an easy way
-    // to do that.
-    writeSettings();
   }
 
   bool rotationDataValid()
@@ -823,6 +811,12 @@ void FxiWorkflowWidget::setupUI(OperatorPython* op)
 {
   Superclass::setupUI(op);
   m_internal->setupUI(op);
+}
+
+void FxiWorkflowWidget::writeSettings()
+{
+  Superclass::writeSettings();
+  m_internal->writeSettings();
 }
 
 } // namespace tomviz
