@@ -600,10 +600,11 @@ set(tomviz_real_time_files
   wbp.py 
 )
 
+file(MAKE_DIRECTORY "${tomviz_python_binary_dir}/tomviz/_realtime")
 foreach(file ${tomviz_real_time_files})
   execute_process(COMMAND ${CMAKE_COMMAND} -E ${script_cmd}
     "${tomviz_SOURCE_DIR}/tomviz/python/tomviz/_realtime/${file}"
-    "${tomviz_python_binary_dir}/tomviz/${file}")
+    "${tomviz_python_binary_dir}/tomviz/_realtime/${file}")
 endforeach()
 
 # Install the tomviz Python files.
