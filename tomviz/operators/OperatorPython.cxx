@@ -8,6 +8,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonValue>
+#include <QMessageBox>
 #include <QPointer>
 #include <QtDebug>
 
@@ -127,15 +128,59 @@ public:
     }
 
     if (!file.open(QIODevice::WriteOnly)) {
-      qDebug() << "Failed to open file: " << name;
+      auto msg = QString("Failed to open file: %1").arg(name);
+      QMessageBox::critical(this, "Failed to save script", msg);
+      qDebug() << msg;
       return;
     }
 
     if (file.write(m_ui.script->toPlainText().toLatin1()) == -1) {
-      qDebug() << "Failed to write to file: " << name;
+      auto msg = QString("Failed to write to file: %1").arg(name);
+      QMessageBox::critical(this, "Failed to save script", msg);
+      qDebug() << msg;
+      file.close();
+      return;
     }
 
     file.close();
+
+    // If there is a JSON description, and the file does not exist,
+    // write that out too.
+    if (m_op->JSONDescription().isEmpty()) {
+      return;
+    }
+
+    // Use the same name with a ".json" extension.
+    QFileInfo info(name);
+    auto descriptionFilename = info.path() + "/" + info.baseName() + ".json";
+    QFile descriptionFile(descriptionFilename, this);
+    if (descriptionFile.exists()) {
+      // Check if the user wants to overwrite it.
+      auto title = QString("Overwrite description file?");
+      auto msg =
+        QString("%1 exists.\n\nOverwrite it?").arg(descriptionFilename);
+      auto response = QMessageBox::question(this, title, msg);
+      if (response == QMessageBox::No) {
+        // Do not overwrite
+        return;
+      }
+    }
+
+    if (!descriptionFile.open(QIODevice::WriteOnly)) {
+      auto msg = QString("Failed to open %1").arg(descriptionFilename);
+      QMessageBox::critical(this, "Failed to save description", msg);
+      qDebug() << msg;
+      return;
+    }
+
+    if (descriptionFile.write(m_op->JSONDescription().toLatin1()) == -1) {
+      auto msg =
+        QString("Failed to write to file: %1").arg(descriptionFilename);
+      QMessageBox::critical(this, "Failed to save description", msg);
+      qDebug() << msg;
+    };
+
+    descriptionFile.close();
   }
 
 private:
