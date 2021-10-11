@@ -8,6 +8,17 @@ pybind11_add_module(_wrapping
 target_link_libraries(_wrapping
   PRIVATE tomvizcore VTK::CommonDataModel VTK::WrappingPythonCore)
 
+set_target_properties(_wrapping PROPERTIES
+  LIBRARY_OUTPUT_DIRECTORY "${tomviz_python_binary_dir}/tomviz"
+  LIBRARY_OUTPUT_DIRECTORY_RELEASE "${tomviz_python_binary_dir}/tomviz"
+  LIBRARY_OUTPUT_DIRECTORY_DEBUG "${tomviz_python_binary_dir}/tomviz"
+)
+
+target_compile_options(_wrapping PRIVATE -D__TBB_NO_IMPLICIT_LINKAGE=1)
+install(TARGETS _wrapping
+    DESTINATION "${tomviz_python_install_dir}/tomviz"
+    COMPONENT runtime)
+
 pybind11_add_module(ctvlib
   ctvlib/ctvlib.cxx
   ctvlib/eigenConversion.h
@@ -19,20 +30,12 @@ add_dependencies(ctvlib VTK::eigen)
 
 include_directories(ctvlib ${TBB_INCLUDE_DIRS})
 
-set_target_properties(_wrapping ctvlib PROPERTIES
-  LIBRARY_OUTPUT_DIRECTORY "${tomviz_python_binary_dir}/tomviz"
-  LIBRARY_OUTPUT_DIRECTORY "${tomviz_python_binary_dir}/tomviz"
-)
-set_target_properties(_wrapping ctvlib PROPERTIES
-  LIBRARY_OUTPUT_DIRECTORY_RELEASE "${tomviz_python_binary_dir}/tomviz"
-  LIBRARY_OUTPUT_DIRECTORY_RELEASE "${tomviz_python_binary_dir}/tomviz"
-)
-set_target_properties(_wrapping ctvlib PROPERTIES
-  LIBRARY_OUTPUT_DIRECTORY_DEBUG "${tomviz_python_binary_dir}/tomviz"
-  LIBRARY_OUTPUT_DIRECTORY_DEBUG "${tomviz_python_binary_dir}/tomviz"
+set_target_properties(ctvlib PROPERTIES
+  LIBRARY_OUTPUT_DIRECTORY "${tomviz_python_binary_dir}/tomviz/_realtime"
+  LIBRARY_OUTPUT_DIRECTORY_RELEASE "${tomviz_python_binary_dir}/_realtime"
+  LIBRARY_OUTPUT_DIRECTORY_DEBUG "${tomviz_python_binary_dir}/_realtime"
 )
 
-target_compile_options(_wrapping PRIVATE -D__TBB_NO_IMPLICIT_LINKAGE=1)
-install(TARGETS _wrapping ctvlib
-    DESTINATION "${tomviz_python_install_dir}/tomviz"
+install(TARGETS ctvlib
+    DESTINATION "${tomviz_python_install_dir}/tomviz/_realtime"
     COMPONENT runtime)

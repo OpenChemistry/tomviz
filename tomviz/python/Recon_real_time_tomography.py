@@ -1,6 +1,6 @@
-import tomviz.ctvlib as ctvlib
-from tomviz import logger, wbp
-from tomviz import pytvlib
+import tomviz._realtime.ctvlib as ctvlib
+from tomviz._realtime import logger, wbp
+from tomviz._realtime import pytvlib
 import tomviz.operators
 import time
 
