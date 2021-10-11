@@ -10,11 +10,7 @@ target_link_libraries(_wrapping
 
 set_target_properties(_wrapping PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY "${tomviz_python_binary_dir}/tomviz"
-)
-set_target_properties(_wrapping PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY_RELEASE "${tomviz_python_binary_dir}/tomviz"
-)
-set_target_properties(_wrapping PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY_DEBUG "${tomviz_python_binary_dir}/tomviz"
 )
 
@@ -36,11 +32,7 @@ include_directories(ctvlib ${TBB_INCLUDE_DIRS})
 
 set_target_properties(ctvlib PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY "${tomviz_python_binary_dir}/tomviz/_realtime"
-)
-set_target_properties(ctvlib PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY_RELEASE "${tomviz_python_binary_dir}/_realtime"
-)
-set_target_properties(ctvlib PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY_DEBUG "${tomviz_python_binary_dir}/_realtime"
 )
 
