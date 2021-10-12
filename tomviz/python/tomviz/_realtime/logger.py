@@ -26,17 +26,15 @@ class Logger:
         """Grab current files in listen directory"""
         files = [f for f in os.listdir(directory) if
                  f[-len(self.fileExt):] == self.fileExt]
-        files.sort(key=lambda x: x[:3])
         return files
 
     def CHANGE_appendAll(self):
         """Append stored files for each new element"""
         # Separate new files to be loaded
         FoI = list(set(self.listenFiles)-set(self.logFiles))
-        # FoI.sort(key=lambda x: x[:3])
         for file in FoI:
             print("Loading {}".format(file))
-            filePath = "{}/{}".format(self.listenDir, file)
+            filePath = os.path.join(self.listenDir, file)
 
             try:
                 (newProj, newAngle) = self.read_projection_image(filePath)
@@ -55,12 +53,11 @@ class Logger:
                 else:
                     self.logTiltSeries = np.dstack((self.logTiltSeries,
                                                     newProj))
-                    np.save('tiltSeries.npy', self.logTiltSeries)
 
                 self.logFiles = np.append(self.logFiles, file)
 
             except Exception:
-                print('Could not read : {}, will preceed with reconstruction\
+                print('Could not read : {}, will proceed with reconstruction\
                         and re-download on next pass'.format(file))
                 break
 
