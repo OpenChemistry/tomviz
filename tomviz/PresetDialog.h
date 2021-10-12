@@ -17,7 +17,7 @@ class PresetDialog;
 namespace tomviz {
 
 class PresetModel;
-  
+
 class PresetDialog : public QDialog
 {
   Q_OBJECT

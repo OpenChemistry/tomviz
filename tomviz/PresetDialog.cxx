@@ -51,7 +51,7 @@ PresetDialog::PresetDialog(QWidget* parent)
 }
 
 PresetDialog::~PresetDialog() = default;
-  
+
 QString PresetDialog::presetName()
 {
   return m_model->presetName();
