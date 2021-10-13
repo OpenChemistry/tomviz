@@ -609,7 +609,7 @@ endforeach()
 
 # Install the tomviz Python files.
 install(DIRECTORY "${tomviz_SOURCE_DIR}/tomviz/python/tomviz/_realtime"
-        DESTINATION "${tomviz_python_install_dir}/tomviz/_realtime"
+        DESTINATION "${tomviz_python_install_dir}/tomviz"
         USE_SOURCE_PERMISSIONS
         COMPONENT runtime)
 
