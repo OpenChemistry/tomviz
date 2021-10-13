@@ -40,6 +40,13 @@
     </widget>
    </item>
    <item>
+    <widget class="QPushButton" name="createSolidColormap">
+     <property name="text">
+      <string>Create Solid Colormap</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QPushButton" name="resetToDefaultsButton">
      <property name="text">
       <string>Reset to Defaults</string>

@@ -5,6 +5,7 @@
 #include "PresetModel.h"
 #include "ui_PresetDialog.h"
 
+#include <QColorDialog>
 #include <QHeaderView>
 #include <QJsonObject>
 #include <QMenu>
@@ -37,6 +38,8 @@ PresetDialog::PresetDialog(QWidget* parent)
           [&](QPoint pos) { this->customMenuRequested(m_view->indexAt(pos)); });
   connect(m_ui->resetToDefaultsButton, &QPushButton::clicked, this,
           &PresetDialog::warning);
+  connect(m_ui->createSolidColormap, &QPushButton::clicked, this,
+          &PresetDialog::createSolidColormap);
   connect(this, &PresetDialog::resetToDefaults, m_model,
 	        &PresetModel::resetToDefaults);
 }
@@ -84,4 +87,22 @@ void PresetDialog::warning()
     emit resetToDefaults();
   };
 }
+
+void PresetDialog::createSolidColormap()
+{
+  auto color = QColorDialog::getColor(Qt::white, this);
+  if (!color.isValid()) {
+    // User canceled...
+    return;
+  }
+
+  QJsonArray array = { 0, color.redF(), color.greenF(), color.blueF(),
+                       1, color.redF(), color.greenF(), color.blueF() };
+  QJsonObject newColor{ { "name", color.name() },
+                        { "colorSpace", "RGB" },
+                        { "colors", array } };
+  m_model->addNewPreset(newColor);
+  emit applyPreset();
+}
+
 } // namespace tomviz
