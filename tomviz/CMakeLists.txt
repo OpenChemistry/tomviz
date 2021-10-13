@@ -607,12 +607,6 @@ foreach(file ${tomviz_real_time_files})
     "${tomviz_python_binary_dir}/tomviz/_realtime/${file}")
 endforeach()
 
-# Install the tomviz Python files.
-install(DIRECTORY "${tomviz_SOURCE_DIR}/tomviz/python/tomviz/_realtime"
-        DESTINATION "${tomviz_python_install_dir}/tomviz"
-        USE_SOURCE_PERMISSIONS
-        COMPONENT runtime)
-
 set(tomviz_python_io_modules
   __init__.py
   _internal.py
