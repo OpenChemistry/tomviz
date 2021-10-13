@@ -17,7 +17,7 @@ class PresetDialog;
 namespace tomviz {
 
 class PresetModel;
-  
+
 class PresetDialog : public QDialog
 {
   Q_OBJECT
@@ -36,6 +36,8 @@ private slots:
   void warning();
 
 private:
+  void createSolidColormap();
+
   QScopedPointer<Ui::PresetDialog> m_ui;
   PresetModel* m_model;
   QTableView* m_view;

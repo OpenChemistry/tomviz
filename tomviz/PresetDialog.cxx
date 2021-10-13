@@ -5,6 +5,7 @@
 #include "PresetModel.h"
 #include "ui_PresetDialog.h"
 
+#include <QColorDialog>
 #include <QHeaderView>
 #include <QJsonObject>
 #include <QMenu>
@@ -19,19 +20,10 @@ PresetDialog::PresetDialog(QWidget* parent)
 {
   m_ui->setupUi(this);
 
-  m_view = new QTableView(this);
+  m_view = m_ui->tableView;
   m_model = new PresetModel();
-  auto* layout = new QVBoxLayout;
 
   m_view->setModel(m_model);
-  m_view->horizontalHeader()->hide();
-  m_view->setContextMenuPolicy(Qt::CustomContextMenu);
-  m_view->setEditTriggers(QAbstractItemView::NoEditTriggers);
-  layout->addWidget(m_view);
-  layout->addWidget(m_ui->buttonBox);
-  layout->addWidget(m_ui->pushButton);
-  layout->setContentsMargins(0, 0, 0, 0);
-  setLayout(layout);
 
   m_view->resizeColumnsToContents();
   m_view->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
@@ -44,14 +36,16 @@ PresetDialog::PresetDialog(QWidget* parent)
   connect(m_model, &PresetModel::applyPreset, this, &PresetDialog::applyPreset);
   connect(m_view, &QMenu::customContextMenuRequested,
           [&](QPoint pos) { this->customMenuRequested(m_view->indexAt(pos)); });
-  connect(m_ui->pushButton, &QPushButton::clicked, this,
-	        &PresetDialog::warning);
+  connect(m_ui->resetToDefaultsButton, &QPushButton::clicked, this,
+          &PresetDialog::warning);
+  connect(m_ui->createSolidColormap, &QPushButton::clicked, this,
+          &PresetDialog::createSolidColormap);
   connect(this, &PresetDialog::resetToDefaults, m_model,
 	        &PresetModel::resetToDefaults);
 }
 
 PresetDialog::~PresetDialog() = default;
-  
+
 QString PresetDialog::presetName()
 {
   return m_model->presetName();
@@ -81,7 +75,8 @@ void PresetDialog::customMenuRequested(const QModelIndex& index)
 void PresetDialog::warning()
 {
   QMessageBox warning(this);
-  warning.setText("Are you sure you want to reset? This will lose any custom made presets and restore default names.");
+  warning.setText("Are you sure you want to reset? This will erase any custom "
+                  "presets and restore default names.");
   warning.setStandardButtons(QMessageBox::Yes);
   warning.addButton(QMessageBox::Cancel);
   warning.setDefaultButton(QMessageBox::Cancel);
@@ -92,4 +87,22 @@ void PresetDialog::warning()
     emit resetToDefaults();
   };
 }
+
+void PresetDialog::createSolidColormap()
+{
+  auto color = QColorDialog::getColor(Qt::white, this);
+  if (!color.isValid()) {
+    // User canceled...
+    return;
+  }
+
+  QJsonArray array = { 0, color.redF(), color.greenF(), color.blueF(),
+                       1, color.redF(), color.greenF(), color.blueF() };
+  QJsonObject newColor{ { "name", color.name() },
+                        { "colorSpace", "RGB" },
+                        { "colors", array } };
+  m_model->addNewPreset(newColor);
+  emit applyPreset();
+}
+
 } // namespace tomviz
