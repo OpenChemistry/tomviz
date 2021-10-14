@@ -56,8 +56,8 @@ class RealTimeTomography(tomviz.operators.CompletableOperator):
             betaRed = 0.99
 
         # Dynamic Tilt Series Loop.
-        experimentRun = True
-        while experimentRun:
+        runExperiment = True
+        while runExperiment:
 
             t0 = time.time()
             counter = 1
@@ -66,11 +66,9 @@ class RealTimeTomography(tomviz.operators.CompletableOperator):
             #Main Reconstruction Loop
             for jj in range(maxIter):
 
-                if self.canceled:
-                    experimentRun = False
-                    break
-                elif self.completed:
-                    experimentRun = False
+                # Check to see experiment is complete
+                if self.completed == True or self.canceled == True:
+                    runExperiment = False
                     break
 
                 self.progress.message = 'Iteration No.%d/%d. '\
