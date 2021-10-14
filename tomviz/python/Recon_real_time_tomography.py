@@ -67,7 +67,7 @@ class RealTimeTomography(tomviz.operators.CompletableOperator):
             for jj in range(maxIter):
 
                 # Check to see experiment is complete
-                if self.completed == True or self.canceled == True:
+                if self.completed or self.canceled:
                     runExperiment = False
                     break
 
