@@ -58,7 +58,8 @@ public:
 
   /// Handle creation of a new data source.
   static void dataSourceAdded(DataSource* dataSource,
-                              bool defaultModules = true, bool child = false);
+                              bool defaultModules = true, bool child = false,
+                              bool createCameraOrbit = true);
 
 protected:
   /// Create a raw data source from the reader.

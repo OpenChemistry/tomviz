@@ -185,6 +185,7 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
   bool defaultModules = options["defaultModules"].toBool(true);
   bool addToRecent = options["addToRecent"].toBool(true);
   bool addToPipeline = options["addToPipeline"].toBool(true);
+  bool createCameraOrbit = options["createCameraOrbit"].toBool(true);
   bool child = options["child"].toBool(false);
   bool loadWithParaview = true;
   bool loadWithPython = false;
@@ -355,7 +356,8 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
 
   if (addToPipeline) {
     // Add to the pipeline if needed...
-    LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
+    LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child,
+                                      createCameraOrbit);
   }
 
   // Now for house keeping, registering elements, etc.
@@ -443,7 +445,8 @@ DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader,
 }
 
 void LoadDataReaction::dataSourceAdded(DataSource* dataSource,
-                                       bool defaultModules, bool child)
+                                       bool defaultModules, bool child,
+                                       bool createCameraOrbit)
 {
   if (!dataSource) {
     return;
@@ -475,7 +478,7 @@ void LoadDataReaction::dataSourceAdded(DataSource* dataSource,
   if (!previousActiveDataSource) {
     pqRenderView* renderView =
       qobject_cast<pqRenderView*>(pqActiveObjects::instance().activeView());
-    if (renderView) {
+    if (renderView && createCameraOrbit) {
       tomviz::createCameraOrbit(dataSource->proxy(),
                                 renderView->getRenderViewProxy());
     }
