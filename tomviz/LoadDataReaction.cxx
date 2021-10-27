@@ -53,6 +53,7 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QJsonArray>
+#include <QMessageBox>
 
 #include <sstream>
 
@@ -140,20 +141,67 @@ QList<DataSource*> LoadDataReaction::loadData()
   dialog.setNameFilters(filters);
   dialog.setObjectName("FileOpenDialog-tomviz"); // avoid name collision?
 
+  if (!dialog.exec()) {
+    return {};
+  }
+
+  QStringList filenames = dialog.selectedFiles();
+
+  bool timeSeries = false;
+  if (filenames.size() > 1) {
+    QString title = "Open as time series?";
+    QString msg = "Multiple files selected. Open them as a time series?";
+    auto response = QMessageBox::question(nullptr, title, msg);
+    if (response == QMessageBox::Yes) {
+      // Load as a time series.
+      timeSeries = true;
+
+      // Sort the file names so we get consistent behavior.
+      filenames.sort();
+    }
+  }
+
+  QJsonObject options;
+  if (timeSeries) {
+    options["createCameraOrbit"] = false;
+  }
+
   QList<DataSource*> dataSources;
-  if (dialog.exec()) {
-    QStringList filenames = dialog.selectedFiles();
-    QString fileName = filenames.size() > 0 ? filenames[0] : "";
-    QFileInfo info(fileName);
-    auto suffix = info.suffix().toLower();
-    QStringList moleculeExt = { "xyz" };
-    if (moleculeExt.contains(suffix)) {
-      loadMolecule(filenames);
-    } else {
-      for (auto f : filenames) {
-        dataSources << loadData(f);
+  QString fileName = filenames.size() > 0 ? filenames[0] : "";
+  QFileInfo info(fileName);
+  auto suffix = info.suffix().toLower();
+  QStringList moleculeExt = { "xyz" };
+  if (moleculeExt.contains(suffix)) {
+    loadMolecule(filenames);
+  } else {
+    for (auto f : filenames) {
+      dataSources << loadData(f, options);
+      if (timeSeries) {
+        // After loading the first data source in a time series, don't
+        // add any more to the pipeline. We'll delete them below.
+        options["addToPipeline"] = false;
       }
     }
+  }
+
+  if (timeSeries) {
+    // Combine all of the data sources into the first one.
+    std::vector<double> timeSteps;
+    for (auto i = 0; i < dataSources.size(); ++i) {
+      dataSources[0]->addTimeSeriesStep(dataSources[i]->imageData());
+      if (i != 0) {
+        // Delete all data sources other than the first one. These were not
+        // added to the pipeline.
+        dataSources[i]->deleteLater();
+      }
+
+      timeSteps.push_back(i);
+    }
+    dataSources = { dataSources[0] };
+
+    // Set the animation time steps and change the play mode to
+    // "Snap To TimeSteps".
+    tomviz::snapAnimationToTimeSteps(timeSteps);
   }
 
   return dataSources;

@@ -195,6 +195,24 @@ public:
   /// Sets the type of data in the DataSource
   void setType(DataSourceType t);
 
+  /// Whether or not the DataSource has time series steps
+  bool hasTimeSteps() const { return numTimeSeriesSteps() != 0; }
+
+  /// The number of time series steps that the DataSource has
+  int numTimeSeriesSteps() const;
+
+  /// Switch to a different time series step
+  void switchTimeSeriesStep(int i);
+
+  /// Add a time series step
+  void addTimeSeriesStep(vtkImageData* data);
+
+  /// Remove all time series steps
+  void clearTimeSeriesSteps();
+
+  /// Are we in the middle of changing time steps?
+  bool isChangingTimeStep() const { return m_changingTimeStep; }
+
   /// Returns the color map for the DataSource.
   vtkSMProxy* colorMap() const;
   vtkSMProxy* opacityMap() const;
@@ -386,6 +404,9 @@ protected slots:
   /// update the color map range.
   void updateColorMap();
 
+  /// What to do when the time is changed...
+  void onTimeChanged();
+
 private:
   /// Private method to initialize the data source.
   void init(vtkImageData* dataSource, DataSourceType dataType,
@@ -402,6 +423,8 @@ private:
   DataSourceBase* m_pythonProxy = nullptr;
 
   QJsonObject m_json;
+
+  bool m_changingTimeStep = false;
 };
 
 inline void DataSource::clearTiltAngles()
