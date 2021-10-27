@@ -64,7 +64,8 @@ protected:
   /// Create a raw data source from the reader.
   static DataSource* createDataSource(vtkSMProxy* reader,
                                       bool defaultModules = true,
-                                      bool child = false);
+                                      bool child = false,
+                                      bool addToPipeline = true);
 
   /// Called when the action is triggered.
   void onTriggered() override;

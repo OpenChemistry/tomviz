@@ -184,6 +184,7 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
 {
   bool defaultModules = options["defaultModules"].toBool(true);
   bool addToRecent = options["addToRecent"].toBool(true);
+  bool addToPipeline = options["addToPipeline"].toBool(true);
   bool child = options["child"].toBool(false);
   bool loadWithParaview = true;
   bool loadWithPython = false;
@@ -214,7 +215,6 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
       dataSource = new DataSource(image, type);
       // Save the node path in case we write the data again in the future
       dataSource->setTvh5NodePath(path);
-      LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
     }
   } else if (info.suffix().toLower() == "emd") {
     // Load the file using our simple EMD class.
@@ -234,7 +234,6 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
                                           ? DataSource::TiltSeries
                                           : DataSource::Volume;
       dataSource = new DataSource(imageData, type);
-      LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
     }
   } else if (info.suffix().toLower() == "h5") {
     loadWithParaview = false;
@@ -272,8 +271,6 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
                                           : DataSource::Volume;
       dataSource = new DataSource(imageData, type);
     }
-
-    LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
   } else if (info.completeSuffix().endsWith("ome.tif")) {
     loadWithParaview = false;
     vtkNew<vtkOMETiffReader> reader;
@@ -285,7 +282,6 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     QJsonObject readerProperties;
     readerProperties["name"] = "OMETIFFReader";
     dataSource->setReaderProperties(readerProperties.toVariantMap());
-    LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
   } else if (FileFormatManager::instance().pythonReaderFactory(
                info.suffix().toLower()) != nullptr) {
     loadWithParaview = false;
@@ -305,8 +301,11 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     setFileNameProperties(props, reader);
     reader->UpdateVTKObjects();
     vtkSMSourceProxy::SafeDownCast(reader)->UpdatePipelineInformation();
-    dataSource =
-      LoadDataReaction::createDataSource(reader, defaultModules, child);
+
+    // We'll add it to the pipeline on our own later, if needed
+    bool addToThePipeline = false;
+    dataSource = LoadDataReaction::createDataSource(reader, defaultModules,
+                                                    child, addToThePipeline);
     if (dataSource == nullptr) {
       return nullptr;
     }
@@ -321,7 +320,10 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
       return nullptr;
     }
 
-    dataSource = createDataSource(reader->getProxy(), defaultModules, child);
+    // We'll add it to the pipeline on our own later, if needed
+    bool addToThePipeline = false;
+    dataSource = createDataSource(reader->getProxy(), defaultModules, child,
+                                  addToThePipeline);
     if (dataSource == nullptr) {
       return nullptr;
     }
@@ -343,13 +345,17 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
       return nullptr;
     }
     dataSource = new DataSource(imageData);
-    LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
   }
 
   // It is possible that the dataSource will be null if, for example, loading
   // a VTI is cancelled in the array selection dialog. Guard against this.
   if (!dataSource) {
     return nullptr;
+  }
+
+  if (addToPipeline) {
+    // Add to the pipeline if needed...
+    LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
   }
 
   // Now for house keeping, registering elements, etc.
@@ -362,9 +368,9 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
   return dataSource;
 }
 
-
 DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader,
-                                               bool defaultModules, bool child)
+                                               bool defaultModules, bool child,
+                                               bool addToPipeline)
 {
   // Prompt user for reader configuration, unless it is TIFF.
   QScopedPointer<QDialog> dialog(new pqProxyWidgetDialog(reader));
@@ -428,7 +434,9 @@ DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader,
     DataSource* dataSource = new DataSource(image, type);
 
     // Do whatever we need to do with a new data source.
-    LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
+    if (addToPipeline) {
+      LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
+    }
     return dataSource;
   }
   return nullptr;
