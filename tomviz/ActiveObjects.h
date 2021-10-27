@@ -14,6 +14,7 @@
 #include "OperatorResult.h"
 
 class pqRenderView;
+class pqTimeKeeper;
 class pqView;
 class vtkSMSessionProxyManager;
 class vtkSMViewProxy;
@@ -81,6 +82,9 @@ public:
   /// appended to. i.e. The closes parent of the currently active data source
   /// that is not an "Output" data source.
   DataSource* activeParentDataSource();
+
+  /// Returns the active time keeper
+  pqTimeKeeper* activeTimeKeeper() const;
 
 public slots:
   /// Set the active view;
