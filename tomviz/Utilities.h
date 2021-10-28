@@ -187,6 +187,11 @@ QString userDataPath();
 void createCameraOrbit(vtkSMSourceProxy* data,
                        vtkSMRenderViewProxy* renderView);
 
+// Set the animation time steps and set the play mode to "Snap to TimeSteps"
+// This will also set the "TimeRange".
+// The time steps must be sorted.
+void snapAnimationToTimeSteps(const std::vector<double>& timeSteps);
+
 // Set up the renderer to show the given slice in parallel projection
 // This function attempts to zoom the renderer so that the enitire slice is
 // visible while minimizing the empty regions of the view (zoom so the slice's
