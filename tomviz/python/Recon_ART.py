@@ -40,7 +40,6 @@ class ReconARTOperator(tomviz.operators.CompletableOperator):
         rowInnerProduct = np.zeros(Nrow, dtype=np.float32)
         row = np.zeros(Ncol, dtype=np.float32)
         f = np.zeros(Ncol, dtype=np.float32) # Placeholder for 2d image
-        beta = 1.0
 
         # Calculate row inner product
         for j in range(Nrow):
@@ -62,25 +61,21 @@ class ReconARTOperator(tomviz.operators.CompletableOperator):
                 break
 
             for s in range(Nslice):
-                if self.canceled:
+                if self.canceled or self.completed:
                     return
-                elif self.completed:
-                    break
 
                 self.progress.message = 'Iteration No.%d/%d,Slice No.%d/%d.' % (
                     i + 1, Niter, s + 1, Nslice) + etcMessage
 
                 #Initialize slice as zeros on first iteration,
                 #or vectorize the slice for the next iter.
-                if (i == 0):
-                    f[:] = 0
-                elif (i != 0):
-                    f[:] = recon[s, :, :].flatten()
+                f[:] = recon[s, :, :].flatten()
 
                 b = tiltSeries[s, :, :].transpose().flatten()
 
                 for j in range(Nrow):
                     row[:] = A[j, :].toarray()
+                    # a = (b[j] - A[j,:].dot(f)) / rowInnerProduct[j]
                     a = (b[j] - np.dot(row, f))/rowInnerProduct[j]
                     f = f + row * a * beta
 

@@ -11,7 +11,7 @@ class RealTimeTomography(tomviz.operators.CompletableOperator):
                   maxIter=None, fileExt=None):
 
         # Parse Inputs
-        fileExtensions = ('dm4', 'dm3', 'ser', 'tif')
+        fileExtensions = ('dm4', 'dm3', 'ser')
         algorithms = ('ART', 'randART', 'SIRT', 'WBP')
         alg = algorithms[alg]
 
@@ -20,6 +20,7 @@ class RealTimeTomography(tomviz.operators.CompletableOperator):
 
         # Create child for recon
         child = dataset.create_child_dataset()
+        utils.mark_as_volume(child)
 
         # Logger to Read Directory
         tomoLogger = logger.Logger(localDirectory, fileExtensions[fileExt])

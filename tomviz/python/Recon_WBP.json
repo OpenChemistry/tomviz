@@ -1,7 +1,14 @@
 {
   "name" : "ReconstructWBP",
   "label" : "Weighted Back Projection",
-  "description" : "Reconstruct a tilt series using Weighted Back Projection (WBP) method. The tilt axis must be parallel to the x-direction and centered in the y-direction. The size of reconstruction will be (Nx,N,N), where Nx is the number of pixels in x-direction and N can be specified below. The maximum N allowed is 4096. Reconstrucing a 512x512x512 tomogram typically takes 7-10 mins.",
+  "description" : "Reconstruct a tilt series using Weighted Back Projection (WBP) method. 
+
+The tilt series data should be aligned prior to reconstruction and the tilt axis must be parallel to the x-direction.
+
+The size of reconstruction will be (Nx,N,N), where Nx is the number of pixels in x-direction and N can be specified below.\nThe maximum N allowed is 4096. 
+
+Reconstrucing a 512x512x512 tomogram typically takes 7-10 mins.",
+
   "children": [
     {
       "name": "reconstruction",

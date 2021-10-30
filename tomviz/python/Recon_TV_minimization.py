@@ -63,18 +63,15 @@ class ReconTVOperator(tomviz.operators.CompletableOperator):
 
             #ART recon
             for s in range(Nslice): #
-                if self.canceled: #In case canceled during ART.
+
+                #In case canceled during ART.
+                if self.canceled or self.completed:
                     return
-                elif self.completed:
-                    break
 
                 self.progress.message = 'Slice No.%d/%d, Iteration No.%d/%d. '\
                     % (s + 1, Nslice, i + 1, Niter) + etcMessage
 
-                if (i == 0):
-                    f[:] = 0
-                elif (i != 0):
-                    f[:] = recon[s, :, :].flatten()
+                f[:] = recon[s, :, :].flatten()
 
                 b = tiltSeries[s, :, :].transpose().flatten()
 
