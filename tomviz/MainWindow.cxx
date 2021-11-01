@@ -339,7 +339,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   QAction* fxiWorkflowAction = m_ui->menuTomography->addAction("FXI Workflow");
   m_ui->menuTomography->addSeparator();
 
-  QAction* simulationLabel = m_ui->menuTomography->addAction("Simulation and Demonstrations:");
+  QAction* simulationLabel =
+    m_ui->menuTomography->addAction("Simulation and Demonstrations:");
   simulationLabel->setEnabled(false);
   QAction* generateTiltSeriesAction =
     m_ui->menuTomography->addAction("Project Tilt Series from Volume");
