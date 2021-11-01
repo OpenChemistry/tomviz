@@ -20,7 +20,6 @@ class RealTimeTomography(tomviz.operators.CompletableOperator):
 
         # Create child for recon
         child = dataset.create_child_dataset()
-        utils.mark_as_volume(child)
 
         # Logger to Read Directory
         tomoLogger = logger.Logger(localDirectory, fileExtensions[fileExt])
@@ -72,8 +71,10 @@ class RealTimeTomography(tomviz.operators.CompletableOperator):
                     runExperiment = False
                     break
 
-                self.progress.message = 'Iteration No.%d/%d. '\
-                    % (jj + 1, maxIter) + etcMessage
+                self.progress.message = 'Reconstructing Tilt Angles (%d'\
+                                        ' Sampled): Iteration No.%d/%d. '\
+                    % (tomoLogger.logTiltAngles.shape[0], jj + 1,
+                        maxIter) + etcMessage
 
                 # Run Reconstruction Algorithm
                 pytvlib.run(tomo, alg, beta, jj)
