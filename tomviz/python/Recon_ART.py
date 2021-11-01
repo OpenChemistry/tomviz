@@ -75,7 +75,6 @@ class ReconARTOperator(tomviz.operators.CompletableOperator):
 
                 for j in range(Nrow):
                     row[:] = A[j, :].toarray()
-                    # a = (b[j] - A[j,:].dot(f)) / rowInnerProduct[j]
                     a = (b[j] - np.dot(row, f))/rowInnerProduct[j]
                     f = f + row * a * beta
 

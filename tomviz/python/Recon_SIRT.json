@@ -7,7 +7,7 @@ The tilt series data should be aligned prior to reconstruction and the tilt axis
 
 The size of reconstruction will be (Nx,Ny,Ny). The number of iterations can be specified below.
 
-Reconstrucing a 256x256x256 tomogram typically takes more than 5 mins with 5 iterations for Landweber's Method.",
+Reconstrucing a 256x256x256 tomogram typically with Landweber's Method takes about 2 mins for 10 iterations.",
   "children": [
     {
       "name": "reconstruction",
