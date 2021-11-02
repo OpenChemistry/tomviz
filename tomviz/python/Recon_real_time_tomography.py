@@ -11,7 +11,7 @@ class RealTimeTomography(tomviz.operators.CompletableOperator):
                   maxIter=None, fileExt=None):
 
         # Parse Inputs
-        fileExtensions = ('dm4', 'dm3', 'ser', 'tif')
+        fileExtensions = ('dm4', 'dm3', 'ser')
         algorithms = ('ART', 'randART', 'SIRT', 'WBP')
         alg = algorithms[alg]
 
@@ -71,8 +71,10 @@ class RealTimeTomography(tomviz.operators.CompletableOperator):
                     runExperiment = False
                     break
 
-                self.progress.message = 'Iteration No.%d/%d. '\
-                    % (jj + 1, maxIter) + etcMessage
+                self.progress.message = 'Reconstructing Tilt Angles (%d'\
+                                        ' Sampled): Iteration No.%d/%d. '\
+                    % (tomoLogger.logTiltAngles.shape[0], jj + 1,
+                        maxIter) + etcMessage
 
                 # Run Reconstruction Algorithm
                 pytvlib.run(tomo, alg, beta, jj)

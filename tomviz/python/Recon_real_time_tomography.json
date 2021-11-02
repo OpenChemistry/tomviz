@@ -1,7 +1,13 @@
 {
   "name" : "LiveTomo",
   "label" : "Live Tomography Visualization",
-  "description" : "Real-Time Tomography Application\nTomviz will monitor a directory and begin a reconstruction.\nTo simulate an experiment, drag micrographs into the defined directory",
+  "description" : "Real-Time Tomography Application
+
+Here tomographic reconstructions will occur in real time, updating as new data arrives in a specified directory. The tomogram will dynamically improve with time as both the reconstruction algorithm converges and additional projections arrives. 
+
+A step-by-step guide is provided in the Real-Time Tomography User Manual.
+
+Below specify the directory where projection image data will arrive. The specimen tilt angle for each image is extracted automatically from the metadata in dm4 or ser files. However, for dm3 files, the name format must be \'_[ANGLE]degrees_.dm3\', where [ANGLE] is the tilt angle.",
   "children": [
     {
       "name": "reconstruction",
@@ -42,8 +48,7 @@
       "options" : [
         {"dm4" : 0},
         {"dm3" : 1},
-        {"ser" : 2},
-        {"tif" : 3}
+        {"ser" : 2}
       ]
     }
   ]

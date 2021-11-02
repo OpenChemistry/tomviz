@@ -70,10 +70,8 @@ class ReconSirtOperator(tomviz.operators.CompletableOperator):
 
             for s in range(Nslice):
 
-                if self.canceled:
+                if self.canceled or self.completed:
                     return
-                elif self.completed:
-                    break
 
                 self.progress.message = 'Iteration No.%d/%d,Slice No.%d/%d.' % (
                     i + 1, Niter, s + 1, Nslice) + etcMessage
