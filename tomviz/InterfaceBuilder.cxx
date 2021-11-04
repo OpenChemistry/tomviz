@@ -3,8 +3,10 @@
 
 #include "InterfaceBuilder.h"
 
+#include "ActiveObjects.h"
 #include "DataSource.h"
 #include "DoubleSpinBox.h"
+#include "ModuleManager.h"
 #include "SpinBox.h"
 #include "Utilities.h"
 
@@ -22,6 +24,8 @@
 #include <QPushButton>
 #include <QSpinBox>
 #include <QWidget>
+
+Q_DECLARE_METATYPE(tomviz::DataSource*)
 
 namespace {
 
@@ -460,6 +464,52 @@ void addStringWidget(QGridLayout* layout, int row, QJsonObject& pathNode)
   }
 }
 
+void addDatasetWidget(QGridLayout* layout, int row, QJsonObject& parameterNode)
+{
+  QJsonValueRef nameValue = parameterNode["name"];
+  QJsonValueRef labelValue = parameterNode["label"];
+
+  if (nameValue.isUndefined()) {
+    QJsonDocument document(parameterNode);
+    qWarning() << QString("Parameter %1 has no name. Skipping.")
+                    .arg(document.toJson().data());
+    return;
+  }
+
+  QLabel* labelWidget = new QLabel(nameValue.toString());
+  if (!labelValue.isUndefined()) {
+    labelWidget->setText(labelValue.toString());
+  }
+  layout->addWidget(labelWidget, row, 0, 1, 1);
+
+  QComboBox* comboBox = new QComboBox();
+  comboBox->setObjectName(nameValue.toString());
+  QStringList addedLabels;
+  auto dataSources = tomviz::ModuleManager::instance().allDataSources();
+  for (auto* dataSource : dataSources) {
+    auto label = dataSource->label();
+    if (addedLabels.contains(label)) {
+      auto original = label;
+      int index = 1;
+      do {
+        label = original + QString("_%1").arg(++index);
+      } while (addedLabels.contains(label));
+
+      dataSource->setLabel(label);
+      auto renameMsg = QString("%1 was renamed to %2").arg(original).arg(label);
+      qDebug().noquote() << "Warning: data source" << renameMsg
+                         << "to avoid name clashes in addDatasetWidget()";
+    }
+
+    QVariant data;
+    data.setValue(dataSource);
+    comboBox->addItem(label, data);
+    addedLabels.append(label);
+  }
+
+  layout->addWidget(comboBox, row, 1, 1, 1);
+}
+
 } // end anonymous namespace
 
 namespace tomviz {
@@ -488,7 +538,6 @@ QLayout* InterfaceBuilder::buildParameterInterface(QGridLayout* layout,
                                                    QJsonArray& parameters,
                                                    const QString& tag) const
 {
-
   QJsonObject::size_type numParameters = parameters.size();
   for (QJsonObject::size_type i = 0; i < numParameters; ++i) {
     QJsonValueRef parameterNode = parameters[i];
@@ -534,6 +583,8 @@ QLayout* InterfaceBuilder::buildParameterInterface(QGridLayout* layout,
       addPathWidget(layout, i + 1, parameterObject);
     } else if (typeString == "string") {
       addStringWidget(layout, i + 1, parameterObject);
+    } else if (typeString == "dataset") {
+      addDatasetWidget(layout, i + 1, parameterObject);
     }
   }
 

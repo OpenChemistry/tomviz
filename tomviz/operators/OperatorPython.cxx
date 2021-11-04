@@ -532,24 +532,41 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
     Python::Tuple args(1);
 
     // Get the name of the function
-    auto name = d->TransformMethod.getAttr("__name__").toString();
-    if (name == "transform_scalars") {
+    auto transformMethod = d->TransformMethod.getAttr("__name__").toString();
+    if (transformMethod == "transform_scalars") {
       // Use the arguments for transform_scalars()
       Python::Object pydata = Python::VTK::GetObjectFromPointer(data);
       args.set(0, pydata);
-    } else if (name == "transform") {
+    } else if (transformMethod == "transform") {
       // Use the arguments for transform()
       Python::Object pydata = Python::createDataset(data, *dataSource());
       args.set(0, pydata);
     } else {
-      qDebug() << "Unknown TransformMethod name: " << name;
+      qDebug() << "Unknown TransformMethod name: " << transformMethod;
       return false;
     }
 
     Python::Dict kwargs;
     foreach (QString key, m_arguments.keys()) {
-      Variant value = toVariant(m_arguments[key]);
-      kwargs.set(key, value);
+      auto value = m_arguments[key];
+      if (value.canConvert<DataSource*>()) {
+        // Handle special case for data sources...
+        auto* ds = value.value<DataSource*>();
+        if (transformMethod == "transform_scalars") {
+          auto pydata = Python::VTK::GetObjectFromPointer(ds->imageData());
+          kwargs.set(key, pydata);
+        } else if (transformMethod == "transform") {
+          auto pydata = Python::createDataset(ds->imageData(), *ds);
+          kwargs.set(key, pydata);
+        } else {
+          qDebug() << "Unknown TransformMethod name: " << transformMethod;
+          return false;
+        }
+        continue;
+      }
+
+      Variant v = toVariant(value);
+      kwargs.set(key, v);
     }
 
     result = d->TransformMethod.call(args, kwargs);
