@@ -60,6 +60,12 @@ public:
   QList<DataSource*> childDataSources();
   QList<DataSource*> allDataSources();
 
+  // Return the data sources in a Depth First Search (DFS) order,
+  // so that child data sources will come immediately after their
+  // parent data source in the list.
+  // This *should* match the order of data sources in the pipeline view.
+  QList<DataSource*> allDataSourcesDepthFirst();
+
   QList<Module*> findModulesGeneric(const DataSource* dataSource,
                                     const vtkSMViewProxy* view);
 

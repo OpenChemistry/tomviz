@@ -211,6 +211,30 @@ QList<DataSource*> ModuleManager::allDataSources()
   return dataSources() + childDataSources();
 }
 
+QList<DataSource*> ModuleManager::allDataSourcesDepthFirst()
+{
+  // Return the data sources in a Depth First Search (DFS) order,
+  // so that child data sources will come immediately after their
+  // parent data source in the list.
+  // This *should* match the order of data sources in the pipeline view.
+  QList<DataSource*> result;
+  for (auto* rootSource : dataSources()) {
+    result.append(rootSource);
+    if (rootSource->operators().isEmpty()) {
+      // If there are no operators, there are no child data sources...
+      continue;
+    }
+
+    auto* lastOperator = rootSource->operators().back();
+    auto* childSource = lastOperator->childDataSource();
+    if (childSource) {
+      result.append(childSource);
+    }
+  }
+
+  return result;
+}
+
 void ModuleManager::addDataSource(DataSource* dataSource)
 {
   if (dataSource && !d->DataSources.contains(dataSource)) {

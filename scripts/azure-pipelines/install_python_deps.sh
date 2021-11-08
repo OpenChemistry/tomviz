@@ -10,4 +10,4 @@ pip3 install acquisition
 # python3.8, and it can be a pain to build, so skip installing it.
 # Install the other dependencies manually.
 pip3 install --no-deps tomviz/python
-pip3 install tqdm h5py numpy==1.16.4 click scipy itk
+pip3 install tqdm h5py numpy click scipy itk
