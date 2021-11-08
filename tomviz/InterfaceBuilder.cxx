@@ -485,20 +485,16 @@ void addDatasetWidget(QGridLayout* layout, int row, QJsonObject& parameterNode)
   QComboBox* comboBox = new QComboBox();
   comboBox->setObjectName(nameValue.toString());
   QStringList addedLabels;
-  auto dataSources = tomviz::ModuleManager::instance().allDataSources();
+  auto dataSources =
+    tomviz::ModuleManager::instance().allDataSourcesDepthFirst();
   for (auto* dataSource : dataSources) {
     auto label = dataSource->label();
     if (addedLabels.contains(label)) {
       auto original = label;
       int index = 1;
       do {
-        label = original + QString("_%1").arg(++index);
+        label = original + QString(" (%1)").arg(++index);
       } while (addedLabels.contains(label));
-
-      dataSource->setLabel(label);
-      auto renameMsg = QString("%1 was renamed to %2").arg(original).arg(label);
-      qDebug().noquote() << "Warning: data source" << renameMsg
-                         << "to avoid name clashes in addDatasetWidget()";
     }
 
     QVariant data;
