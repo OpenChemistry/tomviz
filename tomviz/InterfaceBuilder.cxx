@@ -311,12 +311,13 @@ void addEnumerationWidget(QGridLayout* layout, int row,
       QJsonObject optionNode = optionsArray[i].toObject();
       QString optionName = optionNode.keys()[0];
       QJsonValueRef optionValueNode = optionNode[optionName];
-      int optionValue = 0;
+      QVariant optionValue;
       if (isType<int>(optionValueNode)) {
+        // Convert to an int if possible
         optionValue = optionValueNode.toInt();
       } else {
-        qWarning() << "Option value is not an int. Skipping";
-        continue;
+        // Otherwise, let it be whatever type it is...
+        optionValue = optionValueNode.toVariant();
       }
       comboBox->addItem(optionName, optionValue);
     }
