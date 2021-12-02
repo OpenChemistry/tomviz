@@ -227,13 +227,19 @@ public:
   void translate(const double deltaPosition[3]);
 
   /// Gets the display position of the data source
-  const double* displayPosition();
+  const double* displayPosition() const;
 
   /// Sets the display position of the data source
   void setDisplayPosition(const double newPosition[3]);
 
+  /// Gets the display orientation of the data source
+  const double* displayOrientation() const;
+
+  /// Sets the display orientation of the data source
+  void setDisplayOrientation(const double newOrientation[3]);
+
   /// Returns the extent of the transformed dataset
-  void getExtent(int extent[6]);
+  void getExtent(int extent[6]) const;
   /// Returns the physical extent (bounds) of the transformed dataset
   void getBounds(double bounds[6]);
   /// Returns the range of the transformed dataset
@@ -241,9 +247,15 @@ public:
   static void getRange(vtkImageData* data, double range[2]);
   /// Returns the spacing of the transformed dataset
   void getSpacing(double spacing[3]) const;
+  const double* getSpacing() const;
+
   /// Sets the scale factor (ratio between units and spacing)
   /// one component per axis
   void setSpacing(const double scaleFactor[3], bool markModified = true);
+
+  /// Get the physical dimensions
+  /// Computed via spacing[i] * (extent[2 * i + 1] - extent[2 * i] + 1)
+  void getPhysicalDimensions(double lengths[3]) const;
 
   /// Set the active scalars by array name.
   void setActiveScalars(const QString& arrayName);
@@ -355,6 +367,12 @@ signals:
   /// on their actors to match this so the effect of setting the position is
   /// to translate the dataset.
   void displayPositionChanged(double newX, double newY, double newZ);
+
+  /// This signal is fired every time the display orientation is changed
+  /// Any actors based on this DataSource's data should update the orientation
+  /// on their actors to match this so the effect of setting the orientation is
+  /// to rotate the dataset.
+  void displayOrientationChanged(double newX, double newY, double newZ);
 
   /// Indicates the component names have been modified
   void componentNamesModified();

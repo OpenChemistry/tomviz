@@ -90,6 +90,7 @@ public:
   DataSource::DataSourceType Type;
   vtkSmartPointer<vtkStringArray> Units;
   vtkVector3d DisplayPosition;
+  vtkVector3d DisplayOrientation;
   PersistenceState PersistState = PersistenceState::Saved;
   vtkRectd m_transferFunction2DBox;
   bool UnitsModified = false;
@@ -429,6 +430,16 @@ QString DataSource::id() const
   return QString().sprintf("%p", static_cast<const void*>(this));
 }
 
+template <typename T>
+QJsonArray toJsonArray(T* array, int size)
+{
+  QJsonArray ret;
+  for (int i = 0; i < size; ++i) {
+    ret.append(array[i]);
+  }
+  return ret;
+}
+
 QJsonObject DataSource::serialize() const
 {
   QJsonObject json = m_json;
@@ -440,30 +451,23 @@ QJsonObject DataSource::serialize() const
 
     int s[3];
     subsampleStrides(s);
-    QJsonArray stridesArray = { s[0], s[1], s[2] };
-    settings["strides"] = stridesArray;
+    settings["strides"] = toJsonArray(s, 3);
 
     int bs[6];
     subsampleVolumeBounds(bs);
-    QJsonArray bndsArray = { bs[0], bs[1], bs[2], bs[3], bs[4], bs[5] };
-
-    settings["volumeBounds"] = bndsArray;
+    settings["volumeBounds"] = toJsonArray(bs, 6);
     json["subsampleSettings"] = settings;
   }
 
   if (Internals->UnitsModified) {
-    double spacing[3];
-    getSpacing(spacing);
-    QJsonArray jsonSpacing;
-    for (int i = 0; i < 3; ++i) {
-      jsonSpacing.append(spacing[i]);
-    }
-
-    json["spacing"] = jsonSpacing;
+    json["spacing"] = toJsonArray(getSpacing(), 3);
     if (this->Internals->Units) {
       json["units"] = this->Internals->Units->GetValue(0).c_str();
     }
   }
+
+  json["origin"] = toJsonArray(displayPosition(), 3);
+  json["orientation"] = toJsonArray(displayOrientation(), 3);
 
   // Serialize the currently active scalars
   json["activeScalars"] = activeScalars();
@@ -516,6 +520,23 @@ QJsonObject DataSource::serialize() const
   return json;
 }
 
+template <typename T>
+void fromJsonArray(const QJsonArray& array, T* out);
+
+template <>
+void fromJsonArray<double>(const QJsonArray& array, double* out)
+{
+  for (int i = 0; i < array.size(); ++i) {
+    out[i] = array.at(i).toDouble();
+  }
+}
+
+template <typename T>
+void fromJsonArray(const QJsonValue& value, T* out)
+{
+  fromJsonArray(value.toArray(), out);
+}
+
 bool DataSource::deserialize(const QJsonObject& state)
 {
   if (!state["label"].isUndefined()) {
@@ -549,17 +570,26 @@ bool DataSource::deserialize(const QJsonObject& state)
   }
 
   if (state.contains("spacing")) {
-    auto spacingArray = state["spacing"].toArray();
     double spacing[3];
-    for (int i = 0; i < 3; i++) {
-      spacing[i] = spacingArray.at(i).toDouble();
-    }
+    fromJsonArray(state["spacing"], spacing);
     setSpacing(spacing);
   }
 
   if (state.contains("units")) {
     auto units = state["units"].toString();
     setUnits(units);
+  }
+
+  if (state.contains("origin")) {
+    double origin[3];
+    fromJsonArray(state["origin"], origin);
+    setDisplayPosition(origin);
+  }
+
+  if (state.contains("orientation")) {
+    double orientation[3];
+    fromJsonArray(state["orientation"], orientation);
+    setDisplayOrientation(orientation);
   }
 
   // Check for modules on the data source first.
@@ -646,7 +676,7 @@ vtkSMSourceProxy* DataSource::proxy() const
   return this->Internals->ProducerProxy;
 }
 
-void DataSource::getExtent(int extent[6])
+void DataSource::getExtent(int extent[6]) const
 {
   vtkAlgorithm* tp = algorithm();
   if (tp) {
@@ -709,6 +739,11 @@ void DataSource::getSpacing(double spacing[3]) const
   }
 }
 
+const double* DataSource::getSpacing() const
+{
+  return imageData()->GetSpacing();
+}
+
 void DataSource::setSpacing(const double spacing[3], bool markModified)
 {
   if (markModified) {
@@ -733,6 +768,18 @@ void DataSource::setSpacing(const double spacing[3], bool markModified)
     }
   }
   emit dataPropertiesChanged();
+}
+
+void DataSource::getPhysicalDimensions(double lengths[3]) const
+{
+  int extent[6];
+  getExtent(extent);
+  auto* spacing = getSpacing();
+
+  for (int axis = 0; axis < 3; ++axis) {
+    lengths[axis] =
+      spacing[axis] * (extent[2 * axis + 1] - extent[2 * axis] + 1);
+  }
 }
 
 void DataSource::setActiveScalars(const QString& arrayName)
@@ -1054,7 +1101,7 @@ void DataSource::translate(const double deltaPosition[3])
                               this->Internals->DisplayPosition[2]);
 }
 
-const double* DataSource::displayPosition()
+const double* DataSource::displayPosition() const
 {
   return this->Internals->DisplayPosition.GetData();
 }
@@ -1067,6 +1114,21 @@ void DataSource::setDisplayPosition(const double newPosition[3])
   emit displayPositionChanged(this->Internals->DisplayPosition[0],
                               this->Internals->DisplayPosition[1],
                               this->Internals->DisplayPosition[2]);
+}
+
+const double* DataSource::displayOrientation() const
+{
+  return this->Internals->DisplayOrientation.GetData();
+}
+
+void DataSource::setDisplayOrientation(const double newOrientation[3])
+{
+  for (int i = 0; i < 3; ++i) {
+    this->Internals->DisplayOrientation[i] = newOrientation[i];
+  }
+  emit displayOrientationChanged(this->Internals->DisplayOrientation[0],
+                                 this->Internals->DisplayOrientation[1],
+                                 this->Internals->DisplayOrientation[2]);
 }
 
 vtkDataObject* DataSource::copyData()
@@ -1246,6 +1308,7 @@ void DataSource::init(vtkImageData* data, DataSourceType dataType,
   this->Internals->Type = dataType;
   this->Internals->PersistState = persistState;
   this->Internals->DisplayPosition.Set(0, 0, 0);
+  this->Internals->DisplayOrientation.Set(0, 0, 0);
 
   // Set up default rect for transfer function 2d...
   // The widget knows to interpret a rect with negative width as

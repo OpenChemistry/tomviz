@@ -239,14 +239,6 @@ void ActiveObjects::setActiveViewToFirstRenderView()
   }
 }
 
-void ActiveObjects::setMoveObjectsMode(TransformType transform)
-{
-  if (m_moveObjectsMode != transform) {
-    m_moveObjectsMode = transform;
-    emit moveObjectsModeChanged(transform);
-  }
-}
-
 void ActiveObjects::renderAllViews()
 {
   pqApplicationCore::instance()->render();

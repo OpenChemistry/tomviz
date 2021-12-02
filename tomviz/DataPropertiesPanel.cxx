@@ -69,16 +69,12 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
   l->insertWidget(l->indexOf(m_ui->DataRange), separator);
 
   separator = pqProxyWidget::newGroupLabelWidget("Units and Size", this);
-  m_sizeCheckbox = new QCheckBox("Interactive edit");
   auto index = l->indexOf(m_ui->LengthWidget);
   l->insertWidget(index, separator);
-  l->insertWidget(index + 2, m_sizeCheckbox);
 
-  separator = pqProxyWidget::newGroupLabelWidget("Origin", this);
-  m_originCheckbox = new QCheckBox("Interactive edit");
-  index = l->indexOf(m_ui->OriginWidget);
+  separator = pqProxyWidget::newGroupLabelWidget("Transformations", this);
+  index = l->indexOf(m_ui->transformWidget);
   l->insertWidget(index, separator);
-  l->insertWidget(index + 2, m_originCheckbox);
 
   m_tiltAnglesSeparator =
     pqProxyWidget::newGroupLabelWidget("Tilt Angles", this);
@@ -108,6 +104,13 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
   connect(m_ui->zOriginBox, &QLineEdit::editingFinished,
           [this]() { this->updateOrigin(m_ui->zOriginBox, 2); });
 
+  connect(m_ui->xOrientationBox, &QLineEdit::editingFinished,
+          [this]() { this->updateOrientation(m_ui->xOrientationBox, 0); });
+  connect(m_ui->yOrientationBox, &QLineEdit::editingFinished,
+          [this]() { this->updateOrientation(m_ui->yOrientationBox, 1); });
+  connect(m_ui->zOrientationBox, &QLineEdit::editingFinished,
+          [this]() { this->updateOrientation(m_ui->zOrientationBox, 2); });
+
   connect(m_ui->ActiveScalars, &QComboBox::currentTextChanged, this,
           &DataPropertiesPanel::setActiveScalars);
   connect(&m_scalarsTableModel, &DataPropertiesModel::activeScalarsChanged,
@@ -115,37 +118,24 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
   connect(m_ui->componentNamesEditor, &ComboTextEditor::itemEdited, this,
           &DataPropertiesPanel::componentNameEdited);
 
-  connect(m_sizeCheckbox, &QCheckBox::clicked, [](bool checked) {
-    ActiveObjects::instance().setMoveObjectsMode(checked ? TransformType::Resize
-                                                         : TransformType::None);
-  });
+  connect(m_ui->interactTranslate, &QCheckBox::clicked,
+          &ActiveObjects::instance(), &ActiveObjects::enableTranslation);
+  connect(m_ui->interactRotate, &QCheckBox::clicked, &ActiveObjects::instance(),
+          &ActiveObjects::enableRotation);
+  connect(m_ui->interactScale, &QCheckBox::clicked, &ActiveObjects::instance(),
+          &ActiveObjects::enableScaling);
 
-  connect(m_originCheckbox, &QCheckBox::clicked, [](bool checked) {
-    ActiveObjects::instance().setMoveObjectsMode(
-      checked ? TransformType::Translate : TransformType::None);
-  });
+  connect(&ActiveObjects::instance(), &ActiveObjects::translationStateChanged,
+          m_ui->interactTranslate, &QCheckBox::setChecked);
+  connect(&ActiveObjects::instance(), &ActiveObjects::rotationStateChanged,
+          m_ui->interactRotate, &QCheckBox::setChecked);
+  connect(&ActiveObjects::instance(), &ActiveObjects::scalingStateChanged,
+          m_ui->interactScale, &QCheckBox::setChecked);
 
-  connect(&ActiveObjects::instance(), &ActiveObjects::moveObjectsModeChanged,
-          this, [this](TransformType transform) {
-            switch (transform) {
-              case TransformType::Translate: {
-                m_sizeCheckbox->setChecked(false);
-                m_originCheckbox->setChecked(true);
-                break;
-              }
-              case TransformType::Resize: {
-                m_sizeCheckbox->setChecked(true);
-                m_originCheckbox->setChecked(false);
-                break;
-              }
-              case TransformType::None:
-              default: {
-                m_sizeCheckbox->setChecked(false);
-                m_originCheckbox->setChecked(false);
-                break;
-              }
-            }
-          });
+  m_ui->interactTranslate->setChecked(
+    ActiveObjects::instance().translationEnabled());
+  m_ui->interactRotate->setChecked(ActiveObjects::instance().rotationEnabled());
+  m_ui->interactScale->setChecked(ActiveObjects::instance().scalingEnabled());
 }
 
 DataPropertiesPanel::~DataPropertiesPanel() {}
@@ -170,6 +160,8 @@ void DataPropertiesPanel::setDataSource(DataSource* dsource)
             &DataPropertiesPanel::onDataPropertiesChanged);
     connect(dsource, &DataSource::displayPositionChanged, this,
             &DataPropertiesPanel::onDataPositionChanged);
+    connect(dsource, &DataSource::displayOrientationChanged, this,
+            &DataPropertiesPanel::onDataOrientationChanged);
     connect(&m_scalarsTableModel, &DataPropertiesModel::scalarsRenamed, dsource,
             &DataSource::renameScalarsArray);
   }
@@ -183,18 +175,10 @@ void DataPropertiesPanel::onDataPropertiesChanged()
     return;
   }
 
-  int extent[6];
-  double spacing[3];
   double length[3];
-
-  m_currentDataSource->getExtent(extent);
-  m_currentDataSource->getSpacing(spacing);
+  m_currentDataSource->getPhysicalDimensions(length);
   auto origin = m_currentDataSource->displayPosition();
-
-  for (int axis = 0; axis < 3; ++axis) {
-    length[axis] =
-      spacing[axis] * (extent[2 * axis + 1] - extent[2 * axis] + 1);
-  }
+  auto orientation = m_currentDataSource->displayOrientation();
 
   m_ui->xLengthBox->setText(QString("%1").arg(length[0]));
   m_ui->yLengthBox->setText(QString("%1").arg(length[1]));
@@ -203,9 +187,18 @@ void DataPropertiesPanel::onDataPropertiesChanged()
   m_ui->xOriginBox->setText(QString("%1").arg(origin[0]));
   m_ui->yOriginBox->setText(QString("%1").arg(origin[1]));
   m_ui->zOriginBox->setText(QString("%1").arg(origin[2]));
+
+  m_ui->xOrientationBox->setText(QString("%1").arg(orientation[0]));
+  m_ui->yOrientationBox->setText(QString("%1").arg(orientation[1]));
+  m_ui->zOrientationBox->setText(QString("%1").arg(orientation[2]));
 }
 
 void DataPropertiesPanel::onDataPositionChanged(double, double, double)
+{
+  this->onDataPropertiesChanged();
+}
+
+void DataPropertiesPanel::onDataOrientationChanged(double, double, double)
 {
   this->onDataPropertiesChanged();
 }
@@ -586,6 +579,26 @@ void DataPropertiesPanel::updateOrigin(QLineEdit* widget, int axis)
   double newOrigin[3] = { origin[0], origin[1], origin[2] };
   newOrigin[axis] = newValue;
   dsource->setDisplayPosition(newOrigin);
+}
+
+void DataPropertiesPanel::updateOrientation(QLineEdit* widget, int axis)
+{
+  double newValue;
+  bool ok = DataPropertiesPanel::parseField(widget, newValue);
+
+  if (!ok) {
+    return;
+  }
+
+  DataSource* dsource = m_currentDataSource;
+  if (!dsource) {
+    return;
+  }
+
+  auto orientation = dsource->displayOrientation();
+  double newOrientation[3] = { orientation[0], orientation[1], orientation[2] };
+  newOrientation[axis] = newValue;
+  dsource->setDisplayOrientation(newOrientation);
 }
 
 void DataPropertiesPanel::resetCamera()

@@ -8,7 +8,6 @@
 #include <QPointer>
 
 #include "DataSource.h"
-#include "Enums.h"
 #include "Module.h"
 #include "MoleculeSource.h"
 #include "Operator.h"
@@ -75,8 +74,6 @@ public:
   /// often.
   vtkSMSessionProxyManager* proxyManager() const;
 
-  TransformType moveObjectsMode() { return m_moveObjectsMode; }
-
   /// Returns the active pipelines.
   Pipeline* activePipeline() const;
 
@@ -119,9 +116,14 @@ public slots:
   /// Renders all views.
   void renderAllViews();
 
-  /// Set the active mode (true for the mode where objects can
-  /// be moved via MoveActiveObject)
-  void setMoveObjectsMode(TransformType transform);
+  /// Edit interaction modes for all data sources
+  void enableTranslation(bool b);
+  void enableRotation(bool b);
+  void enableScaling(bool b);
+
+  bool translationEnabled() const { return m_translationEnabled; }
+  bool rotationEnabled() const { return m_rotationEnabled; }
+  bool scalingEnabled() const { return m_scalingEnabled; }
 
 signals:
   /// Fired whenever the active view changes.
@@ -162,8 +164,10 @@ signals:
   /// Fired whenever an OperatorResult is activated.
   void resultActivated(OperatorResult*);
 
-  /// Fired when the mode changes
-  void moveObjectsModeChanged(TransformType transform);
+  /// Fired when interaction modes change
+  void translationStateChanged(bool b);
+  void rotationStateChanged(bool b);
+  void scalingStateChanged(bool b);
 
   /// Fired whenever the color map has changed
   void colorMapChanged(DataSource*);
@@ -191,11 +195,46 @@ protected:
   QPointer<Module> m_activeModule = nullptr;
   QPointer<Operator> m_activeOperator = nullptr;
   QPointer<OperatorResult> m_activeOperatorResult = nullptr;
-  TransformType m_moveObjectsMode = TransformType::None;
+
+  /// interaction states
+  bool m_translationEnabled = false;
+  bool m_rotationEnabled = false;
+  bool m_scalingEnabled = false;
 
 private:
   Q_DISABLE_COPY(ActiveObjects)
 };
+
+inline void ActiveObjects::enableTranslation(bool b)
+{
+  if (m_translationEnabled == b) {
+    return;
+  }
+
+  m_translationEnabled = b;
+  emit translationStateChanged(b);
+}
+
+inline void ActiveObjects::enableRotation(bool b)
+{
+  if (m_rotationEnabled == b) {
+    return;
+  }
+
+  m_rotationEnabled = b;
+  emit rotationStateChanged(b);
+}
+
+inline void ActiveObjects::enableScaling(bool b)
+{
+  if (m_scalingEnabled == b) {
+    return;
+  }
+
+  m_scalingEnabled = b;
+  emit scalingStateChanged(b);
+}
+
 } // namespace tomviz
 
 #endif

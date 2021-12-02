@@ -442,8 +442,6 @@ void LoadDataReaction::dataSourceAdded(DataSource* dataSource,
   }
   DataSource* previousActiveDataSource =
     ActiveObjects::instance().activeDataSource();
-  auto oldMoveObjectsMode = ActiveObjects::instance().moveObjectsMode();
-  ActiveObjects::instance().setMoveObjectsMode(TransformType::None);
   if (child) {
     ModuleManager::instance().addChildDataSource(dataSource);
   } else {
@@ -466,7 +464,6 @@ void LoadDataReaction::dataSourceAdded(DataSource* dataSource,
     view = ActiveObjects::instance().activeView();
   }
 
-  ActiveObjects::instance().setMoveObjectsMode(oldMoveObjectsMode);
   if (!previousActiveDataSource) {
     pqRenderView* renderView =
       qobject_cast<pqRenderView*>(pqActiveObjects::instance().activeView());

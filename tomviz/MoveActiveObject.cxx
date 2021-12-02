@@ -7,8 +7,8 @@
 #include "DataSource.h"
 #include "Module.h"
 #include "ModuleManager.h"
+#include "Pipeline.h"
 #include "Utilities.h"
-#include "vtkCustomBoxRepresentation.h"
 
 #include <pqView.h>
 
@@ -16,6 +16,7 @@
 #include <vtkBoundingBox.h>
 #include <vtkBoxWidget2.h>
 #include <vtkCommand.h>
+#include <vtkCustomBoxRepresentation.h>
 #include <vtkDataObject.h>
 #include <vtkEvent.h>
 #include <vtkEventQtSlotConnect.h>
@@ -25,9 +26,12 @@
 #include <vtkRenderWindowInteractor.h>
 #include <vtkSMSourceProxy.h>
 #include <vtkSMViewProxy.h>
+#include <vtkTransform.h>
 #include <vtkTrivialProducer.h>
 #include <vtkWidgetEvent.h>
 #include <vtkWidgetEventTranslator.h>
+
+#include <QScopedValueRollback>
 
 namespace tomviz {
 
@@ -45,35 +49,25 @@ MoveActiveObject::MoveActiveObject(QObject* p) : Superclass(p)
                 SLOT(dataSourceActivated(DataSource*)));
   this->connect(&activeObjs, SIGNAL(viewChanged(vtkSMViewProxy*)),
                 SLOT(onViewChanged(vtkSMViewProxy*)));
-  connect(&activeObjs, &ActiveObjects::moveObjectsModeChanged, this,
-          &MoveActiveObject::setTransformType);
+
+  this->connect(&activeObjs, &ActiveObjects::translationStateChanged, this,
+                &MoveActiveObject::updateInteractionStates);
+
+  this->connect(&activeObjs, &ActiveObjects::rotationStateChanged, this,
+                &MoveActiveObject::updateInteractionStates);
+
+  this->connect(&activeObjs, &ActiveObjects::scalingStateChanged, this,
+                &MoveActiveObject::updateInteractionStates);
+
   this->EventLink->Connect(this->BoxWidget.GetPointer(),
                            vtkCommand::InteractionEvent, this,
                            SLOT(interactionEnd(vtkObject*)));
   this->EventLink->Connect(this->BoxWidget.GetPointer(),
                            vtkCommand::EndInteractionEvent, this,
                            SLOT(interactionEnd(vtkObject*)));
-  for (int i = 0; i < 3; ++i) {
-    this->DataLocation[i] = 0.0;
-  }
-
-  this->setTransformType(TransformType::None);
 }
 
 MoveActiveObject::~MoveActiveObject() {}
-
-void MoveActiveObject::updateForNewDataSource(DataSource* source)
-{
-  if (!source) {
-    this->BoxWidget->EnabledOff();
-    if (this->View) {
-      this->View->render();
-    }
-    return;
-  }
-
-  this->onDataPropertiesChanged();
-}
 
 void MoveActiveObject::onViewChanged(vtkSMViewProxy* view)
 {
@@ -84,155 +78,173 @@ void MoveActiveObject::onViewChanged(vtkSMViewProxy* view)
 
   if (view && view->GetRenderWindow()) {
     this->BoxWidget->SetInteractor(view->GetRenderWindow()->GetInteractor());
-    pqview->render();
   } else {
     this->BoxWidget->SetInteractor(nullptr);
     this->BoxWidget->EnabledOff();
   }
 
-  if (this->View) {
-    this->View->render();
-  }
+  // Render the old view and then the new one
+  render();
   this->View = pqview;
+  updateInteractionStates();
 }
 
 void MoveActiveObject::interactionEnd(vtkObject* caller)
 {
   Q_UNUSED(caller);
 
-  double* boxBounds = this->BoxRep->GetBounds();
+  vtkNew<vtkTransform> t;
+  this->BoxRep->GetTransform(t);
 
+  QScopedValueRollback<bool> rollback(this->Interacting, true);
   auto ds = ActiveObjects::instance().activeDataSource();
-
-  switch (this->Transform) {
-    case (TransformType::Translate): {
-      double displayPosition[3];
-
-      for (int i = 0; i < 3; ++i) {
-        displayPosition[i] = boxBounds[i * 2] - this->DataLocation[i];
-      }
-
-      ds->setDisplayPosition(displayPosition);
-
-      break;
-    }
-    case (TransformType::Resize): {
-      int extent[6];
-      double spacing[3];
-      double displayPosition[3];
-      ds->getExtent(extent);
-
-      for (int i = 0; i < 3; ++i) {
-        auto length = boxBounds[i * 2 + 1] - boxBounds[i * 2];
-        auto size = extent[i * 2 + 1] - extent[i * 2];
-        spacing[i] = length / size;
-        displayPosition[i] = boxBounds[i * 2] - this->DataLocation[i];
-      }
-
-      ds->setSpacing(spacing);
-      ds->setDisplayPosition(displayPosition);
-      break;
-    }
-    case (TransformType::Rotate): {
-      break;
-    }
-    case (TransformType::None):
-    default: {
-      break;
-    }
-  }
-}
-
-void MoveActiveObject::setTransformType(TransformType transform)
-{
-  this->Transform = transform;
-
-  switch (this->Transform) {
-    case (TransformType::Translate): {
-      this->BoxWidget->RotationEnabledOff();
-      this->BoxWidget->ScalingEnabledOff();
-      this->BoxWidget->MoveFacesEnabledOff();
-      this->BoxWidget->TranslationEnabledOn();
-      this->BoxRep->HandlesOff();
-      this->BoxRep->GetHandle()[6]->SetVisibility(1);
-      this->updateForNewDataSource(
-        ActiveObjects::instance().activeDataSource());
-      this->BoxWidget->EnabledOn();
-      break;
-    }
-    case (TransformType::Resize): {
-      this->BoxWidget->RotationEnabledOff();
-      this->BoxWidget->ScalingEnabledOff();
-      this->BoxWidget->MoveFacesEnabledOn();
-      this->BoxWidget->TranslationEnabledOff();
-      this->BoxRep->HandlesOn();
-      this->BoxRep->GetHandle()[6]->SetVisibility(0);
-      this->updateForNewDataSource(
-        ActiveObjects::instance().activeDataSource());
-      this->BoxWidget->EnabledOn();
-      break;
-    }
-    case (TransformType::Rotate): {
-      break;
-    }
-    case (TransformType::None):
-    default: {
-      this->BoxWidget->EnabledOff();
-      break;
-    }
-  }
-
-  if (this->View) {
-    this->View->render();
-  }
+  ds->setDisplayPosition(t->GetPosition());
+  ds->setDisplayOrientation(t->GetOrientation());
+  ds->setSpacing(t->GetScale());
+  render();
 }
 
 void MoveActiveObject::dataSourceActivated(DataSource* ds)
 {
+  if (ds == this->currentDataSource) {
+    return;
+  }
+
   if (this->currentDataSource) {
     this->disconnect(this->currentDataSource);
   }
 
   this->currentDataSource = ds;
+  resetWidgetPlacement();
 
   if (ds) {
     connect(ds, &DataSource::displayPositionChanged, this,
             &MoveActiveObject::onDataPositionChanged);
+    connect(ds, &DataSource::displayOrientationChanged, this,
+            &MoveActiveObject::onDataOrientationChanged);
     connect(ds, &DataSource::dataPropertiesChanged, this,
             &MoveActiveObject::onDataPropertiesChanged);
   }
 
-  if (this->Transform != TransformType::None) {
-    this->updateForNewDataSource(ds);
-  }
+  updateInteractionStates();
 }
 
-void MoveActiveObject::onDataPropertiesChanged()
+void MoveActiveObject::resetWidgetPlacement()
 {
   auto source = this->currentDataSource;
   if (!source) {
     return;
   }
 
-  vtkDataObject* data = source->producer()->GetOutputDataObject(0);
-  double dataBounds[6];
-  vtkImageData::SafeDownCast(data)->GetBounds(dataBounds);
-  const double* displayPosition = source->displayPosition();
-  for (int i = 0; i < 3; ++i) {
-    this->DataLocation[i] = dataBounds[i * 2];
-    dataBounds[2 * i] += displayPosition[i];
-    dataBounds[2 * i + 1] += displayPosition[i];
+  // Use the extents for the widget bounds. Need to convert to double.
+  double bounds[6];
+  auto* extent = source->imageData()->GetExtent();
+  for (int i = 0; i < 6; ++i) {
+    bounds[i] = static_cast<double>(extent[i]);
   }
-  this->BoxRep->PlaceWidget(dataBounds);
 
-  if (this->View) {
-    this->View->render();
+  this->BoxRep->PlaceWidget(bounds);
+  this->updateWidgetTransform();
+}
+
+void MoveActiveObject::onDataPropertiesChanged()
+{
+  if (this->Interacting) {
+    return;
   }
+
+  updateWidgetTransform();
+  render();
+}
+
+void MoveActiveObject::updateWidgetTransform()
+{
+  auto ds = this->currentDataSource;
+  if (!ds) {
+    return;
+  }
+
+  vtkNew<vtkTransform> t;
+  t->Identity();
+
+  // Translate
+  t->Translate(ds->displayPosition());
+
+  // Rotate
+  // Do as vtkProp3D does: rotate Z first, then X, then Y.
+  auto* orientation = ds->displayOrientation();
+  t->RotateZ(orientation[2]);
+  t->RotateX(orientation[0]);
+  t->RotateY(orientation[1]);
+
+  // Scale
+  t->Scale(ds->getSpacing());
+
+  this->BoxRep->SetTransform(t);
 }
 
 void MoveActiveObject::onDataPositionChanged(double, double, double)
 {
   this->onDataPropertiesChanged();
+}
+
+void MoveActiveObject::onDataOrientationChanged(double, double, double)
+{
+  this->onDataPropertiesChanged();
+}
+
+void MoveActiveObject::updateInteractionStates()
+{
+  auto* ds = this->currentDataSource;
+  auto* widget = this->BoxWidget.Get();
+  auto* rep = this->BoxRep.Get();
+
+  if (!ds || !this->View || activePipelineIsRunning()) {
+    widget->EnabledOff();
+    render();
+    return;
+  }
+
+  auto& activeObjects = ActiveObjects::instance();
+  bool translate = activeObjects.translationEnabled();
+  bool rotate = activeObjects.rotationEnabled();
+  bool scale = activeObjects.scalingEnabled();
+
+  bool anyTransforms = translate || rotate || scale;
+
+  widget->SetEnabled(anyTransforms);
+  if (!anyTransforms) {
+    render();
+    return;
+  }
+
+  widget->SetTranslationEnabled(translate);
+  widget->SetRotationEnabled(rotate);
+  widget->SetScalingEnabled(scale);
+  widget->SetMoveFacesEnabled(scale);
+
+  for (int i = 0; i < 6; ++i) {
+    rep->GetHandle()[i]->SetVisibility(scale);
+  }
+
+  rep->GetHandle()[6]->SetVisibility(translate);
+
+  render();
+}
+
+void MoveActiveObject::render()
+{
+  if (!this->View) {
+    return;
+  }
+
+  this->View->render();
+}
+
+bool MoveActiveObject::activePipelineIsRunning() const
+{
+  auto* pipeline = ActiveObjects::instance().activePipeline();
+  return pipeline && pipeline->isRunning();
 }
 
 } // namespace tomviz
