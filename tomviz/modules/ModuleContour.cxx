@@ -66,6 +66,13 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   m_flyingEdges->SetInputConnection(d->ContourArrayProducer->GetOutputPort());
   resetIsoValue();
 
+  auto* displayPosition = data->displayPosition();
+  m_actor->SetPosition(displayPosition[0], displayPosition[1],
+                       displayPosition[2]);
+  auto* displayOrientation = data->displayOrientation();
+  m_actor->SetOrientation(displayOrientation[0], displayOrientation[1],
+                          displayOrientation[2]);
+
   m_mapper->SetInputConnection(m_flyingEdges->GetOutputPort());
   m_mapper->SetScalarModeToUsePointFieldData();
   onColorMapDataToggled(true);
@@ -385,8 +392,12 @@ bool ModuleContour::deserialize(const QJsonObject& json)
 
 void ModuleContour::dataSourceMoved(double newX, double newY, double newZ)
 {
-  double pos[3] = { newX, newY, newZ };
-  m_actor->SetPosition(pos);
+  m_actor->SetPosition(newX, newY, newZ);
+}
+
+void ModuleContour::dataSourceRotated(double newX, double newY, double newZ)
+{
+  m_actor->SetOrientation(newX, newY, newZ);
 }
 
 vtkDataObject* ModuleContour::dataToExport()

@@ -176,6 +176,17 @@ public:
   void GetDisplayOffset(double xyz[3]);
 
   // Description:
+  // Set/Get the display orientation.  This rotates the entire widget by the
+  // orientation given.
+  void SetDisplayOrientation(const double xyz[3]);
+  const double* GetDisplayOrientation();
+  void GetDisplayOrientation(double xyz[3]);
+
+  // Description:
+  // Update the display transform.
+  void UpdateDisplayTransform();
+
+  // Description:
   // Get the vector from the plane origin to point1.
   void GetVector1(double v1[3]);
 
@@ -449,6 +460,7 @@ protected:
 
   // display offset
   double DisplayOffset[3];
+  double DisplayOrientation[3];
   vtkTransform* DisplayTransform;
 
   // The geometric representation of the plane and it's outline

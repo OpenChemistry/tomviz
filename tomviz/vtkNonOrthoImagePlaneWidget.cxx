@@ -99,6 +99,11 @@ vtkNonOrthoImagePlaneWidget::vtkNonOrthoImagePlaneWidget()
   this->DisplayOffset[0] = 0;
   this->DisplayOffset[1] = 0;
   this->DisplayOffset[2] = 0;
+
+  this->DisplayOrientation[0] = 0;
+  this->DisplayOrientation[1] = 0;
+  this->DisplayOrientation[2] = 0;
+
   this->DisplayTransform = vtkTransform::New();
 
   // Represent the plane's outline
@@ -809,6 +814,10 @@ void vtkNonOrthoImagePlaneWidget::OnMouseMove()
 
   this->ComputeDisplayToWorld(double(X), double(Y), z, pickPoint);
 
+  // Transform the points via rotation
+  this->DisplayTransform->TransformPoint(prevPickPoint, prevPickPoint);
+  this->DisplayTransform->TransformPoint(pickPoint, pickPoint);
+
   if (this->State == vtkNonOrthoImagePlaneWidget::Pushing) {
     this->Push(prevPlanePoint, pickPoint);
     this->UpdatePlacement();
@@ -876,6 +885,11 @@ void vtkNonOrthoImagePlaneWidget::Move(double display[2])
     return;
   }
 
+  // In case any rotations/translations have been applied, transform the point
+  // back to the original coordinate system.
+  this->DisplayTransform->Inverse();
+  this->DisplayTransform->TransformPoint(point, point);
+  this->DisplayTransform->Inverse();
   this->SetCenter(point);
 }
 
@@ -1239,16 +1253,20 @@ void vtkNonOrthoImagePlaneWidget::UpdateClipBounds(double bounds[6])
   int numPlanes =
     this->TexturePlaneActor->GetMapper()->GetNumberOfClippingPlanes();
 
-  double clip_bounds[6] = {
-    bounds[0] + this->DisplayOffset[0], bounds[1] + this->DisplayOffset[0],
-    bounds[2] + this->DisplayOffset[1], bounds[3] + this->DisplayOffset[1],
-    bounds[4] + this->DisplayOffset[2], bounds[5] + this->DisplayOffset[2]
-  };
+  auto transform = this->DisplayTransform;
+  double lower_bounds[3] = { bounds[0], bounds[2], bounds[4] };
+  double upper_bounds[3] = { bounds[1], bounds[3], bounds[5] };
+  transform->TransformPoint(lower_bounds, lower_bounds);
+  transform->TransformPoint(upper_bounds, upper_bounds);
+
+  double clip_bounds[6] = { lower_bounds[0], upper_bounds[0], lower_bounds[1],
+                            upper_bounds[1], lower_bounds[2], upper_bounds[2] };
 
   if (texture_bounds[0] < clip_bounds[0] && numPlanes < 6) {
     vtkNew<vtkPlane> minXPlane;
     minXPlane->SetOrigin(clip_bounds[0], clip_bounds[2], clip_bounds[4]);
-    minXPlane->SetNormal(1, 0, 0); // clip everything on low x
+    minXPlane->SetNormal(
+      transform->TransformNormal(1, 0, 0)); // clip everything on low x
     this->TexturePlaneActor->GetMapper()->AddClippingPlane(minXPlane);
     numPlanes++;
   }
@@ -1256,7 +1274,8 @@ void vtkNonOrthoImagePlaneWidget::UpdateClipBounds(double bounds[6])
   if (texture_bounds[1] > clip_bounds[1] && numPlanes < 6) {
     vtkNew<vtkPlane> maxXPlane;
     maxXPlane->SetOrigin(clip_bounds[1], clip_bounds[3], clip_bounds[5]);
-    maxXPlane->SetNormal(-1, 0, 0); // clip everything on high x
+    maxXPlane->SetNormal(
+      transform->TransformNormal(-1, 0, 0)); // clip everything on high x
     this->TexturePlaneActor->GetMapper()->AddClippingPlane(maxXPlane);
     numPlanes++;
   }
@@ -1264,7 +1283,8 @@ void vtkNonOrthoImagePlaneWidget::UpdateClipBounds(double bounds[6])
   if (texture_bounds[2] < clip_bounds[2] && numPlanes < 6) {
     vtkNew<vtkPlane> minYPlane;
     minYPlane->SetOrigin(clip_bounds[0], clip_bounds[2], clip_bounds[4]);
-    minYPlane->SetNormal(0, 1, 0); // clip everything on low y
+    minYPlane->SetNormal(
+      transform->TransformNormal(0, 1, 0)); // clip everything on low y
     this->TexturePlaneActor->GetMapper()->AddClippingPlane(minYPlane);
     numPlanes++;
   }
@@ -1272,7 +1292,8 @@ void vtkNonOrthoImagePlaneWidget::UpdateClipBounds(double bounds[6])
   if (texture_bounds[3] > clip_bounds[3] && numPlanes < 6) {
     vtkNew<vtkPlane> maxYPlane;
     maxYPlane->SetOrigin(clip_bounds[1], clip_bounds[3], clip_bounds[5]);
-    maxYPlane->SetNormal(0, -1, 0); // clip everything on high y
+    maxYPlane->SetNormal(
+      transform->TransformNormal(0, -1, 0)); // clip everything on high y
     this->TexturePlaneActor->GetMapper()->AddClippingPlane(maxYPlane);
     numPlanes++;
   }
@@ -1280,7 +1301,8 @@ void vtkNonOrthoImagePlaneWidget::UpdateClipBounds(double bounds[6])
   if (texture_bounds[4] < clip_bounds[4] && numPlanes < 6) {
     vtkNew<vtkPlane> minZPlane;
     minZPlane->SetOrigin(clip_bounds[0], clip_bounds[2], clip_bounds[4]);
-    minZPlane->SetNormal(0, 0, 1); // clip everything on low y
+    minZPlane->SetNormal(
+      transform->TransformNormal(0, 0, 1)); // clip everything on low y
     this->TexturePlaneActor->GetMapper()->AddClippingPlane(minZPlane);
     numPlanes++;
   }
@@ -1288,7 +1310,8 @@ void vtkNonOrthoImagePlaneWidget::UpdateClipBounds(double bounds[6])
   if (texture_bounds[5] > clip_bounds[5] && numPlanes < 6) {
     vtkNew<vtkPlane> maxZPlane;
     maxZPlane->SetOrigin(clip_bounds[1], clip_bounds[3], clip_bounds[5]);
-    maxZPlane->SetNormal(0, 0, -1); // clip everything on high y
+    maxZPlane->SetNormal(
+      transform->TransformNormal(0, 0, -1)); // clip everything on high y
     this->TexturePlaneActor->GetMapper()->AddClippingPlane(maxZPlane);
     numPlanes++;
   }
@@ -1622,10 +1645,7 @@ void vtkNonOrthoImagePlaneWidget::SetDisplayOffset(const double xyz[3])
   for (int i = 0; i < 3; ++i) {
     this->DisplayOffset[i] = xyz[i];
   }
-  this->DisplayTransform->Identity();
-  this->DisplayTransform->Translate(xyz);
-  this->DisplayTransform->Update();
-  this->UpdatePlacement();
+  this->UpdateDisplayTransform();
 }
 
 const double* vtkNonOrthoImagePlaneWidget::GetDisplayOffset()
@@ -1638,6 +1658,37 @@ void vtkNonOrthoImagePlaneWidget::GetDisplayOffset(double xyz[3])
   for (int i = 0; i < 3; ++i) {
     xyz[i] = this->DisplayOffset[i];
   }
+}
+
+void vtkNonOrthoImagePlaneWidget::SetDisplayOrientation(const double xyz[3])
+{
+  for (int i = 0; i < 3; ++i) {
+    this->DisplayOrientation[i] = xyz[i];
+  }
+  this->UpdateDisplayTransform();
+}
+
+const double* vtkNonOrthoImagePlaneWidget::GetDisplayOrientation()
+{
+  return this->DisplayOrientation;
+}
+
+void vtkNonOrthoImagePlaneWidget::GetDisplayOrientation(double xyz[3])
+{
+  for (int i = 0; i < 3; ++i) {
+    xyz[i] = this->DisplayOrientation[i];
+  }
+}
+
+void vtkNonOrthoImagePlaneWidget::UpdateDisplayTransform()
+{
+  this->DisplayTransform->Identity();
+  this->DisplayTransform->Translate(this->DisplayOffset);
+  this->DisplayTransform->RotateZ(this->DisplayOrientation[2]);
+  this->DisplayTransform->RotateX(this->DisplayOrientation[0]);
+  this->DisplayTransform->RotateY(this->DisplayOrientation[1]);
+  this->DisplayTransform->Update();
+  this->UpdatePlacement();
 }
 
 void vtkNonOrthoImagePlaneWidget::GetPolyData(vtkPolyData* pd)

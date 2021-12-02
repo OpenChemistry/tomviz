@@ -82,6 +82,8 @@ bool ModuleThreshold::initialize(DataSource* data, vtkSMViewProxy* vtkView)
                                                   "Surface");
   vtkSMPropertyHelper(m_thresholdRepresentation, "Position")
     .Set(data->displayPosition(), 3);
+  vtkSMPropertyHelper(m_thresholdRepresentation, "Orientation")
+    .Set(data->displayOrientation(), 3);
   updateColorMap();
   m_thresholdRepresentation->UpdateVTKObjects();
 
@@ -303,6 +305,14 @@ void ModuleThreshold::dataSourceMoved(double newX, double newY, double newZ)
 {
   double pos[3] = { newX, newY, newZ };
   vtkSMPropertyHelper(m_thresholdRepresentation, "Position").Set(pos, 3);
+  m_thresholdRepresentation->UpdateVTKObjects();
+}
+
+void ModuleThreshold::dataSourceRotated(double newX, double newY, double newZ)
+{
+  double orientation[3] = { newX, newY, newZ };
+  vtkSMPropertyHelper(m_thresholdRepresentation, "Orientation")
+    .Set(orientation, 3);
   m_thresholdRepresentation->UpdateVTKObjects();
 }
 

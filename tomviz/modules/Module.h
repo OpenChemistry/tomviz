@@ -146,6 +146,9 @@ public slots:
   /// This method is called when the data source's display position changes.
   virtual void dataSourceMoved(double newX, double newY, double newZ) = 0;
 
+  /// This method is called when the data source's display orientation changes.
+  virtual void dataSourceRotated(double newX, double newY, double newZ) = 0;
+
   // This method is called when the active scalars for the module change
   virtual void setActiveScalars(int scalars);
 

@@ -114,9 +114,12 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 
   initializeMapper(data);
   m_volume->SetProperty(m_volumeProperty);
-  const double* displayPosition = data->displayPosition();
+  auto* displayPosition = data->displayPosition();
   m_volume->SetPosition(displayPosition[0], displayPosition[1],
                         displayPosition[2]);
+  auto* displayOrientation = data->displayOrientation();
+  m_volume->SetOrientation(displayOrientation[0], displayOrientation[1],
+                           displayOrientation[2]);
   m_volumeProperty->SetInterpolationType(VTK_LINEAR_INTERPOLATION);
   m_volumeProperty->SetAmbient(0.0);
   m_volumeProperty->SetDiffuse(1.0);
@@ -696,8 +699,12 @@ void ModuleVolume::onInterpolationChanged(const int type)
 
 void ModuleVolume::dataSourceMoved(double newX, double newY, double newZ)
 {
-  vtkVector3d pos(newX, newY, newZ);
-  m_volume->SetPosition(pos.GetData());
+  m_volume->SetPosition(newX, newY, newZ);
+}
+
+void ModuleVolume::dataSourceRotated(double newX, double newY, double newZ)
+{
+  m_volume->SetOrientation(newX, newY, newZ);
 }
 
 void ModuleVolume::setLighting(const bool val)
