@@ -50,6 +50,9 @@ MoveActiveObject::MoveActiveObject(QObject* p) : Superclass(p)
   this->connect(&activeObjs, SIGNAL(viewChanged(vtkSMViewProxy*)),
                 SLOT(onViewChanged(vtkSMViewProxy*)));
 
+  this->connect(&activeObjs, &ActiveObjects::interactionDataSourceFixed, this,
+                &MoveActiveObject::onInteractionDataSourceFixed);
+
   this->connect(&activeObjs, &ActiveObjects::translationStateChanged, this,
                 &MoveActiveObject::updateInteractionStates);
 
@@ -97,7 +100,7 @@ void MoveActiveObject::interactionEnd(vtkObject* caller)
   this->BoxRep->GetTransform(t);
 
   QScopedValueRollback<bool> rollback(this->Interacting, true);
-  auto ds = ActiveObjects::instance().activeDataSource();
+  auto ds = this->currentDataSource;
   ds->setDisplayPosition(t->GetPosition());
   ds->setDisplayOrientation(t->GetOrientation());
   ds->setSpacing(t->GetScale());
@@ -106,6 +109,13 @@ void MoveActiveObject::interactionEnd(vtkObject* caller)
 
 void MoveActiveObject::dataSourceActivated(DataSource* ds)
 {
+  auto* fixedDs = ActiveObjects::instance().fixedInteractionDataSource();
+  if (fixedDs && ds != fixedDs) {
+    // Don't allow a different data source to be activated if we are using
+    // a fixed data source.
+    return;
+  }
+
   if (ds == this->currentDataSource) {
     return;
   }
@@ -191,6 +201,12 @@ void MoveActiveObject::onDataPositionChanged(double, double, double)
 void MoveActiveObject::onDataOrientationChanged(double, double, double)
 {
   this->onDataPropertiesChanged();
+}
+
+void MoveActiveObject::onInteractionDataSourceFixed(DataSource* ds)
+{
+  // This has the logic we need
+  this->dataSourceActivated(ds);
 }
 
 void MoveActiveObject::updateInteractionStates()

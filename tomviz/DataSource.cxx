@@ -1360,13 +1360,18 @@ void DataSource::init(vtkImageData* data, DataSourceType dataType,
 
 vtkAlgorithm* DataSource::algorithm() const
 {
+  if (!proxy() || !proxy()->GetClientSideObject()) {
+    return nullptr;
+  }
   return vtkAlgorithm::SafeDownCast(proxy()->GetClientSideObject());
 }
 
 vtkDataObject* DataSource::dataObject() const
 {
   auto alg = algorithm();
-  Q_ASSERT(alg);
+  if (!alg) {
+    return nullptr;
+  }
   return alg->GetOutputDataObject(0);
 }
 

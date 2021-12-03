@@ -45,6 +45,7 @@ void DataTransformMenu::buildTransforms()
   auto reinterpretSignedToUnignedAction =
     menu->addAction("Reinterpret Signed to Unsigned");
   menu->addSeparator();
+  auto manualManipulationAction = menu->addAction("Manual Manipulation");
   auto shiftUniformAction = menu->addAction("Shift Volume");
   auto deleteSliceAction = menu->addAction("Delete Slices");
   auto padVolumeAction = menu->addAction("Pad Volume");
@@ -91,6 +92,10 @@ void DataTransformMenu::buildTransforms()
     reinterpretSignedToUnignedAction, "Reinterpret Signed to Unsigned",
     readInPythonScript("ReinterpretSignedToUnsigned"));
 
+  new AddPythonTransformReaction(
+    manualManipulationAction, "Manual Manipulation",
+    readInPythonScript("ManualManipulation"), false, false, false,
+    readInJSONDescription("ManualManipulation"));
   new AddPythonTransformReaction(
     shiftUniformAction, "Shift Volume",
     readInPythonScript("Shift_Stack_Uniformly"), false, false, false,

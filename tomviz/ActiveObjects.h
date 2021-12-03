@@ -125,6 +125,17 @@ public slots:
   bool rotationEnabled() const { return m_rotationEnabled; }
   bool scalingEnabled() const { return m_scalingEnabled; }
 
+  void setFixedInteractionDataSource(DataSource* ds)
+  {
+    m_fixedInteractionDataSource = ds;
+    emit interactionDataSourceFixed(ds);
+  }
+
+  DataSource* fixedInteractionDataSource() const
+  {
+    return m_fixedInteractionDataSource;
+  };
+
 signals:
   /// Fired whenever the active view changes.
   void viewChanged(vtkSMViewProxy*);
@@ -175,6 +186,9 @@ signals:
   /// Fired to set image viewer mode
   void setImageViewerMode(bool b);
 
+  /// Fired when the interaction data source was fixed.
+  void interactionDataSourceFixed(DataSource*);
+
 private slots:
   void viewChanged(pqView*);
   void dataSourceRemoved(DataSource*);
@@ -195,6 +209,7 @@ protected:
   QPointer<Module> m_activeModule = nullptr;
   QPointer<Operator> m_activeOperator = nullptr;
   QPointer<OperatorResult> m_activeOperatorResult = nullptr;
+  QPointer<DataSource> m_fixedInteractionDataSource = nullptr;
 
   /// interaction states
   bool m_translationEnabled = false;

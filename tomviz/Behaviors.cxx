@@ -6,6 +6,7 @@
 #include "ActiveObjects.h"
 #include "AddRenderViewContextMenuBehavior.h"
 #include "FxiWorkflowWidget.h"
+#include "ManualManipulationWidget.h"
 #include "MoveActiveObject.h"
 #include "OperatorPython.h"
 #include "RotateAlignWidget.h"
@@ -99,10 +100,12 @@ Behaviors::Behaviors(QMainWindow* mainWindow) : QObject(mainWindow)
 
 void Behaviors::registerCustomOperatorUIs()
 {
-  OperatorPython::registerCustomWidget("RotationAlignWidget", true,
-                                       RotateAlignWidget::New);
   OperatorPython::registerCustomWidget("FxiWorkflowWidget", true,
                                        FxiWorkflowWidget::New);
+  OperatorPython::registerCustomWidget("RotationAlignWidget", true,
+                                       RotateAlignWidget::New);
+  OperatorPython::registerCustomWidget("ManualManipulationWidget", true,
+                                       ManualManipulationWidget::New);
 }
 
 } // end of namespace tomviz

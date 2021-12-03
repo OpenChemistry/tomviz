@@ -43,6 +43,8 @@ private slots:
 
   void updateInteractionStates();
 
+  void onInteractionDataSourceFixed(DataSource* ds);
+
 private:
   void render();
 

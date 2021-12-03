@@ -124,6 +124,8 @@ set(SOURCES
   LoadStackReaction.h
   Logger.cxx
   Logger.h
+  ManualManipulationWidget.cxx
+  ManualManipulationWidget.h
   MergeImagesDialog.cxx
   MergeImagesDialog.h
   MergeImagesReaction.cxx
@@ -420,6 +422,7 @@ set(python_files
   Recon_tomopy_gridrec.py
   Recon_tomopy_fxi.py
   FFT_AbsLog.py
+  ManualManipulation.py
   Shift_Stack_Uniformly.py
   Shift3D.py
   Square_Root_Data.py
@@ -462,7 +465,7 @@ set(python_files
   TV_Filter.py
   PoreSizeDistribution.py
   Tortuosity.py
-  Recon_real_time_tomography.py 
+  Recon_real_time_tomography.py
   )
 
 set(json_files
@@ -481,6 +484,7 @@ set(json_files
   LabelObjectAttributes.json
   LabelObjectPrincipalAxes.json
   LabelObjectDistanceFromPrincipalAxis.json
+  ManualManipulation.json
   Shift_Stack_Uniformly.json
   Pad_Data.json
   Resample.json
@@ -597,7 +601,7 @@ install(DIRECTORY "${tomviz_SOURCE_DIR}/tomviz/python/tomviz"
 set(tomviz_real_time_files
   logger.py
   pytvlib.py
-  wbp.py 
+  wbp.py
 )
 
 file(MAKE_DIRECTORY "${tomviz_python_binary_dir}/tomviz/_realtime")

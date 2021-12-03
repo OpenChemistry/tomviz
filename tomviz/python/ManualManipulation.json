@@ -1,0 +1,40 @@
+{
+  "name" : "manual_manipulation",
+  "label" : "Manual Manipulation",
+  "description" : "Manually manipulate a dataset with scaling, translations, and rotations",
+  "widget": "ManualManipulationWidget",
+  "externalCompatible": false,
+  "parameters" : [
+    {
+      "type" : "xyz_header"
+    },
+    {
+      "name" : "scaling",
+      "label" : "Scaling",
+      "description" : "The scaling to apply",
+      "type" : "double",
+      "default" : [0.0, 0.0, 0.0],
+      "minimum" : "negative_size",
+      "maximum" : "size"
+    },
+    {
+      "name" : "rotation",
+      "label" : "Rotation",
+      "description" : "The rotation to apply",
+      "type" : "double",
+      "default" : [0.0, 0.0, 0.0],
+      "minimum" : "negative_size",
+      "maximum" : "size"
+    },
+    {
+      "name" : "shift",
+      "label" : "Shift",
+      "description" : "The shift to apply",
+      "type" : "int",
+      "default" : [0, 0, 0],
+      "minimum" : "negative_size",
+      "maximum" : "size"
+    }
+  ]
+}
+

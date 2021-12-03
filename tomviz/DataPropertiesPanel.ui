@@ -277,7 +277,7 @@
            <item row="0" column="0">
             <widget class="QCheckBox" name="interactTranslate">
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Translate by either left-clicking and dragging the central handle, or by middle-clicking the data source and moving the mouse.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Translate by either left-clicking and dragging the central handle, or by middle-clicking and dragging the data source.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>Translate</string>
