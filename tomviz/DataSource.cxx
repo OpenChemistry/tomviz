@@ -751,21 +751,9 @@ void DataSource::setSpacing(const double spacing[3], bool markModified)
   }
 
   double mySpacing[3] = { spacing[0], spacing[1], spacing[2] };
-  vtkAlgorithm* alg = algorithm();
-  if (alg) {
-    vtkImageData* data =
-      vtkImageData::SafeDownCast(alg->GetOutputDataObject(0));
-    if (data) {
-      data->SetSpacing(mySpacing);
-    }
-  }
-  alg = vtkAlgorithm::SafeDownCast(proxy()->GetClientSideObject());
-  if (alg) {
-    vtkImageData* data =
-      vtkImageData::SafeDownCast(alg->GetOutputDataObject(0));
-    if (data) {
-      data->SetSpacing(mySpacing);
-    }
+  auto* data = imageData();
+  if (data) {
+    data->SetSpacing(mySpacing);
   }
   emit dataPropertiesChanged();
 }
