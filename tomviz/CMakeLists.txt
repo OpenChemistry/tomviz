@@ -404,6 +404,7 @@ set(python_files
   BinaryOpen.py
   BinaryClose.py
   DummyMolecule.py
+  ElastixRegistration.py
   LabelObjectAttributes.py
   LabelObjectPrincipalAxes.py
   LabelObjectDistanceFromPrincipalAxis.py
@@ -462,7 +463,7 @@ set(python_files
   TV_Filter.py
   PoreSizeDistribution.py
   Tortuosity.py
-  Recon_real_time_tomography.py 
+  Recon_real_time_tomography.py
   )
 
 set(json_files
@@ -478,6 +479,7 @@ set(json_files
   BinaryOpen.json
   BinaryClose.json
   DummyMolecule.json
+  ElastixRegistration.json
   LabelObjectAttributes.json
   LabelObjectPrincipalAxes.json
   LabelObjectDistanceFromPrincipalAxis.json
@@ -597,7 +599,7 @@ install(DIRECTORY "${tomviz_SOURCE_DIR}/tomviz/python/tomviz"
 set(tomviz_real_time_files
   logger.py
   pytvlib.py
-  wbp.py 
+  wbp.py
 )
 
 file(MAKE_DIRECTORY "${tomviz_python_binary_dir}/tomviz/_realtime")
