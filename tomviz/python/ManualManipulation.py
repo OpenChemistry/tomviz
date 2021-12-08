@@ -29,7 +29,7 @@ def apply_rotation(array, rotation, spacing):
     center = [x * y / 2 for x, y in zip(array.shape, spacing)]
 
     # Create the ITK image. We will convert to float.
-    itk_image = itk.image_from_array(array)
+    itk_image = itk.image_view_from_array(array)
     itk_image.SetSpacing(spacing)
 
     # Need to do the rotations in YXZ ordering.
@@ -61,7 +61,7 @@ def apply_rotation(array, rotation, spacing):
         itk_image = filter.GetOutput()
 
     # Set the final result on the input numpy array
-    array[:] = itk.array_from_image(itk_image).transpose([2, 1, 0])
+    array[:] = itk.array_view_from_image(itk_image).transpose([2, 1, 0])
 
 
 def transform(dataset, scaling=None, rotation=None, shift=None):
