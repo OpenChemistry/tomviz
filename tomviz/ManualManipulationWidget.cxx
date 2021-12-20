@@ -6,6 +6,7 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
+#include "ModuleManager.h"
 #include "OperatorPython.h"
 #include "Utilities.h"
 
@@ -31,6 +32,8 @@ public:
   vtkSmartPointer<vtkImageData> image;
   QPointer<ManualManipulationWidget> parent;
   QPointer<DataSource> dataSource;
+  QPointer<DataSource> referenceData;
+  double savedReferencePosition[3] = { 0, 0, 0 };
   vtkSmartPointer<vtkSMSourceProxy> originalOutlineSource;
   vtkSmartPointer<vtkSMProxy> originalOutlineRepresentation;
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> pipelineController;
@@ -56,6 +59,7 @@ public:
     ActiveObjects::instance().setActiveDataSource(dataSource);
     fixInteractionDataSource();
 
+    populateReferenceDataCheckBoxes();
     createOriginalOutline();
     setupConnections();
     enableAllInteraction();
@@ -64,6 +68,7 @@ public:
 
   ~Internal()
   {
+    restoreReferenceDataPosition();
     unfixInteractionDataSource();
     removeOriginalOutline();
     disableAllInteraction();
@@ -114,6 +119,10 @@ public:
                 this->setScalingValue(axis, scaleWidgets[axis]->value());
               });
     }
+
+    connect(ui.selectedReferenceData,
+            QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            &Internal::onSelectedReferenceDataChanged);
   }
 
   QList<QVariant> scaling()
@@ -134,12 +143,9 @@ public:
     // Since we rotate about the center, this is the one point that won't
     // move due to rotation. We'll transform its coordinates and then
     // compute the difference to figure out what our shift should be.
-    double lengths[3];
-    dataSource->getPhysicalDimensions(lengths);
     double center[3];
-    for (auto i = 0; i < 3; ++i) {
-      center[i] = lengths[i] / 2;
-    }
+    computeCenter(center);
+
     vtkNew<vtkTransform> t;
 
     // Translate
@@ -199,14 +205,8 @@ public:
 
   void setShift(double* physicalShift)
   {
-    double lengths[3];
-    dataSource->getPhysicalDimensions(lengths);
-
-    // Compute the center
     double center[3];
-    for (auto i = 0; i < 3; ++i) {
-      center[i] = lengths[i] / 2;
-    }
+    computeCenter(center);
 
     // Determine where the data will be after its current rotations
     vtkNew<vtkTransform> t;
@@ -335,6 +335,8 @@ public:
 
     vtkSMPropertyHelper(originalOutlineSource, "Bounds").Set(bounds, 6);
     originalOutlineSource->UpdateVTKObjects();
+
+    alignReferenceDataPosition();
     render();
   }
 
@@ -415,6 +417,20 @@ public:
     ActiveObjects::instance().setFixedInteractionDataSource(nullptr);
   }
 
+  void computeCenter(double* center, DataSource* ds = nullptr)
+  {
+    if (!ds) {
+      ds = dataSource;
+    }
+
+    double lengths[3];
+    ds->getPhysicalDimensions(lengths);
+
+    for (auto i = 0; i < 3; ++i) {
+      center[i] = lengths[i] / 2;
+    }
+  }
+
   void updateInteractionCheckboxes()
   {
     ActiveObjects& activeObjects = ActiveObjects::instance();
@@ -426,6 +442,95 @@ public:
     ui.interactTranslate->setChecked(translate);
     ui.interactRotate->setChecked(rotate);
     ui.interactScale->setChecked(scale);
+  }
+
+  void populateReferenceDataCheckBoxes()
+  {
+    auto allDataSources = ModuleManager::instance().allDataSourcesDepthFirst();
+
+    // Do not include this data source
+    allDataSources.removeAll(dataSource);
+
+    auto* cb = ui.selectedReferenceData;
+    cb->clear();
+
+    // Make the first item null
+    QVariant firstItemData;
+    firstItemData.setValue(static_cast<DataSource*>(nullptr));
+    cb->addItem("None", firstItemData);
+
+    auto labels = ModuleManager::createUniqueLabels(allDataSources);
+    for (int i = 0; i < allDataSources.size(); ++i) {
+      auto* ds = allDataSources[i];
+      auto label = labels[i];
+
+      QVariant data;
+      data.setValue(ds);
+      cb->addItem(label, data);
+    }
+  }
+
+  DataSource* selectedReferenceData() const
+  {
+    // We know we can convert to DataSource*, even for the nullptr
+    return ui.selectedReferenceData->currentData().value<DataSource*>();
+  }
+
+  void onSelectedReferenceDataChanged()
+  {
+    if (referenceData) {
+      restoreReferenceDataPosition();
+    }
+
+    referenceData = selectedReferenceData();
+    saveReferenceDataPosition();
+    alignReferenceDataPosition();
+    updateReferenceEnableStates();
+  }
+
+  void updateReferenceEnableStates()
+  {
+    // FIXME: will add this soon
+    // ui.alignVoxelsWithReference->setEnabled(referenceData != nullptr);
+  }
+
+  void saveReferenceDataPosition()
+  {
+    if (!referenceData) {
+      return;
+    }
+
+    referenceData->displayPosition(savedReferencePosition);
+  }
+
+  void alignReferenceDataPosition()
+  {
+    if (!referenceData || !dataSource) {
+      return;
+    }
+
+    double center[3];
+    computeCenter(center, dataSource);
+
+    double referenceCenter[3];
+    computeCenter(referenceCenter, referenceData);
+
+    // Find the difference
+    double newPosition[3];
+    for (int i = 0; i < 3; ++i) {
+      newPosition[i] = center[i] - referenceCenter[i];
+    }
+
+    referenceData->setDisplayPosition(newPosition);
+  }
+
+  void restoreReferenceDataPosition()
+  {
+    if (!referenceData) {
+      return;
+    }
+
+    referenceData->setDisplayPosition(savedReferencePosition);
   }
 };
 

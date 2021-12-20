@@ -235,6 +235,23 @@ QList<DataSource*> ModuleManager::allDataSourcesDepthFirst()
   return result;
 }
 
+QStringList ModuleManager::createUniqueLabels(const QList<DataSource*>& sources)
+{
+  QStringList ret;
+  for (auto* ds : sources) {
+    auto label = ds->label();
+    if (ret.contains(label)) {
+      auto original = label;
+      int index = 1;
+      do {
+        label = original + QString(" (%1)").arg(++index);
+      } while (ret.contains(label));
+    }
+    ret.append(label);
+  }
+  return ret;
+}
+
 void ModuleManager::addDataSource(DataSource* dataSource)
 {
   if (dataSource && !d->DataSources.contains(dataSource)) {

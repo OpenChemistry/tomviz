@@ -487,15 +487,10 @@ void addDatasetWidget(QGridLayout* layout, int row, QJsonObject& parameterNode)
   QStringList addedLabels;
   auto dataSources =
     tomviz::ModuleManager::instance().allDataSourcesDepthFirst();
-  for (auto* dataSource : dataSources) {
-    auto label = dataSource->label();
-    if (addedLabels.contains(label)) {
-      auto original = label;
-      int index = 1;
-      do {
-        label = original + QString(" (%1)").arg(++index);
-      } while (addedLabels.contains(label));
-    }
+  auto labels = tomviz::ModuleManager::createUniqueLabels(dataSources);
+  for (int i = 0; i < dataSources.size(); ++i) {
+    auto* dataSource = dataSources[i];
+    auto label = labels[i];
 
     QVariant data;
     data.setValue(dataSource);

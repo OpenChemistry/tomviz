@@ -1094,6 +1094,14 @@ const double* DataSource::displayPosition() const
   return this->Internals->DisplayPosition.GetData();
 }
 
+void DataSource::displayPosition(double position[3]) const
+{
+  auto* pos = displayPosition();
+  for (int i = 0; i < 3; ++i) {
+    position[i] = pos[i];
+  }
+}
+
 void DataSource::setDisplayPosition(const double newPosition[3])
 {
   for (int i = 0; i < 3; ++i) {

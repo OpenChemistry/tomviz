@@ -228,6 +228,7 @@ public:
 
   /// Gets the display position of the data source
   const double* displayPosition() const;
+  void displayPosition(double pos[3]) const;
 
   /// Sets the display position of the data source
   void setDisplayPosition(const double newPosition[3]);

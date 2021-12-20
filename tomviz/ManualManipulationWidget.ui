@@ -274,6 +274,32 @@
     </layout>
    </item>
    <item>
+    <widget class="QGroupBox" name="referenceDataGroup">
+     <property name="title">
+      <string>Reference Data</string>
+     </property>
+     <layout class="QGridLayout" name="referenceGridLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="referenceDataLabel">
+        <property name="text">
+         <string>Data Source:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QComboBox" name="selectedReferenceData">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If a reference data source is selected, it will be visually moved so that its center matches the center of this dataset. This will assist with aligning the volumes.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Once the operation is finished, the reference data source will be moved back to its original position.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -301,6 +327,7 @@
   <tabstop>scaleX</tabstop>
   <tabstop>scaleY</tabstop>
   <tabstop>scaleZ</tabstop>
+  <tabstop>selectedReferenceData</tabstop>
  </tabstops>
  <resources/>
  <connections/>
