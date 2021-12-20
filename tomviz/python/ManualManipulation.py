@@ -36,6 +36,11 @@ def apply_rotation(array, rotation, spacing):
     # The ITK Euler3DTransform class only allows ZXY and ZYX
     # ordering. So we will do the transform in two parts: one
     # with YX ordering and one with Z ordering.
+
+    # FIXME: we should in theory be able to come up with a set of 3 angles
+    # where we only have to apply a single Euler3DTransform, perhaps by
+    # converting the Euler convention via scipy.spatial.transform.Rotation.
+    # However, I have not yet figured out a way that works properly.
     axis_order = [(1, 0), (2,)]
     for axes in axis_order:
         angles = [0, 0, 0]
@@ -64,7 +69,49 @@ def apply_rotation(array, rotation, spacing):
     array[:] = itk.array_view_from_image(itk_image).transpose([2, 1, 0])
 
 
-def transform(dataset, scaling=None, rotation=None, shift=None):
+def apply_resize(array, reference_shape):
+    # Resize the input array via cropping and padding to match the reference
+    # shape.
+
+    import numpy as np
+
+    padding = []
+    cropping = []
+    for x, y in zip(array.shape, reference_shape):
+        if y > x:
+            total_pad = y - x
+            half_pad = total_pad // 2
+            remainder = total_pad % 2
+            padding.append((half_pad, y - half_pad - remainder))
+        else:
+            padding.append((0, None))
+
+        if y < x:
+            total_crop = x - y
+            half_crop = total_crop // 2
+            remainder = total_crop % 2
+            cropping.append((half_crop, x - half_crop - remainder))
+        else:
+            cropping.append((0, None))
+
+    padding_slices = tuple([slice(*x) for x in padding])
+    cropping_slices = tuple([slice(*x) for x in cropping])
+    output = np.zeros(reference_shape, dtype=array.dtype)
+
+    output[padding_slices] = array[cropping_slices]
+
+    return output
+
+
+def apply_alignment(array, spacing, reference_spacing, reference_shape):
+    # FIXME: perform resampling based on ratio of spacing and reference spacing
+
+    return apply_resize(array, reference_shape)
+
+
+def transform(dataset, scaling=None, rotation=None, shift=None,
+              align_with_reference=False, reference_spacing=None,
+              reference_shape=None):
     array = dataset.active_scalars
 
     import numpy as np
@@ -79,6 +126,11 @@ def transform(dataset, scaling=None, rotation=None, shift=None):
 
     apply_rotation(array, rotation, scaling)
     apply_shift(array, shift)
+
+    if align_with_reference:
+        array = apply_alignment(array, scaling, reference_spacing,
+                                reference_shape)
+        scaling = reference_spacing
 
     dataset.active_scalars = array
     dataset.spacing = scaling

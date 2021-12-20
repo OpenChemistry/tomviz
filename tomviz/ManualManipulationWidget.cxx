@@ -123,6 +123,8 @@ public:
     connect(ui.selectedReferenceData,
             QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &Internal::onSelectedReferenceDataChanged);
+    connect(ui.alignVoxelsWithReference, &QCheckBox::toggled, this,
+            &Internal::onAlignVoxelsWithReferenceToggled);
   }
 
   QList<QVariant> scaling()
@@ -240,6 +242,57 @@ public:
     }
 
     setShift(physicalShift);
+  }
+
+  bool alignWithReference() { return ui.alignVoxelsWithReference->isChecked(); }
+
+  void setAlignWithReference(bool b)
+  {
+    ui.alignVoxelsWithReference->setChecked(b);
+  }
+
+  QList<QVariant> referenceSpacing()
+  {
+    QList<QVariant> ret;
+    QList<QDoubleSpinBox*> widgets = { ui.referenceSpacingX,
+                                       ui.referenceSpacingY,
+                                       ui.referenceSpacingZ };
+    for (auto* w : widgets) {
+      ret.append(w->value());
+    }
+    return ret;
+  }
+
+  void setReferenceSpacing(const double* spacing)
+  {
+    QList<QDoubleSpinBox*> widgets = { ui.referenceSpacingX,
+                                       ui.referenceSpacingY,
+                                       ui.referenceSpacingZ };
+    for (int i = 0; i < 3; ++i) {
+      widgets[i]->setValue(spacing[i]);
+    }
+  }
+
+  QList<QVariant> referenceShape()
+  {
+    QList<QVariant> ret;
+    QList<QSpinBox*> widgets = { ui.referenceShapeX, ui.referenceShapeY,
+                                 ui.referenceShapeZ };
+
+    for (auto* w : widgets) {
+      ret.append(w->value());
+    }
+
+    return ret;
+  }
+
+  void setReferenceShape(const int* shape)
+  {
+    QList<QSpinBox*> widgets = { ui.referenceShapeX, ui.referenceShapeY,
+                                 ui.referenceShapeZ };
+    for (int i = 0; i < 3; ++i) {
+      widgets[i]->setValue(shape[i]);
+    }
   }
 
   void createOriginalOutline()
@@ -483,15 +536,31 @@ public:
     }
 
     referenceData = selectedReferenceData();
+    updateReferenceValues();
     saveReferenceDataPosition();
     alignReferenceDataPosition();
     updateReferenceEnableStates();
   }
 
+  void onAlignVoxelsWithReferenceToggled() { updateReferenceEnableStates(); }
+
+  void updateReferenceValues()
+  {
+    if (!referenceData) {
+      return;
+    }
+
+    const double* spacing = referenceData->getSpacing();
+    int* dimensions = referenceData->imageData()->GetDimensions();
+
+    setReferenceSpacing(spacing);
+    setReferenceShape(dimensions);
+  }
+
   void updateReferenceEnableStates()
   {
-    // FIXME: will add this soon
-    // ui.alignVoxelsWithReference->setEnabled(referenceData != nullptr);
+    bool enableValuesWidget = alignWithReference() && referenceData == nullptr;
+    ui.referenceDataValuesWidget->setEnabled(enableValuesWidget);
   }
 
   void saveReferenceDataPosition()
@@ -554,6 +623,9 @@ void ManualManipulationWidget::getValues(QMap<QString, QVariant>& map)
   map.insert("scaling", m_internal->scaling());
   map.insert("rotation", m_internal->rotation());
   map.insert("shift", m_internal->voxelShift());
+  map.insert("align_with_reference", m_internal->alignWithReference());
+  map.insert("reference_spacing", m_internal->referenceSpacing());
+  map.insert("reference_shape", m_internal->referenceShape());
 }
 
 void ManualManipulationWidget::setValues(const QMap<QString, QVariant>& map)
@@ -582,6 +654,29 @@ void ManualManipulationWidget::setValues(const QMap<QString, QVariant>& map)
     }
     m_internal->setVoxelShift(shift);
   }
+
+  if (map.contains("align_with_reference")) {
+    m_internal->setAlignWithReference(map["align_with_reference"].toBool());
+  }
+
+  if (map.contains("reference_spacing")) {
+    double referenceSpacing[3];
+    auto array = map["reference_spacing"].toList();
+    for (int i = 0; i < 3; ++i) {
+      referenceSpacing[i] = array[i].toDouble();
+    }
+    m_internal->setReferenceSpacing(referenceSpacing);
+  }
+
+  if (map.contains("reference_shape")) {
+    int referenceShape[3];
+    auto array = map["reference_shape"].toList();
+    for (int i = 0; i < 3; ++i) {
+      referenceShape[i] = array[i].toInt();
+    }
+    m_internal->setReferenceShape(referenceShape);
+  }
+
   m_internal->updateGui();
 }
 

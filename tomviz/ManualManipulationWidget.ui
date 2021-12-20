@@ -82,7 +82,7 @@
         <number>5</number>
        </property>
        <property name="minimum">
-        <double>0.000000000000000</double>
+        <double>0.000010000000000</double>
        </property>
        <property name="maximum">
         <double>1.000000000000000</double>
@@ -169,7 +169,7 @@
         <number>5</number>
        </property>
        <property name="minimum">
-        <double>0.000000000000000</double>
+        <double>0.000010000000000</double>
        </property>
        <property name="maximum">
         <double>1.000000000000000</double>
@@ -188,7 +188,7 @@
         <number>5</number>
        </property>
        <property name="minimum">
-        <double>0.000000000000000</double>
+        <double>0.000010000000000</double>
        </property>
        <property name="maximum">
         <double>1.000000000000000</double>
@@ -279,6 +279,13 @@
       <string>Reference Data</string>
      </property>
      <layout class="QGridLayout" name="referenceGridLayout">
+      <item row="0" column="1">
+       <widget class="QComboBox" name="selectedReferenceData">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If a reference data source is selected, it will be visually moved so that its center matches the center of this dataset. This will assist with aligning the volumes.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Once the operation is finished, the reference data source will be moved back to its original position.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+       </widget>
+      </item>
       <item row="0" column="0">
        <widget class="QLabel" name="referenceDataLabel">
         <property name="text">
@@ -289,11 +296,146 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
-       <widget class="QComboBox" name="selectedReferenceData">
-        <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If a reference data source is selected, it will be visually moved so that its center matches the center of this dataset. This will assist with aligning the volumes.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Once the operation is finished, the reference data source will be moved back to its original position.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <item row="1" column="1">
+       <widget class="QCheckBox" name="alignVoxelsWithReference">
+        <property name="enabled">
+         <bool>true</bool>
         </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked, the voxels of this data source will be cropped, padded, and subsampled (if the spacings are different) so that the voxels will be aligned with that of the reference data source.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Align voxels with reference?</string>
+        </property>
+        <property name="checked">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0" colspan="2">
+       <widget class="QWidget" name="referenceDataValuesWidget" native="true">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_2">
+         <item>
+          <layout class="QGridLayout" name="referenceValuesGridLayout">
+           <item row="1" column="3">
+            <widget class="QDoubleSpinBox" name="referenceSpacingZ">
+             <property name="decimals">
+              <number>5</number>
+             </property>
+             <property name="minimum">
+              <double>0.000010000000000</double>
+             </property>
+             <property name="maximum">
+              <double>1000000.000000000000000</double>
+             </property>
+             <property name="value">
+              <double>1.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QDoubleSpinBox" name="referenceSpacingX">
+             <property name="decimals">
+              <number>5</number>
+             </property>
+             <property name="minimum">
+              <double>0.000010000000000</double>
+             </property>
+             <property name="maximum">
+              <double>1000000.000000000000000</double>
+             </property>
+             <property name="value">
+              <double>1.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLabel" name="label_2">
+             <property name="text">
+              <string>X</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="2">
+            <widget class="QLabel" name="label_3">
+             <property name="text">
+              <string>Y</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="2">
+            <widget class="QDoubleSpinBox" name="referenceSpacingY">
+             <property name="decimals">
+              <number>5</number>
+             </property>
+             <property name="minimum">
+              <double>0.000010000000000</double>
+             </property>
+             <property name="maximum">
+              <double>1000000.000000000000000</double>
+             </property>
+             <property name="value">
+              <double>1.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="label">
+             <property name="text">
+              <string>Spacing:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="3">
+            <widget class="QLabel" name="label_4">
+             <property name="text">
+              <string>Z</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="label_5">
+             <property name="text">
+              <string>Shape:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QSpinBox" name="referenceShapeX">
+             <property name="maximum">
+              <number>1000000</number>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="2">
+            <widget class="QSpinBox" name="referenceShapeY">
+             <property name="maximum">
+              <number>1000000</number>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="3">
+            <widget class="QSpinBox" name="referenceShapeZ">
+             <property name="maximum">
+              <number>1000000</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
        </widget>
       </item>
      </layout>
@@ -328,6 +470,13 @@
   <tabstop>scaleY</tabstop>
   <tabstop>scaleZ</tabstop>
   <tabstop>selectedReferenceData</tabstop>
+  <tabstop>alignVoxelsWithReference</tabstop>
+  <tabstop>referenceSpacingX</tabstop>
+  <tabstop>referenceSpacingY</tabstop>
+  <tabstop>referenceSpacingZ</tabstop>
+  <tabstop>referenceShapeX</tabstop>
+  <tabstop>referenceShapeY</tabstop>
+  <tabstop>referenceShapeZ</tabstop>
  </tabstops>
  <resources/>
  <connections/>

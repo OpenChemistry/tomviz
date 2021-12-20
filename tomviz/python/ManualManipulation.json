@@ -34,6 +34,31 @@
       "default" : [0, 0, 0],
       "minimum" : "negative_size",
       "maximum" : "size"
+    },
+    {
+      "name" : "align_with_reference",
+      "label" : "Align with Reference",
+      "description" : "Make spacing and voxels of output match reference data",
+      "type" : "bool",
+      "default" : false
+    },
+    {
+      "name" : "reference_spacing",
+      "label" : "Reference Spacing",
+      "description" : "The reference spacing",
+      "type" : "double",
+      "default" : [0.0, 0.0, 0.0],
+      "minimum" : "negative_size",
+      "maximum" : "size"
+    },
+    {
+      "name" : "reference_shape",
+      "label" : "Reference Shape",
+      "description" : "The reference shape",
+      "type" : "int",
+      "default" : [0, 0, 0],
+      "minimum" : "negative_size",
+      "maximum" : "size"
     }
   ]
 }
