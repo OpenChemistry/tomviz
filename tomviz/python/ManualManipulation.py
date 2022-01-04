@@ -69,9 +69,37 @@ def apply_rotation(array, rotation, spacing):
     array[:] = itk.array_view_from_image(itk_image).transpose([2, 1, 0])
 
 
+def apply_resampling(array, spacing, reference_spacing):
+    if not spacing or not reference_spacing:
+        return array
+
+    resampling_factor = [x / y for x, y in zip(spacing, reference_spacing)]
+
+    import numpy as np
+
+    if np.allclose(resampling_factor, 1):
+        # Nothing to do
+        return array
+
+    from tomviz import utils
+
+    from scipy.ndimage.interpolation import zoom
+
+    # Transform the dataset.
+    result_shape = utils.zoom_shape(array, resampling_factor)
+    result = np.empty(result_shape, array.dtype, order='F')
+    zoom(array, resampling_factor, output=result)
+
+    return result
+
+
 def apply_resize(array, reference_shape):
     # Resize the input array via cropping and padding to match the reference
     # shape.
+
+    if array.shape == reference_shape:
+        # Nothing to do...
+        return array
 
     import numpy as np
 
@@ -104,8 +132,7 @@ def apply_resize(array, reference_shape):
 
 
 def apply_alignment(array, spacing, reference_spacing, reference_shape):
-    # FIXME: perform resampling based on ratio of spacing and reference spacing
-
+    array = apply_resampling(array, spacing, reference_spacing)
     return apply_resize(array, reference_shape)
 
 
