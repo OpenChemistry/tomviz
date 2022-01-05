@@ -38,6 +38,7 @@ public:
   void addToPanel(QWidget* panel) override;
 
   void dataSourceMoved(double, double, double) override;
+  void dataSourceRotated(double, double, double) override {}
 
 protected slots:
   void dataPropertiesChanged();

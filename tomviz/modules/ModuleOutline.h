@@ -38,6 +38,7 @@ public:
   bool deserialize(const QJsonObject& json) override;
 
   void dataSourceMoved(double newX, double newY, double newZ) override;
+  void dataSourceRotated(double newX, double newY, double newZ) override;
 
 private slots:
   void dataUpdated();

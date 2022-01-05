@@ -177,6 +177,10 @@ void ModuleMolecule::dataSourceMoved(double, double, double)
 {
 }
 
+void ModuleMolecule::dataSourceRotated(double, double, double)
+{
+}
+
 vtkDataObject* ModuleMolecule::dataToExport()
 {
   return m_molecule;

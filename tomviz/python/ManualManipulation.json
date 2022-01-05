@@ -1,0 +1,65 @@
+{
+  "name" : "manual_manipulation",
+  "label" : "Manual Manipulation",
+  "description" : "Manually manipulate a dataset with scaling, translations, and rotations",
+  "widget": "ManualManipulationWidget",
+  "externalCompatible": false,
+  "parameters" : [
+    {
+      "type" : "xyz_header"
+    },
+    {
+      "name" : "scaling",
+      "label" : "Scaling",
+      "description" : "The scaling to apply",
+      "type" : "double",
+      "default" : [0.0, 0.0, 0.0],
+      "minimum" : "negative_size",
+      "maximum" : "size"
+    },
+    {
+      "name" : "rotation",
+      "label" : "Rotation",
+      "description" : "The rotation to apply",
+      "type" : "double",
+      "default" : [0.0, 0.0, 0.0],
+      "minimum" : "negative_size",
+      "maximum" : "size"
+    },
+    {
+      "name" : "shift",
+      "label" : "Shift",
+      "description" : "The shift to apply",
+      "type" : "int",
+      "default" : [0, 0, 0],
+      "minimum" : "negative_size",
+      "maximum" : "size"
+    },
+    {
+      "name" : "align_with_reference",
+      "label" : "Align with Reference",
+      "description" : "Make spacing and voxels of output match reference data",
+      "type" : "bool",
+      "default" : false
+    },
+    {
+      "name" : "reference_spacing",
+      "label" : "Reference Spacing",
+      "description" : "The reference spacing",
+      "type" : "double",
+      "default" : [0.0, 0.0, 0.0],
+      "minimum" : "negative_size",
+      "maximum" : "size"
+    },
+    {
+      "name" : "reference_shape",
+      "label" : "Reference Shape",
+      "description" : "The reference shape",
+      "type" : "int",
+      "default" : [0, 0, 0],
+      "minimum" : "negative_size",
+      "maximum" : "size"
+    }
+  ]
+}
+

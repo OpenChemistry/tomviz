@@ -45,6 +45,7 @@ public:
   void addToPanel(QWidget* panel) override;
 
   void dataSourceMoved(double newX, double newY, double newZ) override;
+  void dataSourceRotated(double newX, double newY, double newZ) override;
 
   QString exportDataTypeString() override { return "Image"; }
 

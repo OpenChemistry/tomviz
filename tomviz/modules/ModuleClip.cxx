@@ -92,6 +92,7 @@ bool ModuleClip::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 
   if (widgetSetup) {
     m_widget->SetDisplayOffset(data->displayPosition());
+    m_widget->SetDisplayOrientation(data->displayOrientation());
     m_widget->On();
     onDirectionChanged(m_direction);
     pqCoreUtilities::connect(m_widget, vtkCommand::InteractionEvent, this,
@@ -537,6 +538,16 @@ void ModuleClip::dataSourceMoved(double newX, double newY, double newZ)
 {
   double pos[3] = { newX, newY, newZ };
   m_widget->SetDisplayOffset(pos);
+  // FIXME: we need to get m_clippingPlane to be aware of non-default
+  // data source origins.
+}
+
+void ModuleClip::dataSourceRotated(double newX, double newY, double newZ)
+{
+  double orientation[3] = { newX, newY, newZ };
+  m_widget->SetDisplayOrientation(orientation);
+  // FIXME: we need to get m_clippingPlane to be aware of non-default
+  // data source orientations.
 }
 
 vtkImageData* ModuleClip::imageData() const

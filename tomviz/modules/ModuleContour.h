@@ -40,6 +40,7 @@ public:
   bool isColorMapNeeded() const override { return true; }
 
   void dataSourceMoved(double newX, double newY, double newZ) override;
+  void dataSourceRotated(double newX, double newY, double newZ) override;
 
   void setIsoValue(double value);
   void resetIsoValue();

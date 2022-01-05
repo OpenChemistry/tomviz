@@ -121,6 +121,8 @@ bool Module::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     connect(m_activeDataSource,
             SIGNAL(displayPositionChanged(double, double, double)),
             SLOT(dataSourceMoved(double, double, double)));
+    connect(m_activeDataSource, &DataSource::displayOrientationChanged, this,
+            &Module::dataSourceRotated);
   }
   return (m_view && m_view->IsA("vtkSMRenderViewProxy") && m_activeDataSource);
 }

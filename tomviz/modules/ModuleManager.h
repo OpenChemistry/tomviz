@@ -66,6 +66,12 @@ public:
   // This *should* match the order of data sources in the pipeline view.
   QList<DataSource*> allDataSourcesDepthFirst();
 
+  // Generate a list of unique labels from the list of data sources.
+  // Duplicate labels will have a space and number appended to them,
+  // such as "Label", "Label (2)", "Label (3)", etc.
+  // The labels will be in the same order as the input DataSource list.
+  static QStringList createUniqueLabels(const QList<DataSource*>& sources);
+
   QList<Module*> findModulesGeneric(const DataSource* dataSource,
                                     const vtkSMViewProxy* view);
 

@@ -62,6 +62,7 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 
   if (widgetSetup) {
     m_widget->SetDisplayOffset(data->displayPosition());
+    m_widget->SetDisplayOrientation(data->displayOrientation());
     m_widget->On();
     m_widget->InteractionOn();
     onDirectionChanged(m_direction);
@@ -591,6 +592,12 @@ void ModuleSlice::dataSourceMoved(double newX, double newY, double newZ)
 {
   double pos[3] = { newX, newY, newZ };
   m_widget->SetDisplayOffset(pos);
+}
+
+void ModuleSlice::dataSourceRotated(double newX, double newY, double newZ)
+{
+  double orientation[3] = { newX, newY, newZ };
+  m_widget->SetDisplayOrientation(orientation);
 }
 
 vtkDataObject* ModuleSlice::dataToExport()

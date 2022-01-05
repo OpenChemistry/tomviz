@@ -60,6 +60,7 @@ public:
   void updateVectorMode();
 
   void dataSourceMoved(double newX, double newY, double newZ) override;
+  void dataSourceRotated(double newX, double newY, double newZ) override;
 
   bool supportsGradientOpacity() override { return true; }
 

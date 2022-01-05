@@ -37,6 +37,7 @@ public:
   bool isColorMapNeeded() const override { return false; }
 
   void dataSourceMoved(double, double, double) override {}
+  void dataSourceRotated(double, double, double) override {}
 
 protected slots:
   void updateUnits();

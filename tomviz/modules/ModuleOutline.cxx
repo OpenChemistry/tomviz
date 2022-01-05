@@ -68,6 +68,8 @@ bool ModuleOutline::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   m_outlineRepresentation = controller->Show(m_outlineFilter, 0, vtkView);
   vtkSMPropertyHelper(m_outlineRepresentation, "Position")
     .Set(data->displayPosition(), 3);
+  vtkSMPropertyHelper(m_outlineRepresentation, "Orientation")
+    .Set(data->displayOrientation(), 3);
   Q_ASSERT(m_outlineRepresentation);
   // vtkSMPropertyHelper(OutlineRepresentation,
   //                    "Representation").Set("Outline");
@@ -325,6 +327,15 @@ void ModuleOutline::dataSourceMoved(double newX, double newY, double newZ)
   vtkSMPropertyHelper(m_outlineRepresentation, "Position").Set(pos, 3);
   m_outlineRepresentation->UpdateVTKObjects();
   m_gridAxes->SetPosition(newX, newY, newZ);
+}
+
+void ModuleOutline::dataSourceRotated(double newX, double newY, double newZ)
+{
+  double orientation[3] = { newX, newY, newZ };
+  vtkSMPropertyHelper(m_outlineRepresentation, "Orientation")
+    .Set(orientation, 3);
+  m_outlineRepresentation->UpdateVTKObjects();
+  m_gridAxes->SetOrientation(newX, newY, newZ);
 }
 
 void ModuleOutline::updateGridAxesBounds(DataSource* dataSource)
