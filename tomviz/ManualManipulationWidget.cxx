@@ -55,6 +55,14 @@ public:
       dataSource = ActiveObjects::instance().activeDataSource();
     }
 
+    if (op->isEditing() && op->childDataSource()) {
+      // Mark the units of the child data source as modified so that when
+      // this widget modifies the spacing of the parent data source, it won't
+      // propagate down to the child.
+      auto* cds = op->childDataSource();
+      cds->setSpacing(cds->getSpacing(), true);
+    }
+
     // Make sure this is the active data source
     ActiveObjects::instance().setActiveDataSource(dataSource);
     fixInteractionDataSource();
