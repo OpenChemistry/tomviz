@@ -1,0 +1,100 @@
+{
+  "name" : "elastix_registration",
+  "label" : "Elastix Registration",
+  "description" : "Perform volume registration between two volumes, one moving, and one fixed, through the use of ITKElastix.",
+  "externalCompatible": false,
+  "parameters" : [
+    {
+      "name" : "fixed_dataset",
+      "label" : "Fixed Dataset",
+      "description" : "The dataset to which the moving dataset will be aligned",
+      "type" : "dataset"
+    },
+    {
+      "name" : "max_num_iterations",
+      "label" : "Max Number of Iterations",
+      "description": "Maps to: MaximumNumberOfIterations",
+      "type" : "int",
+      "default" : 256
+    },
+    {
+      "name" : "num_resolutions",
+      "label" : "Number of Resolutions",
+      "description": "Maps to: NumberOfResolutions",
+      "type" : "int",
+      "default" : 4
+    },
+    {
+      "name" : "disable_rotation",
+      "label" : "Disable Rotation",
+      "description" : "Only perform translation",
+      "type" : "bool",
+      "default" : false
+    },
+    {
+      "name" : "interpolator",
+      "label" : "Interpolator",
+      "description" : "The interpolator that is used during optimization",
+      "type" : "enumeration",
+      "default" : 1,
+      "options" : [
+        {"NearestNeighborInterpolator" : "NearestNeighborInterpolator"},
+        {"LinearInterpolator" : "LinearInterpolator"},
+        {"BSplineInterpolator" : "BSplineInterpolator"},
+        {"BSplineInterpolatorFloat" : "BSplineInterpolatorFloat"}
+      ]
+    },
+    {
+      "name" : "bspline_interpolation_order",
+      "label" : "BSpline Interpolation Order",
+      "description": "For BSpline interpolation only",
+      "type" : "int",
+      "default" : 3,
+      "minimum" : 0
+    },
+    {
+      "name" : "resample_interpolator",
+      "label" : "Resample Interpolator",
+      "description" : "The interpolator that is used to generate the final result",
+      "type" : "enumeration",
+      "default" : 2,
+      "options" : [
+        {"FinalNearestNeighborInterpolator" : "FinalNearestNeighborInterpolator"},
+        {"FinalLinearInterpolator" : "FinalLinearInterpolator"},
+        {"FinalBSplineInterpolator" : "FinalBSplineInterpolator"},
+        {"FinalBSplineInterpolatorFloat" : "FinalBSplineInterpolatorFloat"}
+      ]
+    },
+    {
+      "name" : "resample_bspline_interpolation_order",
+      "label" : "Resample BSpline Interpolation Order",
+      "description": "For Resample BSpline interpolation only",
+      "type" : "int",
+      "default" : 3,
+      "minimum" : 0
+    },
+    {
+      "name" : "lower_threshold",
+      "label" : "Min Histogram Value",
+      "description" : "Minimum histogram value to use for registration",
+      "type" : "double",
+      "precision" : 5,
+      "default" : -1000.0
+    },
+    {
+      "name" : "upper_threshold",
+      "label" : "Max Histogram Value",
+      "description" : "Maximum histogram value to use for registration",
+      "type" : "double",
+      "precision" : 5,
+      "default" : 1000.0
+    },
+    {
+      "name" : "show_elastix_console_output",
+      "label" : "Show Elastix console output",
+      "description" : "Show Elastix console output",
+      "type" : "bool",
+      "default" : false
+    }
+  ]
+}

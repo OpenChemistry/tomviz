@@ -406,6 +406,7 @@ set(python_files
   BinaryOpen.py
   BinaryClose.py
   DummyMolecule.py
+  ElastixRegistration.py
   LabelObjectAttributes.py
   LabelObjectPrincipalAxes.py
   LabelObjectDistanceFromPrincipalAxis.py
@@ -481,6 +482,7 @@ set(json_files
   BinaryOpen.json
   BinaryClose.json
   DummyMolecule.json
+  ElastixRegistration.json
   LabelObjectAttributes.json
   LabelObjectPrincipalAxes.json
   LabelObjectDistanceFromPrincipalAxis.json
