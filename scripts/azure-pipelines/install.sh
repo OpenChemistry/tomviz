@@ -36,11 +36,6 @@ elif [[ $AGENT_OS == 'Darwin' ]]; then
   cd googletest
   cmake .
   sudo make install
-
-  # For some reason, not all standard library header files are on
-  # Mojave by default. This fixes the issue.
-  sudo installer -pkg /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg -target /
-
 elif [[ $AGENT_OS == 'Windows_NT' ]]; then
   choco install wget
   choco install ninja
