@@ -31,7 +31,7 @@ public:
   LoadDataReaction(QAction* parentAction);
   ~LoadDataReaction() override;
 
-  static QList<DataSource*> loadData();
+  static QList<DataSource*> loadData(bool isTimeSeries = false);
 
   /// Convenience method, adds defaultModules, addToRecent, and child to the
   /// JSON object before passing it to the loadData methods.

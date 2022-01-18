@@ -110,7 +110,7 @@ void LoadDataReaction::onTriggered()
   loadData();
 }
 
-QList<DataSource*> LoadDataReaction::loadData()
+QList<DataSource*> LoadDataReaction::loadData(bool isTimeSeries)
 {
   QStringList filters;
   filters << "Common file types (*.emd *.jpg *.jpeg *.png *.tiff *.tif *.h5 "
@@ -147,22 +147,10 @@ QList<DataSource*> LoadDataReaction::loadData()
 
   QStringList filenames = dialog.selectedFiles();
 
-  bool timeSeries = false;
-  if (filenames.size() > 1) {
-    QString title = "Open as time series?";
-    QString msg = "Multiple files selected. Open them as a time series?";
-    auto response = QMessageBox::question(nullptr, title, msg);
-    if (response == QMessageBox::Yes) {
-      // Load as a time series.
-      timeSeries = true;
-
-      // Sort the file names so we get consistent behavior.
-      filenames.sort();
-    }
-  }
-
   QJsonObject options;
-  if (timeSeries) {
+  if (isTimeSeries) {
+    // Sort the file names so we get consistent behavior.
+    filenames.sort();
     options["createCameraOrbit"] = false;
   }
 
@@ -176,7 +164,7 @@ QList<DataSource*> LoadDataReaction::loadData()
   } else {
     for (auto f : filenames) {
       dataSources << loadData(f, options);
-      if (timeSeries) {
+      if (isTimeSeries) {
         // After loading the first data source in a time series, don't
         // add any more to the pipeline. We'll delete them below.
         options["addToPipeline"] = false;
@@ -184,7 +172,7 @@ QList<DataSource*> LoadDataReaction::loadData()
     }
   }
 
-  if (timeSeries) {
+  if (isTimeSeries) {
     // Combine all of the data sources into the first one.
     std::vector<double> timeSteps;
     for (auto i = 0; i < dataSources.size(); ++i) {

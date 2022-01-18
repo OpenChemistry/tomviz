@@ -122,6 +122,8 @@ set(SOURCES
   LoadPaletteReaction.h
   LoadStackReaction.cxx
   LoadStackReaction.h
+  LoadTimeSeriesReaction.cxx
+  LoadTimeSeriesReaction.h
   Logger.cxx
   Logger.h
   ManualManipulationWidget.cxx

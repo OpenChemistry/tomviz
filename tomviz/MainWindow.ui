@@ -27,7 +27,7 @@
      <x>0</x>
      <y>0</y>
      <width>1280</width>
-     <height>22</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -39,8 +39,15 @@
       <string>R&amp;ecently Opened</string>
      </property>
     </widget>
-    <addaction name="actionOpen"/>
-    <addaction name="actionStack"/>
+    <widget class="QMenu" name="menuOpen">
+     <property name="title">
+      <string>&amp;Open</string>
+     </property>
+     <addaction name="actionOpen"/>
+     <addaction name="actionStack"/>
+     <addaction name="actionOpenTimeSeries"/>
+    </widget>
+    <addaction name="menuOpen"/>
     <addaction name="menuRecentlyOpened"/>
     <addaction name="separator"/>
     <addaction name="actionSaveData"/>
@@ -382,14 +389,6 @@
    </attribute>
    <widget class="pqLightsInspector" name="lightsInspector"/>
   </widget>
-  <action name="actionOpen">
-   <property name="text">
-    <string>&amp;Open Data</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+O</string>
-   </property>
-  </action>
   <action name="actionExit">
    <property name="text">
     <string>E&amp;xit</string>
@@ -460,11 +459,6 @@
     <string>Export data to Web</string>
    </property>
   </action>
-  <action name="actionStack">
-   <property name="text">
-    <string>O&amp;pen Stack</string>
-   </property>
-  </action>
   <action name="actionPipelineSettings">
    <property name="text">
     <string>Pipeline Settings</string>
@@ -486,6 +480,21 @@
    </property>
    <property name="text">
     <string>Save State</string>
+   </property>
+  </action>
+  <action name="actionOpen">
+   <property name="text">
+    <string>&amp;Data</string>
+   </property>
+  </action>
+  <action name="actionStack">
+   <property name="text">
+    <string>&amp;Stack</string>
+   </property>
+  </action>
+  <action name="actionOpenTimeSeries">
+   <property name="text">
+    <string>&amp;Time Series</string>
    </property>
   </action>
  </widget>
