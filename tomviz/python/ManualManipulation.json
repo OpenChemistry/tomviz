@@ -60,6 +60,9 @@
       "minimum" : "negative_size",
       "maximum" : "size"
     }
-  ]
+  ],
+  "help" : {
+    "url" : "operators_catalog/#manual-manipulation"
+  }
 }
 

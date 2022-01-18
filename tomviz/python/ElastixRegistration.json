@@ -96,5 +96,8 @@
       "type" : "bool",
       "default" : false
     }
-  ]
+  ],
+  "help" : {
+    "url" : "operators_catalog/#registration"
+  }
 }
