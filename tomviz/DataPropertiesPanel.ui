@@ -55,6 +55,13 @@
         </property>
        </widget>
       </item>
+      <item row="0" column="1">
+       <widget class="QPushButton" name="editTimeSeries">
+        <property name="text">
+         <string>Edit Time Series</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>

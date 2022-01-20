@@ -1257,11 +1257,22 @@ int DataSource::numTimeSeriesSteps() const
   return this->Internals->timeSeriesSteps.size();
 }
 
+int DataSource::currentTimeSeriesIndex() const
+{
+  return this->Internals->currentTimeStep;
+}
+
 void DataSource::setTimeSeriesSteps(const QList<TimeSeriesStep>& steps)
 {
   this->Internals->timeSeriesSteps = steps;
   emit timeStepsModified();
-  emit timeStepChanged();
+
+  // Update the data if we need to
+  auto current = currentTimeSeriesIndex();
+  if (current < steps.size() && steps[current].image != imageData()) {
+    // Re-use the logic here
+    switchTimeSeriesStep(current);
+  }
 }
 
 void DataSource::addTimeSeriesSteps(const QList<TimeSeriesStep>& steps)
@@ -1291,6 +1302,11 @@ TimeSeriesStep DataSource::currentTimeSeriesStep()
   }
 
   return this->Internals->timeSeriesSteps[current];
+}
+
+QList<TimeSeriesStep> DataSource::timeSeriesSteps() const
+{
+  return this->Internals->timeSeriesSteps;
 }
 
 void DataSource::clearTimeSeriesSteps()

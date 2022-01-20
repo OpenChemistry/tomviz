@@ -10,8 +10,10 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
+#include "ListEditorWidget.h"
 #include "SetTiltAnglesOperator.h"
 #include "SetTiltAnglesReaction.h"
+#include "TimeSeriesStep.h"
 #include "Utilities.h"
 
 #include <pqNonEditableStyledItemDelegate.h>
@@ -127,6 +129,9 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
   connect(&ActiveObjects::instance(),
           &ActiveObjects::showTimeSeriesLabelChanged, this,
           &DataPropertiesPanel::updateTimeSeriesGroup);
+
+  connect(m_ui->editTimeSeries, &QPushButton::clicked, this,
+          &DataPropertiesPanel::editTimeSeries);
 
   connect(m_ui->interactTranslate, &QCheckBox::clicked,
           &ActiveObjects::instance(), &ActiveObjects::enableTranslation);
@@ -398,6 +403,51 @@ void DataPropertiesPanel::updateTimeSeriesGroup()
 
   m_ui->showTimeSeriesLabel->setChecked(
     ActiveObjects::instance().showTimeSeriesLabel());
+}
+
+void DataPropertiesPanel::editTimeSeries()
+{
+  if (m_timeSeriesEditor) {
+    m_timeSeriesEditor->reject();
+    m_timeSeriesEditor->deleteLater();
+  }
+
+  QPointer<DataSource> ds = m_currentDataSource;
+  if (!ds) {
+    return;
+  }
+
+  auto steps = ds->timeSeriesSteps();
+  QStringList labels;
+  for (auto& step : steps) {
+    labels.append(step.label);
+  }
+
+  m_timeSeriesEditor = new ListEditorDialog(labels, this);
+  m_timeSeriesEditor->setWindowTitle("Edit Time Series");
+  m_timeSeriesEditor->show();
+  auto* editor = m_timeSeriesEditor.data();
+
+  auto onAccepted = [ds, editor, steps]() {
+    auto newOrder = editor->currentOrder();
+    auto newNames = editor->currentNames();
+
+    // First, re-arrange the time steps according to the new ordering
+    QList<TimeSeriesStep> newSteps;
+    for (auto i : newOrder) {
+      newSteps.append(steps[i]);
+    }
+
+    // Now, rename them
+    for (int i = 0; i < newNames.size(); ++i) {
+      newSteps[i].label = newNames[i];
+    }
+
+    // Finally, set the new steps
+    ds->setTimeSeriesSteps(newSteps);
+  };
+
+  connect(m_timeSeriesEditor, &QDialog::accepted, ds, onAccepted);
 }
 
 void DataPropertiesPanel::updateComponentsCombo()

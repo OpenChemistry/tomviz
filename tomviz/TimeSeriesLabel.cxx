@@ -96,6 +96,7 @@ public:
 
     activeDataSource = ds;
     updateVisibility();
+    timeStepChanged();
   }
 
   void timeStepsModified()

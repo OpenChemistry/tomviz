@@ -116,6 +116,8 @@ set(SOURCES
   InternalPythonHelper.cxx
   IntSliderWidget.cxx
   IntSliderWidget.h
+  ListEditorWidget.cxx
+  ListEditorWidget.h
   LoadDataReaction.cxx
   LoadDataReaction.h
   LoadPaletteReaction.cxx

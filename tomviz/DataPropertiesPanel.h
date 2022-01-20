@@ -24,6 +24,7 @@ class DataPropertiesPanel;
 namespace tomviz {
 
 class DataSource;
+class ListEditorDialog;
 
 /// DataPropertiesPanel is the panel that shows information (and other controls)
 /// for a DataSource. It monitors tomviz::ActiveObjects instance and shows
@@ -57,6 +58,7 @@ private slots:
   void onDataPropertiesChanged();
   void onDataPositionChanged(double, double, double);
   void onDataOrientationChanged(double, double, double);
+  void editTimeSeries();
 
   void updateUnits();
 
@@ -78,6 +80,7 @@ private:
   QPointer<pqProxyWidget> m_colorMapWidget;
   QPointer<QWidget> m_tiltAnglesSeparator;
   QPointer<QWidget> m_timeSeriesSeparator;
+  QPointer<ListEditorDialog> m_timeSeriesEditor;
   DataPropertiesModel m_scalarsTableModel;
   // Hold the order (the indexes into the field data), so we can preserve
   // the order during a rename.

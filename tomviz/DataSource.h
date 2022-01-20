@@ -202,6 +202,9 @@ public:
   /// The number of time series steps that the DataSource has
   int numTimeSeriesSteps() const;
 
+  /// The index of the time series we are currently using
+  int currentTimeSeriesIndex() const;
+
   /// Switch to a different time series step
   void switchTimeSeriesStep(int i);
 
@@ -216,6 +219,9 @@ public:
 
   /// Get the current time series step
   TimeSeriesStep currentTimeSeriesStep();
+
+  /// Get a copy of all time series steps
+  QList<TimeSeriesStep> timeSeriesSteps() const;
 
   /// Remove all time series steps
   void clearTimeSeriesSteps();
