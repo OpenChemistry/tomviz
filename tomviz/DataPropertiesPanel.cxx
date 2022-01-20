@@ -65,6 +65,10 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
   separator = pqProxyWidget::newGroupLabelWidget("Active Scalars", this);
   l->insertWidget(l->indexOf(m_ui->ActiveScalars), separator);
 
+  m_timeSeriesSeparator =
+    pqProxyWidget::newGroupLabelWidget("Time Series", this);
+  l->insertWidget(l->indexOf(m_ui->timeSeriesGroup), m_timeSeriesSeparator);
+
   separator = pqProxyWidget::newGroupLabelWidget("Dimensions & Range", this);
   l->insertWidget(l->indexOf(m_ui->DataRange), separator);
 
@@ -117,6 +121,12 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
           this, &DataPropertiesPanel::setActiveScalars);
   connect(m_ui->componentNamesEditor, &ComboTextEditor::itemEdited, this,
           &DataPropertiesPanel::componentNameEdited);
+
+  connect(m_ui->showTimeSeriesLabel, &QCheckBox::toggled,
+          &ActiveObjects::instance(), &ActiveObjects::setShowTimeSeriesLabel);
+  connect(&ActiveObjects::instance(),
+          &ActiveObjects::showTimeSeriesLabelChanged, this,
+          &DataPropertiesPanel::updateTimeSeriesGroup);
 
   connect(m_ui->interactTranslate, &QCheckBox::clicked,
           &ActiveObjects::instance(), &ActiveObjects::enableTranslation);
@@ -368,9 +378,26 @@ void DataPropertiesPanel::updateData()
   connect(m_ui->TiltAnglesTable, SIGNAL(cellChanged(int, int)),
           SLOT(onTiltAnglesModified(int, int)));
 
+  updateTimeSeriesGroup();
   updateComponentsCombo();
 
   m_updateNeeded = false;
+}
+
+void DataPropertiesPanel::updateTimeSeriesGroup()
+{
+  auto* ds = m_currentDataSource.data();
+  bool visible = ds && ds->hasTimeSteps();
+
+  m_timeSeriesSeparator->setVisible(visible);
+  m_ui->timeSeriesGroup->setVisible(visible);
+
+  if (!visible) {
+    return;
+  }
+
+  m_ui->showTimeSeriesLabel->setChecked(
+    ActiveObjects::instance().showTimeSeriesLabel());
 }
 
 void DataPropertiesPanel::updateComponentsCombo()

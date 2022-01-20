@@ -21,6 +21,7 @@
 #include "PythonUtilities.h"
 #include "RAWFileReaderDialog.h"
 #include "RecentFilesMenu.h"
+#include "TimeSeriesStep.h"
 #include "Utilities.h"
 #include "vtkOMETiffReader.h"
 
@@ -174,22 +175,29 @@ QList<DataSource*> LoadDataReaction::loadData(bool isTimeSeries)
 
   if (isTimeSeries) {
     // Combine all of the data sources into the first one.
-    std::vector<double> timeSteps;
+    std::vector<double> times;
+    QList<TimeSeriesStep> timeSteps;
+
     for (auto i = 0; i < dataSources.size(); ++i) {
-      dataSources[0]->addTimeSeriesStep(dataSources[i]->imageData());
+      QString label = dataSources[i]->label();
+      auto* image = dataSources[i]->imageData();
+      double time = i;
+
+      times.push_back(time);
+      timeSteps.append(TimeSeriesStep(label, image, time));
+
       if (i != 0) {
         // Delete all data sources other than the first one. These were not
         // added to the pipeline.
         dataSources[i]->deleteLater();
       }
-
-      timeSteps.push_back(i);
     }
+    dataSources[0]->setTimeSeriesSteps(timeSteps);
     dataSources = { dataSources[0] };
 
     // Set the animation time steps and change the play mode to
     // "Snap To TimeSteps".
-    tomviz::snapAnimationToTimeSteps(timeSteps);
+    tomviz::snapAnimationToTimeSteps(times);
   }
 
   return dataSources;

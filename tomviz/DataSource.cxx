@@ -15,6 +15,7 @@
 #include "Operator.h"
 #include "OperatorFactory.h"
 #include "Pipeline.h"
+#include "TimeSeriesStep.h"
 #include "Utilities.h"
 
 #include <vtkDataObject.h>
@@ -98,7 +99,8 @@ public:
   bool Forkable = true;
   // Track data array renames
   QMap<QString, QString> CurrentToOriginal;
-  QList<vtkSmartPointer<vtkImageData>> timeSeriesSteps;
+  QList<TimeSeriesStep> timeSeriesSteps;
+  int currentTimeStep = 0;
 
   // Checks if the tilt angles data array exists on the given VTK data
   // and creates it if it does not exist.
@@ -670,11 +672,11 @@ DataSource* DataSource::clone() const
     newClone->setTiltAngles(getTiltAngles());
   }
 
-  for (auto imageData : this->Internals->timeSeriesSteps) {
-    auto* copy = imageData->NewInstance();
-    copy->DeepCopy(imageData);
-    newClone->addTimeSeriesStep(copy);
+  QList<TimeSeriesStep> newTimeSteps;
+  for (auto& timeStep : this->Internals->timeSeriesSteps) {
+    newTimeSteps.append(timeStep.clone());
   }
+  newClone->setTimeSeriesSteps(newTimeSteps);
 
   return newClone;
 }
@@ -1242,9 +1244,12 @@ void DataSource::switchTimeSeriesStep(int i)
   }
 
   m_changingTimeStep = true;
-  producer()->SetOutput(this->Internals->timeSeriesSteps[i]);
+  this->Internals->currentTimeStep = i;
+  producer()->SetOutput(this->Internals->timeSeriesSteps[i].image);
   dataModified();
   m_changingTimeStep = false;
+
+  emit timeStepChanged();
 }
 
 int DataSource::numTimeSeriesSteps() const
@@ -1252,14 +1257,48 @@ int DataSource::numTimeSeriesSteps() const
   return this->Internals->timeSeriesSteps.size();
 }
 
-void DataSource::addTimeSeriesStep(vtkImageData* data)
+void DataSource::setTimeSeriesSteps(const QList<TimeSeriesStep>& steps)
 {
-  this->Internals->timeSeriesSteps.append(data);
+  this->Internals->timeSeriesSteps = steps;
+  emit timeStepsModified();
+  emit timeStepChanged();
+}
+
+void DataSource::addTimeSeriesSteps(const QList<TimeSeriesStep>& steps)
+{
+  this->Internals->timeSeriesSteps.append(steps);
+  emit timeStepsModified();
+}
+
+void DataSource::addTimeSeriesStep(const TimeSeriesStep& step)
+{
+  this->Internals->timeSeriesSteps.append(step);
+  emit timeStepsModified();
+}
+
+TimeSeriesStep DataSource::currentTimeSeriesStep()
+{
+  if (!hasTimeSteps()) {
+    qDebug() << "currentTimeSeriesStep() was called, but there "
+             << "are no time steps!";
+    return TimeSeriesStep();
+  }
+
+  auto current = this->Internals->currentTimeStep;
+  if (current >= numTimeSeriesSteps()) {
+    qDebug() << "Current time step is out of bounds!";
+    return TimeSeriesStep();
+  }
+
+  return this->Internals->timeSeriesSteps[current];
 }
 
 void DataSource::clearTimeSeriesSteps()
 {
   this->Internals->timeSeriesSteps.clear();
+  this->Internals->currentTimeStep = 0;
+  emit timeStepsModified();
+  emit timeStepChanged();
 }
 
 vtkSMProxy* DataSource::colorMap() const

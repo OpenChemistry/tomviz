@@ -125,9 +125,13 @@ public slots:
   void enableRotation(bool b);
   void enableScaling(bool b);
 
+  void setShowTimeSeriesLabel(bool b);
+
   bool translationEnabled() const { return m_translationEnabled; }
   bool rotationEnabled() const { return m_rotationEnabled; }
   bool scalingEnabled() const { return m_scalingEnabled; }
+
+  bool showTimeSeriesLabel() const { return m_showTimeSeriesLabel; }
 
   void setFixedInteractionDataSource(DataSource* ds)
   {
@@ -184,6 +188,9 @@ signals:
   void rotationStateChanged(bool b);
   void scalingStateChanged(bool b);
 
+  /// Fired when time series label visibility changes
+  void showTimeSeriesLabelChanged(bool b);
+
   /// Fired whenever the color map has changed
   void colorMapChanged(DataSource*);
 
@@ -220,6 +227,9 @@ protected:
   bool m_rotationEnabled = false;
   bool m_scalingEnabled = false;
 
+  /// Time series
+  bool m_showTimeSeriesLabel = true;
+
 private:
   Q_DISABLE_COPY(ActiveObjects)
 };
@@ -252,6 +262,16 @@ inline void ActiveObjects::enableScaling(bool b)
 
   m_scalingEnabled = b;
   emit scalingStateChanged(b);
+}
+
+inline void ActiveObjects::setShowTimeSeriesLabel(bool b)
+{
+  if (m_showTimeSeriesLabel == b) {
+    return;
+  }
+
+  m_showTimeSeriesLabel = b;
+  emit showTimeSeriesLabelChanged(b);
 }
 
 } // namespace tomviz

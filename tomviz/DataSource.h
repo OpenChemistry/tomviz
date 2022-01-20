@@ -27,6 +27,7 @@ namespace tomviz {
 class DataSourceBase;
 class Operator;
 class Pipeline;
+class TimeSeriesStep;
 
 /// Encapsulation for a DataSource. This class manages a data source, including
 /// the provenance for any operations performed on the data source.
@@ -204,8 +205,17 @@ public:
   /// Switch to a different time series step
   void switchTimeSeriesStep(int i);
 
+  /// Set the time series steps
+  void setTimeSeriesSteps(const QList<TimeSeriesStep>& steps);
+
+  /// Append a list of time series steps
+  void addTimeSeriesSteps(const QList<TimeSeriesStep>& steps);
+
   /// Add a time series step
-  void addTimeSeriesStep(vtkImageData* data);
+  void addTimeSeriesStep(const TimeSeriesStep& step);
+
+  /// Get the current time series step
+  TimeSeriesStep currentTimeSeriesStep();
 
   /// Remove all time series steps
   void clearTimeSeriesSteps();
@@ -395,6 +405,12 @@ signals:
 
   /// Indicates the component names have been modified
   void componentNamesModified();
+
+  /// Indicates that the current time step has been changed
+  void timeStepChanged();
+
+  /// Indicate that the time steps have been modified
+  void timeStepsModified();
 
 public slots:
   void dataModified();

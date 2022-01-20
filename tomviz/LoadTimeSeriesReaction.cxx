@@ -9,7 +9,8 @@ namespace tomviz {
 
 LoadTimeSeriesReaction::LoadTimeSeriesReaction(QAction* parentObject)
   : pqReaction(parentObject)
-{}
+{
+}
 
 LoadTimeSeriesReaction::~LoadTimeSeriesReaction() = default;
 

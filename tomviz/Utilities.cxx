@@ -666,16 +666,16 @@ void snapAnimationToTimeSteps(const std::vector<double>& timeSteps)
 {
   std::vector<double> timeRange = { timeSteps.front(), timeSteps.back() };
 
+  pqAnimationScene* scene =
+    pqPVApplicationCore::instance()->animationManager()->getActiveScene();
+  pqSMAdaptor::setEnumerationProperty(
+    scene->getProxy()->GetProperty("PlayMode"), "Snap To TimeSteps");
+
   auto* timeKeeper = ActiveObjects::instance().activeTimeKeeper();
   auto* proxy = timeKeeper->getProxy();
   vtkSMPropertyHelper(proxy, "TimestepValues")
     .Set(&timeSteps[0], timeSteps.size());
   vtkSMPropertyHelper(proxy, "TimeRange").Set(&timeRange[0], 2);
-
-  pqAnimationScene* scene =
-    pqPVApplicationCore::instance()->animationManager()->getActiveScene();
-  pqSMAdaptor::setEnumerationProperty(
-    scene->getProxy()->GetProperty("PlayMode"), "Snap To TimeSteps");
 }
 
 void setupRenderer(vtkRenderer* renderer, vtkImageSliceMapper* mapper,

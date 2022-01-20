@@ -210,6 +210,9 @@ set(SOURCES
   SpinBox.h
   ThreadedExecutor.cxx
   ThreadedExecutor.h
+  TimeSeriesLabel.h
+  TimeSeriesLabel.cxx
+  TimeSeriesStep.h
   TomographyReconstruction.h
   TomographyReconstruction.cxx
   TomographyTiltSeries.h
@@ -696,6 +699,7 @@ target_link_libraries(tomvizlib
     VTK::jsoncpp
     VTK::pugixml
     VTK::tiff
+    VTK::CommonColor
     VTK::DomainsChemistry
     VTK::hdf5
     VTK::InteractionStyle

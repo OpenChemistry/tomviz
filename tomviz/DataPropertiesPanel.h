@@ -42,6 +42,7 @@ public:
 protected:
   void paintEvent(QPaintEvent*) override;
   void updateData();
+  void updateTimeSeriesGroup();
   void updateComponentsCombo();
   static bool parseField(QLineEdit* widget, double& value);
   void updateLength(QLineEdit* widget, int axis);
@@ -76,6 +77,7 @@ private:
   QPointer<DataSource> m_currentDataSource;
   QPointer<pqProxyWidget> m_colorMapWidget;
   QPointer<QWidget> m_tiltAnglesSeparator;
+  QPointer<QWidget> m_timeSeriesSeparator;
   DataPropertiesModel m_scalarsTableModel;
   // Hold the order (the indexes into the field data), so we can preserve
   // the order during a rename.

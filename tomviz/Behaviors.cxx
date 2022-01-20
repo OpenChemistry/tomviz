@@ -10,6 +10,7 @@
 #include "MoveActiveObject.h"
 #include "OperatorPython.h"
 #include "RotateAlignWidget.h"
+#include "TimeSeriesLabel.h"
 #include "ViewFrameActions.h"
 
 #include <pqAlwaysConnectedBehavior.h>
@@ -87,7 +88,8 @@ Behaviors::Behaviors(QMainWindow* mainWindow) : QObject(mainWindow)
 
   new tomviz::AddRenderViewContextMenuBehavior(this);
 
-  m_moveActiveBehavior = new tomviz::MoveActiveObject(this);
+  m_moveActiveBehavior.reset(new tomviz::MoveActiveObject(this));
+  m_timeSeriesLabel.reset(new tomviz::TimeSeriesLabel(this));
 
   // This will trigger the logic to setup reader/writer factories, etc.
   pqApplicationCore::instance()->loadConfigurationXML("<xml/>");
