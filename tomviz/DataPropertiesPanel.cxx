@@ -424,6 +424,8 @@ void DataPropertiesPanel::editTimeSeries()
   }
 
   m_timeSeriesEditor = new ListEditorDialog(labels, this);
+  m_timeSeriesEditor->setToolTip("Left-click and drag a row to re-order time "
+                                 "series steps. Double-click to edit a label.");
   m_timeSeriesEditor->setWindowTitle("Edit Time Series");
   m_timeSeriesEditor->show();
   auto* editor = m_timeSeriesEditor.data();
