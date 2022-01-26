@@ -21,6 +21,7 @@
 #include "PythonUtilities.h"
 #include "RAWFileReaderDialog.h"
 #include "RecentFilesMenu.h"
+#include "TimeSeriesStep.h"
 #include "Utilities.h"
 #include "vtkOMETiffReader.h"
 
@@ -53,6 +54,7 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QJsonArray>
+#include <QMessageBox>
 
 #include <sstream>
 
@@ -109,7 +111,7 @@ void LoadDataReaction::onTriggered()
   loadData();
 }
 
-QList<DataSource*> LoadDataReaction::loadData()
+QList<DataSource*> LoadDataReaction::loadData(bool isTimeSeries)
 {
   QStringList filters;
   filters << "Common file types (*.emd *.jpg *.jpeg *.png *.tiff *.tif *.h5 "
@@ -140,20 +142,62 @@ QList<DataSource*> LoadDataReaction::loadData()
   dialog.setNameFilters(filters);
   dialog.setObjectName("FileOpenDialog-tomviz"); // avoid name collision?
 
+  if (!dialog.exec()) {
+    return {};
+  }
+
+  QStringList filenames = dialog.selectedFiles();
+
+  QJsonObject options;
+  if (isTimeSeries) {
+    // Sort the file names so we get consistent behavior.
+    filenames.sort();
+    options["createCameraOrbit"] = false;
+  }
+
   QList<DataSource*> dataSources;
-  if (dialog.exec()) {
-    QStringList filenames = dialog.selectedFiles();
-    QString fileName = filenames.size() > 0 ? filenames[0] : "";
-    QFileInfo info(fileName);
-    auto suffix = info.suffix().toLower();
-    QStringList moleculeExt = { "xyz" };
-    if (moleculeExt.contains(suffix)) {
-      loadMolecule(filenames);
-    } else {
-      for (auto f : filenames) {
-        dataSources << loadData(f);
+  QString fileName = filenames.size() > 0 ? filenames[0] : "";
+  QFileInfo info(fileName);
+  auto suffix = info.suffix().toLower();
+  QStringList moleculeExt = { "xyz" };
+  if (moleculeExt.contains(suffix)) {
+    loadMolecule(filenames);
+  } else {
+    for (auto f : filenames) {
+      dataSources << loadData(f, options);
+      if (isTimeSeries) {
+        // After loading the first data source in a time series, don't
+        // add any more to the pipeline. We'll delete them below.
+        options["addToPipeline"] = false;
       }
     }
+  }
+
+  if (isTimeSeries) {
+    // Combine all of the data sources into the first one.
+    std::vector<double> times;
+    QList<TimeSeriesStep> timeSteps;
+
+    for (auto i = 0; i < dataSources.size(); ++i) {
+      QString label = dataSources[i]->label();
+      auto* image = dataSources[i]->imageData();
+      double time = i;
+
+      times.push_back(time);
+      timeSteps.append(TimeSeriesStep(label, image, time));
+
+      if (i != 0) {
+        // Delete all data sources other than the first one. These were not
+        // added to the pipeline.
+        dataSources[i]->deleteLater();
+      }
+    }
+    dataSources[0]->setTimeSeriesSteps(timeSteps);
+    dataSources = { dataSources[0] };
+
+    // Set the animation time steps and change the play mode to
+    // "Snap To TimeSteps".
+    tomviz::snapAnimationToTimeSteps(times);
   }
 
   return dataSources;
@@ -184,6 +228,8 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
 {
   bool defaultModules = options["defaultModules"].toBool(true);
   bool addToRecent = options["addToRecent"].toBool(true);
+  bool addToPipeline = options["addToPipeline"].toBool(true);
+  bool createCameraOrbit = options["createCameraOrbit"].toBool(true);
   bool child = options["child"].toBool(false);
   bool loadWithParaview = true;
   bool loadWithPython = false;
@@ -214,7 +260,6 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
       dataSource = new DataSource(image, type);
       // Save the node path in case we write the data again in the future
       dataSource->setTvh5NodePath(path);
-      LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
     }
   } else if (info.suffix().toLower() == "emd") {
     // Load the file using our simple EMD class.
@@ -234,7 +279,6 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
                                           ? DataSource::TiltSeries
                                           : DataSource::Volume;
       dataSource = new DataSource(imageData, type);
-      LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
     }
   } else if (info.suffix().toLower() == "h5") {
     loadWithParaview = false;
@@ -272,8 +316,6 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
                                           : DataSource::Volume;
       dataSource = new DataSource(imageData, type);
     }
-
-    LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
   } else if (info.completeSuffix().endsWith("ome.tif")) {
     loadWithParaview = false;
     vtkNew<vtkOMETiffReader> reader;
@@ -285,7 +327,6 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     QJsonObject readerProperties;
     readerProperties["name"] = "OMETIFFReader";
     dataSource->setReaderProperties(readerProperties.toVariantMap());
-    LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
   } else if (FileFormatManager::instance().pythonReaderFactory(
                info.suffix().toLower()) != nullptr) {
     loadWithParaview = false;
@@ -305,8 +346,11 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     setFileNameProperties(props, reader);
     reader->UpdateVTKObjects();
     vtkSMSourceProxy::SafeDownCast(reader)->UpdatePipelineInformation();
-    dataSource =
-      LoadDataReaction::createDataSource(reader, defaultModules, child);
+
+    // We'll add it to the pipeline on our own later, if needed
+    bool addToThePipeline = false;
+    dataSource = LoadDataReaction::createDataSource(reader, defaultModules,
+                                                    child, addToThePipeline);
     if (dataSource == nullptr) {
       return nullptr;
     }
@@ -321,7 +365,10 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
       return nullptr;
     }
 
-    dataSource = createDataSource(reader->getProxy(), defaultModules, child);
+    // We'll add it to the pipeline on our own later, if needed
+    bool addToThePipeline = false;
+    dataSource = createDataSource(reader->getProxy(), defaultModules, child,
+                                  addToThePipeline);
     if (dataSource == nullptr) {
       return nullptr;
     }
@@ -343,13 +390,18 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
       return nullptr;
     }
     dataSource = new DataSource(imageData);
-    LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
   }
 
   // It is possible that the dataSource will be null if, for example, loading
   // a VTI is cancelled in the array selection dialog. Guard against this.
   if (!dataSource) {
     return nullptr;
+  }
+
+  if (addToPipeline) {
+    // Add to the pipeline if needed...
+    LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child,
+                                      createCameraOrbit);
   }
 
   // Now for house keeping, registering elements, etc.
@@ -362,9 +414,9 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
   return dataSource;
 }
 
-
 DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader,
-                                               bool defaultModules, bool child)
+                                               bool defaultModules, bool child,
+                                               bool addToPipeline)
 {
   // Prompt user for reader configuration, unless it is TIFF.
   QScopedPointer<QDialog> dialog(new pqProxyWidgetDialog(reader));
@@ -428,14 +480,17 @@ DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader,
     DataSource* dataSource = new DataSource(image, type);
 
     // Do whatever we need to do with a new data source.
-    LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
+    if (addToPipeline) {
+      LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
+    }
     return dataSource;
   }
   return nullptr;
 }
 
 void LoadDataReaction::dataSourceAdded(DataSource* dataSource,
-                                       bool defaultModules, bool child)
+                                       bool defaultModules, bool child,
+                                       bool createCameraOrbit)
 {
   if (!dataSource) {
     return;
@@ -467,7 +522,7 @@ void LoadDataReaction::dataSourceAdded(DataSource* dataSource,
   if (!previousActiveDataSource) {
     pqRenderView* renderView =
       qobject_cast<pqRenderView*>(pqActiveObjects::instance().activeView());
-    if (renderView) {
+    if (renderView && createCameraOrbit) {
       tomviz::createCameraOrbit(dataSource->proxy(),
                                 renderView->getRenderViewProxy());
     }

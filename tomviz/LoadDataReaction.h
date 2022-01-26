@@ -31,7 +31,7 @@ public:
   LoadDataReaction(QAction* parentAction);
   ~LoadDataReaction() override;
 
-  static QList<DataSource*> loadData();
+  static QList<DataSource*> loadData(bool isTimeSeries = false);
 
   /// Convenience method, adds defaultModules, addToRecent, and child to the
   /// JSON object before passing it to the loadData methods.
@@ -58,13 +58,15 @@ public:
 
   /// Handle creation of a new data source.
   static void dataSourceAdded(DataSource* dataSource,
-                              bool defaultModules = true, bool child = false);
+                              bool defaultModules = true, bool child = false,
+                              bool createCameraOrbit = true);
 
 protected:
   /// Create a raw data source from the reader.
   static DataSource* createDataSource(vtkSMProxy* reader,
                                       bool defaultModules = true,
-                                      bool child = false);
+                                      bool child = false,
+                                      bool addToPipeline = true);
 
   /// Called when the action is triggered.
   void onTriggered() override;

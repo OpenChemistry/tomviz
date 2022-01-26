@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>482</width>
-    <height>668</height>
+    <height>682</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -44,6 +44,32 @@
    </item>
    <item>
     <widget class="QComboBox" name="ActiveScalars"/>
+   </item>
+   <item>
+    <widget class="QWidget" name="timeSeriesGroup" native="true">
+     <layout class="QGridLayout" name="gridLayout_3">
+      <item row="0" column="0">
+       <widget class="QCheckBox" name="showTimeSeriesLabel">
+        <property name="toolTip">
+         <string>Show/hide the time series label in the render view</string>
+        </property>
+        <property name="text">
+         <string>Show label?</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QPushButton" name="editTimeSeries">
+        <property name="toolTip">
+         <string>Edit the order of time series steps and their labels</string>
+        </property>
+        <property name="text">
+         <string>Edit Time Series</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
    </item>
    <item>
     <layout class="QHBoxLayout" name="componentNamesLayout">

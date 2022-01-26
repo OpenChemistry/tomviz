@@ -27,6 +27,7 @@ namespace tomviz {
 class DataSourceBase;
 class Operator;
 class Pipeline;
+class TimeSeriesStep;
 
 /// Encapsulation for a DataSource. This class manages a data source, including
 /// the provenance for any operations performed on the data source.
@@ -194,6 +195,39 @@ public:
   DataSourceType type() const;
   /// Sets the type of data in the DataSource
   void setType(DataSourceType t);
+
+  /// Whether or not the DataSource has time series steps
+  bool hasTimeSteps() const { return numTimeSeriesSteps() != 0; }
+
+  /// The number of time series steps that the DataSource has
+  int numTimeSeriesSteps() const;
+
+  /// The index of the time series we are currently using
+  int currentTimeSeriesIndex() const;
+
+  /// Switch to a different time series step
+  void switchTimeSeriesStep(int i);
+
+  /// Set the time series steps
+  void setTimeSeriesSteps(const QList<TimeSeriesStep>& steps);
+
+  /// Append a list of time series steps
+  void addTimeSeriesSteps(const QList<TimeSeriesStep>& steps);
+
+  /// Add a time series step
+  void addTimeSeriesStep(const TimeSeriesStep& step);
+
+  /// Get the current time series step
+  TimeSeriesStep currentTimeSeriesStep();
+
+  /// Get a copy of all time series steps
+  QList<TimeSeriesStep> timeSeriesSteps() const;
+
+  /// Remove all time series steps
+  void clearTimeSeriesSteps();
+
+  /// Are we in the middle of changing time steps?
+  bool isChangingTimeStep() const { return m_changingTimeStep; }
 
   /// Returns the color map for the DataSource.
   vtkSMProxy* colorMap() const;
@@ -378,6 +412,12 @@ signals:
   /// Indicates the component names have been modified
   void componentNamesModified();
 
+  /// Indicates that the current time step has been changed
+  void timeStepChanged();
+
+  /// Indicate that the time steps have been modified
+  void timeStepsModified();
+
 public slots:
   void dataModified();
   void renameScalarsArray(const QString& oldName, const QString& newName);
@@ -385,6 +425,9 @@ public slots:
 protected slots:
   /// update the color map range.
   void updateColorMap();
+
+  /// What to do when the time is changed...
+  void onTimeChanged();
 
 private:
   /// Private method to initialize the data source.
@@ -402,6 +445,8 @@ private:
   DataSourceBase* m_pythonProxy = nullptr;
 
   QJsonObject m_json;
+
+  bool m_changingTimeStep = false;
 };
 
 inline void DataSource::clearTiltAngles()

@@ -3,6 +3,7 @@
 
 #include "Utilities.h"
 
+#include "ActiveObjects.h"
 #include "DataSource.h"
 #include "tomvizConfig.h"
 
@@ -12,6 +13,7 @@
 #include <pqCoreUtilities.h>
 #include <pqPVApplicationCore.h>
 #include <pqSMAdaptor.h>
+#include <pqTimeKeeper.h>
 #include <vtkPVArrayInformation.h>
 #include <vtkPVDataInformation.h>
 #include <vtkPVDataSetAttributesInformation.h>
@@ -658,6 +660,22 @@ void createCameraOrbit(vtkSMSourceProxy* data, vtkSMRenderViewProxy* renderView)
                                           centerList);
   pqSMAdaptor::setElementProperty(kf->GetProperty("ClosedPositionPath"), 1);
   kf->UpdateVTKObjects();
+}
+
+void snapAnimationToTimeSteps(const std::vector<double>& timeSteps)
+{
+  std::vector<double> timeRange = { timeSteps.front(), timeSteps.back() };
+
+  pqAnimationScene* scene =
+    pqPVApplicationCore::instance()->animationManager()->getActiveScene();
+  pqSMAdaptor::setEnumerationProperty(
+    scene->getProxy()->GetProperty("PlayMode"), "Snap To TimeSteps");
+
+  auto* timeKeeper = ActiveObjects::instance().activeTimeKeeper();
+  auto* proxy = timeKeeper->getProxy();
+  vtkSMPropertyHelper(proxy, "TimestepValues")
+    .Set(&timeSteps[0], timeSteps.size());
+  vtkSMPropertyHelper(proxy, "TimeRange").Set(&timeRange[0], 2);
 }
 
 void setupRenderer(vtkRenderer* renderer, vtkImageSliceMapper* mapper,

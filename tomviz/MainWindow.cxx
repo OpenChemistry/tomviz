@@ -34,6 +34,7 @@
 #include "LoadDataReaction.h"
 #include "LoadPaletteReaction.h"
 #include "LoadStackReaction.h"
+#include "LoadTimeSeriesReaction.h"
 #include "ModuleManager.h"
 #include "ModuleMenu.h"
 #include "ModulePropertiesPanel.h"
@@ -246,6 +247,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   new LoadDataReaction(m_ui->actionOpen);
 
   new LoadStackReaction(m_ui->actionStack);
+
+  new LoadTimeSeriesReaction(m_ui->actionOpenTimeSeries);
 
   new DataBrokerLoadReaction(m_ui->actionImportFromDataBroker);
 

@@ -10,8 +10,10 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
+#include "ListEditorWidget.h"
 #include "SetTiltAnglesOperator.h"
 #include "SetTiltAnglesReaction.h"
+#include "TimeSeriesStep.h"
 #include "Utilities.h"
 
 #include <pqNonEditableStyledItemDelegate.h>
@@ -65,6 +67,10 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
   separator = pqProxyWidget::newGroupLabelWidget("Active Scalars", this);
   l->insertWidget(l->indexOf(m_ui->ActiveScalars), separator);
 
+  m_timeSeriesSeparator =
+    pqProxyWidget::newGroupLabelWidget("Time Series", this);
+  l->insertWidget(l->indexOf(m_ui->timeSeriesGroup), m_timeSeriesSeparator);
+
   separator = pqProxyWidget::newGroupLabelWidget("Dimensions & Range", this);
   l->insertWidget(l->indexOf(m_ui->DataRange), separator);
 
@@ -117,6 +123,15 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
           this, &DataPropertiesPanel::setActiveScalars);
   connect(m_ui->componentNamesEditor, &ComboTextEditor::itemEdited, this,
           &DataPropertiesPanel::componentNameEdited);
+
+  connect(m_ui->showTimeSeriesLabel, &QCheckBox::toggled,
+          &ActiveObjects::instance(), &ActiveObjects::setShowTimeSeriesLabel);
+  connect(&ActiveObjects::instance(),
+          &ActiveObjects::showTimeSeriesLabelChanged, this,
+          &DataPropertiesPanel::updateTimeSeriesGroup);
+
+  connect(m_ui->editTimeSeries, &QPushButton::clicked, this,
+          &DataPropertiesPanel::editTimeSeries);
 
   connect(m_ui->interactTranslate, &QCheckBox::clicked,
           &ActiveObjects::instance(), &ActiveObjects::enableTranslation);
@@ -368,9 +383,73 @@ void DataPropertiesPanel::updateData()
   connect(m_ui->TiltAnglesTable, SIGNAL(cellChanged(int, int)),
           SLOT(onTiltAnglesModified(int, int)));
 
+  updateTimeSeriesGroup();
   updateComponentsCombo();
 
   m_updateNeeded = false;
+}
+
+void DataPropertiesPanel::updateTimeSeriesGroup()
+{
+  auto* ds = m_currentDataSource.data();
+  bool visible = ds && ds->hasTimeSteps();
+
+  m_timeSeriesSeparator->setVisible(visible);
+  m_ui->timeSeriesGroup->setVisible(visible);
+
+  if (!visible) {
+    return;
+  }
+
+  m_ui->showTimeSeriesLabel->setChecked(
+    ActiveObjects::instance().showTimeSeriesLabel());
+}
+
+void DataPropertiesPanel::editTimeSeries()
+{
+  if (m_timeSeriesEditor) {
+    m_timeSeriesEditor->reject();
+    m_timeSeriesEditor->deleteLater();
+  }
+
+  QPointer<DataSource> ds = m_currentDataSource;
+  if (!ds) {
+    return;
+  }
+
+  auto steps = ds->timeSeriesSteps();
+  QStringList labels;
+  for (auto& step : steps) {
+    labels.append(step.label);
+  }
+
+  m_timeSeriesEditor = new ListEditorDialog(labels, this);
+  m_timeSeriesEditor->setToolTip("Left-click and drag a row to re-order time "
+                                 "series steps. Double-click to edit a label.");
+  m_timeSeriesEditor->setWindowTitle("Edit Time Series");
+  m_timeSeriesEditor->show();
+  auto* editor = m_timeSeriesEditor.data();
+
+  auto onAccepted = [ds, editor, steps]() {
+    auto newOrder = editor->currentOrder();
+    auto newNames = editor->currentNames();
+
+    // First, re-arrange the time steps according to the new ordering
+    QList<TimeSeriesStep> newSteps;
+    for (auto i : newOrder) {
+      newSteps.append(steps[i]);
+    }
+
+    // Now, rename them
+    for (int i = 0; i < newNames.size(); ++i) {
+      newSteps[i].label = newNames[i];
+    }
+
+    // Finally, set the new steps
+    ds->setTimeSeriesSteps(newSteps);
+  };
+
+  connect(m_timeSeriesEditor, &QDialog::accepted, ds, onAccepted);
 }
 
 void DataPropertiesPanel::updateComponentsCombo()

@@ -15,6 +15,7 @@
 #include "Operator.h"
 #include "OperatorFactory.h"
 #include "Pipeline.h"
+#include "TimeSeriesStep.h"
 #include "Utilities.h"
 
 #include <vtkDataObject.h>
@@ -31,6 +32,7 @@
 #include <vtkTypeInt8Array.h>
 #include <vtkVector.h>
 
+#include <pqTimeKeeper.h>
 #include <vtkPVArrayInformation.h>
 #include <vtkPVDataInformation.h>
 #include <vtkPVDataSetAttributesInformation.h>
@@ -97,6 +99,8 @@ public:
   bool Forkable = true;
   // Track data array renames
   QMap<QString, QString> CurrentToOriginal;
+  QList<TimeSeriesStep> timeSeriesSteps;
+  int currentTimeStep = 0;
 
   // Checks if the tilt angles data array exists on the given VTK data
   // and creates it if it does not exist.
@@ -668,6 +672,12 @@ DataSource* DataSource::clone() const
     newClone->setTiltAngles(getTiltAngles());
   }
 
+  QList<TimeSeriesStep> newTimeSteps;
+  for (auto& timeStep : this->Internals->timeSeriesSteps) {
+    newTimeSteps.append(timeStep.clone());
+  }
+  newClone->setTimeSeriesSteps(newTimeSteps);
+
   return newClone;
 }
 
@@ -1193,6 +1203,120 @@ void DataSource::copyData(vtkDataObject* newData)
   emit activeScalarsChanged();
 }
 
+void DataSource::onTimeChanged()
+{
+  auto* timeKeeper = ActiveObjects::instance().activeTimeKeeper();
+  if (!timeKeeper) {
+    return;
+  }
+
+  // Use interpolation to figure out which time step we are at
+  auto numTimeSteps = numTimeSeriesSteps();
+  if (numTimeSteps <= 1) {
+    return;
+  }
+
+  auto timeSteps = timeKeeper->getTimeSteps();
+  if (timeSteps.size() == 1) {
+    return;
+  } else if (timeSteps.size() == 0) {
+    // It's just a 0 to 1 default.
+    timeSteps.append(0);
+    timeSteps.append(1);
+  }
+
+  auto timeStart = timeSteps.front();
+  auto timeStop = timeSteps.back();
+  auto time = timeKeeper->getTime();
+
+  auto scale = ((numTimeSteps - 1) / (timeStop - timeStart));
+  auto timeStep = std::round((time - timeStart) * scale);
+  switchTimeSeriesStep(timeStep);
+}
+
+void DataSource::switchTimeSeriesStep(int i)
+{
+  if (i >= this->Internals->timeSeriesSteps.size()) {
+    auto size = this->Internals->timeSeriesSteps.size();
+    qCritical() << i
+                << "is out of bounds for number of time series steps: " << size;
+    return;
+  }
+
+  m_changingTimeStep = true;
+  this->Internals->currentTimeStep = i;
+  producer()->SetOutput(this->Internals->timeSeriesSteps[i].image);
+  dataModified();
+  m_changingTimeStep = false;
+
+  emit timeStepChanged();
+}
+
+int DataSource::numTimeSeriesSteps() const
+{
+  return this->Internals->timeSeriesSteps.size();
+}
+
+int DataSource::currentTimeSeriesIndex() const
+{
+  return this->Internals->currentTimeStep;
+}
+
+void DataSource::setTimeSeriesSteps(const QList<TimeSeriesStep>& steps)
+{
+  this->Internals->timeSeriesSteps = steps;
+  emit timeStepsModified();
+
+  // Update the data if we need to
+  auto current = currentTimeSeriesIndex();
+  if (current < steps.size() && steps[current].image != imageData()) {
+    // Re-use the logic here
+    switchTimeSeriesStep(current);
+  }
+}
+
+void DataSource::addTimeSeriesSteps(const QList<TimeSeriesStep>& steps)
+{
+  this->Internals->timeSeriesSteps.append(steps);
+  emit timeStepsModified();
+}
+
+void DataSource::addTimeSeriesStep(const TimeSeriesStep& step)
+{
+  this->Internals->timeSeriesSteps.append(step);
+  emit timeStepsModified();
+}
+
+TimeSeriesStep DataSource::currentTimeSeriesStep()
+{
+  if (!hasTimeSteps()) {
+    qDebug() << "currentTimeSeriesStep() was called, but there "
+             << "are no time steps!";
+    return TimeSeriesStep();
+  }
+
+  auto current = this->Internals->currentTimeStep;
+  if (current >= numTimeSeriesSteps()) {
+    qDebug() << "Current time step is out of bounds!";
+    return TimeSeriesStep();
+  }
+
+  return this->Internals->timeSeriesSteps[current];
+}
+
+QList<TimeSeriesStep> DataSource::timeSeriesSteps() const
+{
+  return this->Internals->timeSeriesSteps;
+}
+
+void DataSource::clearTimeSeriesSteps()
+{
+  this->Internals->timeSeriesSteps.clear();
+  this->Internals->currentTimeStep = 0;
+  emit timeStepsModified();
+  emit timeStepChanged();
+}
+
 vtkSMProxy* DataSource::colorMap() const
 {
   return this->Internals->ColorMap;
@@ -1278,6 +1402,11 @@ bool DataSource::hasLabelMap()
 
 void DataSource::updateColorMap()
 {
+  if (m_changingTimeStep) {
+    // Don't update the color map for time step changes
+    return;
+  }
+
   rescaleColorMap(colorMap(), this);
 }
 
@@ -1352,6 +1481,12 @@ void DataSource::init(vtkImageData* data, DataSourceType dataType,
 
   connect(this, &DataSource::dataPropertiesChanged,
           [this]() { this->proxy()->MarkModified(nullptr); });
+
+  auto* timeKeeper = ActiveObjects::instance().activeTimeKeeper();
+  if (timeKeeper) {
+    connect(timeKeeper, &pqTimeKeeper::timeChanged, this,
+            &DataSource::onTimeChanged);
+  }
 }
 
 vtkAlgorithm* DataSource::algorithm() const

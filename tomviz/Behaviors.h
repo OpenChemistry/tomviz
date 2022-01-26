@@ -5,12 +5,14 @@
 #define tomvizBehaviors_h
 
 #include <QObject>
+#include <QScopedPointer>
 
 class QMainWindow;
 
 namespace tomviz {
 
 class MoveActiveObject;
+class TimeSeriesLabel;
 
 /// Behaviors instantiates tomviz relevant ParaView behaviors (and any new
 /// ones) as needed.
@@ -22,12 +24,13 @@ class Behaviors : public QObject
 public:
   Behaviors(QMainWindow* mainWindow);
 
-  MoveActiveObject* moveActiveBehavior() { return m_moveActiveBehavior; }
+  MoveActiveObject* moveActiveBehavior() { return m_moveActiveBehavior.data(); }
 
 private:
   Q_DISABLE_COPY(Behaviors)
 
-  MoveActiveObject* m_moveActiveBehavior;
+  QScopedPointer<MoveActiveObject> m_moveActiveBehavior;
+  QScopedPointer<TimeSeriesLabel> m_timeSeriesLabel;
 
   void registerCustomOperatorUIs();
 };

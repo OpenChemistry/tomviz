@@ -116,12 +116,16 @@ set(SOURCES
   InternalPythonHelper.cxx
   IntSliderWidget.cxx
   IntSliderWidget.h
+  ListEditorWidget.cxx
+  ListEditorWidget.h
   LoadDataReaction.cxx
   LoadDataReaction.h
   LoadPaletteReaction.cxx
   LoadPaletteReaction.h
   LoadStackReaction.cxx
   LoadStackReaction.h
+  LoadTimeSeriesReaction.cxx
+  LoadTimeSeriesReaction.h
   Logger.cxx
   Logger.h
   ManualManipulationWidget.cxx
@@ -208,6 +212,9 @@ set(SOURCES
   SpinBox.h
   ThreadedExecutor.cxx
   ThreadedExecutor.h
+  TimeSeriesLabel.h
+  TimeSeriesLabel.cxx
+  TimeSeriesStep.h
   TomographyReconstruction.h
   TomographyReconstruction.cxx
   TomographyTiltSeries.h
@@ -694,6 +701,7 @@ target_link_libraries(tomvizlib
     VTK::jsoncpp
     VTK::pugixml
     VTK::tiff
+    VTK::CommonColor
     VTK::DomainsChemistry
     VTK::hdf5
     VTK::InteractionStyle

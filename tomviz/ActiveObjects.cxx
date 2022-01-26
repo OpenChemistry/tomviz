@@ -297,6 +297,12 @@ DataSource* ActiveObjects::activeParentDataSource()
   return m_activeParentDataSource;
 }
 
+pqTimeKeeper* ActiveObjects::activeTimeKeeper() const
+{
+  pqServer* server = pqActiveObjects::instance().activeServer();
+  return server ? server->getTimeKeeper() : nullptr;
+}
+
 Pipeline* ActiveObjects::activePipeline() const
 {
 
