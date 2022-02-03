@@ -33,16 +33,16 @@ if(UNIX AND NOT APPLE)
 endif()
 
 # Location where Python modules will be installed.
-set(tomviz_python_install_dir "lib/tomviz/site-packages")
+set(tomviz_python_install_dir "${INSTALL_LIBRARY_DIR}/tomviz/site-packages")
 # Location where Python modules will be copied to in binary tree.
 set(tomviz_python_binary_dir "${tomviz_BINARY_DIR}/lib/site-packages")
 # Location where sample data will be installed.
-set(tomviz_data_install_dir "share/tomviz")
+set(tomviz_data_install_dir "${INSTALL_DATA_DIR}/tomviz")
 
 set(tomviz_html_binary_dir "${CMAKE_BINARY_DIR}/web")
 set(tomviz_js_binary_path "${tomviz_html_binary_dir}/tomviz.js")
 set(tomviz_html_binary_path "${tomviz_html_binary_dir}/tomviz.html")
-set(tomviz_web_install_dir "share/tomviz/web")
+set(tomviz_web_install_dir "${INSTALL_DATA_DIR}/tomviz/web")
 
 # Centrally set the grand exception for macOS...
 if(APPLE)

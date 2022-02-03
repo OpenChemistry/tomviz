@@ -719,7 +719,7 @@ if(APPLE)
       MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/tomviz.plist.in)
   install(TARGETS tomviz DESTINATION Applications COMPONENT runtime)
 else()
-  install(TARGETS tomviz DESTINATION bin COMPONENT runtime)
+  install(TARGETS tomviz DESTINATION "${INSTALL_RUNTIME_DIR}" COMPONENT runtime)
 endif()
 install(TARGETS tomvizlib
   RUNTIME DESTINATION "${INSTALL_RUNTIME_DIR}"
