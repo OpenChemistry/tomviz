@@ -24,6 +24,8 @@ set(SOURCES
   AddResampleReaction.h
   AlignWidget.cxx
   AlignWidget.h
+  AnimationHelperDialog.cxx
+  AnimationHelperDialog.h
   ArrayWranglerReaction.cxx
   ArrayWranglerReaction.h
   AxesReaction.cxx

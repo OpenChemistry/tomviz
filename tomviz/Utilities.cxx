@@ -612,6 +612,21 @@ QString readInJSONDescription(const QString& fileName)
   return readInTextFile(fileName, ".json");
 }
 
+void clearCameraCues(vtkSMRenderViewProxy* renderView)
+{
+  pqAnimationScene* scene =
+    pqPVApplicationCore::instance()->animationManager()->getActiveScene();
+
+  for (auto* cue : scene->getCues()) {
+    vtkSMProxy* animatedProxy = pqSMAdaptor::getProxyProperty(
+      cue->getProxy()->GetProperty("AnimatedProxy"));
+    if (animatedProxy == renderView &&
+        cue->getSMName().startsWith("CameraAnimationCue")) {
+      scene->removeCue(cue);
+    }
+  }
+}
+
 void createCameraOrbit(vtkSMSourceProxy* data, vtkSMRenderViewProxy* renderView)
 {
   // Get camera position at start
@@ -646,8 +661,6 @@ void createCameraOrbit(vtkSMSourceProxy* data, vtkSMRenderViewProxy* renderView)
 
   pqAnimationScene* scene =
     pqPVApplicationCore::instance()->animationManager()->getActiveScene();
-  pqSMAdaptor::setElementProperty(
-    scene->getProxy()->GetProperty("NumberOfFrames"), 200);
 
   pqAnimationCue* cue =
     scene->createCue(renderView, "Camera", 0, "CameraAnimationCue");
@@ -660,6 +673,49 @@ void createCameraOrbit(vtkSMSourceProxy* data, vtkSMRenderViewProxy* renderView)
                                           centerList);
   pqSMAdaptor::setElementProperty(kf->GetProperty("ClosedPositionPath"), 1);
   kf->UpdateVTKObjects();
+}
+
+void createCameraOrbit(vtkSMRenderViewProxy* renderView)
+{
+  // Get camera position at start
+  double* normal = renderView->GetActiveCamera()->GetViewUp();
+  double* origin = renderView->GetActiveCamera()->GetPosition();
+  double* center = renderView->GetActiveCamera()->GetFocalPoint();
+
+  QList<QVariant> centerList;
+  centerList << center[0] << center[1] << center[2];
+
+  // Generate camera orbit
+  vtkSmartPointer<vtkPoints> pts;
+  pts.TakeReference(vtkSMUtilities::CreateOrbit(center, normal, 7, origin));
+  QList<QVariant> points;
+  for (vtkIdType i = 0; i < pts->GetNumberOfPoints(); ++i) {
+    auto* coords = pts->GetPoint(i);
+    points << coords[0] << coords[1] << coords[2];
+  }
+
+  pqAnimationScene* scene =
+    pqPVApplicationCore::instance()->animationManager()->getActiveScene();
+
+  pqAnimationCue* cue =
+    scene->createCue(renderView, "Camera", 0, "CameraAnimationCue");
+  pqSMAdaptor::setElementProperty(cue->getProxy()->GetProperty("Mode"), 1);
+  cue->getProxy()->UpdateVTKObjects();
+  vtkSMProxy* kf = cue->getKeyFrame(0);
+  pqSMAdaptor::setMultipleElementProperty(kf->GetProperty("PositionPathPoints"),
+                                          points);
+  pqSMAdaptor::setMultipleElementProperty(kf->GetProperty("FocalPathPoints"),
+                                          centerList);
+  pqSMAdaptor::setElementProperty(kf->GetProperty("ClosedPositionPath"), 1);
+  kf->UpdateVTKObjects();
+}
+
+void setAnimationNumberOfFrames(int numFrames)
+{
+  pqAnimationScene* scene =
+    pqPVApplicationCore::instance()->animationManager()->getActiveScene();
+  pqSMAdaptor::setElementProperty(
+    scene->getProxy()->GetProperty("NumberOfFrames"), numFrames);
 }
 
 void snapAnimationToTimeSteps(const std::vector<double>& timeSteps)

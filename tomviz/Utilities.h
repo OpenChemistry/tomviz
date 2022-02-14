@@ -182,10 +182,21 @@ QString readInJSONDescription(const QString& scriptName);
 // Get the path for the Tomviz directory
 QString userDataPath();
 
+// Remove all camera cues from the animation scene associated with the
+// render view.
+void clearCameraCues(vtkSMRenderViewProxy* renderView);
+
 // Create a camera orbit animation for the given renderview around the given
 // object
 void createCameraOrbit(vtkSMSourceProxy* data,
                        vtkSMRenderViewProxy* renderView);
+
+// Create a camera orbit animation for the given renderview around the current
+// camera focal point.
+void createCameraOrbit(vtkSMRenderViewProxy* renderView);
+
+// Set the number of frames in the animation scene
+void setAnimationNumberOfFrames(int numFrames);
 
 // Set the animation time steps and set the play mode to "Snap to TimeSteps"
 // This will also set the "TimeRange".

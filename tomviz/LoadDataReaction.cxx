@@ -523,6 +523,7 @@ void LoadDataReaction::dataSourceAdded(DataSource* dataSource,
     pqRenderView* renderView =
       qobject_cast<pqRenderView*>(pqActiveObjects::instance().activeView());
     if (renderView && createCameraOrbit) {
+      tomviz::setAnimationNumberOfFrames(200);
       tomviz::createCameraOrbit(dataSource->proxy(),
                                 renderView->getRenderViewProxy());
     }
