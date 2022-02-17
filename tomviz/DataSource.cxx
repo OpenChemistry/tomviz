@@ -1205,6 +1205,10 @@ void DataSource::copyData(vtkDataObject* newData)
 
 void DataSource::onTimeChanged()
 {
+  if (!ActiveObjects::instance().timeSeriesAnimationsEnabled()) {
+    return;
+  }
+
   auto* timeKeeper = ActiveObjects::instance().activeTimeKeeper();
   if (!timeKeeper) {
     return;

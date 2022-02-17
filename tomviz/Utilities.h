@@ -182,9 +182,10 @@ QString readInJSONDescription(const QString& scriptName);
 // Get the path for the Tomviz directory
 QString userDataPath();
 
-// Remove all camera cues from the animation scene associated with the
-// render view.
-void clearCameraCues(vtkSMRenderViewProxy* renderView);
+// Remove all camera cues from the animation scene.
+// If a render view is provided, only camera cues associated with that
+// render view will be removed.
+void clearCameraCues(vtkSMRenderViewProxy* renderView = nullptr);
 
 // Create a camera orbit animation for the given renderview around the given
 // object

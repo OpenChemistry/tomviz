@@ -390,6 +390,13 @@ list(APPEND SOURCES
 )
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/operators)
 
+# animations/
+list(APPEND SOURCES
+  animations/ModuleAnimation.h
+  animations/ContourAnimation.h
+)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/animations)
+
 list(APPEND SOURCES
   h5cpp/h5readwrite.cpp
 )

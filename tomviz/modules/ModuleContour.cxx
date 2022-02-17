@@ -329,6 +329,11 @@ void ModuleContour::resetIsoValue()
   setIsoValue(val);
 }
 
+void ModuleContour::isoRange(double range[2])
+{
+  getRange(d->ContourArrayProducer, range);
+}
+
 QJsonObject ModuleContour::serialize() const
 {
   auto json = Module::serialize();

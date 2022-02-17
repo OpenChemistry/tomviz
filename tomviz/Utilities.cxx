@@ -618,12 +618,18 @@ void clearCameraCues(vtkSMRenderViewProxy* renderView)
     pqPVApplicationCore::instance()->animationManager()->getActiveScene();
 
   for (auto* cue : scene->getCues()) {
+    if (!cue->getSMName().startsWith("CameraAnimationCue")) {
+      continue;
+    }
+
     vtkSMProxy* animatedProxy = pqSMAdaptor::getProxyProperty(
       cue->getProxy()->GetProperty("AnimatedProxy"));
-    if (animatedProxy == renderView &&
-        cue->getSMName().startsWith("CameraAnimationCue")) {
-      scene->removeCue(cue);
+    if (renderView && animatedProxy != renderView) {
+      continue;
     }
+
+    // If we made it this far, we should remove this cue
+    scene->removeCue(cue);
   }
 }
 
