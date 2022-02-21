@@ -642,7 +642,17 @@ QJsonObject OperatorPython::serialize() const
   json["label"] = label();
   json["script"] = script();
   if (!m_arguments.isEmpty()) {
-    json["arguments"] = QJsonObject::fromVariantMap(m_arguments);
+    auto arguments = m_arguments;
+
+    for (auto& value : arguments) {
+      if (value.canConvert<DataSource*>()) {
+        // Write out the id
+        auto* ds = value.value<DataSource*>();
+        value.setValue(ds->id());
+      }
+    }
+
+    json["arguments"] = QJsonObject::fromVariantMap(arguments);
     // If we have no description we still need to save the types of
     // the arguments
     if (JSONDescription().isEmpty() && !m_typeInfo.isEmpty()) {
