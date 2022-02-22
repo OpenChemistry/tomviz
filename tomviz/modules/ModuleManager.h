@@ -212,6 +212,7 @@ private:
   QString m_mostRecentStateFile = "";
   QJsonObject m_stateObject;
   bool m_loadDataSources = true;
+  bool m_isDeserializing = false;
 };
 } // namespace tomviz
 

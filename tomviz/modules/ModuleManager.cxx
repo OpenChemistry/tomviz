@@ -168,25 +168,23 @@ public:
 
   QStringList dataSourceDependencies(const QJsonObject& ds)
   {
+    // Traverse recursively through the operators and find any
+    // data source dependencies. Returns a list of their ids.
     QStringList deps;
-    if (!ds.contains("operators")) {
-      return deps;
-    }
-
-    for (auto opVal : ds["operators"].toArray()) {
+    for (auto opVal : ds.value("operators").toArray()) {
       auto op = opVal.toObject();
       auto args = op.value("arguments").toObject();
       for (auto& key : args.keys()) {
         auto value = args[key];
         if (value.isString() && value.toString().startsWith("0x")) {
+          // This is a dependency, add it.
           deps.append(value.toString());
         }
       }
 
-      if (op.contains("dataSources")) {
-        for (auto output : op["dataSources"].toArray()) {
-          deps.append(dataSourceDependencies(output.toObject()));
-        }
+      for (auto childVal : op.value("dataSources").toArray()) {
+        // Recursively add child dependencies.
+        deps.append(dataSourceDependencies(childVal.toObject()));
       }
     }
 
@@ -196,25 +194,19 @@ public:
   QJsonObject rootDataSourceDependency(QString dep,
                                        QList<QJsonObject>& dataSources)
   {
+    // Find the root data source of this dependency.
+    // Searches through the list of dataSources to find this information.
     for (auto& ds : dataSources) {
       if (ds.value("id").toString() == dep) {
         return ds;
       }
 
-      if (!ds.contains("operators")) {
-        continue;
-      }
-
-      for (auto opVal : ds["operators"].toArray()) {
+      for (auto opVal : ds.value("operators").toArray()) {
         auto op = opVal.toObject();
-        if (!op.contains("dataSources")) {
-          continue;
-        }
+        auto children = toObjectList(op.value("dataSources").toArray());
 
-        auto childDataSources = toObjectList(op["dataSources"].toArray());
-
-        // See if the child has it
-        auto result = rootDataSourceDependency(dep, childDataSources);
+        // Recursively search for it in the children
+        auto result = rootDataSourceDependency(dep, children);
         if (!result.isEmpty()) {
           return ds;
         }
@@ -860,6 +852,8 @@ void createXmlLayout(pugi::xml_node& n, QJsonArray arr)
 bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir,
                                 bool loadDataSources)
 {
+  m_isDeserializing = true;
+
   // Get back to a known state.
   reset();
   d->LastStateLoadSuccess = true;
@@ -1155,7 +1149,12 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
     }
   }
 
-  if (!executePipelinesOnLoad()) {
+  m_isDeserializing = false;
+
+  if (!executePipelinesOnLoad() || d->RemaningPipelinesToWaitFor == 0) {
+    // If there are no pipelines left to wait for, most likely, the
+    // pipelines finished before deserialization finished. Go ahead and
+    // emit the signal.
     emit stateDoneLoading();
   }
 }
@@ -1168,7 +1167,11 @@ void ModuleManager::incrementPipelinesToWaitFor()
 void ModuleManager::onPipelineFinished()
 {
   --d->RemaningPipelinesToWaitFor;
-  if (d->RemaningPipelinesToWaitFor == 0) {
+
+  // It could still be deserializing if the pipeline finishes early.
+  // In this case, the signal will be emitted after deserialization
+  // finishes.
+  if (d->RemaningPipelinesToWaitFor == 0 && !m_isDeserializing) {
     emit stateDoneLoading();
   }
   if (d->RemaningPipelinesToWaitFor <= 0) {
@@ -1272,6 +1275,7 @@ void ModuleManager::loadDataSources(const QJsonArray& dataSourcesArray)
 
     // Load the dependencies first.
     for (auto& dep : deps) {
+      // Load the root data source of this dependency
       auto rootObj = d->rootDataSourceDependency(dep, dataSources);
       localLoadDataSource(rootObj);
 
