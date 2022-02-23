@@ -471,7 +471,7 @@ void addDatasetWidget(QGridLayout* layout, int row, QJsonObject& parameterNode)
 {
   QJsonValueRef nameValue = parameterNode["name"];
   QJsonValueRef labelValue = parameterNode["label"];
-  auto defaultId = parameterNode["default"].toString();
+  auto defaultId = parameterNode.value("default").toString();
 
   if (nameValue.isUndefined()) {
     QJsonDocument document(parameterNode);
