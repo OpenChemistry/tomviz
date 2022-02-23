@@ -405,7 +405,10 @@ def _read_emd(path, options=None):
         data = tomography['data']
         # We default the name to ImageScalars
         name = data.attrs.get('name', 'ImageScalars')
-        if not isinstance(name, str):
+        if isinstance(name, (bytes, bytearray)):
+            name = name.decode()
+        elif not isinstance(name, str):
+            # FIXME: is there a particular use case for this?
             name = name[0].decode()
 
         arrays = [(name, _read_dataset(data, options))]
@@ -616,7 +619,8 @@ def _is_data_exchange(path):
         return '/exchange/data' in f
 
 
-def _execute_transform(operator_label, transform, arguments, input, progress):
+def _execute_transform(operator_label, transform, arguments, input, progress,
+                       dataset_dependencies):
     # Update the progress attribute to an instance that will work outside the
     # application and give use a nice progress information.
     spinner = None
@@ -630,6 +634,11 @@ def _execute_transform(operator_label, transform, arguments, input, progress):
     logger.info('Executing \'%s\' operator' % operator_label)
     if not supports_progress:
         print('Operator doesn\'t support progress updates.')
+
+    # Convert any data source id arguments here into Dataset objects.
+    for k, v in arguments.items():
+        if isinstance(v, str) and v.startswith('0x'):
+            arguments[k] = dataset_dependencies[v]
 
     result = None
     # Special cases for marking as volume or tilt series
@@ -709,9 +718,7 @@ def _write_child_data(result, operator_index, output_file_path, dims):
         _write_emd(child_data_path, dataobject, dims)
 
 
-def execute(operators, start_at, data_file_path, output_file_path,
-            progress_method, progress_path, read_options=None):
-
+def load_dataset(data_file_path, read_options=None):
     if _is_data_exchange(data_file_path):
         output = _read_data_exchange(data_file_path, read_options)
     else:
@@ -739,26 +746,57 @@ def execute(operators, start_at, data_file_path, output_file_path,
         # Convert to native type, as is required by itk
         data.spacing = [float(d.values[1] - d.values[0]) for d in dims]
 
+    data.dims = dims
+
+    return data
+
+
+def run_pipeline(data, operators, start_at, progress, child_output_path=None,
+                 dataset_dependencies=None):
+
+    dims = data.dims
     operators = operators[start_at:]
     transforms = _load_transform_functions(operators)
-    with _progress(progress_method, progress_path) as progress:
-        progress.started()
-        operator_index = start_at
-        for (label, transform, arguments) in transforms:
-            progress.started(operator_index)
-            result = _execute_transform(label, transform,
-                                        arguments, data,
-                                        progress)
 
-            # Do we have any child data sources we need to write out?
-            if result is not None:
-                _write_child_data(result, operator_index,
-                                  output_file_path, dims)
+    operator_index = start_at
+    for (label, transform, arguments) in transforms:
+        progress.started(operator_index)
+        result = _execute_transform(label, transform, arguments, data,
+                                    progress, dataset_dependencies)
 
-            progress.finished(operator_index)
-            operator_index += 1
+        # Do we have any child data sources we need to write out?
+        if child_output_path and result is not None:
+            _write_child_data(result, operator_index, child_output_path, dims)
+
+        progress.finished(operator_index)
+        operator_index += 1
 
         logger.info('Execution complete.')
+
+    return result
+
+
+def execute(operators, start_at, data_file_path, output_file_path,
+            progress_method, progress_path, read_options=None,
+            dataset_dependencies=None):
+
+    if dataset_dependencies is None:
+        dataset_dependencies = {}
+
+    child_output_path = output_file_path
+    if child_output_path is None:
+        child_output_path = '.'
+
+    data = load_dataset(data_file_path, read_options)
+    dims = data.dims
+
+    with _progress(progress_method, progress_path) as progress:
+        progress.started()
+
+        # Run the pipeline
+        result = run_pipeline(data, operators, start_at, progress,
+                              child_output_path, dataset_dependencies)
+
         # Now write out the transformed data.
         logger.info('Writing transformed data.')
         if output_file_path is None:
@@ -770,6 +808,7 @@ def execute(operators, start_at, data_file_path, output_file_path,
         else:
             [(_, child_data)] = result.items()
             _write_emd(output_file_path, child_data, dims)
+
         logger.info('Write complete.')
         progress.finished()
 
