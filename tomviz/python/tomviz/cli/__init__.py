@@ -33,6 +33,10 @@ def _create_data_source_options_string(data_sources):
 def _auto_select_data_source(data_sources):
     if len(data_sources) == 1:
         # Only one data source. Select this one.
+        if 'id' not in data_sources[0]:
+            # For backwards compatibility, when we did not have data
+            # source ids (as is being done in the CI), make an id.
+            data_sources[0]['id'] = '0x0'
         return data_sources[0]['id']
 
     with_pipeline = [len(x.get('operators', [])) > 0 for x in data_sources]

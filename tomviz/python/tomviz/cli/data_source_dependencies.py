@@ -48,6 +48,7 @@ class DependencyInfo:
                         return True
 
         recurse(self.data_sources)
+        self._path = path
         return path
 
     @property
