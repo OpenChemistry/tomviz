@@ -47,6 +47,7 @@
 
 #include <QDebug>
 #include <QDir>
+#include <QEventLoop>
 #include <QJsonArray>
 #include <QMap>
 #include <QMessageBox>
@@ -57,6 +58,15 @@
 #include <sstream>
 
 namespace tomviz {
+
+static QList<QJsonObject> toObjectList(const QJsonArray& array)
+{
+  QList<QJsonObject> ret;
+  for (const auto& item : array) {
+    ret.append(item.toObject());
+  }
+  return ret;
+}
 
 class ModuleManager::MMInternals
 {
@@ -154,6 +164,63 @@ public:
       }
       dataSourceState["reader"] = reader;
     }
+  }
+
+  QStringList dataSourceDependencies(const QJsonObject& ds)
+  {
+    // Traverse recursively through the operators and find any
+    // data source dependencies. Returns a list of their ids.
+    QStringList deps;
+    for (auto opVal : ds.value("operators").toArray()) {
+      auto op = opVal.toObject();
+      auto args = op.value("arguments").toObject();
+      for (auto& key : args.keys()) {
+        auto value = args[key];
+        if (value.isString() && value.toString().startsWith("0x")) {
+          // This is a dependency, add it.
+          deps.append(value.toString());
+        }
+      }
+
+      for (auto childVal : op.value("dataSources").toArray()) {
+        // Recursively add child dependencies.
+        deps.append(dataSourceDependencies(childVal.toObject()));
+      }
+    }
+
+    return deps;
+  }
+
+  QJsonObject rootDataSourceDependency(QString dep,
+                                       QList<QJsonObject>& dataSources)
+  {
+    // Find the root data source of this dependency.
+    // Searches through the list of dataSources to find this information.
+    for (auto& ds : dataSources) {
+      if (ds.value("id").toString() == dep) {
+        return ds;
+      }
+
+      for (auto opVal : ds.value("operators").toArray()) {
+        auto op = opVal.toObject();
+        auto children = toObjectList(op.value("dataSources").toArray());
+
+        // Recursively search for it in the children
+        auto result = rootDataSourceDependency(dep, children);
+        if (!result.isEmpty()) {
+          return ds;
+        }
+      }
+    }
+
+    // Didn't find it...
+    return {};
+  }
+
+  bool isChildDataSourceDependency(QString dep, QList<QJsonObject>& dataSources)
+  {
+    auto root = rootDataSourceDependency(dep, dataSources);
+    return root.value("id").toString() != dep;
   }
 };
 
@@ -785,6 +852,8 @@ void createXmlLayout(pugi::xml_node& n, QJsonArray arr)
 bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir,
                                 bool loadDataSources)
 {
+  m_isDeserializing = true;
+
   // Get back to a known state.
   reset();
   d->LastStateLoadSuccess = true;
@@ -1034,10 +1103,7 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
   // Load up all of the data sources.
   if (m_loadDataSources && m_stateObject["dataSources"].isArray()) {
     auto dataSources = m_stateObject["dataSources"].toArray();
-    foreach (auto ds, dataSources) {
-      auto dsObject = ds.toObject();
-      loadDataSource(dsObject);
-    }
+    loadDataSources(dataSources);
   }
 
   // Load up all of the molecule sources.
@@ -1083,7 +1149,12 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
     }
   }
 
-  if (!executePipelinesOnLoad()) {
+  m_isDeserializing = false;
+
+  if (!executePipelinesOnLoad() || d->RemaningPipelinesToWaitFor == 0) {
+    // If there are no pipelines left to wait for, most likely, the
+    // pipelines finished before deserialization finished. Go ahead and
+    // emit the signal.
     emit stateDoneLoading();
   }
 }
@@ -1096,7 +1167,11 @@ void ModuleManager::incrementPipelinesToWaitFor()
 void ModuleManager::onPipelineFinished()
 {
   --d->RemaningPipelinesToWaitFor;
-  if (d->RemaningPipelinesToWaitFor == 0) {
+
+  // It could still be deserializing if the pipeline finishes early.
+  // In this case, the signal will be emitted after deserialization
+  // finishes.
+  if (d->RemaningPipelinesToWaitFor == 0 && !m_isDeserializing) {
     emit stateDoneLoading();
   }
   if (d->RemaningPipelinesToWaitFor <= 0) {
@@ -1167,6 +1242,58 @@ bool ModuleManager::hasDataSources()
 bool ModuleManager::hasMoleculeSources()
 {
   return !d->MoleculeSources.empty();
+}
+
+void ModuleManager::loadDataSources(const QJsonArray& dataSourcesArray)
+{
+  // Data source arguments in operators make it so that we have to
+  // load in the data sources in a proper order, or else the arguments
+  // will not be able to be resolved for the operator to use.
+
+  auto dataSources = toObjectList(dataSourcesArray);
+  QMap<QString, DataSource*> alreadyLoaded;
+
+  // This local load data source function ensures we load dependencies
+  // before we load in the requested data source. It also ensures that
+  // we do not load in any data sources twice.
+  std::function<void(QJsonObject ds)> localLoadDataSource;
+  localLoadDataSource = [&dataSources, &alreadyLoaded, &localLoadDataSource,
+                         this](QJsonObject ds) {
+    auto id = ds.value("id").toString();
+    if (alreadyLoaded.contains(id)) {
+      // Already have this one
+      return;
+    }
+
+    // First, see if it has any dependencies.
+    auto deps = d->dataSourceDependencies(ds);
+
+    // Load the dependencies first.
+    for (auto& dep : deps) {
+      // Load the root data source of this dependency
+      auto rootObj = d->rootDataSourceDependency(dep, dataSources);
+      localLoadDataSource(rootObj);
+
+      // If it is a child dependency, wait for the pipeline to finish
+      if (d->isChildDataSourceDependency(dep, dataSources)) {
+        auto rootId = rootObj.value("id").toString();
+        auto* depDataSource = alreadyLoaded[rootId];
+        if (depDataSource->pipeline()->isRunning()) {
+          QEventLoop loop;
+          connect(depDataSource->pipeline(), &Pipeline::finished, &loop,
+                  &QEventLoop::quit);
+          loop.exec();
+        };
+      }
+    }
+
+    // Now that the dependencies are loaded, we can load the data source...
+    alreadyLoaded[id] = loadDataSource(ds);
+  };
+
+  for (auto& ds : dataSources) {
+    localLoadDataSource(ds);
+  }
 }
 
 DataSource* ModuleManager::loadDataSource(QJsonObject& dsObject)

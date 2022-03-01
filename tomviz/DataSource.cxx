@@ -547,6 +547,11 @@ bool DataSource::deserialize(const QJsonObject& state)
     setLabel(state["label"].toString());
   }
 
+  if (state.contains("id")) {
+    ModuleManager::instance().addStateIdToDataSource(state["id"].toString(),
+                                                     this);
+  }
+
   if (state.contains("scalarsRename")) {
     auto scalarsRename = state["scalarsRename"].toObject();
     for (auto it = scalarsRename.begin(); it != scalarsRename.end(); ++it) {

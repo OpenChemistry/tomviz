@@ -25,7 +25,9 @@
 #include <QSpinBox>
 #include <QWidget>
 
-Q_DECLARE_METATYPE(tomviz::DataSource*)
+using tomviz::DataSource;
+
+Q_DECLARE_METATYPE(DataSource*)
 
 namespace {
 
@@ -168,7 +170,7 @@ void addBoolWidget(QGridLayout* layout, int row, QJsonObject& parameterNode)
 
 template <typename T>
 void addNumericWidget(QGridLayout* layout, int row, QJsonObject& parameterNode,
-                      tomviz::DataSource* dataSource)
+                      DataSource* dataSource)
 {
   QJsonValueRef nameValue = parameterNode["name"];
   QJsonValueRef labelValue = parameterNode["label"];
@@ -469,6 +471,7 @@ void addDatasetWidget(QGridLayout* layout, int row, QJsonObject& parameterNode)
 {
   QJsonValueRef nameValue = parameterNode["name"];
   QJsonValueRef labelValue = parameterNode["label"];
+  auto defaultId = parameterNode.value("default").toString();
 
   if (nameValue.isUndefined()) {
     QJsonDocument document(parameterNode);
@@ -489,14 +492,23 @@ void addDatasetWidget(QGridLayout* layout, int row, QJsonObject& parameterNode)
   auto dataSources =
     tomviz::ModuleManager::instance().allDataSourcesDepthFirst();
   auto labels = tomviz::ModuleManager::createUniqueLabels(dataSources);
+  auto defaultIndex = -1;
   for (int i = 0; i < dataSources.size(); ++i) {
     auto* dataSource = dataSources[i];
+    if (dataSource->id() == defaultId) {
+      defaultIndex = i;
+    }
+
     auto label = labels[i];
 
     QVariant data;
     data.setValue(dataSource);
     comboBox->addItem(label, data);
     addedLabels.append(label);
+  }
+
+  if (defaultIndex != -1) {
+    comboBox->setCurrentIndex(defaultIndex);
   }
 
   layout->addWidget(comboBox, row, 1, 1, 1);
@@ -557,6 +569,12 @@ QLayout* InterfaceBuilder::buildParameterInterface(QGridLayout* layout,
       QString parameterName = nameValue.toString();
       if (m_parameterValues.contains(parameterName)) {
         QVariant parameterValue = m_parameterValues[parameterName];
+        if (parameterValue.canConvert<DataSource*>()) {
+          // Save the id of the pointer so we can store it in a QJsonValue
+          auto* ds = parameterValue.value<DataSource*>();
+          parameterValue.setValue(ds->id());
+        }
+
         parameterObject["default"] = QJsonValue::fromVariant(parameterValue);
       }
     }
@@ -637,7 +655,26 @@ static bool setWidgetValue(QObject* o, const QVariant& v)
   } else if (auto dsb = qobject_cast<tomviz::DoubleSpinBox*>(o)) {
     dsb->setValue(v.toDouble());
   } else if (auto combo = qobject_cast<QComboBox*>(o)) {
-    combo->setCurrentText(v.toString());
+    // Check if the variant is a data source
+    if (v.canConvert<DataSource*>()) {
+      // Find the item with this data, and set it
+      auto* ds = v.value<DataSource*>();
+      bool found = false;
+      for (int i = 0; i < combo->count(); ++i) {
+        if (combo->itemData(i).value<DataSource*>() == ds) {
+          found = true;
+          combo->setCurrentIndex(i);
+          break;
+        }
+      }
+      if (!found) {
+        qDebug() << "Warning: could not find combo box for data source: "
+                 << ds->label() << "(" << ds << ")";
+      }
+    } else {
+      // Assume it is a string
+      combo->setCurrentText(v.toString());
+    }
   } else if (auto le = qobject_cast<QLineEdit*>(o)) {
     le->setText(v.toString());
   } else {

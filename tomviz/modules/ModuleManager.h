@@ -9,6 +9,7 @@
 #include "Module.h"
 
 #include <QJsonObject>
+#include <QMap>
 #include <QScopedPointer>
 
 class pqView;
@@ -118,6 +119,17 @@ public:
   void setMostRecentStateFile(const QString& s);
   QString mostRecentStateFile() const { return m_mostRecentStateFile; }
 
+  // Keep a record of state ids to data sources
+  void addStateIdToDataSource(QString id, DataSource* dataSource)
+  {
+    m_stateIdToDataSource[id] = dataSource;
+  }
+
+  DataSource* dataSourceForStateId(QString id)
+  {
+    return m_stateIdToDataSource.value(id, nullptr);
+  }
+
 public slots:
   void addModule(Module*);
 
@@ -191,12 +203,16 @@ private:
   ModuleManager(QObject* parent = nullptr);
   ~ModuleManager();
 
+  void loadDataSources(const QJsonArray& dataSources);
+
   class MMInternals;
   QScopedPointer<MMInternals> d;
 
+  QMap<QString, DataSource*> m_stateIdToDataSource;
   QString m_mostRecentStateFile = "";
   QJsonObject m_stateObject;
   bool m_loadDataSources = true;
+  bool m_isDeserializing = false;
 };
 } // namespace tomviz
 

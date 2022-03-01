@@ -16,6 +16,7 @@
 #include "CustomPythonOperatorWidget.h"
 #include "DataSource.h"
 #include "EditOperatorWidget.h"
+#include "ModuleManager.h"
 #include "OperatorResult.h"
 #include "OperatorWidget.h"
 #include "Pipeline.h"
@@ -642,7 +643,17 @@ QJsonObject OperatorPython::serialize() const
   json["label"] = label();
   json["script"] = script();
   if (!m_arguments.isEmpty()) {
-    json["arguments"] = QJsonObject::fromVariantMap(m_arguments);
+    auto arguments = m_arguments;
+
+    for (auto& value : arguments) {
+      if (value.canConvert<DataSource*>()) {
+        // Write out the id
+        auto* ds = value.value<DataSource*>();
+        value.setValue(ds->id());
+      }
+    }
+
+    json["arguments"] = QJsonObject::fromVariantMap(arguments);
     // If we have no description we still need to save the types of
     // the arguments
     if (JSONDescription().isEmpty() && !m_typeInfo.isEmpty()) {
@@ -697,6 +708,10 @@ QVariant castJsonArg(const QJsonValue& arg, const QString& type)
       variant = arg.toDouble();
     }
     return variant;
+  } else if (arg.isBool()) {
+    return arg.toBool();
+  } else if (arg.isString()) {
+    return arg.toString();
   }
   return QVariant();
 }
@@ -721,9 +736,26 @@ bool OperatorPython::deserialize(const QJsonObject& json)
       auto params = document.object()["parameters"].toArray();
       foreach (const QString& key, args.keys()) {
         auto param = findJsonObject(params, key);
-        if (!param.isEmpty()) {
-          m_arguments[key] = castJsonArg(args[key], param["type"].toString());
+        if (param.isEmpty()) {
+          continue;
         }
+
+        auto value = castJsonArg(args[key], param["type"].toString());
+        if (value.toString().startsWith("0x")) {
+          // Need to convert a data source id to a data source
+          // The ModuleManager will be responsible for making sure the
+          // right data source is loaded before deserializing this
+          // operator.
+          auto id = value.toString();
+          auto* ds = ModuleManager::instance().dataSourceForStateId(id);
+          if (!ds) {
+            qDebug() << "Error: no data source found for state id: " << id;
+          } else {
+            value.setValue(ds);
+          }
+        }
+
+        m_arguments[key] = value;
       }
     } else if (json.contains("argumentTypeInformation")) {
       auto args = json["arguments"].toObject();
