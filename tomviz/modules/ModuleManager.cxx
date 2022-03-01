@@ -1267,11 +1267,6 @@ void ModuleManager::loadDataSources(const QJsonArray& dataSourcesArray)
 
     // First, see if it has any dependencies.
     auto deps = d->dataSourceDependencies(ds);
-    if (deps.empty()) {
-      // No dependencies. Go ahead and load it.
-      alreadyLoaded[id] = loadDataSource(ds);
-      return;
-    }
 
     // Load the dependencies first.
     for (auto& dep : deps) {
