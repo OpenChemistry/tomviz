@@ -66,9 +66,12 @@ endif()
 # Get the relative path from the tomviz executable install location
 # (INSTALL_RUNTIME_DIR) to the python install dir (tomviz_python_install_dir).
 # Tomviz will use this when it starts to find the python packages.
-cmake_path(RELATIVE_PATH tomviz_python_install_dir
-           BASE_DIRECTORY "${INSTALL_RUNTIME_DIR}"
-           OUTPUT_VARIABLE tomviz_path_from_exe_to_python_install_dir)
+# Note: The paths need to be absolute so we just prefix them with the directory
+# separator
+file(RELATIVE_PATH
+     tomviz_path_from_exe_to_python_install_dir
+     "/${INSTALL_RUNTIME_DIR}"
+     "/${tomviz_python_install_dir}")
 
 # Add our CMake modules to the search path.
 set(CMAKE_MODULE_PATH "${tomviz_SOURCE_DIR}/cmake")
