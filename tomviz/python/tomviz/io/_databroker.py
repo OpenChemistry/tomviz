@@ -6,6 +6,8 @@ from vtk import vtkImageData
 
 _installed = False
 try:
+    from tiled.client import from_uri
+    c = from_uri("https://tiled.nsls2.bnl.gov")
     from databroker import catalog
     from databroker.queries import TimeRange
     _installed = True
@@ -18,11 +20,12 @@ def installed():
 
 
 def catalogs():
+    c = from_uri("https://tiled.nsls2.bnl.gov")
     cats = []
-    for name, cat in catalog.items():
+    for name in c:
         cats.append({
             "name": name,
-            "description": cat.describe()['description']
+            "description": "blank" #cat.describe()['description']
         })
 
     cats = sorted(cats, key=lambda c: c['name'])
@@ -33,18 +36,23 @@ def catalogs():
 def runs(catalog_name, since, until):
     runs = []
 
-    cat = catalog[catalog_name]
+    current = c[catalog_name]
 
     if since != "" and until != "":
-        cat = cat.search(TimeRange(since=since, until=until))
+        cat = current.search(TimeRange(since=since, until=until))
 
-    for uid, run in cat.items():
+    cat = [] # [ current[-1], current[-2], current[-3] ]
+    for i in range(-1, -21, -1):
+        cat.append(current[i])
+
+    for run in cat:
+        md = run.metadata
         runs.append({
-            "uid": uid,
-            "planName": run.metadata['start']['plan_name'],
-            "scanId": run.metadata['start']['scan_id'],
-            "startTime": run.metadata['start']['time'],
-            "stopTime": run.metadata['stop']['time'],
+            "uid": md['start']['uid'],
+            "planName": md['start']['plan_name'],
+            "scanId": md['start']['scan_id'],
+            "startTime": md['start']['time'],
+            "stopTime": md['stop']['time'],
         })
 
     runs = sorted(runs, key=lambda r: r['uid'])
@@ -54,7 +62,7 @@ def runs(catalog_name, since, until):
 
 def tables(catalog_name, run_uid):
     tables = []
-    for name, _ in catalog[catalog_name][run_uid].items():
+    for name, _ in c[catalog_name][run_uid].items():
         tables.append({
             "name": name,
         })
@@ -69,7 +77,7 @@ def variables(catalog_name, run_uid, table):
 
     # Would be nice to use context manager here, but it doesn't seem to close
     # the dataset.
-    dataset = catalog[catalog_name][run_uid][table].read()
+    dataset = c[catalog_name][run_uid][table].read()
     try:
         for name, variable in dataset.data_vars.items():
             variables.append({
@@ -85,7 +93,7 @@ def variables(catalog_name, run_uid, table):
 
 
 def load_variable(catalog_name, run_uid, table, variable):
-    dataset = catalog[catalog_name][run_uid][table].read()
+    dataset = c[catalog_name][run_uid][table].read()
     try:
         data = dataset[variable].data
         shape = data.shape
