@@ -91,8 +91,7 @@ def variables(catalog_name, run_uid, table):
 
 
 def load_variable(catalog_name, run_uid, table, variable):
-    dataset = c[catalog_name][run_uid][table][variable]
-    data = dataset[variable].data
+    data = c[catalog_name][run_uid][table]['data'][variable].data
     shape = data.shape
     data = data.reshape((shape[0]*shape[1], shape[2], shape[3]))
 
