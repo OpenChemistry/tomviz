@@ -52,7 +52,6 @@ def runs(catalog_name, since, until):
             "planName": md['start']['plan_name'],
             "scanId": md['start']['scan_id'],
             "startTime": md['start']['time'],
-            "stopTime": md['stop']['time'],
         })
 
     runs = sorted(runs, key=lambda r: r['uid'])
