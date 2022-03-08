@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>85</height>
+    <height>96</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -34,8 +34,19 @@
      </property>
     </widget>
    </item>
+   <item>
+    <widget class="pqOutputWidget" name="outputWidget" native="true"/>
+   </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>pqOutputWidget</class>
+   <extends>QWidget</extends>
+   <header>pqOutputWidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>
