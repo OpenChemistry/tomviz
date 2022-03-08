@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PyXRFMakeHDF5Dialog</class>
+ <widget class="QDialog" name="PyXRFMakeHDF5Dialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>595</width>
+    <height>305</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>PyXRF Make HDF5</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <property name="leftMargin">
+    <number>6</number>
+   </property>
+   <property name="topMargin">
+    <number>6</number>
+   </property>
+   <property name="rightMargin">
+    <number>6</number>
+   </property>
+   <property name="bottomMargin">
+    <number>6</number>
+   </property>
+   <item row="3" column="0">
+    <widget class="QLabel" name="workingDirectoryLabel">
+     <property name="text">
+      <string>Working directory:</string>
+     </property>
+     <property name="buddy">
+      <cstring>workingDirectory</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="1">
+    <widget class="QLineEdit" name="workingDirectory"/>
+   </item>
+   <item row="6" column="0" colspan="2">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="3" column="2">
+    <widget class="QPushButton" name="selectWorkingDirectory">
+     <property name="text">
+      <string>Select</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="0" colspan="3">
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Close|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0" colspan="3">
+    <widget class="QTabWidget" name="methodWidget">
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <widget class="QWidget" name="new_data">
+      <attribute name="title">
+       <string>New Data</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_2">
+       <item row="0" column="0" colspan="3">
+        <widget class="QGroupBox" name="scanNumbersGroup">
+         <property name="title">
+          <string>Scan Numbers</string>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <widget class="QLabel" name="scanStartLabel">
+            <property name="text">
+             <string>Start:</string>
+            </property>
+            <property name="buddy">
+             <cstring>scanStart</cstring>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="scanStart">
+            <property name="maximum">
+             <number>100000000</number>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="scanStopLabel">
+            <property name="text">
+             <string>Stop:</string>
+            </property>
+            <property name="buddy">
+             <cstring>scanStop</cstring>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="scanStop">
+            <property name="maximum">
+             <number>100000000</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="2" column="0" colspan="3">
+        <widget class="QCheckBox" name="successfulScansOnly">
+         <property name="text">
+          <string>Successful scans only?</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="alreadyExisting">
+      <attribute name="title">
+       <string>Already Existing</string>
+      </attribute>
+     </widget>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="methodLabel">
+     <property name="text">
+      <string>Method:</string>
+     </property>
+     <property name="buddy">
+      <cstring>method</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1" colspan="2">
+    <widget class="QComboBox" name="method">
+     <item>
+      <property name="text">
+       <string>New</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Already Existing</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <tabstops>
+  <tabstop>method</tabstop>
+  <tabstop>methodWidget</tabstop>
+  <tabstop>scanStart</tabstop>
+  <tabstop>scanStop</tabstop>
+  <tabstop>successfulScansOnly</tabstop>
+  <tabstop>workingDirectory</tabstop>
+  <tabstop>selectWorkingDirectory</tabstop>
+ </tabstops>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>PyXRFMakeHDF5Dialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>316</x>
+     <y>260</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>286</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

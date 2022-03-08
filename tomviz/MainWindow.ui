@@ -74,10 +74,14 @@
     <property name="title">
      <string>Tools</string>
     </property>
+    <property name="toolTipsVisible">
+     <bool>true</bool>
+    </property>
     <addaction name="actionAcquisition"/>
     <addaction name="actionAnimationHelper"/>
     <addaction name="actionPassiveAcquisition"/>
     <addaction name="actionPipelineSettings"/>
+    <addaction name="actionPyXRFWorkflow"/>
    </widget>
    <widget class="QMenu" name="menuData">
     <property name="title">
@@ -402,6 +406,9 @@
    <property name="text">
     <string>&amp;Passive Acquisition</string>
    </property>
+   <property name="toolTip">
+    <string> </string>
+   </property>
   </action>
   <action name="actionSaveData">
    <property name="text">
@@ -464,10 +471,16 @@
    <property name="text">
     <string>Pipeline Settings</string>
    </property>
+   <property name="toolTip">
+    <string> </string>
+   </property>
   </action>
   <action name="actionAcquisition">
    <property name="text">
     <string>Acquisition</string>
+   </property>
+   <property name="toolTip">
+    <string> </string>
    </property>
   </action>
   <action name="actionReadTheDocs">
@@ -501,6 +514,14 @@
   <action name="actionAnimationHelper">
    <property name="text">
     <string>Animation Helper</string>
+   </property>
+  </action>
+  <action name="actionPyXRFWorkflow">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>PyXRF Workflow</string>
    </property>
   </action>
  </widget>

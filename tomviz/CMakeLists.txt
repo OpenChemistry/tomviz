@@ -176,6 +176,12 @@ set(SOURCES
   PythonUtilities.h
   PythonWriter.cxx
   PythonWriter.h
+  PyXRFMakeHDF5Dialog.cxx
+  PyXRFMakeHDF5Dialog.h
+  PyXRFProcessDialog.cxx
+  PyXRFProcessDialog.h
+  PyXRFRunner.cxx
+  PyXRFRunner.h
   QVTKGLWidget.cxx
   QVTKGLWidget.h
   RAWFileReaderDialog.h
@@ -648,6 +654,19 @@ foreach(file ${tomviz_python_io_modules})
     "${tomviz_python_binary_dir}/tomviz/io/${file}")
 endforeach()
 
+set(tomviz_python_pyxrf_modules
+  __init__.py
+  load_output.py
+  make_hdf5.py
+  process_projections.py
+)
+
+file(MAKE_DIRECTORY "${tomviz_python_binary_dir}/tomviz/pyxrf")
+foreach(file ${tomviz_python_pyxrf_modules})
+  execute_process(COMMAND ${CMAKE_COMMAND} -E ${script_cmd}
+    "${tomviz_SOURCE_DIR}/tomviz/python/tomviz/pyxrf/${file}"
+    "${tomviz_python_binary_dir}/tomviz/pyxrf/${file}")
+endforeach()
 
 file(GLOB tomviz_python_state_modules "${tomviz_SOURCE_DIR}/tomviz/python/tomviz/state/*.py")
 file(MAKE_DIRECTORY "${tomviz_python_binary_dir}/tomviz/state")

@@ -47,6 +47,7 @@
 #include "PipelineProxy.h"
 #include "PipelineSettingsDialog.h"
 #include "ProgressDialogManager.h"
+#include "PyXRFRunner.h"
 #include "PythonGeneratedDatasetReaction.h"
 #include "PythonUtilities.h"
 #include "RecentFilesMenu.h"
@@ -547,6 +548,10 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   connect(m_ui->actionPipelineSettings, &QAction::triggered,
           pipelineSettingsDialog, &QWidget::show);
 
+  auto pyXRFRunner = new PyXRFRunner(this);
+  connect(m_ui->actionPyXRFWorkflow, &QAction::triggered, pyXRFRunner,
+          &PyXRFRunner::start);
+
   // Prepopulate the previously seen python readers/writers
   // This operation is fast since it fetches the readers description
   // from the settings, without really invoking python
@@ -557,7 +562,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   statusBar()->showMessage("Initializing python...");
   auto pythonWatcher = new QFutureWatcher<std::vector<OperatorDescription>>;
   connect(pythonWatcher, &QFutureWatcherBase::finished, this,
-          [this, pythonWatcher]() {
+          [this, pyXRFRunner, pythonWatcher]() {
             m_ui->actionAcquisition->setEnabled(true);
             m_ui->actionPassiveAcquisition->setEnabled(true);
             registerCustomOperators(pythonWatcher->result());
@@ -566,6 +571,13 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
             m_ui->actionImportFromDataBroker->setEnabled(
               dataBroker->installed());
             dataBroker->deleteLater();
+
+            bool installed = pyXRFRunner->isInstalled();
+            m_ui->actionPyXRFWorkflow->setEnabled(installed);
+            if (!installed) {
+              QString tooltip = "Failed to import required modules";
+              m_ui->actionPyXRFWorkflow->setToolTip(tooltip);
+            }
 
             delete pythonWatcher;
             statusBar()->showMessage("Initialization complete", 1500);

@@ -23,7 +23,8 @@ public:
                           QWidget* parent = nullptr);
   explicit ProgressDialog(QWidget* parent = nullptr)
     : ProgressDialog("", "", parent)
-  {}
+  {
+  }
   ~ProgressDialog() override;
 
   void setText(QString text);
