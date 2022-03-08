@@ -204,6 +204,8 @@ set(SOURCES
   SaveWebReaction.cxx
   ScaleActorBehavior.cxx
   ScaleActorBehavior.h
+  SelectItemsDialog.cxx
+  SelectItemsDialog.h
   SetDataTypeReaction.h
   SetDataTypeReaction.cxx
   SetTiltAnglesReaction.cxx
