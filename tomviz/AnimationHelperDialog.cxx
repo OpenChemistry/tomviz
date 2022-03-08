@@ -61,7 +61,12 @@ public:
     connect(ui.enableTimeSeriesAnimations, &QCheckBox::toggled,
             &activeObjects(), &ActiveObjects::enableTimeSeriesAnimations);
     connect(ui.enableTimeSeriesAnimations, &QCheckBox::toggled, this,
-            &Internal::updateEnableStates);
+            [this](bool b) {
+              updateEnableStates();
+              if (b) {
+                play();
+              }
+            });
 
     // Modules
     connect(&moduleManager(), &ModuleManager::dataSourceAdded, this,
@@ -93,6 +98,8 @@ public:
     connect(ui.clearAllAnimations, &QPushButton::clicked, this,
             &Internal::clearAllAnimations);
   }
+
+  void play() { scene()->getProxy()->InvokeCommand("Play"); }
 
   void updateGui()
   {
@@ -157,6 +164,7 @@ public:
     createCameraOrbit(renderView->getRenderViewProxy());
 
     updateEnableStates();
+    play();
   }
 
   QStringList moduleTabTexts()
@@ -357,6 +365,7 @@ public:
     }
 
     updateEnableStates();
+    play();
   }
 
   void addContourAnimation()
