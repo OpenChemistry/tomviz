@@ -11,7 +11,6 @@ TILED_URL = os.getenv("TILED_URL", DEFAULT_URL)
 try:
     from tiled.client import from_uri
     c = from_uri(TILED_URL, "dask")
-    from databroker import catalog
     from databroker.queries import TimeRange
     _installed = True
 except ImportError:
