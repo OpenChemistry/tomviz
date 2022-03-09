@@ -42,9 +42,7 @@ def runs(catalog_name, since, until):
     if since != "" and until != "":
         cat = current.search(TimeRange(since=since, until=until))
 
-    cat = [] # [ current[-1], current[-2], current[-3] ]
-    for i in range(-1, -21, -1):
-        cat.append(current[i])
+    cat = current.values_indexer[-1:-21:-1]
 
     for run in cat:
         md = run.metadata
