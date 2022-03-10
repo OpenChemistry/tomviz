@@ -56,6 +56,21 @@ DataBrokerLoadDialog::DataBrokerLoadDialog(DataBroker* dataBroker,
 
   setEnabledOkButton(false);
 
+  // Load settings
+  QSettings* settings = pqApplicationCore::instance()->settings();
+  settings->beginGroup(DATABROKER_GROUP);
+  if (settings->contains(FILTER_FROM_SETTINGS_LABEL)) {
+    m_fromDate = settings->value(FILTER_FROM_SETTINGS_LABEL).toDate();
+    m_ui->fromDateEdit->setDate(m_fromDate);
+  }
+
+  if (settings->contains(FILTER_TO_SETTINGS_LABEL)) {
+    m_toDate = settings->value(FILTER_TO_SETTINGS_LABEL).toDate();
+    m_ui->toDateEdit->setDate(m_toDate);
+  }
+
+  settings->endGroup();
+
   loadCatalogs();
 }
 
@@ -361,14 +376,23 @@ void DataBrokerLoadDialog::enableFilter(bool enable)
   m_dateFilter = enable;
   m_ui->fromDateEdit->setEnabled(enable);
   m_ui->toDateEdit->setEnabled(enable);
-  m_ui->applyFilterButton->setEnabled(enable);
 }
 
 void DataBrokerLoadDialog::applyFilter()
 {
+
   m_fromDate = m_ui->fromDateEdit->date();
   m_toDate = m_ui->toDateEdit->date();
-  this->loadRuns(m_selectedCatalog, m_dateFilter, m_fromDate, m_toDate);
+  m_limit = m_ui->limitSpinBox->value();
+
+  // Save the range
+  QSettings* settings = pqApplicationCore::instance()->settings();
+  settings->beginGroup(DATABROKER_GROUP);
+  settings->setValue(FILTER_FROM_SETTINGS_LABEL, QVariant(m_fromDate));
+  settings->setValue(FILTER_TO_SETTINGS_LABEL, QVariant(m_toDate));
+  settings->endGroup();
+
+  this->loadRuns(m_selectedCatalog, m_dateFilter, m_fromDate, m_toDate, m_limit);
 }
 
 } // namespace tomviz
