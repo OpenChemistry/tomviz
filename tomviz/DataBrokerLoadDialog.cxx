@@ -48,10 +48,11 @@ DataBrokerLoadDialog::DataBrokerLoadDialog(DataBroker* dataBroker,
     this->loadCatalogs();
   });
 
-  connect(m_ui->filterByDateCheckBox, &QPushButton::toggled, this, [this](bool enable) {
-    this->enableFilter(enable);
-    this->applyFilter();
-  });
+  connect(m_ui->filterByDateCheckBox, &QPushButton::toggled, this,
+          [this](bool enable) {
+            this->enableFilter(enable);
+            this->applyFilter();
+          });
 
   connect(m_ui->fromDateEdit, &QDateEdit::dateChanged, this,
           [this](QDate date) { m_fromDate = date; });
@@ -139,7 +140,8 @@ void DataBrokerLoadDialog::showCatalogs()
 }
 
 void DataBrokerLoadDialog::loadRuns(const QString& catalog, bool dateFilter,
-                                    const QDate& fromDate, const QDate& toDate, int limit)
+                                    const QDate& fromDate, const QDate& toDate,
+                                    int limit)
 {
   beginCall();
 
@@ -405,7 +407,8 @@ void DataBrokerLoadDialog::applyFilter()
   settings->setValue(LIMIT_SETTINGS_LABEL, QVariant(m_limit));
   settings->endGroup();
 
-  this->loadRuns(m_selectedCatalog, m_dateFilter, m_fromDate, m_toDate, m_limit);
+  this->loadRuns(m_selectedCatalog, m_dateFilter, m_fromDate, m_toDate,
+                 m_limit);
 }
 
 } // namespace tomviz

@@ -44,7 +44,8 @@ void DataBrokerLoadReaction::loadData()
              variable](vtkSmartPointer<vtkImageData> imageData) {
               // relable axes first
               relabelXAndZAxes(imageData);
-              auto dataSource = new DataSource(imageData, DataSource::TiltSeries);
+              auto dataSource =
+                new DataSource(imageData, DataSource::TiltSeries);
               dataSource->setLabel(QString("db:///%1/%2/%3/%4")
                                      .arg(catalog)
                                      .arg(runUid)

@@ -3,9 +3,9 @@
 
 #include "FxiFormat.h"
 
-#include "Utilities.h"
 #include "DataSource.h"
 #include "GenericHDF5Format.h"
+#include "Utilities.h"
 
 #include <h5cpp/h5readwrite.h>
 #include <h5cpp/h5vtktypemaps.h>
