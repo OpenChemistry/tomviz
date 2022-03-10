@@ -12,7 +12,14 @@
 #include <QPushButton>
 #include <QTreeWidget>
 
+#include <pqSettings.h>
+
 namespace tomviz {
+
+const char* DATABROKER_GROUP = "DataBroker";
+const char* FILTER_FROM_SETTINGS_LABEL = "FilterFromDate";
+const char* FILTER_TO_SETTINGS_LABEL = "FilterToDate";
+const char* LIMIT_SETTINGS_LABEL = "Limit";
 
 DataBrokerLoadDialog::DataBrokerLoadDialog(DataBroker* dataBroker,
                                            QWidget* parent)
@@ -38,11 +45,9 @@ DataBrokerLoadDialog::DataBrokerLoadDialog(DataBroker* dataBroker,
     this->loadCatalogs();
   });
 
-  connect(m_ui->filterButton, &QPushButton::toggled, this, [this](bool enable) {
+  connect(m_ui->filterByDateCheckBox, &QPushButton::toggled, this, [this](bool enable) {
     this->enableFilter(enable);
-    if (!enable) {
-      this->applyFilter();
-    }
+    this->applyFilter();
   });
 
   connect(m_ui->fromDateEdit, &QDateEdit::dateChanged, this,
