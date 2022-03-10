@@ -45,17 +45,18 @@ private:
   QList<QVariantMap> m_tables;
   QList<QVariantMap> m_variables;
 
-  QString m_selectedCatalog;
+  QString m_selectedCatalog = "fxi";
   QString m_selectedRunUid;
-  QString m_selectedTable;
-  QString m_selectedVariable;
+  QString m_selectedTable = "primary";
+  QString m_selectedVariable = "Andor_image";
   QDate m_fromDate;
   QDate m_toDate;
   bool m_dateFilter;
+  int m_limit = 20;
 
   void loadCatalogs();
   void loadRuns(const QString& catalog, bool dateFilter, const QDate& fromDate,
-                const QDate& toDate);
+                const QDate& toDate, int limit);
   void loadTables(const QString& catalog, const QString& runUid);
   void loadVariables(const QString& catalog, const QString& runUid,
                      const QString& table);

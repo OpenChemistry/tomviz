@@ -303,6 +303,13 @@ bool loadPlugin(const QString& path);
 
 // Automatically load plugins specified in the TOMVIZ_PLUGIN_PATHS macro
 bool loadPlugins();
+
+/**
+ * Swap the X and Z dimensions, spacing, and origin of the image without
+ * actually modifying the data.
+ */
+void relabelXAndZAxes(vtkImageData* image);
+
 } // namespace tomviz
 
 #endif

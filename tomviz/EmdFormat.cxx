@@ -5,6 +5,7 @@
 
 #include "DataSource.h"
 #include "GenericHDF5Format.h"
+#include "Utilities.h"
 
 #include <h5cpp/h5readwrite.h>
 
@@ -153,7 +154,7 @@ bool EmdFormat::readNode(h5::H5ReadWrite& reader, const std::string& emdNode,
     GenericHDF5Format::reorderData(image, ReorderMode::CToFortran);
   } else {
     // No deep copying of the data needed. Just relabel the X and Z axes.
-    GenericHDF5Format::relabelXAndZAxes(image);
+    relabelXAndZAxes(image);
     DataSource::setTiltAngles(image, angles);
     DataSource::setType(image, DataSource::TiltSeries);
   }
@@ -196,7 +197,7 @@ bool EmdFormat::writeNode(h5::H5ReadWrite& writer, const std::string& path,
   if (DataSource::hasTiltAngles(image)) {
     // No deep copies of data needed. Just re-label the axes.
     permutedImage->ShallowCopy(image);
-    GenericHDF5Format::relabelXAndZAxes(permutedImage);
+    relabelXAndZAxes(permutedImage);
   } else {
     // Need to re-order to C ordering before writing
     GenericHDF5Format::reorderData(image, permutedImage,

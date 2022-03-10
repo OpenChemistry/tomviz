@@ -1671,4 +1671,24 @@ bool loadPlugins()
   return success;
 }
 
+void relabelXAndZAxes(vtkImageData* image)
+{
+  if (!image)
+    return;
+
+  int dim[3];
+  double spacing[3], origin[3];
+  image->GetDimensions(dim);
+  image->GetSpacing(spacing);
+  image->GetOrigin(origin);
+
+  std::swap(dim[0], dim[2]);
+  std::swap(spacing[0], spacing[2]);
+  std::swap(origin[0], origin[2]);
+
+  image->SetDimensions(dim);
+  image->SetSpacing(spacing);
+  image->SetOrigin(origin);
+}
+
 } // namespace tomviz

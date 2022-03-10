@@ -42,7 +42,10 @@ void DataBrokerLoadReaction::loadData()
     connect(call, &LoadDataCall::complete, dataBroker,
             [dataBroker, catalog, runUid, table,
              variable](vtkSmartPointer<vtkImageData> imageData) {
-              auto dataSource = new DataSource(imageData);
+              // relable axes first
+              relabelXAndZAxes(imageData);
+              auto dataSource =
+                new DataSource(imageData, DataSource::TiltSeries);
               dataSource->setLabel(QString("db:///%1/%2/%3/%4")
                                      .arg(catalog)
                                      .arg(runUid)

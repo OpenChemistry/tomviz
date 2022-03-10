@@ -77,11 +77,11 @@ ListResourceCall* DataBroker::catalogs()
 }
 
 ListResourceCall* DataBroker::runs(const QString& catalog, const QString& since,
-                                   const QString& until)
+                                   const QString& until, int limit)
 {
   auto call = new ListResourceCall(this);
 
-  auto future = QtConcurrent::run([this, call, catalog, since, until]() {
+  auto future = QtConcurrent::run([this, call, catalog, since, until, limit]() {
     Python python;
 
     auto runsFunc = m_dataBrokerModule.findFunction("runs");
@@ -90,10 +90,11 @@ ListResourceCall* DataBroker::runs(const QString& catalog, const QString& since,
       return;
     }
 
-    Python::Tuple args(3);
+    Python::Tuple args(4);
     args.set(0, catalog.toStdString());
     args.set(1, since.toStdString());
     args.set(2, until.toStdString());
+    args.set(3, limit);
 
     auto res = runsFunc.call(args);
 
