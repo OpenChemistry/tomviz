@@ -405,6 +405,7 @@ set(exec_sources
 set(python_files
   AddPoissonNoise.py
   BinaryThreshold.py
+  CircleMask.py
   ConnectedComponents.py
   ClipEdges.py
   OtsuMultipleThreshold.py
@@ -481,6 +482,7 @@ set(json_files
   AutoCenterOfMassTiltImageAlignment.json
   AutoCrossCorrelationTiltImageAlignment.json
   BinaryThreshold.json
+  CircleMask.json
   ConnectedComponents.json
   ClipEdges.json
   OtsuMultipleThreshold.json

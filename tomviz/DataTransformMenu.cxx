@@ -73,6 +73,7 @@ void DataTransformMenu::buildTransforms()
   auto peronaMalikeAnisotropicDiffusionAction =
     menu->addAction("Perona-Malik Anisotropic Diffusion");
   auto medianFilterAction = menu->addAction("Median Filter");
+  auto circleMaskAction = menu->addAction("Circle Mask");
   auto moleculeAction = menu->addAction("Add Molecule");
   menu->addSeparator();
   auto tortuosityAction = menu->addAction("Tortuosity");
@@ -165,6 +166,9 @@ void DataTransformMenu::buildTransforms()
   new AddPythonTransformReaction(
     medianFilterAction, "Median Filter", readInPythonScript("MedianFilter"),
     false, false, false, readInJSONDescription("MedianFilter"));
+  new AddPythonTransformReaction(circleMaskAction, "Circle Mask",
+                                 readInPythonScript("CircleMask"), false, false,
+                                 false, readInJSONDescription("CircleMask"));
   new AddPythonTransformReaction(
     moleculeAction, "Add Molecule", readInPythonScript("DummyMolecule"), false,
     false, false, readInJSONDescription("DummyMolecule"));

@@ -196,6 +196,13 @@ public:
     ui.sliceStart->setValue(0);
     ui.sliceStop->setValue(dims[1]);
 
+    // Set the default start and stop values around the predicted
+    // center of rotation.
+    auto center = dims[0] / 2.0;
+    auto delta = std::min(20.0, center);
+    ui.start->setValue(center - delta);
+    ui.stop->setValue(center + delta);
+
     // Indicate what the max is via a tooltip.
     auto toolTip = "Max: " + QString::number(dims[1]);
     ui.sliceStop->setToolTip(toolTip);
@@ -420,8 +427,6 @@ public:
     auto settings = pqApplicationCore::instance()->settings();
     settings->beginGroup("FxiWorkflowWidget");
     settings->beginGroup("TestSettings");
-    ui.start->setValue(settings->value("start", 550).toDouble());
-    ui.stop->setValue(settings->value("stop", 650).toDouble());
     ui.steps->setValue(settings->value("steps", 26).toInt());
     ui.slice->setValue(settings->value("sli", 0).toInt());
     customTestRotationSettings = settings->value("extraParams").toMap();
@@ -453,8 +458,6 @@ public:
     auto settings = pqApplicationCore::instance()->settings();
     settings->beginGroup("FxiWorkflowWidget");
     settings->beginGroup("TestSettings");
-    settings->setValue("start", ui.start->value());
-    settings->setValue("stop", ui.stop->value());
     settings->setValue("steps", ui.steps->value());
     settings->setValue("sli", ui.slice->value());
     settings->setValue("extraParams", testRotationsExtraParamValues());
@@ -686,7 +689,7 @@ public:
     auto* dims = rotationImages->GetDimensions();
     ui.imageViewSlider->setMaximum(dims[0] - 1);
 
-    sliceNumber = 0;
+    sliceNumber = dims[0] / 2;
     ui.imageViewSlider->setValue(sliceNumber);
 
     sliderEdited();

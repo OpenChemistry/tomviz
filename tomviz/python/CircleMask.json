@@ -1,0 +1,39 @@
+{
+  "name" : "CircleMask",
+  "label" : "Circle Mask",
+  "description" : "Apply a circle mask to the data (requires tomopy)",
+  "parameters" : [
+    {
+      "name" : "axis",
+      "label" : "Axis",
+      "description" : "Axis along which mask will be performed",
+      "type" : "enumeration",
+      "default" : 0,
+      "options" : [
+        {"X" : 0},
+        {"Y" : 1},
+        {"Z" : 2}
+      ]
+    },
+    {
+      "name" : "ratio",
+      "label" : "Ratio",
+      "description" : "Ratio of the mask's diameter in pixels to the smallest edge size along given axis",
+      "type" : "double",
+      "default" : 1.0,
+      "precision" : 3,
+      "step" : 0.05,
+      "minimum" : 0.0,
+      "maximum" : 1.0
+    },
+    {
+      "name" : "value",
+      "label" : "Value",
+      "description" : "Value for the masked region",
+      "type" : "double",
+      "default" : 0.0,
+      "precision" : 5
+    }
+  ]
+}
+
