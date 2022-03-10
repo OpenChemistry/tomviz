@@ -34,7 +34,7 @@ def catalogs():
     return cats
 
 
-def runs(catalog_name, since, until):
+def runs(catalog_name, since, until, limit):
     runs = []
 
     current = c[catalog_name]
@@ -42,7 +42,7 @@ def runs(catalog_name, since, until):
     if since != "" and until != "":
         cat = current.search(TimeRange(since=since, until=until))
 
-    cat = current.values_indexer[-1:-21:-1]
+    cat = current.values_indexer[-1:-limit:-1]
 
     for run in cat:
         md = run.metadata

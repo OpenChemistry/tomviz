@@ -69,6 +69,10 @@ DataBrokerLoadDialog::DataBrokerLoadDialog(DataBroker* dataBroker,
     m_ui->toDateEdit->setDate(m_toDate);
   }
 
+  if (settings->contains(LIMIT_SETTINGS_LABEL)) {
+    m_limit = settings->value(LIMIT_SETTINGS_LABEL).toInt();
+    m_ui->limitSpinBox->setValue(m_limit);
+  }
   settings->endGroup();
 
   loadCatalogs();
@@ -106,7 +110,7 @@ void DataBrokerLoadDialog::showCatalogs()
             Q_UNUSED(column);
             m_selectedCatalog = item->data(0, Qt::DisplayRole).toString();
             this->loadRuns(m_selectedCatalog, m_dateFilter, m_fromDate,
-                           m_toDate);
+                           m_toDate, m_limit);
           });
 
   tree->setColumnCount(2);
@@ -127,14 +131,14 @@ void DataBrokerLoadDialog::showCatalogs()
 }
 
 void DataBrokerLoadDialog::loadRuns(const QString& catalog, bool dateFilter,
-                                    const QDate& fromDate, const QDate& toDate)
+                                    const QDate& fromDate, const QDate& toDate, int limit)
 {
   beginCall();
 
   auto call = dateFilter
                 ? m_dataBroker->runs(catalog, fromDate.toString(Qt::ISODate),
-                                     toDate.toString(Qt::ISODate))
-                : m_dataBroker->runs(catalog, QString(""), QString(""));
+                                     toDate.toString(Qt::ISODate), limit)
+                : m_dataBroker->runs(catalog, QString(""), QString(""), limit);
   connect(call, &ListResourceCall::complete, call,
           [this, call](QList<QVariantMap> runs) {
             this->m_runs = runs;
@@ -390,6 +394,7 @@ void DataBrokerLoadDialog::applyFilter()
   settings->beginGroup(DATABROKER_GROUP);
   settings->setValue(FILTER_FROM_SETTINGS_LABEL, QVariant(m_fromDate));
   settings->setValue(FILTER_TO_SETTINGS_LABEL, QVariant(m_toDate));
+  settings->setValue(LIMIT_SETTINGS_LABEL, QVariant(m_limit));
   settings->endGroup();
 
   this->loadRuns(m_selectedCatalog, m_dateFilter, m_fromDate, m_toDate, m_limit);

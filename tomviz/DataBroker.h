@@ -65,7 +65,7 @@ public:
   bool installed();
   ListResourceCall* catalogs();
   ListResourceCall* runs(const QString& catalog, const QString& since,
-                         const QString& until);
+                         const QString& until, int limit);
   ListResourceCall* tables(const QString& catalog, const QString& runUid);
   ListResourceCall* variables(const QString& catalog, const QString& runUid,
                               const QString& table);
