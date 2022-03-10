@@ -199,7 +199,7 @@ public:
     // Set the default start and stop values around the predicted
     // center of rotation.
     auto center = dims[0] / 2.0;
-    auto delta = std::min(100.0, center);
+    auto delta = std::min(20.0, center);
     ui.start->setValue(center - delta);
     ui.stop->setValue(center + delta);
 
