@@ -88,12 +88,19 @@ def variables(catalog_name, run_uid, table):
 
 
 def load_variable(catalog_name, run_uid, table, variable):
-    data = c[catalog_name][run_uid][table]['data'][variable].data
+    if run_uid not in c[catalog_name]:
+        raise Exception(f"Unable to load run: {run_uid}")
+
+    if table not in c[catalog_name][run_uid]:
+        raise Exception(f"Unable to find table: {table}")
+
+    if variable not in c[catalog_name][run_uid][table]['data']:
+        raise Exception(f"Unable to find variable: {variable}")
+
+    run = c[catalog_name][run_uid]
+    data = run[table]['data'][variable].data
     shape = data.shape
     data = data.reshape((shape[0]*shape[1], shape[2], shape[3]))
-
-    # Convert to Fortran ordering
-    data = np.asfortranarray(data)
 
     image_data = vtkImageData()
     (x, y, z) = data.shape
@@ -103,5 +110,14 @@ def load_variable(catalog_name, run_uid, table, variable):
     image_data.SetSpacing(1, 1, 1)
     image_data.SetExtent(0, x - 1, 0, y - 1, 0, z - 1)
     tomviz.utils.set_array(image_data, data)
+
+    # Now load the angles
+    if 'zps_pi_r_monitor' not in run or \
+       'data' not in run['zps_pi_r_monitor'] or \
+       'zps_pi_r' not in run['zps_pi_r_monitor']['data']:
+       raise Exception("No angles found!")
+
+    angles = run['zps_pi_r_monitor']['data']['zps_pi_r'].data
+    tomviz.utils.set_tilt_angles(image_data, angles)
 
     return image_data
