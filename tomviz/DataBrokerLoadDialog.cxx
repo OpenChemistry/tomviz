@@ -9,6 +9,7 @@
 
 #include <QDateTime>
 #include <QDebug>
+#include <QProcessEnvironment>
 #include <QPushButton>
 #include <QTreeWidget>
 
@@ -80,6 +81,12 @@ DataBrokerLoadDialog::DataBrokerLoadDialog(DataBroker* dataBroker,
     m_ui->limitSpinBox->setValue(m_limit);
   }
   settings->endGroup();
+
+  // See we have a catalog override in the environment
+  QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+  if (env.contains("TILED_CATALOG")) {
+    m_selectedCatalog = env.value("TILED_CATALOG");
+  }
 
   loadRuns(m_selectedCatalog, m_dateFilter, m_fromDate, m_toDate, m_limit);
 }
