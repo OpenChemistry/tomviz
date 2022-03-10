@@ -3,6 +3,7 @@
 
 #include "FxiFormat.h"
 
+#include "Utilities.h"
 #include "DataSource.h"
 #include "GenericHDF5Format.h"
 
@@ -91,9 +92,9 @@ bool FxiFormat::read(const std::string& fileName,
                                    ReorderMode::CToFortran);
   } else {
     // No re-order needed. Just re-label the axes.
-    GenericHDF5Format::relabelXAndZAxes(image);
-    GenericHDF5Format::relabelXAndZAxes(dataSource->darkData());
-    GenericHDF5Format::relabelXAndZAxes(dataSource->whiteData());
+    relabelXAndZAxes(image);
+    relabelXAndZAxes(dataSource->darkData());
+    relabelXAndZAxes(dataSource->whiteData());
     dataSource->setTiltAngles(angles);
     dataSource->setType(DataSource::TiltSeries);
   }

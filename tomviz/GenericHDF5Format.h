@@ -99,12 +99,6 @@ public:
   static void swapXAndZAxes(vtkImageData* image);
 
   /**
-   * Swap the X and Z dimensions, spacing, and origin of the image without
-   * actually modifying the data.
-   */
-  static void relabelXAndZAxes(vtkImageData* image);
-
-  /**
    * Re-order Fortran data to C, or C data to Fortran. Modifies the
    * image in place.
    */

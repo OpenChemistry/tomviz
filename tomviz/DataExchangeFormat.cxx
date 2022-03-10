@@ -5,6 +5,7 @@
 
 #include "DataSource.h"
 #include "GenericHDF5Format.h"
+#include "Utilities.h"
 
 #include <h5cpp/h5readwrite.h>
 #include <h5cpp/h5vtktypemaps.h>
@@ -91,9 +92,9 @@ bool DataExchangeFormat::read(const std::string& fileName,
                                    ReorderMode::CToFortran);
   } else {
     // No re-order needed. Just re-label the axes.
-    GenericHDF5Format::relabelXAndZAxes(image);
-    GenericHDF5Format::relabelXAndZAxes(dataSource->darkData());
-    GenericHDF5Format::relabelXAndZAxes(dataSource->whiteData());
+    relabelXAndZAxes(image);
+    relabelXAndZAxes(dataSource->darkData());
+    relabelXAndZAxes(dataSource->whiteData());
     dataSource->setTiltAngles(angles);
     dataSource->setType(DataSource::TiltSeries);
   }
@@ -143,7 +144,7 @@ bool writeData(h5::H5ReadWrite& writer, vtkImageData* image)
   if (DataSource::hasTiltAngles(image)) {
     // No deep copies of data needed. Just re-label the axes.
     permutedImage->ShallowCopy(image);
-    GenericHDF5Format::relabelXAndZAxes(permutedImage);
+    relabelXAndZAxes(permutedImage);
   } else {
     // Need to re-order to C ordering before writing
     GenericHDF5Format::reorderData(image, permutedImage,
@@ -163,7 +164,7 @@ bool writeExtraData(h5::H5ReadWrite& writer, vtkImageData* image,
   if (isTiltSeries) {
     // No deep copying needed. Just re-label the axes.
     permutedImage->ShallowCopy(image);
-    GenericHDF5Format::relabelXAndZAxes(permutedImage);
+    relabelXAndZAxes(permutedImage);
   } else {
     GenericHDF5Format::reorderData(image, permutedImage,
                                    ReorderMode::FortranToC);

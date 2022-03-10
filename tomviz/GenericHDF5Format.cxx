@@ -218,26 +218,6 @@ void GenericHDF5Format::swapXAndZAxes(vtkImageData* image)
   pd->SetActiveScalars(activeName.c_str());
 }
 
-void GenericHDF5Format::relabelXAndZAxes(vtkImageData* image)
-{
-  if (!image)
-    return;
-
-  int dim[3];
-  double spacing[3], origin[3];
-  image->GetDimensions(dim);
-  image->GetSpacing(spacing);
-  image->GetOrigin(origin);
-
-  std::swap(dim[0], dim[2]);
-  std::swap(spacing[0], spacing[2]);
-  std::swap(origin[0], origin[2]);
-
-  image->SetDimensions(dim);
-  image->SetSpacing(spacing);
-  image->SetOrigin(origin);
-}
-
 bool GenericHDF5Format::addScalarArray(h5::H5ReadWrite& reader,
                                        const std::string& path,
                                        vtkImageData* image,
@@ -631,7 +611,7 @@ bool GenericHDF5Format::read(const std::string& fileName, vtkImageData* image,
     GenericHDF5Format::reorderData(image, ReorderMode::CToFortran);
   } else {
     // No deep copying of the data needed. Just relabel the X and Z axes.
-    GenericHDF5Format::relabelXAndZAxes(image);
+    relabelXAndZAxes(image);
     DataSource::setTiltAngles(image, angles);
     DataSource::setType(image, DataSource::TiltSeries);
   }
