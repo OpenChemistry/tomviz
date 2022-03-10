@@ -26,9 +26,6 @@ DataBrokerLoadDialog::DataBrokerLoadDialog(DataBroker* dataBroker,
   : QDialog(parent), m_ui(new Ui::DataBrokerLoadDialog),
     m_dataBroker(dataBroker)
 {
-  m_selectedTable = "primary";
-  m_selectedVariable = "Andor_image";
-
   m_ui->setupUi(this);
   allowFilter(false);
   enableFilter(false);
@@ -84,7 +81,7 @@ DataBrokerLoadDialog::DataBrokerLoadDialog(DataBroker* dataBroker,
   }
   settings->endGroup();
 
-  loadCatalogs();
+  loadRuns(m_selectedCatalog, m_dateFilter, m_fromDate, m_toDate, m_limit);
 }
 
 DataBrokerLoadDialog::~DataBrokerLoadDialog() = default;
@@ -166,6 +163,7 @@ void DataBrokerLoadDialog::showRuns()
   auto tree = m_ui->treeWidget;
   tree->clear();
   disconnect(tree, &QTreeWidget::itemDoubleClicked, nullptr, nullptr);
+  disconnect(tree, &QTreeWidget::itemClicked, nullptr, nullptr);
 
   allowFilter(true);
 
@@ -174,6 +172,13 @@ void DataBrokerLoadDialog::showRuns()
             Q_UNUSED(column);
             m_selectedRunUid = item->data(0, Qt::DisplayRole).toString();
             this->accept();
+          });
+
+  connect(tree, &QTreeWidget::itemClicked, this,
+          [this](QTreeWidgetItem* item, int column) {
+            Q_UNUSED(column);
+            m_selectedRunUid = item->data(0, Qt::DisplayRole).toString();
+            setEnabledOkButton(true);
           });
 
   tree->setColumnCount(3);

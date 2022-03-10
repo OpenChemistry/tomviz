@@ -45,10 +45,10 @@ private:
   QList<QVariantMap> m_tables;
   QList<QVariantMap> m_variables;
 
-  QString m_selectedCatalog;
+  QString m_selectedCatalog = "fxi";
   QString m_selectedRunUid;
-  QString m_selectedTable;
-  QString m_selectedVariable;
+  QString m_selectedTable = "primary";
+  QString m_selectedVariable = "Andor_image";
   QDate m_fromDate;
   QDate m_toDate;
   bool m_dateFilter;
