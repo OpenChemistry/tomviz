@@ -112,6 +112,7 @@ private:
   // Lazily loaded dialogs
   QWidget* m_aboutDialog = nullptr;
   QWidget* m_acquisitionWidget = nullptr;
+  QWidget* m_animationHelperDialog = nullptr;
   QWidget* m_passiveAcquisitionDialog = nullptr;
 
   template <class T>

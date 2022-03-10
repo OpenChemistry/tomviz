@@ -44,6 +44,7 @@ public:
 
   void setIsoValue(double value);
   void resetIsoValue();
+  void isoRange(double range[2]);
 
   QString exportDataTypeString() override { return "Mesh"; }
 

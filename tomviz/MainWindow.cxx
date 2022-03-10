@@ -22,6 +22,7 @@
 #include "ActiveObjects.h"
 #include "AddAlignReaction.h"
 #include "AddPythonTransformReaction.h"
+#include "AnimationHelperDialog.h"
 #include "AxesReaction.h"
 #include "Behaviors.h"
 #include "CameraReaction.h"
@@ -533,6 +534,10 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
 
   connect(m_ui->actionAcquisition, &QAction::triggered, this,
           [this]() { openDialog<AcquisitionWidget>(&m_acquisitionWidget); });
+
+  connect(m_ui->actionAnimationHelper, &QAction::triggered, this, [this]() {
+    openDialog<AnimationHelperDialog>(&m_animationHelperDialog);
+  });
 
   connect(m_ui->actionPassiveAcquisition, &QAction::triggered, this, [this]() {
     openDialog<PassiveAcquisitionWidget>(&m_passiveAcquisitionDialog);

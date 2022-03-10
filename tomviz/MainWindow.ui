@@ -75,6 +75,7 @@
      <string>Tools</string>
     </property>
     <addaction name="actionAcquisition"/>
+    <addaction name="actionAnimationHelper"/>
     <addaction name="actionPassiveAcquisition"/>
     <addaction name="actionPipelineSettings"/>
    </widget>
@@ -495,6 +496,11 @@
   <action name="actionOpenTimeSeries">
    <property name="text">
     <string>&amp;Time Series</string>
+   </property>
+  </action>
+  <action name="actionAnimationHelper">
+   <property name="text">
+    <string>Animation Helper</string>
    </property>
   </action>
  </widget>

@@ -1,0 +1,368 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>AnimationHelperDialog</class>
+ <widget class="QDialog" name="AnimationHelperDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>699</width>
+    <height>448</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Animation Helper</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout_3">
+   <item row="3" column="0" colspan="2">
+    <widget class="QLabel" name="numberOfFramesLabel">
+     <property name="text">
+      <string>Number of Frames:</string>
+     </property>
+     <property name="buddy">
+      <cstring>numberOfFrames</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1" colspan="2">
+    <widget class="pqVCRToolbar" name="vcrToolbar">
+     <property name="windowTitle">
+      <string>VCR Toolbar</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="1" colspan="2">
+    <spacer name="verticalSpacer_4">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeType">
+      <enum>QSizePolicy::Fixed</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>5</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="6" column="1" colspan="2">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="0" column="0">
+    <spacer name="horizontalSpacer">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>40</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="0" column="3">
+    <spacer name="horizontalSpacer_2">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>40</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="1" column="0" colspan="4">
+    <widget class="QTabWidget" name="AnimationTypeTabWidget">
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <widget class="QWidget" name="camera_tab">
+      <attribute name="title">
+       <string>Camera</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_5">
+       <item row="0" column="0">
+        <widget class="QPushButton" name="createCameraOrbit">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Create a camera orbit animation using the current camera settings.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The orbit will start at the current camera position and move to the right around the camera focal point.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Note that if any other camera animations exist for this render view, they will be removed.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="text">
+          <string>Create Camera Orbit</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QPushButton" name="clearCameraAnimations">
+         <property name="text">
+          <string>Clear Camera Animations</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <spacer name="verticalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="time_series_tab">
+      <attribute name="title">
+       <string>Time Series</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout">
+       <item row="0" column="0">
+        <widget class="QCheckBox" name="enableTimeSeriesAnimations">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Uncheck to disable time series animations.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This setting only applies if there is a data source with time series animations.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="text">
+          <string>Enable Time Series Animations?</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <spacer name="verticalSpacer_3">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tab">
+      <attribute name="title">
+       <string>Modules</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_2">
+       <item row="2" column="1">
+        <widget class="QLabel" name="selectedModuleLabel">
+         <property name="text">
+          <string>Module:</string>
+         </property>
+         <property name="buddy">
+          <cstring>selectedModule</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1" colspan="3">
+        <widget class="QTabWidget" name="modulesTabWidget">
+         <property name="currentIndex">
+          <number>1</number>
+         </property>
+         <widget class="QWidget" name="None">
+          <attribute name="title">
+           <string>None</string>
+          </attribute>
+         </widget>
+         <widget class="QWidget" name="Contour">
+          <attribute name="title">
+           <string>Contour</string>
+          </attribute>
+          <layout class="QGridLayout" name="gridLayout_4">
+           <item row="0" column="2">
+            <widget class="QLabel" name="contourRangeHyphen">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>-</string>
+             </property>
+             <property name="buddy">
+              <cstring>contourStop</cstring>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0">
+            <widget class="QLabel" name="contourRange">
+             <property name="text">
+              <string>Range:</string>
+             </property>
+             <property name="buddy">
+              <cstring>contourStart</cstring>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QDoubleSpinBox" name="contourStart">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Start ISO value&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="decimals">
+              <number>8</number>
+             </property>
+             <property name="minimum">
+              <double>-1000000.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>10000000.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="3">
+            <widget class="QDoubleSpinBox" name="contourStop">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Stop ISO value&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="decimals">
+              <number>8</number>
+             </property>
+             <property name="minimum">
+              <double>-1000000.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>10000000.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0" colspan="4">
+            <spacer name="verticalSpacer_5">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>40</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QLabel" name="selectedDataSourceLabel">
+         <property name="text">
+          <string>Data Source:</string>
+         </property>
+         <property name="buddy">
+          <cstring>selectedDataSource</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1" colspan="3">
+        <widget class="QPushButton" name="addModuleAnimation">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add an animation for this module using the above settings.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Note that each module may currently only have one animation. Any old animations for a given module will be over-written.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="text">
+          <string>Add Module Animation</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="1" colspan="3">
+        <widget class="QPushButton" name="clearModuleAnimations">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>Clear Module Animations</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="2" colspan="2">
+        <widget class="QComboBox" name="selectedDataSource">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select a data source. Any modules that support animations and are associated with this data source will be listed below.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="2" colspan="2">
+        <widget class="QComboBox" name="selectedModule">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select a module for animation.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Current supported list:&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Contour&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+   <item row="3" column="2" colspan="2">
+    <widget class="QSpinBox" name="numberOfFrames">
+     <property name="keyboardTracking">
+      <bool>false</bool>
+     </property>
+     <property name="minimum">
+      <number>1</number>
+     </property>
+     <property name="maximum">
+      <number>10000000</number>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="0" colspan="4">
+    <widget class="QPushButton" name="clearAllAnimations">
+     <property name="text">
+      <string>Clear All Animations</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>pqVCRToolbar</class>
+   <extends>QToolBar</extends>
+   <header>pqVCRToolbar.h</header>
+  </customwidget>
+ </customwidgets>
+ <tabstops>
+  <tabstop>AnimationTypeTabWidget</tabstop>
+  <tabstop>createCameraOrbit</tabstop>
+  <tabstop>clearCameraAnimations</tabstop>
+  <tabstop>enableTimeSeriesAnimations</tabstop>
+  <tabstop>selectedDataSource</tabstop>
+  <tabstop>selectedModule</tabstop>
+  <tabstop>modulesTabWidget</tabstop>
+  <tabstop>contourStart</tabstop>
+  <tabstop>contourStop</tabstop>
+  <tabstop>addModuleAnimation</tabstop>
+  <tabstop>clearModuleAnimations</tabstop>
+  <tabstop>numberOfFrames</tabstop>
+  <tabstop>clearAllAnimations</tabstop>
+ </tabstops>
+ <resources>
+  <include location="resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>

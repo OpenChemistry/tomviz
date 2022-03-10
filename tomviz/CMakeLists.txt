@@ -24,6 +24,8 @@ set(SOURCES
   AddResampleReaction.h
   AlignWidget.cxx
   AlignWidget.h
+  AnimationHelperDialog.cxx
+  AnimationHelperDialog.h
   ArrayWranglerReaction.cxx
   ArrayWranglerReaction.h
   AxesReaction.cxx
@@ -387,6 +389,13 @@ list(APPEND SOURCES
   operators/TransposeDataOperator.cxx
 )
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/operators)
+
+# animations/
+list(APPEND SOURCES
+  animations/ModuleAnimation.h
+  animations/ContourAnimation.h
+)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/animations)
 
 list(APPEND SOURCES
   h5cpp/h5readwrite.cpp

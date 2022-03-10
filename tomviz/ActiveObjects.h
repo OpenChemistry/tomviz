@@ -125,12 +125,18 @@ public slots:
   void enableRotation(bool b);
   void enableScaling(bool b);
 
+  /// Set whether to enable time series animations.
+  void enableTimeSeriesAnimations(bool b);
   void setShowTimeSeriesLabel(bool b);
 
   bool translationEnabled() const { return m_translationEnabled; }
   bool rotationEnabled() const { return m_rotationEnabled; }
   bool scalingEnabled() const { return m_scalingEnabled; }
 
+  bool timeSeriesAnimationsEnabled() const
+  {
+    return m_timeSeriesAnimationsEnabled;
+  }
   bool showTimeSeriesLabel() const { return m_showTimeSeriesLabel; }
 
   void setFixedInteractionDataSource(DataSource* ds)
@@ -188,6 +194,9 @@ signals:
   void rotationStateChanged(bool b);
   void scalingStateChanged(bool b);
 
+  /// Fired when time series animations enable state is changed.
+  void timeSeriesAnimationsEnableStateChanged(bool b);
+
   /// Fired when time series label visibility changes
   void showTimeSeriesLabelChanged(bool b);
 
@@ -228,6 +237,7 @@ protected:
   bool m_scalingEnabled = false;
 
   /// Time series
+  bool m_timeSeriesAnimationsEnabled = true;
   bool m_showTimeSeriesLabel = true;
 
 private:
@@ -262,6 +272,16 @@ inline void ActiveObjects::enableScaling(bool b)
 
   m_scalingEnabled = b;
   emit scalingStateChanged(b);
+}
+
+inline void ActiveObjects::enableTimeSeriesAnimations(bool b)
+{
+  if (m_timeSeriesAnimationsEnabled == b) {
+    return;
+  }
+
+  m_timeSeriesAnimationsEnabled = b;
+  emit timeSeriesAnimationsEnableStateChanged(b);
 }
 
 inline void ActiveObjects::setShowTimeSeriesLabel(bool b)

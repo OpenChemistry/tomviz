@@ -198,6 +198,10 @@ QList<DataSource*> LoadDataReaction::loadData(bool isTimeSeries)
     // Set the animation time steps and change the play mode to
     // "Snap To TimeSteps".
     tomviz::snapAnimationToTimeSteps(times);
+
+    // Also set the number of time steps in the sequence to match
+    // (this only matters if the user switches to "Sequence" play mode)
+    tomviz::setAnimationNumberOfFrames(times.size());
   }
 
   return dataSources;
@@ -523,6 +527,7 @@ void LoadDataReaction::dataSourceAdded(DataSource* dataSource,
     pqRenderView* renderView =
       qobject_cast<pqRenderView*>(pqActiveObjects::instance().activeView());
     if (renderView && createCameraOrbit) {
+      tomviz::setAnimationNumberOfFrames(200);
       tomviz::createCameraOrbit(dataSource->proxy(),
                                 renderView->getRenderViewProxy());
     }
