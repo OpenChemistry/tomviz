@@ -1,5 +1,5 @@
 import os
-
+import numpy as np
 import tomviz.utils
 
 from vtk import vtkImageData
@@ -100,6 +100,8 @@ def load_variable(catalog_name, run_uid, table, variable):
     data = run[table]['data'][variable].data
     shape = data.shape
     data = data.reshape((shape[0]*shape[1], shape[2], shape[3]))
+    # Convert to numpy array
+    data = np.ascontiguousarray(data)
 
     image_data = vtkImageData()
     (x, y, z) = data.shape
