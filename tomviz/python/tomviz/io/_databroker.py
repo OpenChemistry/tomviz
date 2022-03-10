@@ -40,7 +40,7 @@ def runs(catalog_name, since, until, limit):
     current = c[catalog_name]
 
     if since != "" and until != "":
-        cat = current.search(TimeRange(since=since, until=until))
+        current = current.search(TimeRange(since=since, until=until))
 
     cat = current.values_indexer[-1:-limit:-1]
 
