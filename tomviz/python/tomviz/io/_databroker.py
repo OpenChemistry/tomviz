@@ -1,5 +1,4 @@
 import os
-import numpy as np
 
 import tomviz.utils
 
@@ -115,7 +114,7 @@ def load_variable(catalog_name, run_uid, table, variable):
     if 'zps_pi_r_monitor' not in run or \
        'data' not in run['zps_pi_r_monitor'] or \
        'zps_pi_r' not in run['zps_pi_r_monitor']['data']:
-       raise Exception("No angles found!")
+        raise Exception("No angles found!")
 
     angles = run['zps_pi_r_monitor']['data']['zps_pi_r'].data
     tomviz.utils.set_tilt_angles(image_data, angles)
