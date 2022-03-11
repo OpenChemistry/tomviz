@@ -17,6 +17,7 @@
 
 #include <pqApplicationCore.h>
 #include <pqSettings.h>
+#include <vtkSMTransferFunctionManager.h>
 
 #include <vtkCallbackCommand.h>
 #include <vtkColorTransferFunction.h>
@@ -177,7 +178,19 @@ public:
       dataSource = ActiveObjects::instance().activeDataSource();
     }
 
-    colorMap = dataSource->colorMap();
+    static unsigned int colorMapCounter = 0;
+    ++colorMapCounter;
+
+    auto pxm = ActiveObjects::instance().proxyManager();
+    vtkNew<vtkSMTransferFunctionManager> tfmgr;
+    colorMap =
+      tfmgr->GetColorTransferFunction(QString("FxiWorkflowWidgetColorMap%1")
+                                        .arg(colorMapCounter)
+                                        .toLatin1()
+                                        .data(),
+                                      pxm);
+
+    setColorMapToGrayscale();
 
     for (auto* w : inputWidgets()) {
       w->installEventFilter(this);
@@ -741,6 +754,11 @@ public:
     lut = dsLut->NewInstance();
     lut->DeepCopy(dsLut);
     slice->GetProperty()->SetLookupTable(lut);
+  }
+
+  void setColorMapToGrayscale()
+  {
+    ColorMap::instance().applyPreset("Grayscale", colorMap);
   }
 
   void onColorPresetClicked()
