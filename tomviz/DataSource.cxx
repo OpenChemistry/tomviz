@@ -316,7 +316,6 @@ QStringList DataSource::fileNames() const
 
 void DataSource::setDarkData(vtkSmartPointer<vtkImageData> image)
 {
-  m_pythonProxy->setDarkData(image);
   this->Internals->m_darkData = image;
 }
 
@@ -327,7 +326,6 @@ vtkImageData* DataSource::darkData() const
 
 void DataSource::setWhiteData(vtkSmartPointer<vtkImageData> image)
 {
-  m_pythonProxy->setWhiteData(image);
   this->Internals->m_whiteData = image;
 }
 
@@ -1438,7 +1436,7 @@ vtkTrivialProducer* DataSource::producer() const
 void DataSource::init(vtkImageData* data, DataSourceType dataType,
                       PersistenceState persistState)
 {
-  m_pythonProxy = new DataSourceBase;
+  m_pythonProxy = new DataSourceBase(this);
   this->Internals->Type = dataType;
   this->Internals->PersistState = persistState;
   this->Internals->DisplayPosition.Set(0, 0, 0);

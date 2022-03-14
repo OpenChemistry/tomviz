@@ -4,7 +4,7 @@
 #ifndef tomvizDataSourceBase_h
 #define tomvizDataSourceBase_h
 
-class vtkImageData;
+#include "DataSource.h"
 
 namespace tomviz {
 
@@ -12,17 +12,13 @@ namespace tomviz {
 class DataSourceBase
 {
 public:
-  void setDarkData(vtkImageData* data) { m_dark = data; }
+  DataSourceBase(DataSource* ds) : m_dataSource(ds) {}
 
-  vtkImageData* darkData() const { return m_dark; }
-
-  void setWhiteData(vtkImageData* data) { m_white = data; }
-
-  vtkImageData* whiteData() const { return m_white; }
+  vtkImageData* darkData() const { return m_dataSource->darkData(); }
+  vtkImageData* whiteData() const { return m_dataSource->whiteData(); }
 
 private:
-  vtkImageData* m_dark = nullptr;
-  vtkImageData* m_white = nullptr;
+  DataSource* m_dataSource = nullptr;
 };
 
 } // namespace tomviz
