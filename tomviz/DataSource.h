@@ -14,6 +14,8 @@
 #include <vtkRect.h>
 #include <vtkSmartPointer.h>
 
+#include "Variant.h"
+
 class vtkSMProxy;
 class vtkSMSourceProxy;
 class vtkImageData;
@@ -28,6 +30,8 @@ class DataSourceBase;
 class Operator;
 class Pipeline;
 class TimeSeriesStep;
+
+using MetadataType = std::map<std::string, Variant>;
 
 /// Encapsulation for a DataSource. This class manages a data source, including
 /// the provenance for any operations performed on the data source.
@@ -148,6 +152,12 @@ public:
 
   /// Get the PV reader properties.
   QVariantMap readerProperties() const;
+
+  /// Get the metadata
+  MetadataType& metadata() { return m_metadata; }
+
+  /// Set the metadata explicitly
+  void setMetadata(const MetadataType& m) { m_metadata = m; }
 
   /// Set/get the dark/white data, used in Data Exchange currently
   void setDarkData(vtkSmartPointer<vtkImageData> image);
@@ -445,6 +455,7 @@ private:
   DataSourceBase* m_pythonProxy = nullptr;
 
   QJsonObject m_json;
+  MetadataType m_metadata;
 
   bool m_changingTimeStep = false;
 };
