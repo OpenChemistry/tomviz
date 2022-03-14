@@ -59,6 +59,14 @@ class Dataset:
             return None
         return utils.get_array(self._data_source.white_data)
 
+    @property
+    def file_name(self):
+        return self._data_source.file_name
+
+    @property
+    def metadata(self):
+        return self._data_source.metadata
+
     def create_child_dataset(self):
         new_data = utils.make_child_dataset(self._data_object)
         return Dataset(new_data, self._data_source)
