@@ -1,7 +1,8 @@
 import numpy as np
 
 
-def transform(dataset, rotation_center=0, slice_start=0, slice_stop=1):
+def transform(dataset, rotation_center=0, slice_start=0, slice_stop=1,
+              denoise_flag=0, denoise_level=9, dark_scale=1):
 
     # Get the current volume as a numpy array.
     array = dataset.active_scalars
@@ -40,6 +41,9 @@ def transform(dataset, rotation_center=0, slice_start=0, slice_stop=1):
         'f': recon_input,
         'rot_cen': rotation_center,
         'sli': [slice_start, slice_stop],
+        'denoise_flag': denoise_flag,
+        'denoise_level': denoise_level,
+        'dark_scale': dark_scale,
     }
 
     # Perform the reconstruction
@@ -54,7 +58,8 @@ def transform(dataset, rotation_center=0, slice_start=0, slice_stop=1):
     return return_values
 
 
-def test_rotations(dataset, start=None, stop=None, steps=None, sli=0):
+def test_rotations(dataset, start=None, stop=None, steps=None, sli=0,
+                   denoise_flag=0, denoise_level=9, dark_scale=1):
     # Get the current volume as a numpy array.
     array = dataset.active_scalars
 
@@ -94,6 +99,9 @@ def test_rotations(dataset, start=None, stop=None, steps=None, sli=0):
         'stop': stop,
         'steps': steps,
         'sli': sli,
+        'denoise_flag': denoise_flag,
+        'denoise_level': denoise_level,
+        'dark_scale': dark_scale,
     }
 
     # Perform the reconstruction
