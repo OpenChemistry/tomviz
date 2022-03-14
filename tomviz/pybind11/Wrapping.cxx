@@ -45,15 +45,15 @@ PYBIND11_PLUGIN(_wrapping)
       "file_name",
       [](const DataSourceBase& b) { return b.fileName().toStdString(); },
       "Get the file from which the data source was loaded")
-    .def_property_readonly(
-      "metadata",
-      [](const DataSourceBase& b) {
-        auto* obj = tomviz::Python::toPyObject(b.metadata());
-        // The PyObject* reference is currently unmanaged.
-        // Therefore, we steal it, rather than borrow.
-        return py::reinterpret_steal<py::dict>(obj);
-      },
-      "Get the data source metadata");
+    .def_property_readonly("metadata",
+                           [](const DataSourceBase& b) {
+                             auto* obj =
+                               tomviz::Python::toPyObject(b.metadata());
+                             // The PyObject* reference is currently unmanaged.
+                             // Therefore, we steal it, rather than borrow.
+                             return py::reinterpret_steal<py::dict>(obj);
+                           },
+                           "Get the data source metadata");
 
   py::class_<PipelineStateManager>(m, "PipelineStateManagerBase")
     .def(py::init())

@@ -277,7 +277,8 @@ Python::Dict::Dict(const Object& obj) : Object(obj) {}
 
 Python::Dict::Dict(const std::map<std::string, Variant>& map)
   : Object(toPyObject(map))
-{}
+{
+}
 
 Python::Dict& Python::Dict::operator=(const Python::Object& other)
 {
