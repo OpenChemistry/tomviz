@@ -38,15 +38,14 @@ static bool readDataSet(const std::string& fileName, const std::string& path,
 }
 
 bool FxiFormat::read(const std::string& fileName, vtkImageData* image,
-                              const QVariantMap& options)
+                     const QVariantMap& options)
 {
   std::string path = "/img_tomo";
   return readDataSet(fileName, path, image, options);
 }
 
-bool FxiFormat::read(const std::string& fileName,
-                              DataSource* dataSource,
-                              const QVariantMap& options)
+bool FxiFormat::read(const std::string& fileName, DataSource* dataSource,
+                     const QVariantMap& options)
 {
   vtkNew<vtkImageData> image;
   if (!read(fileName, image, options)) {
@@ -104,17 +103,15 @@ bool FxiFormat::read(const std::string& fileName,
   return true;
 }
 
-bool FxiFormat::readDark(const std::string& fileName,
-                                  vtkImageData* image,
-                                  const QVariantMap& options)
+bool FxiFormat::readDark(const std::string& fileName, vtkImageData* image,
+                         const QVariantMap& options)
 {
   std::string path = "/img_dark_avg";
   return readDataSet(fileName, path, image, options);
 }
 
-bool FxiFormat::readWhite(const std::string& fileName,
-                                   vtkImageData* image,
-                                   const QVariantMap& options)
+bool FxiFormat::readWhite(const std::string& fileName, vtkImageData* image,
+                          const QVariantMap& options)
 {
   std::string path = "/img_bkg_avg";
   return readDataSet(fileName, path, image, options);
