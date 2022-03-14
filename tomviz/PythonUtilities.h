@@ -114,6 +114,7 @@ public:
     Dict(PyObject* obj);
     Dict(const Dict& other);
     Dict(const Object& obj);
+    Dict(const std::map<std::string, Variant>& map);
     Dict& operator=(const Object& other);
     Object operator[](const QString& key);
     Object operator[](const std::string& key);
@@ -194,6 +195,9 @@ public:
 
   /// Convert a list of tomviz::Variant to the appropriate Python types
   static PyObject* toPyObject(const std::vector<Variant>& variants);
+
+  /// Convert a map of tomviz::Variant to the appropriate Python types
+  static PyObject* toPyObject(const std::map<std::string, Variant>& map);
 
   /// Convert a long to the appropriate Python type
   static PyObject* toPyObject(long l);

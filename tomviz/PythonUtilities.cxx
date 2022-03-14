@@ -275,6 +275,10 @@ Python::Dict::Dict(const Python::Dict& other) : Object(other) {}
 
 Python::Dict::Dict(const Object& obj) : Object(obj) {}
 
+Python::Dict::Dict(const std::map<std::string, Variant>& map)
+  : Object(toPyObject(map))
+{}
+
 Python::Dict& Python::Dict::operator=(const Python::Object& other)
 {
   Object::operator=(other);
@@ -562,6 +566,8 @@ PyObject* Python::toPyObject(const Variant& value)
   switch (value.type()) {
     case Variant::INTEGER:
       return toPyObject(value.toInteger());
+    case Variant::LONG:
+      return toPyObject(value.toLong());
     case Variant::DOUBLE:
       return PyFloat_FromDouble(value.toDouble());
     case Variant::BOOL:
@@ -572,6 +578,10 @@ PyObject* Python::toPyObject(const Variant& value)
     case Variant::LIST: {
       std::vector<Variant> list = value.toList();
       return toPyObject(list);
+    }
+    case Variant::MAP: {
+      std::map<std::string, Variant> map = value.toMap();
+      return toPyObject(map);
     }
     default:
       Logger::critical("Unsupported type");
@@ -591,6 +601,17 @@ PyObject* Python::toPyObject(const std::vector<Variant>& list)
   }
 
   return pyList;
+}
+
+PyObject* Python::toPyObject(const std::map<std::string, Variant>& map)
+{
+  PyObject* dict = PyDict_New();
+  for (const auto& x : map) {
+    Python::Object value(x.second);
+    PyDict_SetItemString(dict, x.first.c_str(), value);
+  }
+
+  return dict;
 }
 
 PyObject* Python::toPyObject(long l)
