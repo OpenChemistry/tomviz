@@ -6,6 +6,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include "PythonUtilities.h"
 #include "core/DataSourceBase.h"
 
 #include "PipelineStateManager.h"
@@ -39,7 +40,14 @@ PYBIND11_PLUGIN(_wrapping)
     .def_property_readonly("dark_data", &DataSourceBase::darkData,
                            "Get the dark image data")
     .def_property_readonly("white_data", &DataSourceBase::whiteData,
-                           "Get the white image data");
+                           "Get the white image data")
+    .def_property_readonly(
+      "metadata",
+      [](const DataSourceBase& b) {
+        auto* obj = tomviz::Python::toPyObject(b.metadata());
+        return py::reinterpret_steal<py::dict>(obj);
+      },
+      "Get the data source metadata");
 
   py::class_<PipelineStateManager>(m, "PipelineStateManagerBase")
     .def(py::init())
