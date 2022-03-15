@@ -12,19 +12,16 @@ def transform(dataset, rotation_center=0, slice_start=0, slice_stop=1,
     angles = dataset.tilt_angles
     tilt_axis = dataset.tilt_axis
 
-    # Dark and white data are required
-    if dark is None:
-        raise Exception('No dark data found')
-
-    if white is None:
-        raise Exception('No white data found')
-
     # TomoPy wants the tilt axis to be zero, so ensure that is true
     if tilt_axis == 2:
         order = [2, 1, 0]
         array = np.transpose(array, order)
-        dark = np.transpose(dark, order)
-        white = np.transpose(white, order)
+
+        if dark is not None:
+            dark = np.transpose(dark, order)
+
+        if white is not None:
+            white = np.transpose(white, order)
 
     if angles is None:
         raise Exception('No angles found')
@@ -33,9 +30,13 @@ def transform(dataset, rotation_center=0, slice_start=0, slice_stop=1,
     recon_input = {
         'img_tomo': array,
         'angle': angles,
-        'img_bkg_avg': white,
-        'img_dark_avg': dark,
     }
+
+    if dark is not None:
+        recon_input['img_dark_avg'] = dark
+
+    if white is not None:
+        recon_input['img_bkg_avg'] = white
 
     kwargs = {
         'f': recon_input,
@@ -68,30 +69,30 @@ def test_rotations(dataset, start=None, stop=None, steps=None, sli=0,
     angles = dataset.tilt_angles
     tilt_axis = dataset.tilt_axis
 
-    # Dark and white data are required
-    if dark is None:
-        raise Exception('No dark data found')
-
-    if white is None:
-        raise Exception('No white data found')
-
     # TomoPy wants the tilt axis to be zero, so ensure that is true
     if tilt_axis == 2:
         order = [2, 1, 0]
         array = np.transpose(array, order)
-        dark = np.transpose(dark, order)
-        white = np.transpose(white, order)
+
+        if dark is not None:
+            dark = np.transpose(dark, order)
+
+        if white is not None:
+            white = np.transpose(white, order)
 
     if angles is None:
         raise Exception('No angles found')
 
-    # FIXME: Are these right?
     recon_input = {
         'img_tomo': array,
         'angle': angles,
-        'img_bkg_avg': white,
-        'img_dark_avg': dark,
     }
+
+    if dark is not None:
+        recon_input['img_dark_avg'] = dark
+
+    if white is not None:
+        recon_input['img_bkg_avg'] = white
 
     kwargs = {
         'f': recon_input,
@@ -103,6 +104,9 @@ def test_rotations(dataset, start=None, stop=None, steps=None, sli=0,
         'denoise_level': denoise_level,
         'dark_scale': dark_scale,
     }
+
+    if dark is None or white is None:
+        kwargs['txm_normed_flag'] = True
 
     # Perform the reconstruction
     images, centers = rotcen_test(**kwargs)

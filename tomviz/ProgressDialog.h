@@ -21,7 +21,18 @@ class ProgressDialog : public QDialog
 public:
   explicit ProgressDialog(const QString& title, const QString& msg,
                           QWidget* parent = nullptr);
+  explicit ProgressDialog(QWidget* parent = nullptr)
+    : ProgressDialog("", "", parent)
+  {
+  }
   ~ProgressDialog() override;
+
+  void setText(QString text);
+  void showOutputWidget(bool b = true);
+  void clearOutputWidget();
+
+protected:
+  void keyPressEvent(QKeyEvent* e) override;
 
 private:
   QScopedPointer<Ui::ProgressDialog> m_ui;
