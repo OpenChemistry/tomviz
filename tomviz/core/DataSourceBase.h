@@ -4,23 +4,35 @@
 #ifndef tomvizDataSourceBase_h
 #define tomvizDataSourceBase_h
 
-#include "DataSource.h"
+#include "Variant.h"
+
+class vtkImageData;
 
 namespace tomviz {
+
+using MetadataType = std::map<std::string, Variant>;
 
 /** Pure virtual base class providing a proxy to the DataSource class. */
 class DataSourceBase
 {
 public:
-  DataSourceBase(DataSource* ds) : m_dataSource(ds) {}
+  void setDarkData(vtkImageData* data) { m_dark = data; }
+  vtkImageData* darkData() const { return m_dark; }
 
-  vtkImageData* darkData() const { return m_dataSource->darkData(); }
-  vtkImageData* whiteData() const { return m_dataSource->whiteData(); }
-  QString fileName() const { return m_dataSource->fileName(); }
-  MetadataType metadata() const { return m_dataSource->metadata(); }
+  void setWhiteData(vtkImageData* data) { m_white = data; }
+  vtkImageData* whiteData() const { return m_white; }
+
+  void setFileName(const std::string& name) { m_fileName = name; }
+  std::string fileName() const { return m_fileName; }
+
+  void setMetadata(const MetadataType& meta) { m_metadata = meta; }
+  MetadataType metadata() const { return m_metadata; }
 
 private:
-  DataSource* m_dataSource = nullptr;
+  vtkImageData* m_dark = nullptr;
+  vtkImageData* m_white = nullptr;
+  std::string m_fileName;
+  MetadataType m_metadata;
 };
 
 } // namespace tomviz

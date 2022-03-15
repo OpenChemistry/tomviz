@@ -8,7 +8,7 @@
 
 #include <QVariantMap>
 
-#include "Variant.h"
+#include "core/Variant.h"
 
 class vtkImageData;
 

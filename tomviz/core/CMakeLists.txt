@@ -1,6 +1,6 @@
 include(GenerateExportHeader)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
-add_library(tomvizcore SHARED PythonFactory.cxx)
+add_library(tomvizcore SHARED PythonFactory.cxx Variant.cxx)
 generate_export_header(tomvizcore)
 target_link_libraries(tomvizcore PRIVATE ${PYTHON_LIBRARIES})
 install(TARGETS tomvizcore

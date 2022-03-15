@@ -285,6 +285,11 @@ void DataSource::setFileNames(const QStringList fileNames)
     files.append(file);
   }
 
+  if (fileNames.size() != 0) {
+    // Set the python proxy file name too
+    m_pythonProxy->setFileName(fileNames[0].toStdString());
+  }
+
   reader["fileNames"] = files;
   m_json["reader"] = reader;
 }
@@ -314,8 +319,15 @@ QStringList DataSource::fileNames() const
   return files;
 }
 
+void DataSource::setMetadata(const MetadataType& meta)
+{
+  m_pythonProxy->setMetadata(meta);
+  m_metadata = meta;
+}
+
 void DataSource::setDarkData(vtkSmartPointer<vtkImageData> image)
 {
+  m_pythonProxy->setDarkData(image);
   this->Internals->m_darkData = image;
 }
 
@@ -326,6 +338,7 @@ vtkImageData* DataSource::darkData() const
 
 void DataSource::setWhiteData(vtkSmartPointer<vtkImageData> image)
 {
+  m_pythonProxy->setWhiteData(image);
   this->Internals->m_whiteData = image;
 }
 
@@ -1436,7 +1449,7 @@ vtkTrivialProducer* DataSource::producer() const
 void DataSource::init(vtkImageData* data, DataSourceType dataType,
                       PersistenceState persistState)
 {
-  m_pythonProxy = new DataSourceBase(this);
+  m_pythonProxy = new DataSourceBase;
   this->Internals->Type = dataType;
   this->Internals->PersistState = persistState;
   this->Internals->DisplayPosition.Set(0, 0, 0);

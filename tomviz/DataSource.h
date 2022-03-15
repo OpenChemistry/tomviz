@@ -14,7 +14,7 @@
 #include <vtkRect.h>
 #include <vtkSmartPointer.h>
 
-#include "Variant.h"
+#include "core/Variant.h"
 
 class vtkSMProxy;
 class vtkSMSourceProxy;
@@ -154,10 +154,10 @@ public:
   QVariantMap readerProperties() const;
 
   /// Get the metadata
-  MetadataType& metadata() { return m_metadata; }
+  MetadataType metadata() { return m_metadata; }
 
   /// Set the metadata explicitly
-  void setMetadata(const MetadataType& m) { m_metadata = m; }
+  void setMetadata(const MetadataType& m);
 
   /// Set/get the dark/white data, used in Data Exchange currently
   void setDarkData(vtkSmartPointer<vtkImageData> image);
