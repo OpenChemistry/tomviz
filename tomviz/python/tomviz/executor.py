@@ -405,11 +405,11 @@ def _read_emd(path, options=None):
         data = tomography['data']
         # We default the name to ImageScalars
         name = data.attrs.get('name', 'ImageScalars')
+        if isinstance(name, (np.ndarray, list, tuple)):
+            name = name[0]
+
         if isinstance(name, (bytes, bytearray)):
             name = name.decode()
-        elif not isinstance(name, str):
-            # FIXME: is there a particular use case for this?
-            name = name[0].decode()
 
         arrays = [(name, _read_dataset(data, options))]
 
