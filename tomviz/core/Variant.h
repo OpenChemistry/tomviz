@@ -4,6 +4,12 @@
 #ifndef tomvizVariant_h
 #define tomvizVariant_h
 
+#ifdef IS_TOMVIZ_CORE_BUILD
+#include "tomvizcore_export.h"
+#else
+#define TOMVIZCORE_EXPORT
+#endif
+
 #include <iostream>
 #include <map>
 #include <string>
@@ -11,7 +17,7 @@
 
 namespace tomviz {
 
-class Variant
+class TOMVIZCORE_EXPORT Variant
 {
 
 public:
