@@ -38,15 +38,14 @@ static bool readDataSet(const std::string& fileName, const std::string& path,
 }
 
 bool FxiFormat::read(const std::string& fileName, vtkImageData* image,
-                              const QVariantMap& options)
+                     const QVariantMap& options)
 {
   std::string path = "/img_tomo";
   return readDataSet(fileName, path, image, options);
 }
 
-bool FxiFormat::read(const std::string& fileName,
-                              DataSource* dataSource,
-                              const QVariantMap& options)
+bool FxiFormat::read(const std::string& fileName, DataSource* dataSource,
+                     const QVariantMap& options)
 {
   vtkNew<vtkImageData> image;
   if (!read(fileName, image, options)) {
@@ -99,22 +98,23 @@ bool FxiFormat::read(const std::string& fileName,
     dataSource->setType(DataSource::TiltSeries);
   }
 
+  auto metadata = readMetadata(fileName, options);
+  dataSource->setMetadata(metadata);
+
   dataSource->dataModified();
 
   return true;
 }
 
-bool FxiFormat::readDark(const std::string& fileName,
-                                  vtkImageData* image,
-                                  const QVariantMap& options)
+bool FxiFormat::readDark(const std::string& fileName, vtkImageData* image,
+                         const QVariantMap& options)
 {
   std::string path = "/img_dark_avg";
   return readDataSet(fileName, path, image, options);
 }
 
-bool FxiFormat::readWhite(const std::string& fileName,
-                                   vtkImageData* image,
-                                   const QVariantMap& options)
+bool FxiFormat::readWhite(const std::string& fileName, vtkImageData* image,
+                          const QVariantMap& options)
 {
   std::string path = "/img_bkg_avg";
   return readDataSet(fileName, path, image, options);
@@ -134,6 +134,30 @@ QVector<double> FxiFormat::readTheta(const std::string& fileName,
   }
 
   return GenericHDF5Format::readAngles(reader, path, options);
+}
+
+std::map<std::string, Variant> FxiFormat::readMetadata(
+  const std::string& fileName, const QVariantMap& options)
+{
+  Q_UNUSED(options);
+
+  using h5::H5ReadWrite;
+  H5ReadWrite::OpenMode mode = H5ReadWrite::OpenMode::ReadOnly;
+  H5ReadWrite reader(fileName.c_str(), mode);
+
+  std::map<std::string, Variant> ret;
+
+  static const std::string scanIdPath = "/scan_id";
+  if (reader.isDataSet(scanIdPath)) {
+    long long result;
+    if (!reader.readData(scanIdPath, &result)) {
+      std::cerr << "Failed to read /scan_id\n";
+    } else {
+      ret["scan_id"] = static_cast<long>(result);
+    }
+  }
+
+  return ret;
 }
 
 } // namespace tomviz

@@ -25,6 +25,10 @@ class Dataset:
         self.dark = None
         self.white = None
 
+        # Filename and metadata
+        self.file_name = None
+        self.metadata = {}
+
     @property
     def active_scalars(self):
         return self.arrays[self.active_name]

@@ -9,7 +9,7 @@
 #include "ModuleManager.h"
 #include "PythonUtilities.h"
 #include "Utilities.h"
-#include "Variant.h"
+#include "core/Variant.h"
 
 #include <vtkImageData.h>
 #include <vtkNew.h>

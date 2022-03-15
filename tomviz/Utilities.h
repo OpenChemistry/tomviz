@@ -13,7 +13,7 @@
 #include <vtkSMSourceProxy.h>
 #include <vtkVariant.h>
 
-#include <Variant.h>
+#include <core/Variant.h>
 #include <vtkVector.h>
 #include <vtk_pugixml.h>
 

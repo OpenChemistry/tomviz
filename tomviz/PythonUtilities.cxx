@@ -15,6 +15,7 @@
 #include <vtkPythonUtil.h>
 #include <vtkSmartPyObject.h>
 
+#include "pybind11/PythonTypeConversions.h"
 #include <pybind11/pybind11.h>
 
 namespace py = pybind11;
@@ -48,7 +49,7 @@ Python::Object::Object(const Python::Object& other)
 
 Python::Object::Object(const QString& str)
 {
-  m_smartPyObject = new vtkSmartPyObject(toPyObject(str));
+  m_smartPyObject = new vtkSmartPyObject(toPyObject(str.toStdString()));
 }
 
 Python::Object::Object(const Variant& value)
@@ -274,6 +275,11 @@ Python::Dict::Dict(PyObject* obj) : Object(obj) {}
 Python::Dict::Dict(const Python::Dict& other) : Object(other) {}
 
 Python::Dict::Dict(const Object& obj) : Object(obj) {}
+
+Python::Dict::Dict(const std::map<std::string, Variant>& map)
+  : Object(toPyObject(map))
+{
+}
 
 Python::Dict& Python::Dict::operator=(const Python::Object& other)
 {
@@ -543,59 +549,6 @@ bool Python::checkForPythonError()
     return true;
   }
   return false;
-}
-
-PyObject* Python::toPyObject(const QString& str)
-{
-  return PyUnicode_DecodeUTF16((const char*)str.utf16(), str.length() * 2, NULL,
-                               NULL);
-}
-
-PyObject* Python::toPyObject(const std::string& str)
-{
-  return PyString_FromStringAndSize(str.data(), str.size());
-}
-
-PyObject* Python::toPyObject(const Variant& value)
-{
-
-  switch (value.type()) {
-    case Variant::INTEGER:
-      return toPyObject(value.toInteger());
-    case Variant::DOUBLE:
-      return PyFloat_FromDouble(value.toDouble());
-    case Variant::BOOL:
-      return value.toBool() ? Py_True : Py_False;
-    case Variant::STRING: {
-      return toPyObject(value.toString());
-    }
-    case Variant::LIST: {
-      std::vector<Variant> list = value.toList();
-      return toPyObject(list);
-    }
-    default:
-      Logger::critical("Unsupported type");
-  }
-
-  return nullptr;
-}
-
-PyObject* Python::toPyObject(const std::vector<Variant>& list)
-{
-  PyObject* pyList = PyTuple_New(list.size());
-  int i = 0;
-
-  foreach (Variant value, list) {
-    PyTuple_SET_ITEM(pyList, i, toPyObject(value));
-    i++;
-  }
-
-  return pyList;
-}
-
-PyObject* Python::toPyObject(long l)
-{
-  return PyInt_FromLong(l);
 }
 
 void Python::prependPythonPath(std::string dir)
