@@ -6,7 +6,7 @@
 
 // Collection of miscellaneous Python utility functions.
 
-#include "Variant.h"
+#include "core/Variant.h"
 #include <QString>
 
 // Forward declare PyObject
@@ -114,6 +114,7 @@ public:
     Dict(PyObject* obj);
     Dict(const Dict& other);
     Dict(const Object& obj);
+    Dict(const std::map<std::string, Variant>& map);
     Dict& operator=(const Object& other);
     Object operator[](const QString& key);
     Object operator[](const std::string& key);
@@ -182,21 +183,6 @@ public:
   /// occurred.
   /// Return true if an error has occurred, false otherwise.
   static bool checkForPythonError();
-
-  /// Convert a tomviz::Variant to the appropriate Python type
-  static PyObject* toPyObject(const Variant& variant);
-
-  /// Convert a QString to the appropriate Python type
-  static PyObject* toPyObject(const QString& str);
-
-  /// Convert a std::string to the appropriate Python type
-  static PyObject* toPyObject(const std::string& str);
-
-  /// Convert a list of tomviz::Variant to the appropriate Python types
-  static PyObject* toPyObject(const std::vector<Variant>& variants);
-
-  /// Convert a long to the appropriate Python type
-  static PyObject* toPyObject(long l);
 
   /// Prepends the path to the sys.path variable calls
   /// vtkPythonPythonInterpreter::PrependPythonPath(...)  to do the work.

@@ -405,11 +405,11 @@ def _read_emd(path, options=None):
         data = tomography['data']
         # We default the name to ImageScalars
         name = data.attrs.get('name', 'ImageScalars')
+        if isinstance(name, (np.ndarray, list, tuple)):
+            name = name[0]
+
         if isinstance(name, (bytes, bytearray)):
             name = name.decode()
-        elif not isinstance(name, str):
-            # FIXME: is there a particular use case for this?
-            name = name[0].decode()
 
         arrays = [(name, _read_dataset(data, options))]
 
@@ -446,7 +446,8 @@ def _read_emd(path, options=None):
         output = {
             'arrays': arrays,
             'dims': dims,
-            'tilt_axis': tilt_axis
+            'tilt_axis': tilt_axis,
+            'metadata': {},
         }
 
         if dims is not None and dims[-1].name == b'angles':
@@ -602,7 +603,8 @@ def _read_data_exchange(path, options=None):
             'data_dark': datasets.get('data_dark'),
             'data_white': datasets.get('data_white'),
             'tilt_angles': datasets.get('theta'),
-            'tilt_axis': tilt_axis
+            'tilt_axis': tilt_axis,
+            'metadata': {},
         }
 
         return output
@@ -727,6 +729,7 @@ def load_dataset(data_file_path, read_options=None):
 
     arrays = output['arrays']
     dims = output.get('dims')
+    metadata = output.get('metadata', {})
 
     # The first is the active array
     (active_array, _) = arrays[0]
@@ -734,6 +737,9 @@ def load_dataset(data_file_path, read_options=None):
     arrays = {name: array for (name, array) in arrays}
 
     data = Dataset(arrays, active_array)
+    data.file_name = os.path.abspath(data_file_path)
+    data.metadata = metadata
+
     if 'data_dark' in output:
         data.dark = output['data_dark']
     if 'data_white' in output:

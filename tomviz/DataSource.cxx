@@ -285,6 +285,11 @@ void DataSource::setFileNames(const QStringList fileNames)
     files.append(file);
   }
 
+  if (fileNames.size() != 0) {
+    // Set the python proxy file name too
+    m_pythonProxy->setFileName(fileNames[0].toStdString());
+  }
+
   reader["fileNames"] = files;
   m_json["reader"] = reader;
 }
@@ -312,6 +317,12 @@ QStringList DataSource::fileNames() const
     }
   }
   return files;
+}
+
+void DataSource::setMetadata(const MetadataType& meta)
+{
+  m_pythonProxy->setMetadata(meta);
+  m_metadata = meta;
 }
 
 void DataSource::setDarkData(vtkSmartPointer<vtkImageData> image)

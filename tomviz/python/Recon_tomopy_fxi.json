@@ -26,6 +26,27 @@
       "description" : "The last slice to use for reconstruction",
       "type" : "int",
       "default" : 0
+    },
+    {
+      "name" : "denoise_flag",
+      "label" : "Denoise Flag",
+      "description" : "Whether to apply Wiener denoise",
+      "type" : "bool",
+      "default" : false
+    },
+    {
+      "name" : "denoise_level",
+      "label" : "Denoise Level",
+      "description" : "The level to apply to tomopy.prep.stripe.remove_stripe_fw",
+      "type" : "int",
+      "default" : 9
+    },
+    {
+      "name" : "dark_scale",
+      "label" : "Dark Scale",
+      "description" : "The scaling that should be applied to the dark image",
+      "type" : "double",
+      "default" : 1
     }
   ],
   "children": [

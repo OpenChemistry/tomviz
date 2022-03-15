@@ -4,7 +4,7 @@
 #include <gtest/gtest.h>
 
 #include "TomvizTest.h"
-#include "Variant.h"
+#include "core/Variant.h"
 
 using namespace tomviz;
 

@@ -8,6 +8,8 @@
 
 #include <QVariantMap>
 
+#include "core/Variant.h"
+
 class vtkImageData;
 
 namespace tomviz {
@@ -39,6 +41,9 @@ private:
   // Read the theta angles from /exchange/theta
   QVector<double> readTheta(const std::string& fileName,
                             const QVariantMap& options = QVariantMap());
+  // Read and return any known metadata from the file
+  std::map<std::string, Variant> readMetadata(const std::string& fileName,
+                                              const QVariantMap& options);
 };
 } // namespace tomviz
 

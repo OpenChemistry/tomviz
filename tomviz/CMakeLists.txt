@@ -182,6 +182,8 @@ set(SOURCES
   PyXRFProcessDialog.h
   PyXRFRunner.cxx
   PyXRFRunner.h
+  pybind11/PythonTypeConversions.cxx
+  pybind11/PythonTypeConversions.h
   QVTKGLWidget.cxx
   QVTKGLWidget.h
   RAWFileReaderDialog.h
@@ -235,8 +237,8 @@ set(SOURCES
   Tvh5Format.h
   Utilities.cxx
   Utilities.h
-  Variant.cxx
-  Variant.h
+  core/Variant.cxx
+  core/Variant.h
   ViewFrameActions.cxx
   ViewFrameActions.h
   ViewMenuManager.cxx

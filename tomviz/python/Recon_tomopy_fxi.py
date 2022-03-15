@@ -1,7 +1,8 @@
 import numpy as np
 
 
-def transform(dataset, rotation_center=0, slice_start=0, slice_stop=1):
+def transform(dataset, rotation_center=0, slice_start=0, slice_stop=1,
+              denoise_flag=0, denoise_level=9, dark_scale=1):
 
     # Get the current volume as a numpy array.
     array = dataset.active_scalars
@@ -41,6 +42,9 @@ def transform(dataset, rotation_center=0, slice_start=0, slice_stop=1):
         'f': recon_input,
         'rot_cen': rotation_center,
         'sli': [slice_start, slice_stop],
+        'denoise_flag': denoise_flag,
+        'denoise_level': denoise_level,
+        'dark_scale': dark_scale,
     }
 
     # Perform the reconstruction
@@ -55,7 +59,8 @@ def transform(dataset, rotation_center=0, slice_start=0, slice_stop=1):
     return return_values
 
 
-def test_rotations(dataset, start=None, stop=None, steps=None, sli=0):
+def test_rotations(dataset, start=None, stop=None, steps=None, sli=0,
+                   denoise_flag=0, denoise_level=9, dark_scale=1):
     # Get the current volume as a numpy array.
     array = dataset.active_scalars
 
@@ -95,6 +100,9 @@ def test_rotations(dataset, start=None, stop=None, steps=None, sli=0):
         'stop': stop,
         'steps': steps,
         'sli': sli,
+        'denoise_flag': denoise_flag,
+        'denoise_level': denoise_level,
+        'dark_scale': dark_scale,
     }
 
     if dark is None or white is None:
@@ -119,7 +127,7 @@ def find_nearest(data, value):
 
 def recon(f, rot_cen, sli=[], binning=None, zero_flag=0, block_list=[],
           bkg_level=0, txm_normed_flag=0, read_full_memory=0, denoise_flag=0,
-          denoise_level=9):
+          denoise_level=9, dark_scale=1):
     '''
     reconstruct 3D tomography
     Inputs:
@@ -224,7 +232,8 @@ def recon(f, rot_cen, sli=[], binning=None, zero_flag=0, block_list=[],
         print(f'recon {i+1}/{n_steps}:    sli = [{sli_sub[0]},',
               f'{sli_sub[1]}] ... ')
         prj_norm = proj_normalize(f, current_sli, txm_normed_flag, binning,
-                                  allow_list, bkg_level, denoise_level)
+                                  allow_list, bkg_level, denoise_level,
+                                  dark_scale)
         prj_norm = wiener_denoise(prj_norm, wiener_param, denoise_flag)
         if i != 0 and i != n_steps - 1:
             start = add_slice // binning
@@ -259,7 +268,7 @@ def wiener_denoise(prj_norm, wiener_param, denoise_flag):
 
 
 def proj_normalize(f, sli, txm_normed_flag, binning, allow_list=[],
-                   bkg_level=0, denoise_level=9):
+                   bkg_level=0, denoise_level=9, dark_scale=1):
     import tomopy
 
     img_tomo = np.array(f['img_tomo'][:, sli[0]:sli[1], :])
@@ -274,7 +283,8 @@ def proj_normalize(f, sli, txm_normed_flag, binning, allow_list=[],
     if len(img_dark) == 0 or len(img_bkg) == 0 or txm_normed_flag == 1:
         prj = img_tomo
     else:
-        prj = (img_tomo - img_dark) / (img_bkg - img_dark)
+        prj = ((img_tomo - img_dark / dark_scale) /
+               (img_bkg - img_dark / dark_scale))
 
     s = prj.shape
     prj = bin_ndarray(prj, (s[0], int(s[1] / binning), int(s[2] / binning)),
@@ -335,7 +345,7 @@ def bin_ndarray(ndarray, new_shape=None, operation='mean'):
 
 def rotcen_test(f, start=None, stop=None, steps=None, sli=0, block_list=[],
                 print_flag=1, bkg_level=0, txm_normed_flag=0, denoise_flag=0,
-                denoise_level=9):
+                denoise_level=9, dark_scale=1):
 
     import tomopy
 
@@ -369,7 +379,8 @@ def rotcen_test(f, start=None, stop=None, steps=None, sli=0, block_list=[],
     else:
         img_bkg = np.array(f['img_bkg_avg'][:, sli_exp[0]:sli_exp[1], :])
         img_dark = np.array(f['img_dark_avg'][:, sli_exp[0]:sli_exp[1], :])
-        prj = (img_tomo - img_dark) / (img_bkg - img_dark)
+        prj = ((img_tomo - img_dark / dark_scale) /
+               (img_bkg - img_dark / dark_scale))
 
     prj_norm = -np.log(prj)
     prj_norm[np.isnan(prj_norm)] = 0

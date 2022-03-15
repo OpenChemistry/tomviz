@@ -17,6 +17,7 @@
 
 #include <pqApplicationCore.h>
 #include <pqSettings.h>
+#include <vtkSMTransferFunctionManager.h>
 
 #include <vtkCallbackCommand.h>
 #include <vtkColorTransferFunction.h>
@@ -177,7 +178,19 @@ public:
       dataSource = ActiveObjects::instance().activeDataSource();
     }
 
-    colorMap = dataSource->colorMap();
+    static unsigned int colorMapCounter = 0;
+    ++colorMapCounter;
+
+    auto pxm = ActiveObjects::instance().proxyManager();
+    vtkNew<vtkSMTransferFunctionManager> tfmgr;
+    colorMap =
+      tfmgr->GetColorTransferFunction(QString("FxiWorkflowWidgetColorMap%1")
+                                        .arg(colorMapCounter)
+                                        .toLatin1()
+                                        .data(),
+                                      pxm);
+
+    setColorMapToGrayscale();
 
     for (auto* w : inputWidgets()) {
       w->installEventFilter(this);
@@ -199,7 +212,7 @@ public:
     // Set the default start and stop values around the predicted
     // center of rotation.
     auto center = dims[0] / 2.0;
-    auto delta = std::min(20.0, center);
+    auto delta = std::min(40.0, center);
     ui.start->setValue(center - delta);
     ui.stop->setValue(center + delta);
 
@@ -289,7 +302,8 @@ public:
   {
     // Here is the list of parameters for which we already have widgets
     QStringList knownParameters = {
-      "rotation_center", "slice_start", "slice_stop",
+      "denoise_flag",    "denoise_level", "dark_scale",
+      "rotation_center", "slice_start",   "slice_stop",
     };
 
     int i = 0;
@@ -405,8 +419,21 @@ public:
 
   void readSettings()
   {
+    readGeneralSettings();
     readReconSettings();
     readTestSettings();
+  }
+
+  void readGeneralSettings()
+  {
+    auto settings = pqApplicationCore::instance()->settings();
+    settings->beginGroup("FxiWorkflowWidget");
+    settings->beginGroup("General");
+    setDenoiseFlag(settings->value("denoiseFlag", false).toBool());
+    setDenoiseLevel(settings->value("denoiseLevel", 9).toInt());
+    setDarkScale(settings->value("darkScale", 1).toDouble());
+    settings->endGroup();
+    settings->endGroup();
   }
 
   void readReconSettings()
@@ -436,8 +463,21 @@ public:
 
   void writeSettings()
   {
+    writeGeneralSettings();
     writeReconSettings();
     writeTestSettings();
+  }
+
+  void writeGeneralSettings()
+  {
+    auto settings = pqApplicationCore::instance()->settings();
+    settings->beginGroup("FxiWorkflowWidget");
+    settings->beginGroup("General");
+    settings->setValue("denoiseFlag", denoiseFlag());
+    settings->setValue("denoiseLevel", denoiseLevel());
+    settings->setValue("darkScale", darkScale());
+    settings->endGroup();
+    settings->endGroup();
   }
 
   void writeReconSettings()
@@ -467,8 +507,9 @@ public:
 
   QList<QWidget*> inputWidgets()
   {
-    return { ui.start,          ui.stop,       ui.steps,    ui.slice,
-             ui.rotationCenter, ui.sliceStart, ui.sliceStop };
+    return { ui.denoiseFlag, ui.denoiseLevel, ui.darkScale, ui.start,
+             ui.stop,        ui.steps,        ui.slice,     ui.rotationCenter,
+             ui.sliceStart,  ui.sliceStop };
   }
 
   void startGeneratingTestImages()
@@ -522,6 +563,9 @@ public:
       kwargs.set("stop", ui.stop->value());
       kwargs.set("steps", ui.steps->value());
       kwargs.set("sli", ui.slice->value());
+      kwargs.set("denoise_flag", denoiseFlag());
+      kwargs.set("denoise_level", denoiseLevel());
+      kwargs.set("dark_scale", darkScale());
 
       // Add extra parameters
       auto extraParams = testRotationsExtraParamValues();
@@ -743,6 +787,11 @@ public:
     slice->GetProperty()->SetLookupTable(lut);
   }
 
+  void setColorMapToGrayscale()
+  {
+    ColorMap::instance().applyPreset("Grayscale", colorMap);
+  }
+
   void onColorPresetClicked()
   {
     if (!colorMap) {
@@ -762,6 +811,15 @@ public:
     });
     dialog.exec();
   }
+
+  void setDenoiseFlag(bool b) { ui.denoiseFlag->setChecked(b); }
+  bool denoiseFlag() const { return ui.denoiseFlag->isChecked(); }
+
+  void setDenoiseLevel(int i) { ui.denoiseLevel->setValue(i); }
+  int denoiseLevel() const { return ui.denoiseLevel->value(); }
+
+  void setDarkScale(double x) { ui.darkScale->setValue(x); }
+  double darkScale() const { return ui.darkScale->value(); }
 
   void setRotationCenter(double center) { ui.rotationCenter->setValue(center); }
   double rotationCenter() const { return ui.rotationCenter->value(); }
@@ -787,14 +845,27 @@ FxiWorkflowWidget::~FxiWorkflowWidget() = default;
 
 void FxiWorkflowWidget::getValues(QVariantMap& map)
 {
+  map.insert("denoise_flag", m_internal->denoiseFlag());
+  map.insert("denoise_level", m_internal->denoiseLevel());
+  map.insert("dark_scale", m_internal->darkScale());
   map.insert("rotation_center", m_internal->rotationCenter());
   map.insert("slice_start", m_internal->sliceStart());
   map.insert("slice_stop", m_internal->sliceStop());
+
   map = unite(map, m_internal->reconExtraParamValues());
 }
 
 void FxiWorkflowWidget::setValues(const QVariantMap& map)
 {
+  if (map.contains("denoise_flag")) {
+    m_internal->setDenoiseFlag(map["denoise_flag"].toBool());
+  }
+  if (map.contains("denoise_level")) {
+    m_internal->setDenoiseLevel(map["denoise_level"].toInt());
+  }
+  if (map.contains("dark_scale")) {
+    m_internal->setDarkScale(map["dark_scale"].toDouble());
+  }
   if (map.contains("rotation_center")) {
     m_internal->setRotationCenter(map["rotation_center"].toDouble());
   }

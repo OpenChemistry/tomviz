@@ -9,11 +9,13 @@
 #include "core/DataSourceBase.h"
 
 #include "PipelineStateManager.h"
+#include "PythonTypeConversions.h"
 #include "vtkImageData.h"
 
 namespace py = pybind11;
 
 using tomviz::DataSourceBase;
+using tomviz::MetadataType;
 
 PYBIND11_VTK_TYPECASTER(vtkImageData)
 
@@ -39,7 +41,18 @@ PYBIND11_PLUGIN(_wrapping)
     .def_property_readonly("dark_data", &DataSourceBase::darkData,
                            "Get the dark image data")
     .def_property_readonly("white_data", &DataSourceBase::whiteData,
-                           "Get the white image data");
+                           "Get the white image data")
+    .def_property_readonly("file_name",
+                           [](const DataSourceBase& b) { return b.fileName(); },
+                           "Get the file from which the data source was loaded")
+    .def_property_readonly("metadata",
+                           [](const DataSourceBase& b) {
+                             auto* obj = tomviz::toPyObject(b.metadata());
+                             // The PyObject* reference is currently unmanaged.
+                             // Therefore, we steal it, rather than borrow.
+                             return py::reinterpret_steal<py::dict>(obj);
+                           },
+                           "Get the data source metadata");
 
   py::class_<PipelineStateManager>(m, "PipelineStateManagerBase")
     .def(py::init())
