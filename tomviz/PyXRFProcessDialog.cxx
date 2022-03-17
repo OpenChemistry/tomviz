@@ -18,6 +18,7 @@
 #include <QMessageBox>
 #include <QPointer>
 #include <QProcess>
+#include <QProcessEnvironment>
 #include <QTextStream>
 
 namespace tomviz {
@@ -408,6 +409,11 @@ public:
     }
 
     QString program = "pyxrf";
+    auto environment = QProcessEnvironment::systemEnvironment();
+    if (environment.contains("TOMVIZ_PYXRF_EXECUTABLE")) {
+      program = environment.value("TOMVIZ_PYXRF_EXECUTABLE");
+    }
+
     QStringList args;
 
     auto* process = new QProcess(this);
@@ -418,6 +424,31 @@ public:
     connect(process,
             QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this,
             [this]() { pyxrfIsRunning = false; });
+
+    connect(
+      process, &QProcess::errorOccurred, this,
+      [this, process](QProcess::ProcessError err) {
+        pyxrfIsRunning = false;
+
+        QString title;
+        QString msg;
+
+        if (err == QProcess::FailedToStart) {
+          title = "PyXRF failed to start";
+          msg = QString("The program \"%1\" failed to start.\n\n")
+                  .arg(process->program()) +
+                "Try setting the environment variable "
+                "\"TOMVIZ_PYXRF_EXECUTABLE\" to the full path, and restart "
+                "tomviz.";
+        } else {
+          QString output = process->readAllStandardOutput();
+          QString error = process->readAllStandardError();
+          title = "PyXRF exited with an error";
+          msg =
+            QString("stdout: \"%1\"\n\nstderr: \"%2\"").arg(output).arg(error);
+        }
+        QMessageBox::critical(parent.data(), title, msg);
+      });
   }
 
   void selectLogFile()
