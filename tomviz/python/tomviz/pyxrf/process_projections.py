@@ -1,3 +1,5 @@
+import os
+import multiprocessing
 from pathlib import Path
 import shutil
 
@@ -32,6 +34,18 @@ def ic_names(working_directory):
 
 def process_projections(working_directory, parameters_file_name, log_file_name,
                         ic_name, skip_processed, output_directory):
+    # FIXME: this shouldn't be necessary. When we get time, figure out why
+    # we have to specify these paths. Currently, if we do not, then the
+    # multiprocessing will encounter errors about missing standard python
+    # libraries.
+    fix_python_paths()
+
+    # Because we are running an embedded tomviz, multiprocessing can't
+    # find the python executable. Therefore, we need to try to find it
+    # automatically and tell multiprocessing where it is.
+    python_exec = find_python_executable()
+    multiprocessing.set_executable(python_exec)
+
     kwargs = {
         'wd': working_directory,
         'fn_param': parameters_file_name,
@@ -53,3 +67,51 @@ def process_projections(working_directory, parameters_file_name, log_file_name,
     # Copy the csv file into the output directory
     shutil.copyfile(Path(working_directory) / log_file_name,
                     Path(output_directory) / log_file_name)
+
+
+def fix_python_paths():
+    # FIXME: this shouldn't be necessary, but otherwise, we get errors
+    # indicating that python standard libraries couldn't be found.
+    python_path_var = os.environ.get('PYTHONPATH', '')
+    python_paths = python_path_var.split(':') if python_path_var else []
+
+    conda_path = Path(os.environ.get('CONDA_PREFIX', ''))
+    need_to_add = [
+        conda_path / 'lib/python3.7/lib-dynload',
+    ]
+
+    for path in need_to_add:
+        if str(path) not in python_paths:
+            python_paths.append(str(path))
+
+    os.environ['PYTHONPATH'] = ':'.join(python_paths)
+
+
+def find_python_executable():
+    # Since we are in tomviz, sys.executable does not work
+    failure_msg = (
+        'Could not find python executable for multiprocessing. '
+        'Please set it to the environment variable "TOMVIZ_PYTHON_EXECUTABLE" '
+        'and restart tomviz.'
+    )
+
+    # First, check if the user set it via an environment variable
+    path = os.environ.get('TOMVIZ_PYTHON_EXECUTABLE')
+    if path and Path(path).exists():
+        return path
+
+    # Next, try to find it via the conda prefix
+    conda_path = os.environ.get('CONDA_PREFIX')
+    if conda_path is None:
+        raise Exception(failure_msg)
+
+    try_list = [
+        Path(conda_path) / 'bin' / 'python',
+        Path(conda_path) / 'bin' / 'python3',
+        Path(conda_path) / 'bin' / 'python.exe',
+    ]
+    for path in try_list:
+        if path.exists():
+            return str(path)
+
+    raise Exception(failure_msg)
