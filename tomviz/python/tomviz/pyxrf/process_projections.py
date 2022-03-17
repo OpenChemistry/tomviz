@@ -65,8 +65,14 @@ def process_projections(working_directory, parameters_file_name, log_file_name,
     make_single_hdf(**kwargs)
 
     # Copy the csv file into the output directory
-    shutil.copyfile(Path(working_directory) / log_file_name,
-                    Path(output_directory) / log_file_name)
+    log_file_path = Path(log_file_name)
+    if not log_file_path.is_absolute():
+        log_file_path = Path(working_directory).resolve() / log_file_path
+
+    output_file_path = Path(output_directory).resolve() / log_file_path.name
+    if log_file_path != output_file_path:
+        # Copy the csv file into the output directory
+        shutil.copyfile(log_file_path, output_file_path)
 
 
 def fix_python_paths():
