@@ -4,6 +4,17 @@ import shutil
 import h5py
 from xrf_tomo import process_proj, make_single_hdf
 
+# sys.stderr has been replaced by vtkPythonStdStreamCaptureHelper
+# As such, it does not have an "isatty()" function. Therefore, turn off
+# the tty check in the progress library.
+try:
+    import progress
+    progress.Infinite.check_tty = False
+except Exception:
+    # Maybe a new version of pyxrf removed dependency on progress...
+    # Or maybe progress refactored. Either way, let it go...
+    pass
+
 
 def ic_names(working_directory):
     # Find any HDF5 file in the working directory and grab the ic names
