@@ -46,6 +46,10 @@ public:
     ui.setupUi(p);
     setParent(p);
 
+    // Our embedded python in conda doesn't seem to have its paths set up
+    // correctly. No idea why. Fix it.
+    fixPythonPaths();
+
     setupTable();
     setupComboBoxes();
     setupConnections();
@@ -371,6 +375,24 @@ public:
     settings->endGroup();
   }
 
+  void fixPythonPaths()
+  {
+    importModule();
+
+    Python python;
+
+    auto func = pyxrfModule.findFunction("fix_python_paths");
+    if (!func.isValid()) {
+      qCritical() << "Failed to import tomviz.pyxrf.fix_python_paths";
+      return;
+    }
+
+    auto res = func.call();
+    if (!res.isValid()) {
+      qCritical() << "Error calling tomviz.pyxrf.fix_python_paths";
+    }
+  }
+
   QStringList icNames()
   {
     QStringList ret;
@@ -390,7 +412,7 @@ public:
     auto res = icNamesFunc.call(kwargs);
 
     if (!res.isValid()) {
-      qCritical("Error calling tomviz.pyxrf.ic_names");
+      qCritical() << "Error calling tomviz.pyxrf.ic_names";
       return ret;
     }
 

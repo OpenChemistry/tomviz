@@ -78,11 +78,14 @@ def process_projections(working_directory, parameters_file_name, log_file_name,
 def fix_python_paths():
     # FIXME: this shouldn't be necessary, but otherwise, we get errors
     # indicating that python standard libraries couldn't be found.
+    # It seems the embedded python in our conda package doesn't set up
+    # its sys.path correctly.
     python_path_var = os.environ.get('PYTHONPATH', '')
     python_paths = python_path_var.split(':') if python_path_var else []
 
     conda_path = Path(os.environ.get('CONDA_PREFIX', ''))
     need_to_add = [
+        conda_path / 'lib/python3.7/site-packages',
         conda_path / 'lib/python3.7/lib-dynload',
     ]
 
