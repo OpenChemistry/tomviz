@@ -1,0 +1,75 @@
+{
+  "name" : "ctf_correct",
+  "label" : "CTF Correction",
+  "description" : "Applies CTF corrections on BF-TEM images.
+
+This program adopts the conventions of the following paper:
+    
+J. A. Mindell and N. Grigorieff 'Accurate determination of local defocus and specimen tilt in electron microscopy'
+  
+which is the same adopted in FREALIGN, RELION, CTFFIND3/4 and Gctf, among others.",
+  "parameters" : [
+    {
+      "name" : "apix",
+      "label" : "Pixel size (Angstroms)",
+      "type" : "double",
+      "default" : 1.0,
+      "minimum" : 0
+    },
+    {
+      "name" : "df1",
+      "label" : "Defocus 1 (or Defocus U in some notations).\nPrincipal defocus axis. Underfocus is positive.",
+      "type" : "double",
+      "default" : 10000
+    },
+    {
+      "name" : "df2",
+      "label" : "Defocus 2 (or Defocus V in some notations).\nDefocus axis orthogonal to the U axis. Only mandatory for astigmatic data.",
+      "type" : "double",
+      "default" : 10000
+    },
+    {
+      "name" : "ast",
+      "label" : "Angle for astigmatic data (Degrees)",
+      "type" : "double",
+      "default" : 0.0
+    },
+    {
+      "name" : "ampcon",
+      "label" : "Amplitude contrast fraction.",
+      "type" : "double",
+      "default" : 0.1,
+      "minimum" : 0,
+      "maximum" : 1.0
+    },
+    {
+      "name" : "cs",
+      "label" : "Spherical Aberration (Degrees)",
+      "type" : "double",
+      "default" : 2.7
+    },
+    {
+      "name" : "kev",
+      "label" : "Acceleration Voltage (keV)",
+      "type" : "double",
+      "default" : 300
+    },
+    {
+      "name" : "invert",
+      "label" : "Invert Contrast of Images",
+      "type" : "bool",
+      "default" : false
+    },
+    {
+      "name" : "ctf_method",
+      "label" : "CTF Correction Method",
+      "type" : "enumeration",
+      "default" : 0,
+      "options" : [
+        {"Multiplication": 0},
+        {"Phase Flip": 1},
+        {"Wiener Filter": 2}
+      ]
+    }
+  ]
+}

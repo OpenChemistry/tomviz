@@ -305,6 +305,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     m_ui->menuTomography->addAction("Normalize Average Image Intensity");
   QAction* gradientMagnitude2DSobelAction =
     m_ui->menuTomography->addAction("2D Gradient Magnitude");
+  QAction* ctfCorrectAction = 
+    m_ui->menuTomography->addAction("CTF Correction");
 
   m_ui->menuTomography->addSeparator();
   QAction* alignmentLabel = m_ui->menuTomography->addAction("Alignment:");
@@ -363,18 +365,6 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   new SetDataTypeReaction(setTiltDataTypeAction, this, DataSource::TiltSeries);
   // new SetDataTypeReaction(setFibDataTypeAction, this, DataSource::FIB);
   new SetTiltAnglesReaction(setTiltAnglesAction, this);
-
-  new AddPythonTransformReaction(
-    generateTiltSeriesAction, "Generate Tilt Series",
-    readInPythonScript("GenerateTiltSeries"), false, true, false,
-    readInJSONDescription("GenerateTiltSeries"));
-
-  new AddAlignReaction(alignAction);
-  new AddPythonTransformReaction(downsampleByTwoAction, "Bin Tilt Image x2",
-                                 readInPythonScript("BinTiltSeriesByTwo"),
-                                 false, false, false);
-  new AddPythonTransformReaction(
-    removeBadPixelsAction, "Remove Bad Pixels",
     readInPythonScript("RemoveBadPixelsTiltSeries"), false, false, false);
   new AddPythonTransformReaction(
     gaussianFilterAction, "Gaussian Filter Tilt Series",
@@ -393,6 +383,10 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   new AddPythonTransformReaction(
     gradientMagnitude2DSobelAction, "Gradient Magnitude 2D",
     readInPythonScript("GradientMagnitude2D_Sobel"), false, false, false);
+  new AddPythonTransformReaction(
+    ctfCorrectAction, "CTF Correction",
+    readInPythonScript("ctf_correct"), true, false, false, 
+    readInJSONDescription("ctf_correct"));
   new AddPythonTransformReaction(
     rotateAlignAction, "Tilt Axis Alignment (manual)",
     readInPythonScript("RotationAlign"), true, false, false,

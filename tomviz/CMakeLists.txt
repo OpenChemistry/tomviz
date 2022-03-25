@@ -441,6 +441,7 @@ set(python_files
   AutoTiltAxisShiftAlignment.py
   AutoCenterOfMassTiltImageAlignment.py
   AutoCrossCorrelationTiltImageAlignment.py
+  ctf_correct.py
   Recon_DFT.py
   Recon_DFT_constraint.py
   Recon_WBP.py
@@ -524,6 +525,7 @@ set(json_files
   MedianFilter.json
   Rotate3D.json
   GenerateTiltSeries.json
+  ctf_correct.json
   Recon_ART.json
   Recon_DFT.json
   Recon_DFT_constraint.json
