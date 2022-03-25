@@ -23,6 +23,22 @@ Below specify the directory where projection image data will arrive. The specime
       "default" : ""
     },
     {
+      "name" : "align",
+      "label" : "Alignment Method",
+      "type" : "enumeration",
+      "default" : 0,
+      "options":[
+        { "Center of Mass" : 0},
+        { "Cross Correlation" : 1} 
+      ]
+    },
+    {
+      "name" : "invert",
+      "label": "Invert Contrast of Images (for BF-TEM)",
+      "type" : "bool",
+      "default": false
+    },
+    {
       "name" : "alg",
       "label" : "Reconstruction Algorithm",
       "type" : "enumeration",

@@ -7,11 +7,12 @@ import time
 
 class RealTimeTomography(tomviz.operators.CompletableOperator):
 
-    def transform(self, dataset, localDirectory=None, alg=None,
-                  maxIter=None, fileExt=None):
+    def transform(self, dataset, localDirectory=None, alg=None, invert=None,
+                  align=None, maxIter=None, fileExt=None):
 
         # Parse Inputs
         fileExtensions = ('dm4', 'dm3', 'ser')
+        alignments = ('CoM', 'xcor')
         algorithms = ('ART', 'randART', 'SIRT', 'WBP')
         alg = algorithms[alg]
 
@@ -22,7 +23,8 @@ class RealTimeTomography(tomviz.operators.CompletableOperator):
         child = dataset.create_child_dataset()
 
         # Logger to Read Directory
-        tomoLogger = logger.Logger(localDirectory, fileExtensions[fileExt])
+        tomoLogger = logger.Logger(localDirectory, fileExtensions[fileExt],
+                                   alignments[align], invert)
 
         # Keep Checking Directory until a projection is read.
         while True:
