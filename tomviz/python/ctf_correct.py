@@ -12,9 +12,9 @@ def transform(dataset, apix=None, df1=None, df2=None, ast=None, ampcon=None,
 
     # Main loop
     for i in range(tiltSeries.shape[2]):
-        tiltSeries[:, :, i] = correct_CTF(tiltSeries[:,:,i], df1, df2, ast,
-                                        ampcon, cs, kev, apix,
-                                        methods[ctf_method], snr)
+        tiltSeries[:, :, i] = correct_CTF(tiltSeries[:, :, i], df1, df2, ast,
+                                          ampcon, cs, kev, apix,
+                                          methods[ctf_method], snr)
 
     dataset.active_scalars = tiltSeries
 
@@ -63,7 +63,7 @@ def CTF(imSize, DF1, DF2, AST, AmpCon, Cs, kV, apix):
     radialMeshSq = radialMesh * radialMesh
 
     DF = 0.5 * (DF1 + DF2 + (DF1 - DF2) * np.cos(2 * (angleMesh - AST)))
-    Xr = np.nan_to_num(np.pi * WL * radialMeshSq \
+    Xr = np.nan_to_num(np.pi * WL * radialMeshSq 
                        * (DF - 0.5 * WL * WL * radialMeshSq * Cs))
 
     CTFim = -w1 * np.sin(Xr) - w2 * np.cos(Xr)
