@@ -395,10 +395,9 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   new AddPythonTransformReaction(
     gradientMagnitude2DSobelAction, "Gradient Magnitude 2D",
     readInPythonScript("GradientMagnitude2D_Sobel"), false, false, false);
-  new AddPythonTransformReaction(
-    ctfCorrectAction, "CTF Correction",
-    readInPythonScript("ctf_correct"), true, false, false, 
-    readInJSONDescription("ctf_correct"));
+  new AddPythonTransformReaction(ctfCorrectAction, "CTF Correction",
+                                 readInPythonScript("ctf_correct"), true,
+                                 false, false, readInJSONDescription("ctf_correct"));
   new AddPythonTransformReaction(
     rotateAlignAction, "Tilt Axis Alignment (manual)",
     readInPythonScript("RotationAlign"), true, false, false,
