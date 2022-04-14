@@ -63,8 +63,8 @@ def CTF(imSize, DF1, DF2, AST, AmpCon, Cs, kV, apix):
     radialMeshSq = radialMesh * radialMesh
 
     DF = 0.5 * (DF1 + DF2 + (DF1 - DF2) * np.cos(2 * (angleMesh - AST)))
-    Xr = np.nan_to_num(np.pi * WL * radialMeshSq 
-                       * (DF - 0.5 * WL * WL * radialMeshSq * Cs))
+    Xr = np.nan_to_num(np.pi * WL * radialMeshSq *
+                       (DF - 0.5 * WL * WL * radialMeshSq * Cs))
 
     CTFim = -w1 * np.sin(Xr) - w2 * np.cos(Xr)
 
