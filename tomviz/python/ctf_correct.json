@@ -1,13 +1,9 @@
 {
   "name" : "ctf_correct",
   "label" : "CTF Correction",
-  "description" : "Applies CTF corrections on BF-TEM images.
+  "description" : "Apply CTF correction on BF-TEM images.
 
-This program adopts the conventions of the following paper:
-    
-J. A. Mindell and N. Grigorieff 'Accurate determination of local defocus and specimen tilt in electron microscopy'
-  
-which is the same adopted in FREALIGN, RELION, CTFFIND3/4 and Gctf, among others.",
+This program adopts naming conventions of the following paper:\n J. A. Mindell and N. Grigorieff (doi:10.1016/s1047-8477(03)00069-8)",
   "parameters" : [
     {
       "name" : "apix",
@@ -18,25 +14,25 @@ which is the same adopted in FREALIGN, RELION, CTFFIND3/4 and Gctf, among others
     },
     {
       "name" : "df1",
-      "label" : "Defocus 1 (or Defocus U in some notations).\nPrincipal defocus axis. Underfocus is positive.",
+      "label" : "Defocus U (micron).\nPrincipal defocus axis. Underfocus is positive.",
       "type" : "double",
-      "default" : 10000
+      "default" : 1
     },
     {
       "name" : "df2",
-      "label" : "Defocus 2 (or Defocus V in some notations).\nDefocus axis orthogonal to the U axis. Only mandatory for astigmatic data.",
+      "label" : "Defocus V (micron).\nDefocus axis orthogonal to the U axis. Only mandatory for astigmatic data.",
       "type" : "double",
-      "default" : 10000
+      "default" : 1
     },
     {
       "name" : "ast",
-      "label" : "Angle for astigmatic data (Degrees)",
+      "label" : "Angle of stigmation (Degrees)",
       "type" : "double",
       "default" : 0.0
     },
     {
       "name" : "ampcon",
-      "label" : "Amplitude contrast fraction.",
+      "label" : "Percent amplitude contrast.",
       "type" : "double",
       "default" : 0.1,
       "minimum" : 0,
@@ -44,7 +40,7 @@ which is the same adopted in FREALIGN, RELION, CTFFIND3/4 and Gctf, among others
     },
     {
       "name" : "cs",
-      "label" : "Spherical Aberration (Degrees)",
+      "label" : "Spherical Aberration (mm)",
       "type" : "double",
       "default" : 2.7
     },
@@ -55,21 +51,22 @@ which is the same adopted in FREALIGN, RELION, CTFFIND3/4 and Gctf, among others
       "default" : 300
     },
     {
-      "name" : "invert",
-      "label" : "Invert Contrast of Images",
-      "type" : "bool",
-      "default" : false
-    },
-    {
       "name" : "ctf_method",
       "label" : "CTF Correction Method",
       "type" : "enumeration",
       "default" : 0,
       "options" : [
-        {"Multiplication": 0},
+        {"Wiener Filter": 0},
         {"Phase Flip": 1},
-        {"Wiener Filter": 2}
+        {"Multiplication": 2}
       ]
+    },
+    {
+      "name" : "snr",
+      "label" : "SNR (for Wiener Filter)",
+      "type" : "double",
+      "default" : 5.0,
+      "mininum" : 1e-5
     }
   ]
 }
