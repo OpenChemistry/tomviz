@@ -71,6 +71,10 @@ def CTF(imSize, DF1, DF2, AST, AmpCon, Cs, kV, apix):
     return CTFim
 
 
-# Calculate the Electron Wavelength is Angstroms
-def ElectronWavelength(kV):
-    return 12.2639 / np.sqrt(kV * 1e3 + 0.97856 * (kV**2))
+# Calculate the Electron Wavelength in Angstroms
+def ElectronWavelength(keV):
+    h = 6.626e-34 
+    eCharge = 1.6e-19 
+    c = 3e8     # m / s
+    eRest = 511 # keV
+    return h*c / np.sqrt(((2*eRest+keV)*keV)*(eCharge*eCharge)) * 1e7
