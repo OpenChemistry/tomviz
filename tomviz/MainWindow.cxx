@@ -579,7 +579,10 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
             bool installed = pyXRFRunner->isInstalled();
             m_ui->actionPyXRFWorkflow->setEnabled(installed);
             if (!installed) {
-              QString tooltip = "Failed to import required modules";
+              // Grab the import error and show it in the tooltip
+              QString tooltip = "Failed to import required modules. "
+                                "Error message was:\n\n" +
+                                pyXRFRunner->importError();
               m_ui->actionPyXRFWorkflow->setToolTip(tooltip);
             }
 

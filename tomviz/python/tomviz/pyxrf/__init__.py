@@ -6,6 +6,16 @@ try:
 except ImportError:
     requirements_installed = False
 
+    import traceback
+    import_error_exc = traceback.format_exc()
+
 
 def installed():
     return requirements_installed
+
+
+def import_error():
+    if requirements_installed:
+        return ''
+    else:
+        return import_error_exc
