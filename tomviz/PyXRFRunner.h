@@ -22,6 +22,9 @@ public:
 
   void start();
 
+  // Get the import error if the needed modules are not installed
+  QString importError();
+
 private:
   class Internal;
   QScopedPointer<Internal> m_internal;

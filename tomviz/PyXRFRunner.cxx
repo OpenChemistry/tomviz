@@ -114,6 +114,28 @@ public:
     return res.toBool();
   }
 
+  QString importError()
+  {
+    importModule();
+
+    Python python;
+
+    auto func = pyxrfModule.findFunction("import_error");
+    if (!func.isValid()) {
+      qCritical() << "Failed to import \"tomviz.pyxrf.import_error\"";
+      return "import_error not found";
+    }
+
+    auto res = func.call();
+
+    if (!res.isValid()) {
+      qCritical() << "Error calling \"tomviz.pyxrf.import_error\"";
+      return "import_error not found";
+    }
+
+    return res.toString();
+  }
+
   void importFunctions()
   {
     importModule();
@@ -459,6 +481,11 @@ PyXRFRunner::~PyXRFRunner() = default;
 bool PyXRFRunner::isInstalled()
 {
   return m_internal->isInstalled();
+}
+
+QString PyXRFRunner::importError()
+{
+  return m_internal->importError();
 }
 
 void PyXRFRunner::start()
