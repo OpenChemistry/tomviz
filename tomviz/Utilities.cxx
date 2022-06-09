@@ -1676,6 +1676,10 @@ void relabelXAndZAxes(vtkImageData* image)
   if (!image)
     return;
 
+  // We want the preserve the field data
+  vtkSmartPointer<vtkFieldData> fd = image->GetFieldData();
+  image->SetFieldData(nullptr);
+
   int dim[3];
   double spacing[3], origin[3];
   image->GetDimensions(dim);
@@ -1689,6 +1693,9 @@ void relabelXAndZAxes(vtkImageData* image)
   image->SetDimensions(dim);
   image->SetSpacing(spacing);
   image->SetOrigin(origin);
+
+  // Reinstate the field data
+  image->SetFieldData(fd);
 }
 
 } // namespace tomviz
