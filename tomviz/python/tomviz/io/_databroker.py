@@ -5,7 +5,7 @@ import tomviz.utils
 from vtk import vtkImageData
 
 _installed = False
-DEFAULT_URL = "https://tiled.nsls2.bnl.gov"
+DEFAULT_URL = "https://tiled.nsls2.bnl.gov/api"
 TILED_URL = os.getenv("TILED_URL", DEFAULT_URL)
 try:
     from tiled.client import from_uri
@@ -101,7 +101,7 @@ def load_variable(catalog_name, run_uid, table, variable):
     shape = data.shape
     data = data.reshape((shape[0]*shape[1], shape[2], shape[3]))
     # Convert to numpy array
-    data = np.ascontiguousarray(data)
+    data = np.asfortranarray(data)
 
     image_data = vtkImageData()
     (x, y, z) = data.shape
