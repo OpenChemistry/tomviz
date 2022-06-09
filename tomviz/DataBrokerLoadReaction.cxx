@@ -7,6 +7,7 @@
 #include "DataSource.h"
 #include "LoadDataReaction.h"
 #include "Utilities.h"
+#include "GenericHDF5Format.h"
 
 #include <vtkImageData.h>
 
@@ -42,7 +43,8 @@ void DataBrokerLoadReaction::loadData()
     connect(call, &LoadDataCall::complete, dataBroker,
             [dataBroker, catalog, runUid, table,
              variable](vtkSmartPointer<vtkImageData> imageData) {
-              // relable axes first
+              // Relabel axes first, short-term workaround reorder to C (again).
+              GenericHDF5Format::reorderData(imageData, ReorderMode::FortranToC);
               relabelXAndZAxes(imageData);
               auto dataSource =
                 new DataSource(imageData, DataSource::TiltSeries);
