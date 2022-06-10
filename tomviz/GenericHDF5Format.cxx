@@ -85,10 +85,18 @@ void GenericHDF5Format::reorderData(vtkImageData* image, ReorderMode mode)
   if (!image)
     return;
 
+  // We want the preserve the field data
+  vtkSmartPointer<vtkFieldData> fd = image->GetFieldData();
+  image->SetFieldData(nullptr);
+
+
   // TODO: Can we re-order this in place, rather than making a copy?
   vtkNew<vtkImageData> tmp;
   reorderData(image, tmp, mode);
   image->ShallowCopy(tmp);
+
+  // Restore field data
+  image->SetFieldData(fd);
 }
 
 void GenericHDF5Format::reorderData(vtkImageData* in, vtkImageData* out,
