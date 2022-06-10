@@ -89,7 +89,6 @@ void GenericHDF5Format::reorderData(vtkImageData* image, ReorderMode mode)
   vtkSmartPointer<vtkFieldData> fd = image->GetFieldData();
   image->SetFieldData(nullptr);
 
-
   // TODO: Can we re-order this in place, rather than making a copy?
   vtkNew<vtkImageData> tmp;
   reorderData(image, tmp, mode);
