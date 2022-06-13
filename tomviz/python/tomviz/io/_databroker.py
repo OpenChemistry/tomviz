@@ -85,6 +85,23 @@ def variables(catalog_name, run_uid, table):
 
     return variables
 
+def _nsls2_fxi_load_thetas(run):
+    """Load thetas from fly scan. The stage has a monitor and the timestamps from
+       the camera have to be interpolated with the stage to get the stage position.
+    """
+    EPICS_TO_UNIX_OFFSET = 631152000  # 20 years in seconds
+    # get xarray object once, then grab angles and time from it
+    zps_pi_r = run['zps_pi_r_monitor']['data']['zps_pi_r']
+    rotation_deg = np.array(zps_pi_r)
+    rotation_time = np.array(zps_pi_r.coords['time'])  # UNIX EPOCH
+    img_time = np.array(run['primary']['data']['Andor_timestamps'])  # EPICS EPOCH
+    img_time = np.concatenate(img_time, axis=0)  # remove chunking
+    img_time += EPICS_TO_UNIX_OFFSET  # Convert EPICS to UNIX TIMESTAMP
+    # Interpolate rotation angle for each projection
+    #thetas = np.deg2rad(np.interp(img_time, rotation_time, rotation_deg))
+    thetas = np.interp(img_time, rotation_time, rotation_deg)
+    return thetas
+
 
 def load_variable(catalog_name, run_uid, table, variable):
     if run_uid not in c[catalog_name]:
@@ -118,7 +135,7 @@ def load_variable(catalog_name, run_uid, table, variable):
        'zps_pi_r' not in run['zps_pi_r_monitor']['data']:
         raise Exception("No angles found!")
 
-    angles = run['zps_pi_r_monitor']['data']['zps_pi_r'].data
+    angles = _nsls2_fxi_load_thetas(run)
     tomviz.utils.set_tilt_angles(image_data, angles)
 
     return image_data
