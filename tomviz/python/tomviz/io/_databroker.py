@@ -85,16 +85,20 @@ def variables(catalog_name, run_uid, table):
 
     return variables
 
+
 def _nsls2_fxi_load_thetas(run):
-    """Load thetas from fly scan. The stage has a monitor and the timestamps from
-       the camera have to be interpolated with the stage to get the stage position.
+    """Load thetas from fly scan. The stage has a monitor and the timestamps
+       from the camera have to be interpolated with the stage to get the stage
+       position.
     """
     EPICS_TO_UNIX_OFFSET = 631152000  # 20 years in seconds
     # get xarray object once, then grab angles and time from it
     zps_pi_r = run['zps_pi_r_monitor']['data']['zps_pi_r']
     rotation_deg = np.array(zps_pi_r)
-    rotation_time = np.array(zps_pi_r.coords['time'])  # UNIX EPOCH
-    img_time = np.array(run['primary']['data']['Andor_timestamps'])  # EPICS EPOCH
+    # UNIX EPOCH
+    rotation_time = np.array(zps_pi_r.coords['time'])
+    # EPICS EPOCH
+    img_time = np.array(run['primary']['data']['Andor_timestamps'])
     img_time = np.concatenate(img_time, axis=0)  # remove chunking
     img_time += EPICS_TO_UNIX_OFFSET  # Convert EPICS to UNIX TIMESTAMP
     # Interpolate rotation angle for each projection
