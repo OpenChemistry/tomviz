@@ -51,12 +51,14 @@ private:
   QString m_selectedVariable = "Andor_image";
   QDate m_fromDate;
   QDate m_toDate;
+  int m_id = -1;
   bool m_dateFilter;
+  bool m_idFilter;
   int m_limit = 20;
 
   void loadCatalogs();
-  void loadRuns(const QString& catalog, bool dateFilter, const QDate& fromDate,
-                const QDate& toDate, int limit);
+  void loadRuns(const QString& catalog, int id, bool dateFilter,
+                const QDate& fromDate, const QDate& toDate, int limit);
   void loadTables(const QString& catalog, const QString& runUid);
   void loadVariables(const QString& catalog, const QString& runUid,
                      const QString& table);
@@ -76,7 +78,8 @@ private:
   void connectErrorSignal(ListResourceCall* call);
 
 private slots:
-  void enableFilter(bool enable);
+  void enableFilterByDate(bool enable);
+  void enableFilterByID(bool enable);
   void applyFilter();
 };
 } // namespace tomviz

@@ -76,41 +76,44 @@ ListResourceCall* DataBroker::catalogs()
   return call;
 }
 
-ListResourceCall* DataBroker::runs(const QString& catalog, const QString& since,
-                                   const QString& until, int limit)
+ListResourceCall* DataBroker::runs(const QString& catalog, int id,
+                                   const QString& since, const QString& until,
+                                   int limit)
 {
   auto call = new ListResourceCall(this);
 
-  auto future = QtConcurrent::run([this, call, catalog, since, until, limit]() {
-    Python python;
+  auto future =
+    QtConcurrent::run([this, call, catalog, id, since, until, limit]() {
+      Python python;
 
-    auto runsFunc = m_dataBrokerModule.findFunction("runs");
-    if (!runsFunc.isValid()) {
-      emit call->error("Failed to import tomviz.io._databroker.runs");
-      return;
-    }
+      auto runsFunc = m_dataBrokerModule.findFunction("runs");
+      if (!runsFunc.isValid()) {
+        emit call->error("Failed to import tomviz.io._databroker.runs");
+        return;
+      }
 
-    Python::Tuple args(4);
-    args.set(0, catalog.toStdString());
-    args.set(1, since.toStdString());
-    args.set(2, until.toStdString());
-    args.set(3, limit);
+      Python::Tuple args(5);
+      args.set(0, catalog.toStdString());
+      args.set(1, id);
+      args.set(2, since.toStdString());
+      args.set(3, until.toStdString());
+      args.set(4, limit);
 
-    auto res = runsFunc.call(args);
+      auto res = runsFunc.call(args);
 
-    if (!res.isValid()) {
-      emit call->error("Error fetching runs");
-      return;
-    }
+      if (!res.isValid()) {
+        emit call->error("Error fetching runs");
+        return;
+      }
 
-    QList<QVariantMap> runs;
+      QList<QVariantMap> runs;
 
-    for (auto v : toQVariant(res.toVariant()).toList()) {
-      runs.append(v.toMap());
-    }
+      for (auto v : toQVariant(res.toVariant()).toList()) {
+        runs.append(v.toMap());
+      }
 
-    emit call->complete(runs);
-  });
+      emit call->complete(runs);
+    });
 
   return call;
 }
