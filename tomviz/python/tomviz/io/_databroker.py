@@ -9,7 +9,8 @@ DEFAULT_URL = "https://tiled.nsls2.bnl.gov/api"
 TILED_URL = os.getenv("TILED_URL", DEFAULT_URL)
 try:
     from tiled.client import from_uri
-    c = from_uri(TILED_URL, "dask")
+    from tiled.client.cache import Cache
+    c = from_uri(TILED_URL, "dask", cache=Cache.in_memory(capacity=1e6))
     from databroker.queries import TimeRange
     _installed = True
 except ImportError:
