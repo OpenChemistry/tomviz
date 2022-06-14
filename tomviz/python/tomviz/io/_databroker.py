@@ -37,7 +37,7 @@ def catalogs():
 def runs(catalog_name, since, until, limit):
     runs = []
 
-    current = c[catalog_name]
+    current = c[catalog_name]['raw']
 
     if since != "" and until != "":
         current = current.search(TimeRange(since=since, until=until))
@@ -60,7 +60,7 @@ def runs(catalog_name, since, until, limit):
 
 def tables(catalog_name, run_uid):
     tables = []
-    for name, _ in c[catalog_name][run_uid].items():
+    for name, _ in c[catalog_name]['raw'][run_uid].items():
         tables.append({
             "name": name,
         })
@@ -75,7 +75,7 @@ def variables(catalog_name, run_uid, table):
 
     # Would be nice to use context manager here, but it doesn't seem to close
     # the dataset.
-    dataset = c[catalog_name][run_uid][table].read()
+    dataset = c[catalog_name]['raw'][run_uid][table].read()
     for name, variable in dataset.data_vars.items():
         variables.append({
             "name": name,
@@ -109,16 +109,16 @@ def _nsls2_fxi_load_thetas(run):
 
 
 def load_variable(catalog_name, run_uid, table, variable):
-    if run_uid not in c[catalog_name]:
+    if run_uid not in c[catalog_name]['raw']:
         raise Exception(f"Unable to load run: {run_uid}")
 
-    if table not in c[catalog_name][run_uid]:
+    if table not in c[catalog_name]['raw'][run_uid]:
         raise Exception(f"Unable to find table: {table}")
 
-    if variable not in c[catalog_name][run_uid][table]['data']:
+    if variable not in c[catalog_name]['raw'][run_uid][table]['data']:
         raise Exception(f"Unable to find variable: {variable}")
 
-    run = c[catalog_name][run_uid]
+    run = c[catalog_name]['raw'][run_uid]
     data = run[table]['data'][variable].data
     shape = data.shape
     data = data.reshape((shape[0]*shape[1], shape[2], shape[3]))
