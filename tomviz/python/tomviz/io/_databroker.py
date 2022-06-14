@@ -10,7 +10,7 @@ TILED_URL = os.getenv("TILED_URL", DEFAULT_URL)
 try:
     from tiled.client import from_uri
     c = from_uri(TILED_URL, "dask")
-    from databroker.queries import TimeRange
+    from databroker.queries import TimeRange, ScanID
     _installed = True
 except ImportError:
     pass
@@ -33,7 +33,7 @@ def catalogs():
     return cats
 
 
-def runs(catalog_name, since, until, limit):
+def runs(catalog_name, id, since, until, limit):
     runs = []
 
     current = c[catalog_name]
@@ -41,18 +41,26 @@ def runs(catalog_name, since, until, limit):
     if since != "" and until != "":
         current = current.search(TimeRange(since=since, until=until))
 
+    if id != -1:
+        current = current.search(ScanID(id))
+
     cat = current.values_indexer[-1:-limit:-1]
 
     for run in cat:
         md = run.metadata
-        runs.append({
+        r = {
             "uid": md['start']['uid'],
             "planName": md['start']['plan_name'],
             "scanId": md['start']['scan_id'],
             "startTime": md['start']['time'],
-        })
+        }
 
-    runs = sorted(runs, key=lambda r: r['uid'])
+        if 'stop' in md:
+            r['stopTime'] = md['stop']['time']
+
+        runs.append(r)
+
+    runs = sorted(runs, key=lambda r: r['startTime'])
 
     return runs
 

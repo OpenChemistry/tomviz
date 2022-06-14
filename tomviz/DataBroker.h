@@ -64,7 +64,7 @@ public:
   DataBroker(QObject* parent = 0);
   bool installed();
   ListResourceCall* catalogs();
-  ListResourceCall* runs(const QString& catalog, const QString& since,
+  ListResourceCall* runs(const QString& catalog, int id, const QString& since,
                          const QString& until, int limit);
   ListResourceCall* tables(const QString& catalog, const QString& runUid);
   ListResourceCall* variables(const QString& catalog, const QString& runUid,

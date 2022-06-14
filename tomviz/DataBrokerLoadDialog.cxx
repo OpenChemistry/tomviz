@@ -29,17 +29,21 @@ DataBrokerLoadDialog::DataBrokerLoadDialog(DataBroker* dataBroker,
 {
   m_ui->setupUi(this);
   allowFilter(false);
-  enableFilter(false);
+  enableFilterByDate(false);
+  enableFilterByID(false);
   m_ui->fromDateEdit->setCalendarPopup(true);
   m_ui->toDateEdit->setCalendarPopup(true);
   m_ui->fromDateEdit->setDate(QDate::currentDate().addDays(-365));
   m_ui->toDateEdit->setDate(QDate::currentDate().addDays(1));
+
+  m_ui->idLineEdit->setValidator(new QIntValidator(0, 10000000, this));
 
   auto tree = m_ui->treeWidget;
   tree->setExpandsOnDoubleClick(false);
   tree->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
   auto resetButton = m_ui->buttonBox->button(QDialogButtonBox::Reset);
+  resetButton->setVisible(false);
   connect(resetButton, &QPushButton::clicked, this, [this]() {
     setEnabledOkButton(false);
     clearErrorMessage();
@@ -48,7 +52,13 @@ DataBrokerLoadDialog::DataBrokerLoadDialog(DataBroker* dataBroker,
 
   connect(m_ui->filterByDateCheckBox, &QPushButton::toggled, this,
           [this](bool enable) {
-            this->enableFilter(enable);
+            this->enableFilterByDate(enable);
+            this->applyFilter();
+          });
+
+  connect(m_ui->filterByIDCheckBox, &QPushButton::toggled, this,
+          [this](bool enable) {
+            this->enableFilterByID(enable);
             this->applyFilter();
           });
 
@@ -88,7 +98,8 @@ DataBrokerLoadDialog::DataBrokerLoadDialog(DataBroker* dataBroker,
     m_selectedCatalog = env.value("TILED_CATALOG");
   }
 
-  loadRuns(m_selectedCatalog, m_dateFilter, m_fromDate, m_toDate, m_limit);
+  loadRuns(m_selectedCatalog, m_id, m_dateFilter, m_fromDate, m_toDate,
+           m_limit);
 }
 
 DataBrokerLoadDialog::~DataBrokerLoadDialog() = default;
@@ -122,7 +133,7 @@ void DataBrokerLoadDialog::showCatalogs()
           [this](QTreeWidgetItem* item, int column) {
             Q_UNUSED(column);
             m_selectedCatalog = item->data(0, Qt::DisplayRole).toString();
-            this->loadRuns(m_selectedCatalog, m_dateFilter, m_fromDate,
+            this->loadRuns(m_selectedCatalog, m_id, m_dateFilter, m_fromDate,
                            m_toDate, m_limit);
           });
 
@@ -143,16 +154,17 @@ void DataBrokerLoadDialog::showCatalogs()
   tree->insertTopLevelItems(0, items);
 }
 
-void DataBrokerLoadDialog::loadRuns(const QString& catalog, bool dateFilter,
-                                    const QDate& fromDate, const QDate& toDate,
-                                    int limit)
+void DataBrokerLoadDialog::loadRuns(const QString& catalog, int id,
+                                    bool dateFilter, const QDate& fromDate,
+                                    const QDate& toDate, int limit)
 {
   beginCall();
 
-  auto call = dateFilter
-                ? m_dataBroker->runs(catalog, fromDate.toString(Qt::ISODate),
-                                     toDate.toString(Qt::ISODate), limit)
-                : m_dataBroker->runs(catalog, QString(""), QString(""), limit);
+  auto call =
+    dateFilter
+      ? m_dataBroker->runs(catalog, id, fromDate.toString(Qt::ISODate),
+                           toDate.toString(Qt::ISODate), limit)
+      : m_dataBroker->runs(catalog, id, QString(""), QString(""), limit);
   connect(call, &ListResourceCall::complete, call,
           [this, call](QList<QVariantMap> runs) {
             this->m_runs = runs;
@@ -202,13 +214,14 @@ void DataBrokerLoadDialog::showRuns()
       auto mseconds = seconds * 1000;
       startTime = QDateTime::fromMSecsSinceEpoch(mseconds);
     }
-    {
+
+    if (run.contains("stopTime")) {
       auto seconds = run["stopTime"].toDouble();
       auto mseconds = seconds * 1000;
       stopTime = QDateTime::fromMSecsSinceEpoch(mseconds);
     }
-    QStringList row = { run["uid"].toString(), run["planName"].toString(),
-                        run["scanId"].toString(),
+    QStringList row = { run["uid"].toString().mid(0, 8),
+                        run["planName"].toString(), run["scanId"].toString(),
                         startTime.toString(Qt::TextDate),
                         stopTime.toString(Qt::TextDate) };
 
@@ -397,11 +410,17 @@ void DataBrokerLoadDialog::allowFilter(bool allow)
   m_ui->filterWidget->setVisible(allow);
 }
 
-void DataBrokerLoadDialog::enableFilter(bool enable)
+void DataBrokerLoadDialog::enableFilterByDate(bool enable)
 {
   m_dateFilter = enable;
   m_ui->fromDateEdit->setEnabled(enable);
   m_ui->toDateEdit->setEnabled(enable);
+}
+
+void DataBrokerLoadDialog::enableFilterByID(bool enable)
+{
+  m_idFilter = enable;
+  m_ui->idLineEdit->setEnabled(enable);
 }
 
 void DataBrokerLoadDialog::applyFilter()
@@ -411,6 +430,15 @@ void DataBrokerLoadDialog::applyFilter()
   m_toDate = m_ui->toDateEdit->date();
   m_limit = m_ui->limitSpinBox->value();
 
+  auto idStr = m_ui->idLineEdit->text();
+  bool ok = false;
+  auto id = idStr.toInt(&ok);
+  if (ok && m_idFilter) {
+    m_id = id;
+  } else {
+    m_id = -1;
+  }
+
   // Save the range
   QSettings* settings = pqApplicationCore::instance()->settings();
   settings->beginGroup(DATABROKER_GROUP);
@@ -419,7 +447,7 @@ void DataBrokerLoadDialog::applyFilter()
   settings->setValue(LIMIT_SETTINGS_LABEL, QVariant(m_limit));
   settings->endGroup();
 
-  this->loadRuns(m_selectedCatalog, m_dateFilter, m_fromDate, m_toDate,
+  this->loadRuns(m_selectedCatalog, m_id, m_dateFilter, m_fromDate, m_toDate,
                  m_limit);
 }
 
