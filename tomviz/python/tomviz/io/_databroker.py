@@ -56,7 +56,7 @@ def runs(catalog_name, id, since, until, limit):
             "startTime": md['start']['time'],
         }
 
-        if 'stop' in md:
+        if md.get('stop') is not None:
             r['stopTime'] = md['stop']['time']
 
         runs.append(r)
