@@ -241,4 +241,38 @@ LoadDataCall* DataBroker::loadVariable(const QString& catalog,
   return call;
 }
 
+SaveDataCall* DataBroker::saveData(const QString& catalog, const QString& name,
+                                   vtkImageData* data)
+{
+  auto call = new SaveDataCall(this);
+
+  auto future = QtConcurrent::run([this, catalog, name, data, call]() {
+    Python python;
+
+    auto saveFunc = m_dataBrokerModule.findFunction("save_data");
+    if (!saveFunc.isValid()) {
+      emit call->error("Failed to import tomviz.io._databroker.save_data");
+    }
+
+    Python::Object pydata = Python::VTK::GetObjectFromPointer(data);
+    Python::Tuple args(3);
+    args.set(0, catalog.toStdString());
+    args.set(1, name.toStdString());
+    args.set(2, pydata);
+
+    auto res = saveFunc.call(args);
+
+    if (!res.isValid()) {
+      emit call->error("Error calling save_data");
+      return;
+    }
+
+    auto id = res.toString();
+
+    emit call->complete(id);
+  });
+
+  return call;
+}
+
 } // namespace tomviz
