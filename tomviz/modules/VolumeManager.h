@@ -30,6 +30,7 @@ public:
   static VolumeManager& instance();
   void allowMultiVolume(bool allow, vtkSMViewProxy* view);
   bool allowMultiVolume(vtkSMViewProxy* view) const;
+  bool usingMultiVolume(vtkSMViewProxy* view) const;
   int volumeCount(vtkSMViewProxy* view) const;
 
 signals:

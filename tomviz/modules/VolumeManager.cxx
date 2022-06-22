@@ -243,6 +243,15 @@ bool VolumeManager::allowMultiVolume(vtkSMViewProxy* view) const
   return this->d->views[view]->usingMultiVolume;
 }
 
+bool VolumeManager::usingMultiVolume(vtkSMViewProxy* view) const
+{
+  if (!this->d->views.contains(view)) {
+    return false;
+  }
+
+  return this->d->views[view]->usingMultiVolume;
+}
+
 int VolumeManager::volumeCount(vtkSMViewProxy* view) const
 {
   if (!this->d->views.contains(view)) {
