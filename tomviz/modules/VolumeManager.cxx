@@ -90,6 +90,8 @@ void VolumeManager::onModuleAdded(Module* module)
       viewVolumes->auxProperty->SetScalarOpacity(viewVolumes->auxOpacity);
       // NOTE: Due to a bug in vtkMultiVolume, a gradient opacity function must
       // be set or the shader will fail to compile.
+      // (likely fixed in
+      // https://gitlab.kitware.com/vtk/vtk/-/merge_requests/8909)
       viewVolumes->auxProperty->SetGradientOpacity(
         viewVolumes->auxGradientOpacity);
       viewVolumes->auxVolume->SetProperty(viewVolumes->auxProperty);
@@ -238,6 +240,15 @@ bool VolumeManager::allowMultiVolume(vtkSMViewProxy* view) const
 {
   if (!this->d->views.contains(view)) {
     return true;
+  }
+
+  return this->d->views[view]->usingMultiVolume;
+}
+
+bool VolumeManager::usingMultiVolume(vtkSMViewProxy* view) const
+{
+  if (!this->d->views.contains(view)) {
+    return false;
   }
 
   return this->d->views[view]->usingMultiVolume;

@@ -62,6 +62,7 @@ vtkStandardNewMacro(SmartVolumeMapper)
 {
   // NOTE: Due to a bug in vtkMultiVolume, a gradient opacity function must be
   // set or the shader will fail to compile.
+  // (likely fixed in https://gitlab.kitware.com/vtk/vtk/-/merge_requests/8909)
   m_gradientOpacity->AddPoint(0.0, 1.0);
   connect(&HistogramManager::instance(), &HistogramManager::histogram2DReady,
           this, [=](vtkSmartPointer<vtkImageData> image,
@@ -81,6 +82,12 @@ vtkStandardNewMacro(SmartVolumeMapper)
             this->updateColorMap();
             emit this->renderNeeded();
           });
+
+  // NOTE: Due to a bug in vtkMultiVolume, a gradient opacity function must
+  // be set or the shader will fail to compile.
+  // (likely fixed in https://gitlab.kitware.com/vtk/vtk/-/merge_requests/8909)
+  connect(&VolumeManager::instance(), &VolumeManager::usingMultiVolumeChanged,
+          this, &ModuleVolume::updateColorMap);
 }
 
 ModuleVolume::~ModuleVolume()
@@ -371,9 +378,20 @@ void ModuleVolume::updateColorMap()
   int propertyMode = vtkVolumeProperty::TF_1D;
   const Module::TransferMode mode = getTransferMode();
   switch (mode) {
-    case (Module::SCALAR):
-      m_volumeProperty->SetGradientOpacity(m_gradientOpacity);
+    case (Module::SCALAR): {
+      // NOTE: Due to a bug in vtkMultiVolume, a gradient opacity function must
+      // be set or the shader will fail to compile.
+      // (likely fixed in
+      // https://gitlab.kitware.com/vtk/vtk/-/merge_requests/8909)
+      bool usingMultiVolume =
+        VolumeManager::instance().usingMultiVolume(this->view());
+      if (usingMultiVolume) {
+        m_volumeProperty->SetGradientOpacity(m_gradientOpacity);
+      } else {
+        m_volumeProperty->SetGradientOpacity(nullptr);
+      }
       break;
+    }
     case (Module::GRADIENT_1D):
       m_volumeProperty->SetGradientOpacity(gradientOpacityMap());
       break;
