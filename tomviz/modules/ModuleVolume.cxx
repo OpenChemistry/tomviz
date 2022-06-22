@@ -62,6 +62,7 @@ vtkStandardNewMacro(SmartVolumeMapper)
 {
   // NOTE: Due to a bug in vtkMultiVolume, a gradient opacity function must be
   // set or the shader will fail to compile.
+  // (likely fixed in https://gitlab.kitware.com/vtk/vtk/-/merge_requests/8909)
   m_gradientOpacity->AddPoint(0.0, 1.0);
   connect(&HistogramManager::instance(), &HistogramManager::histogram2DReady,
           this, [=](vtkSmartPointer<vtkImageData> image,
@@ -84,6 +85,7 @@ vtkStandardNewMacro(SmartVolumeMapper)
 
   // NOTE: Due to a bug in vtkMultiVolume, a gradient opacity function must
   // be set or the shader will fail to compile.
+  // (likely fixed in https://gitlab.kitware.com/vtk/vtk/-/merge_requests/8909)
   connect(&VolumeManager::instance(), &VolumeManager::usingMultiVolumeChanged,
           this, &ModuleVolume::updateColorMap);
 }
@@ -379,6 +381,8 @@ void ModuleVolume::updateColorMap()
     case (Module::SCALAR): {
       // NOTE: Due to a bug in vtkMultiVolume, a gradient opacity function must
       // be set or the shader will fail to compile.
+      // (likely fixed in
+      // https://gitlab.kitware.com/vtk/vtk/-/merge_requests/8909)
       bool usingMultiVolume =
         VolumeManager::instance().usingMultiVolume(this->view());
       if (usingMultiVolume) {
