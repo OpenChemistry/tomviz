@@ -62,6 +62,10 @@ set(SOURCES
   DataBrokerLoadDialog.h
   DataBrokerLoadReaction.cxx
   DataBrokerLoadReaction.h
+  DataBrokerSaveDialog.cxx
+  DataBrokerSaveDialog.h
+  DataBrokerSaveReaction.cxx
+  DataBrokerSaveReaction.h
   DataExchangeFormat.cxx
   DataExchangeFormat.h
   DataPropertiesModel.cxx

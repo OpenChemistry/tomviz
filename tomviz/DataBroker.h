@@ -53,6 +53,17 @@ signals:
   void complete(vtkSmartPointer<vtkImageData> imageData);
 };
 
+class SaveDataCall : public DataBrokerCall
+{
+  Q_OBJECT
+
+public:
+  explicit SaveDataCall(QObject* parent = 0) : DataBrokerCall(parent) {}
+
+signals:
+  void complete(const QString& id);
+};
+
 class DataBroker : public QObject
 {
   Q_OBJECT
@@ -71,6 +82,8 @@ public:
                               const QString& table);
   LoadDataCall* loadVariable(const QString& catalog, const QString& runUid,
                              const QString& table, const QString& variable);
+  SaveDataCall* saveData(const QString& catalog, const QString& name,
+                         vtkImageData* data);
 };
 
 } // namespace tomviz

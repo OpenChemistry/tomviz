@@ -29,6 +29,7 @@
 #include "Connection.h"
 #include "DataBroker.h"
 #include "DataBrokerLoadReaction.h"
+#include "DataBrokerSaveReaction.h"
 #include "DataPropertiesPanel.h"
 #include "DataTransformMenu.h"
 #include "FileFormatManager.h"
@@ -253,6 +254,9 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   new LoadTimeSeriesReaction(m_ui->actionOpenTimeSeries);
 
   new DataBrokerLoadReaction(m_ui->actionImportFromDataBroker);
+
+  auto dataBrokerSaveReaction =
+    new DataBrokerSaveReaction(m_ui->actionExportToDataBroker, this);
 
   // Build Data Transforms menu
   new DataTransformMenu(this, m_ui->menuData, m_ui->menuSegmentation);
@@ -566,13 +570,18 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   statusBar()->showMessage("Initializing python...");
   auto pythonWatcher = new QFutureWatcher<std::vector<OperatorDescription>>;
   connect(pythonWatcher, &QFutureWatcherBase::finished, this,
-          [this, pyXRFRunner, pythonWatcher]() {
+          [this, pyXRFRunner, pythonWatcher, dataBrokerSaveReaction]() {
             m_ui->actionAcquisition->setEnabled(true);
             m_ui->actionPassiveAcquisition->setEnabled(true);
             registerCustomOperators(pythonWatcher->result());
             // Check if we have DataBroker and enable menu if we do
             auto dataBroker = new DataBroker(this);
             m_ui->actionImportFromDataBroker->setEnabled(
+              dataBroker->installed());
+            m_ui->actionExportToDataBroker->setEnabled(
+              dataBroker->installed() &&
+              ActiveObjects::instance().activeDataSource() != nullptr);
+            dataBrokerSaveReaction->setDataBrokerInstalled(
               dataBroker->installed());
             dataBroker->deleteLater();
 

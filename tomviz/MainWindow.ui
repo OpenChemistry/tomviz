@@ -53,6 +53,7 @@
     <addaction name="actionSaveData"/>
     <addaction name="separator"/>
     <addaction name="actionImportFromDataBroker"/>
+    <addaction name="actionExportToDataBroker"/>
     <addaction name="separator"/>
     <addaction name="actionSaveScreenshot"/>
     <addaction name="actionSaveMovie"/>
@@ -424,6 +425,14 @@
    </property>
    <property name="text">
     <string>&amp;Import from DataBroker</string>
+   </property>
+  </action>
+  <action name="actionExportToDataBroker">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Export to DataBroker</string>
    </property>
   </action>
   <action name="actionSaveScreenshot">

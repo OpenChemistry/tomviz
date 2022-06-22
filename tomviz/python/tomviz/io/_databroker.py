@@ -15,6 +15,9 @@ try:
     _installed = True
 except ImportError:
     pass
+except Exception:
+    import traceback
+    traceback.print_exc()
 
 
 def installed():
@@ -152,3 +155,10 @@ def load_variable(catalog_name, run_uid, table, variable):
     tomviz.utils.set_tilt_angles(image_data, angles)
 
     return image_data
+
+
+def save_data(catalog_name, name, data):
+    scalars = tomviz.utils.get_scalars(data)
+    r = c[catalog_name]["sandbox"].write_array(scalars, {"name": name})
+
+    return r
