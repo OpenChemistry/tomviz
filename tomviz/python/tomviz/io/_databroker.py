@@ -105,12 +105,12 @@ def _nsls2_fxi_load_thetas(run):
     """
     EPICS_TO_UNIX_OFFSET = 631152000  # 20 years in seconds
     # get xarray object once, then grab angles and time from it
-    zps_pi_r = run['zps_pi_r_monitor']['data']['zps_pi_r']
+    zps_pi_r = run['zps_pi_r_monitor']['data']['zps_pi_r'][:]
     rotation_deg = np.array(zps_pi_r)
     # UNIX EPOCH
-    rotation_time = np.array(zps_pi_r.coords['time'])
+    rotation_time = np.array(zps_pi_r.coords['time'][:])
     # EPICS EPOCH
-    img_time = np.array(run['primary']['data']['Andor_timestamps'])
+    img_time = np.array(run['primary']['data']['Andor_timestamps'][:])
     img_time = np.concatenate(img_time, axis=0)  # remove chunking
     img_time += EPICS_TO_UNIX_OFFSET  # Convert EPICS to UNIX TIMESTAMP
     # Interpolate rotation angle for each projection
