@@ -494,8 +494,9 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   connect(userGuideAction, SIGNAL(triggered()), SLOT(openUserGuide()));
   QAction* introAction = m_ui->menuHelp->addAction("Intro to 3D Visualization");
   connect(introAction, SIGNAL(triggered()), SLOT(openVisIntro()));
-  QAction* userGuideAction = m_ui->menuHelp->addAction("Real-Time Tomography User Manual");
-  connect(userGuideAction, SIGNAL(triggered()), SLOT(openRealTimeManual()));
+  QAction* realTimeAction = 
+    m_ui->menuHelp->addAction("Real-Time Tomography User Manual");
+  connect(realTimeAction, SIGNAL(triggered()), SLOT(openRealTimeManual()));
 #ifdef TOMVIZ_DATA
   QAction* reconAction =
     sampleDataMenu->addAction("Star Nanoparticle (Reconstruction)");
