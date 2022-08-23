@@ -51,6 +51,13 @@ Start by watching this short video to [see Tomviz in action][tomviz_in_action].
 Also [Tomviz user guide](/docs/TomvizBasicUserGuide.pdf) has more detailed
 information to get started.
 
+
+Cite Tomviz
+------------------------
+When using tomviz in your research, please cite:
+
+[Real-time 3D analysis during electron tomography using tomviz, J. Schwartz et al., Nature Comm. 13, 4458 (2022)](https://www.nature.com/articles/s41467-022-32046-0)
+
 Publications using Tomviz
 ------------------------
 - [A Simple Preparation Method for Full-Range Electron Tomography of Nanoparticles and Fine Powders, E. Padgett et al., Microsc. & Microanalys. (2017)](https://www.cambridge.org/core/journals/microscopy-and-microanalysis/article/simple-preparation-method-for-fullrange-electron-tomography-of-nanoparticles-and-fine-powders/918054E2B052A391B82467EB42FCB09C)
