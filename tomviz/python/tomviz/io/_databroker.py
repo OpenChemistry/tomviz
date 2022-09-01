@@ -8,9 +8,10 @@ _installed = False
 DEFAULT_URL = "https://tiled.nsls2.bnl.gov/api"
 TILED_URL = os.getenv("TILED_URL", DEFAULT_URL)
 try:
-    from tiled.client import from_uri
+    from tiled.client import from_uri, from_profile
     from tiled.client.cache import Cache
-    c = from_uri(TILED_URL, "dask", cache=Cache.in_memory(capacity=1e6))
+    c = from_uri(TILED_URL, cache=Cache.in_memory(capacity=1e6))
+    #c = from_profile("fxi")
     from databroker.queries import TimeRange, ScanID
     _installed = True
 except ImportError:
@@ -108,7 +109,8 @@ def _nsls2_fxi_load_thetas(run):
     zps_pi_r = run['zps_pi_r_monitor']['data']['zps_pi_r'][:]
     rotation_deg = np.array(zps_pi_r)
     # UNIX EPOCH
-    rotation_time = np.array(zps_pi_r.coords['time'][:])
+    #rotation_time = np.array(zps_pi_r['time'][:])
+    rotation_time = run['zps_pi_r_monitor']['data']['time'][:]
     # EPICS EPOCH
     img_time = np.array(run['primary']['data']['Andor_timestamps'][:])
     img_time = np.concatenate(img_time, axis=0)  # remove chunking
@@ -130,7 +132,7 @@ def load_variable(catalog_name, run_uid, table, variable):
         raise Exception(f"Unable to find variable: {variable}")
 
     run = c[catalog_name]['raw'][run_uid]
-    data = run[table]['data'][variable].data
+    data = run[table]['data'][variable].read()
     shape = data.shape
     data = data.reshape((shape[0]*shape[1], shape[2], shape[3]))
     # Convert to numpy array
