@@ -7,7 +7,7 @@
 #include "PythonUtilities.h"
 #include "tomvizConfig.h"
 
-#include <vtkPVConfig.h>
+#include <vtkPVVersion.h>
 
 #include <vtkNew.h>
 #include <vtkRenderWindow.h>
