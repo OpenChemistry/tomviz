@@ -962,9 +962,6 @@ QJsonValue toJson(vtkVariant variant)
   switch (type) {
     case VTK_STRING:
       return QJsonValue(variant.ToString().c_str());
-    case VTK_UNICODE_STRING:
-      return QJsonValue(
-        QString::fromUtf8(variant.ToUnicodeString().utf8_str()));
     case VTK_CHAR:
       return QJsonValue(QString(QChar(variant.ToChar())));
     case VTK_SIGNED_CHAR:
