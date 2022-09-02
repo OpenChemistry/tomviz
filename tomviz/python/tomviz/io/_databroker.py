@@ -161,6 +161,6 @@ def load_variable(catalog_name, run_uid, table, variable):
 
 def save_data(catalog_name, name, data):
     scalars = tomviz.utils.get_scalars(data)
-    r = c[catalog_name]["sandbox"].write_array(scalars, {"name": name})
+    r = c[catalog_name]["sandbox"].write_array(scalars, metadata={"name": name})
 
     return r
