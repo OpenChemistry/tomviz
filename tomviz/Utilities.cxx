@@ -961,7 +961,7 @@ QJsonValue toJson(vtkVariant variant)
   auto type = variant.GetType();
   switch (type) {
     case VTK_STRING:
-      return QJsonValue(variant.ToString());
+      return QJsonValue(variant.ToString().c_str());
     case VTK_UNICODE_STRING:
       return QJsonValue(
         QString::fromUtf8(variant.ToUnicodeString().utf8_str()));
