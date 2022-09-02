@@ -137,9 +137,10 @@ void AxesReaction::pickCenterOfRotation(int posx, int posy)
   if (renderView) {
     int posxy[2] = { posx, posy };
     double center[3];
+    double normal[3];
 
     vtkSMRenderViewProxy* proxy = renderView->getRenderViewProxy();
-    if (proxy->ConvertDisplayToPointOnSurface(posxy, center)) {
+    if (proxy->ConvertDisplayToPointOnSurface(posxy, center, normal)) {
       renderView->setCenterOfRotation(center);
       renderView->render();
     }
