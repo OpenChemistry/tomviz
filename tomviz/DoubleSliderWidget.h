@@ -35,6 +35,9 @@ public:
 
   void setLineEditWidth(int width);
 
+  bool sliderTracking() const;
+  void setSliderTracking(bool b);
+
 signals:
   void valueChanged(double);
   void valueEdited(double);
@@ -52,6 +55,8 @@ private slots:
   void editingFinished();
   void updateValidator();
   void updateSlider();
+  void onSliderReleased();
+  void setValueFromSlider(int);
 
 private:
   int Resolution;
@@ -62,6 +67,7 @@ private:
   pqLineEdit* LineEdit;
   bool StrictRange;
   bool BlockUpdate;
+  bool SliderTracking;
 };
 } // namespace tomviz
 #endif

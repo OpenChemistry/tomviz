@@ -173,6 +173,10 @@ void ModuleThreshold::addToPanel(QWidget* panel)
   auto* lowerSlider = new DoubleSliderWidget(true);
   auto* upperSlider = new DoubleSliderWidget(true);
 
+  // Only update when the user releases the slider
+  lowerSlider->setSliderTracking(false);
+  upperSlider->setSliderTracking(false);
+
   lowerSlider->setLineEditWidth(50);
   upperSlider->setLineEditWidth(50);
 
