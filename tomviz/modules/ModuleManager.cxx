@@ -735,8 +735,8 @@ bool ModuleManager::serialize(QJsonObject& doc, const QDir& stateDir,
         } else if (name == "Background") {
           backgroundColor.append(jsonArrayFromXmlDouble(node));
         } else if (name == "Background2") {
-          vtkSMPropertyHelper helper(view, "UseGradientBackground");
-          if (helper.GetAsInt()) {
+          vtkSMPropertyHelper helper(view, "BackgroundColorMode");
+          if (helper.GetAsString() == std::string("Gradient")) {
             backgroundColor.append(jsonArrayFromXmlDouble(node));
           }
         } else if (name == "CameraParallelScale") {
