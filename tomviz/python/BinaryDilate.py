@@ -5,8 +5,8 @@ class BinaryDilate(tomviz.operators.CancelableOperator):
 
     def transform(self, dataset, structuring_element_id=0, radius=1,
                   object_label=1, background_label=0):
-        """Dilate segmented objects with a given label by a spherically symmetric
-        structuring element with a given radius.
+        """Dilate segmented objects with a given label by a spherically
+        symmetric structuring element with a given radius.
         """
 
         # Initial progress

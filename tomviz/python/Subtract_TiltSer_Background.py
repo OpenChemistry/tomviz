@@ -1,6 +1,6 @@
 def transform(dataset, XRANGE=None, YRANGE=None, ZRANGE=None):
-    '''For each tilt image, the method uses average pixel value of selected region
-      as the background level and subtracts it from the image.'''
+    '''For each tilt image, the method uses average pixel value of selected
+    region as the background level and subtracts it from the image.'''
     '''It does NOT set negative pixels to zero.'''
 
     import numpy as np

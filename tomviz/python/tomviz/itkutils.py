@@ -383,7 +383,7 @@ def get_label_object_attributes(dataset, progress_callback=None):
         return label_map
     except Exception as exc:
         print("Problem encountered while running label_object_attributes")
-        raise(exc)
+        raise (exc)
 
 
 @with_vtk_dataobject

@@ -1214,7 +1214,9 @@ class FileDM:
                              dtype='<u1').reshape(xSizeRGB, ySizeRGB, 4)
 
     def getThumbnail(self):
-        """Read the thumbnail saved as the first dataset in the DM file as an RGB array.
+        """Read the thumbnail saved as the first dataset in the DM file as an
+        RGB array.
+
         This is not fully tested. Be careful using this.
 
         Returns
