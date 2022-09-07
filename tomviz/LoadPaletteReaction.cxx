@@ -26,9 +26,12 @@ namespace tomviz {
 LoadPaletteReaction::LoadPaletteReaction(QAction* parentObject)
   : pqReaction(parentObject)
 {
-  m_paletteWhiteList << "Default Background"
+  m_paletteWhiteList << "Blue Gray Background (Default)"
                      << "Black Background"
-                     << "White Background";
+                     << "White Background"
+                     << "Warm Gray Background"
+                     << "Neutral Gray Background"
+                     << "Light Gray Background";
 
   m_menu = new QMenu();
   m_menu->setObjectName("LoadPaletteMenu");
