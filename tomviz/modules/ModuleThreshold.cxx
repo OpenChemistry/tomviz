@@ -173,6 +173,23 @@ void ModuleThreshold::addToPanel(QWidget* panel)
   auto* lowerSlider = new DoubleSliderWidget(true);
   auto* upperSlider = new DoubleSliderWidget(true);
 
+  auto clampLower = [lowerSlider, upperSlider]() {
+    if (lowerSlider->value() > upperSlider->value()) {
+      lowerSlider->setValue(upperSlider->value());
+    }
+  };
+
+  auto clampUpper = [lowerSlider, upperSlider]() {
+    if (lowerSlider->value() > upperSlider->value()) {
+      upperSlider->setValue(lowerSlider->value());
+    }
+  };
+
+  connect(lowerSlider, &DoubleSliderWidget::valueEdited, upperSlider,
+          clampUpper);
+  connect(upperSlider, &DoubleSliderWidget::valueEdited, lowerSlider,
+          clampLower);
+
   // Only update when the user releases the slider
   lowerSlider->setSliderTracking(false);
   upperSlider->setSliderTracking(false);
