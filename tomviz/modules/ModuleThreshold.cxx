@@ -194,6 +194,9 @@ void ModuleThreshold::addToPanel(QWidget* panel)
   lowerSlider->setSliderTracking(false);
   upperSlider->setSliderTracking(false);
 
+  lowerSlider->setKeyboardTracking(false);
+  upperSlider->setKeyboardTracking(false);
+
   lowerSlider->setLineEditWidth(50);
   upperSlider->setLineEditWidth(50);
 

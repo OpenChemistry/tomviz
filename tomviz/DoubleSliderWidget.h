@@ -38,6 +38,9 @@ public:
   bool sliderTracking() const;
   void setSliderTracking(bool b);
 
+  bool keyboardTracking() const;
+  void setKeyboardTracking(bool b);
+
 signals:
   void valueChanged(double);
   void valueEdited(double);
@@ -57,6 +60,7 @@ private slots:
   void updateSlider();
   void onSliderReleased();
   void setValueFromSlider(int);
+  void updateSliderFromText(const QString&);
 
 private:
   int Resolution;
@@ -68,6 +72,7 @@ private:
   bool StrictRange;
   bool BlockUpdate;
   bool SliderTracking;
+  bool KeyboardTracking;
 };
 } // namespace tomviz
 #endif

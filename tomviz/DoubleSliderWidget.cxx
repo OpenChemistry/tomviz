@@ -23,6 +23,7 @@ DoubleSliderWidget::DoubleSliderWidget(bool showLineEdit, QWidget* p)
   this->Resolution = 100;
   this->StrictRange = false;
   this->SliderTracking = true;
+  this->KeyboardTracking = true;
 
   QHBoxLayout* l = new QHBoxLayout(this);
   l->setMargin(0);
@@ -112,6 +113,16 @@ bool DoubleSliderWidget::sliderTracking() const
 void DoubleSliderWidget::setSliderTracking(bool b)
 {
   this->SliderTracking = b;
+}
+
+bool DoubleSliderWidget::keyboardTracking() const
+{
+  return this->KeyboardTracking;
+}
+
+void DoubleSliderWidget::setKeyboardTracking(bool b)
+{
+  this->KeyboardTracking = b;
 }
 
 double DoubleSliderWidget::maximum() const
@@ -213,6 +224,13 @@ void DoubleSliderWidget::setValueFromSlider(int val)
 
 void DoubleSliderWidget::textChanged(const QString& text)
 {
+  if (this->KeyboardTracking) {
+    updateSliderFromText(text);
+  }
+}
+
+void DoubleSliderWidget::updateSliderFromText(const QString& text)
+{
   if (!this->BlockUpdate) {
     double val = text.toDouble();
     this->BlockUpdate = true;
@@ -227,6 +245,11 @@ void DoubleSliderWidget::textChanged(const QString& text)
 
 void DoubleSliderWidget::editingFinished()
 {
+  if (!this->KeyboardTracking && this->LineEdit) {
+    // Slider needs to be updated
+    updateSliderFromText(this->LineEdit->text());
+  }
+
   emit this->valueEdited(this->Value);
 }
 
