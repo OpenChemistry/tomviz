@@ -858,7 +858,7 @@ void vtkOMETiffReader::ReadVolume(T* buffer)
     }
     else if (!this->InternalImage->CanRead())
     {
-      uint32_t *tempImage = new uint32_t[width * height];
+      uint32_t* tempImage = new uint32_t[width * height];
       if (!TIFFReadRGBAImage(this->InternalImage->Image,
                              width, height,
                              tempImage, 1))
@@ -1336,14 +1336,14 @@ void vtkOMETiffReader::ReadImageInternal(T* outPtr)
   if (!this->InternalImage->CanRead())
   {
     // Why do we read the image for the ! CanRead case?
-    uint32_t *tempImage = reinterpret_cast<uint32_t*>(outPtr);
+    uint32_t* tempImage = reinterpret_cast<uint32_t*>(outPtr);
 
     if (this->OutputExtent[0] != 0 ||
         this->OutputExtent[1] != width - 1 ||
         this->OutputExtent[2] != 0 ||
         this->OutputExtent[3] != height - 1)
     {
-      tempImage = new uint32_t[ width * height ];
+      tempImage = new uint32_t[width * height];
     }
     // This should really be fixed to read only the rows necessary.
     if (!TIFFReadRGBAImage(this->InternalImage->Image,
@@ -1351,8 +1351,7 @@ void vtkOMETiffReader::ReadImageInternal(T* outPtr)
                            tempImage, 0))
     {
       vtkErrorMacro("Problem reading RGB image");
-      if (tempImage != reinterpret_cast<uint32_t*>(outPtr))
-      {
+      if (tempImage != reinterpret_cast<uint32_t*>(outPtr)) {
         delete [] tempImage;
       }
       return;
@@ -1378,8 +1377,7 @@ void vtkOMETiffReader::ReadImageInternal(T* outPtr)
       }
     }
 
-    if (tempImage != reinterpret_cast<uint32_t*>(outPtr))
-    {
+    if (tempImage != reinterpret_cast<uint32_t*>(outPtr)) {
       delete [] tempImage;
     }
     return;
