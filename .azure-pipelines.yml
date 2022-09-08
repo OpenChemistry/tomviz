@@ -17,7 +17,7 @@ jobs:
       Linux:
         imageName: 'ubuntu-20.04'
       Mac:
-        imageName: 'macos-10.15'
+        imageName: 'macos-11'
       Windows:
         imageName: 'windows-2019'
         # The D:\ drive (default) on Windows only has about 4 GB of disk
