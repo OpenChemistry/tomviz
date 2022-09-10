@@ -5,6 +5,9 @@ if [[ $AGENT_OS == 'Darwin' ]]; then
   CMAKE_EXTRA_ARGS="-DCMAKE_PREFIX_PATH=/usr/local/opt/qt@5/ "
   # Resort to brute force to get CMake to find the right library!
   CMAKE_EXTRA_ARGS+="-DPython3_LIBRARY=$(dirname $(which python))/../lib/libpython3.8.dylib "
+  # We used to not have to add this explicitly, but now we apparently need to.
+  # I am not sure why it is necessary.
+  CMAKE_EXTRA_ARGS+="-DCMAKE_CXX_FLAGS=-I/usr/local/opt/tbb@2020/include"
 elif [[ $AGENT_OS == 'Windows_NT' ]]; then
   export CC=cl
   export CXX=cl
