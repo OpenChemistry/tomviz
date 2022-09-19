@@ -54,7 +54,7 @@ jobs:
     displayName: Temporarily disable SSL cert verification
 
   # Use the OS's native script language for this command
-  - script: git clone -b tomviz/dev --recursive https://github.com/openchemistry/paraview $(PARAVIEW_SOURCE_FOLDER)
+  - script: git clone --recursive https://github.com/openchemistry/paraview $(PARAVIEW_SOURCE_FOLDER)
     displayName: Clone ParaView
 
   - bash: scripts/azure-pipelines/prepend_paths.sh
