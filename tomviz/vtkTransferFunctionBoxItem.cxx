@@ -518,7 +518,7 @@ vtkIdType vtkTransferFunctionBoxItem::FindBoxPoint(double* _pos)
     this->ScreenPointRadius * this->ScreenPointRadius * tolerance * tolerance;
 
   double screenPos[2];
-  this->Transform->TransformPoints(pos, screenPos, 1);
+  this->ControlPointsTransform->TransformPoints(pos, screenPos, 1);
   vtkIdType pointId = -1;
   double minDist = VTK_DOUBLE_MAX;
   const int numberOfPoints = this->GetNumberOfPoints();
@@ -531,7 +531,7 @@ vtkIdType vtkTransferFunctionBoxItem::FindBoxPoint(double* _pos)
     point[1] = vpos1.GetY();
 
     double screenPoint[2];
-    this->Transform->TransformPoints(point, screenPoint, 1);
+    this->ControlPointsTransform->TransformPoints(point, screenPoint, 1);
     double distance2 =
       (screenPoint[0] - screenPos[0]) * (screenPoint[0] - screenPos[0]) +
       (screenPoint[1] - screenPos[1]) * (screenPoint[1] - screenPos[1]);

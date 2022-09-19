@@ -743,6 +743,7 @@ target_link_libraries(tomvizlib
     VTK::tiff
     VTK::CommonColor
     VTK::DomainsChemistry
+    VTK::IOChemistry
     VTK::hdf5
     VTK::InteractionStyle
     VTK::RenderingVolume

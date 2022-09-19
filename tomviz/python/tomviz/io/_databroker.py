@@ -8,9 +8,10 @@ _installed = False
 DEFAULT_URL = "https://tiled.nsls2.bnl.gov/api"
 TILED_URL = os.getenv("TILED_URL", DEFAULT_URL)
 try:
-    from tiled.client import from_uri, from_profile
+    from tiled.client import from_uri
     from tiled.client.cache import Cache
     c = from_uri(TILED_URL, cache=Cache.in_memory(capacity=1e6))
+    #from tiled.client import from_profile
     #c = from_profile("fxi")
     from databroker.queries import TimeRange, ScanID
     _installed = True

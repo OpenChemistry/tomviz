@@ -10,7 +10,7 @@
 
 #include <pqPVApplicationCore.h>
 
-#include <QVTKOpenGLWidget.h>
+#include <QVTKOpenGLStereoWidget.h>
 #include <vtkNew.h>
 #include <vtkObjectFactory.h>
 
@@ -22,7 +22,7 @@
 
 int main(int argc, char** argv)
 {
-  QSurfaceFormat::setDefaultFormat(QVTKOpenGLWidget::defaultFormat());
+  QSurfaceFormat::setDefaultFormat(QVTKOpenGLStereoWidget::defaultFormat());
 
   QCoreApplication::setApplicationName("tomviz");
   QCoreApplication::setApplicationVersion(TOMVIZ_VERSION);

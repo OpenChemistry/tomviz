@@ -178,7 +178,7 @@ def edges_to_sparse_matrix(edges, aux_edges, aux_node_idx, n_nodes, ndim):
             data[i] = distance
             i += 1
 
-    assert(i == n_edges + n_aux_edges)
+    assert (i == n_edges + n_aux_edges)
 
     total_nodes = n_nodes + 2 * ndim
     sparse_edge_matrix = csr_matrix((data, (row, col)),
@@ -207,7 +207,7 @@ def get_slice_scalars(volume, propagation_direction, slice_number):
         start = volume.shape[axis_idx] - 1
 
     s = start + increment * slice_number
-    assert(s >= 0 and s < volume.shape[axis_idx])
+    assert (s >= 0 and s < volume.shape[axis_idx])
 
     slice_obj = [slice(None)] * volume.ndim
     slice_obj[axis_idx] = s

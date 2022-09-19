@@ -66,7 +66,8 @@ class BinaryErode(tomviz.operators.CancelableOperator):
 
             self.progress.message = "Saving results"
 
-            itkutils.set_itk_image_on_dataset(erode_filter.GetOutput(), dataset)
+            itkutils.set_itk_image_on_dataset(erode_filter.GetOutput(),
+                                              dataset)
 
             self.progress.value = STEP_PCT[3]
         except Exception as exc:

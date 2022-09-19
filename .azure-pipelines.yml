@@ -17,7 +17,7 @@ jobs:
       Linux:
         imageName: 'ubuntu-20.04'
       Mac:
-        imageName: 'macos-10.15'
+        imageName: 'macos-11'
       Windows:
         imageName: 'windows-2019'
         # The D:\ drive (default) on Windows only has about 4 GB of disk
@@ -76,7 +76,7 @@ jobs:
   - task: Cache@2
     inputs:
       # Change the "v*" at the end to force a re-build
-      key: paraview | $(Agent.OS) | $(deps_md5sum) | v3
+      key: paraview | $(Agent.OS) | $(deps_md5sum) | v4
       path: $(PARAVIEW_DIR)
       cacheHitVar: PARAVIEW_DIR_RESTORED
     displayName: Restore ParaView Dir
@@ -99,14 +99,14 @@ jobs:
 
 - job: clang_format
   pool:
-    vmImage: 'ubuntu-18.04'
+    vmImage: 'ubuntu-20.04'
   steps:
   - bash: scripts/azure-pipelines/run_clang_format_diff.sh
     displayName: Run clang-format
 
 - job: flake8
   pool:
-    vmImage: 'ubuntu-18.04'
+    vmImage: 'ubuntu-20.04'
   steps:
   - bash: scripts/azure-pipelines/run_flake8.sh
     displayName: Run flake8

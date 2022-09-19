@@ -26,9 +26,12 @@ namespace tomviz {
 LoadPaletteReaction::LoadPaletteReaction(QAction* parentObject)
   : pqReaction(parentObject)
 {
-  m_paletteWhiteList << "Default Background"
+  m_paletteWhiteList << "Blue Gray Background (Default)"
                      << "Black Background"
-                     << "White Background";
+                     << "White Background"
+                     << "Warm Gray Background"
+                     << "Neutral Gray Background"
+                     << "Light Gray Background";
 
   m_menu = new QMenu();
   m_menu->setObjectName("LoadPaletteMenu");
@@ -94,22 +97,6 @@ void LoadPaletteReaction::actionTriggered(QAction* action)
   auto paletteProxy = pxm->GetProxy("settings", "ColorPalette");
 
   if (action->property("PV_XML_NAME").isValid()) {
-    // Setting the color property unlinks the palette background property
-    // from the view background property. As a result, changes to the palette
-    // do not update the view background. To solve this, we re-link the
-    // palette background color property to the background.
-    auto palette = vtkSMSettingsProxy::SafeDownCast(paletteProxy);
-    Q_ASSERT(palette);
-
-    auto view = pqActiveObjects::instance().activeView();
-    auto viewProxy = view->getProxy();
-
-    auto linkedPropertyName =
-      palette->GetSourcePropertyName(viewProxy, "Background");
-    if (!linkedPropertyName) {
-      palette->AddLink("Background", viewProxy, "Background", true);
-    }
-
     auto palettePrototype = pxm->GetPrototypeProxy(
       "palettes", action->property("PV_XML_NAME").toString().toLatin1().data());
     Q_ASSERT(palettePrototype);

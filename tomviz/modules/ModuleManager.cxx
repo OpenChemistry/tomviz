@@ -652,9 +652,18 @@ bool ModuleManager::serialize(QJsonObject& doc, const QDir& stateDir,
   }
   doc["moleculeSources"] = jMoleculeSources;
 
+  // Save the palette color
+  auto* pxm = ActiveObjects::instance().proxyManager();
+  auto* paletteProxy = pxm->GetProxy("settings", "ColorPalette");
+  double paletteColor[3];
+  vtkSMPropertyHelper(paletteProxy->GetProperty("BackgroundColor"))
+    .Get(paletteColor, 3);
+  doc["paletteColor"] =
+    QJsonArray({ paletteColor[0], paletteColor[1], paletteColor[2] });
+
   // Now serialize the views and layouts.
   vtkNew<vtkSMProxyIterator> iter;
-  iter->SetSessionProxyManager(ActiveObjects::instance().proxyManager());
+  iter->SetSessionProxyManager(pxm);
   iter->SetModeToOneGroup();
   QJsonArray jLayouts;
   for (iter->Begin("layouts"); !iter->IsAtEnd(); iter->Next()) {
@@ -703,6 +712,9 @@ bool ModuleManager::serialize(QJsonObject& doc, const QDir& stateDir,
         jView["active"] = true;
       }
 
+      jView["useColorPaletteForBackground"] =
+        vtkSMPropertyHelper(view, "UseColorPaletteForBackground").GetAsInt();
+
       // Now to get some more specific information about the view!
       pugi::xml_document document;
       pugi::xml_node proxyNode = document.append_child("ParaViewXML");
@@ -735,8 +747,8 @@ bool ModuleManager::serialize(QJsonObject& doc, const QDir& stateDir,
         } else if (name == "Background") {
           backgroundColor.append(jsonArrayFromXmlDouble(node));
         } else if (name == "Background2") {
-          vtkSMPropertyHelper helper(view, "UseGradientBackground");
-          if (helper.GetAsInt()) {
+          vtkSMPropertyHelper helper(view, "BackgroundColorMode");
+          if (helper.GetAsString() == std::string("Gradient")) {
             backgroundColor.append(jsonArrayFromXmlDouble(node));
           }
         } else if (name == "CameraParallelScale") {
@@ -890,6 +902,20 @@ bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir,
   pvLayouts.append_attribute("name").set_value("layouts");
   int numViews = 0, numLayouts = 0;
 
+  // Check for a palette color
+  if (doc.contains("paletteColor")) {
+    auto paletteColorArray = doc["paletteColor"].toArray();
+    double paletteColor[3] = { paletteColorArray[0].toDouble(),
+                               paletteColorArray[1].toDouble(),
+                               paletteColorArray[2].toDouble() };
+
+    auto* pxm = ActiveObjects::instance().proxyManager();
+    auto* paletteProxy = pxm->GetProxy("settings", "ColorPalette");
+    vtkSMPropertyHelper(paletteProxy->GetProperty("BackgroundColor"))
+      .Set(paletteColor, 3);
+    paletteProxy->UpdateVTKObjects();
+  }
+
   // First see if we have views, and unpack them.
   for (int i = 0; i < views.size(); ++i) {
     QJsonObject view = views[i].toObject();
@@ -909,7 +935,19 @@ bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir,
     createXmlProperty(propNode, "CameraFocalPoint", viewId,
                       camera["focalPoint"].toArray());
 
+    if (view.contains("useColorPaletteForBackground")) {
+      propNode = proxyNode.append_child("Property");
+      createXmlProperty(propNode, "UseColorPaletteForBackground", viewId,
+                        view["useColorPaletteForBackground"].toInt());
+    }
+
     if (view.contains("backgroundColor")) {
+      if (!view.contains("useColorPaletteForBackground")) {
+        // Assume this is an older state file where we should turn this off
+        propNode = proxyNode.append_child("Property");
+        createXmlProperty(propNode, "UseColorPaletteForBackground", viewId, 0);
+      }
+
       auto backgroundColor = view["backgroundColor"].toArray();
       // Restore the background color
       propNode = proxyNode.append_child("Property");

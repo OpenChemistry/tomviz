@@ -6,10 +6,10 @@
 #include "DataSource.h"
 #include "DoubleSliderWidget.h"
 #include "Utilities.h"
-#include "pqDoubleRangeSliderPropertyWidget.h"
 #include "pqProxiesWidget.h"
 #include "pqSignalAdaptors.h"
 #include "pqStringVectorPropertyWidget.h"
+#include "pqWidgetRangeDomain.h"
 
 #include "vtkDataObject.h"
 #include "vtkNew.h"
@@ -64,15 +64,24 @@ bool ModuleThreshold::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   controller->PostInitializeProxy(m_thresholdFilter);
   controller->RegisterPipelineProxy(m_thresholdFilter);
 
+  vtkSMPropertyHelper(m_thresholdFilter, "ThresholdMethod").Set("Between");
+
   // Update min/max to avoid thresholding the full dataset.
-  vtkSMPropertyHelper rangeProperty(m_thresholdFilter, "ThresholdBetween");
+  vtkSMPropertyHelper lowerProp(m_thresholdFilter, "LowerThreshold");
+  vtkSMPropertyHelper upperProp(m_thresholdFilter, "UpperThreshold");
+
   double range[2], newRange[2];
-  rangeProperty.Get(range, 2);
+  lowerProp.Get(&range[0]);
+  upperProp.Get(&range[1]);
+
   double delta = (range[1] - range[0]);
   double mid = ((range[0] + range[1]) / 2.0);
   newRange[0] = mid - 0.1 * delta;
   newRange[1] = mid + 0.1 * delta;
-  rangeProperty.Set(newRange, 2);
+
+  lowerProp.Set(newRange[0]);
+  upperProp.Set(newRange[1]);
+
   m_thresholdFilter->UpdateVTKObjects();
 
   // Create the representation for it.
@@ -158,12 +167,54 @@ void ModuleThreshold::addToPanel(QWidget* panel)
       m_thresholdFilter);
   layout->addWidget(arraySelection);
 
-  pqDoubleRangeSliderPropertyWidget* range =
-    new pqDoubleRangeSliderPropertyWidget(
-      m_thresholdFilter,
-      m_thresholdFilter->GetProperty("ThresholdBetween"));
-  range->setProperty(m_thresholdFilter->GetProperty("ThresholdBetween"));
-  layout->addWidget(range);
+  auto lowerProp = m_thresholdFilter->GetProperty("LowerThreshold");
+  auto upperProp = m_thresholdFilter->GetProperty("UpperThreshold");
+
+  auto* lowerSlider = new DoubleSliderWidget(true);
+  auto* upperSlider = new DoubleSliderWidget(true);
+
+  auto clampLower = [lowerSlider, upperSlider]() {
+    if (lowerSlider->value() > upperSlider->value()) {
+      lowerSlider->setValue(upperSlider->value());
+    }
+  };
+
+  auto clampUpper = [lowerSlider, upperSlider]() {
+    if (lowerSlider->value() > upperSlider->value()) {
+      upperSlider->setValue(lowerSlider->value());
+    }
+  };
+
+  connect(lowerSlider, &DoubleSliderWidget::valueEdited, upperSlider,
+          clampUpper);
+  connect(upperSlider, &DoubleSliderWidget::valueEdited, lowerSlider,
+          clampLower);
+
+  // Only update when the user releases the slider
+  lowerSlider->setSliderTracking(false);
+  upperSlider->setSliderTracking(false);
+
+  lowerSlider->setKeyboardTracking(false);
+  upperSlider->setKeyboardTracking(false);
+
+  lowerSlider->setLineEditWidth(50);
+  upperSlider->setLineEditWidth(50);
+
+  QFormLayout* thresholdFormLayout = new QFormLayout;
+  thresholdFormLayout->setHorizontalSpacing(5);
+  layout->addItem(thresholdFormLayout);
+
+  thresholdFormLayout->addRow("Minimum", lowerSlider);
+  thresholdFormLayout->addRow("Maximum", upperSlider);
+
+  m_links.addPropertyLink(lowerSlider, "value", SIGNAL(valueEdited(double)),
+                          m_thresholdRepresentation, lowerProp);
+  m_links.addPropertyLink(upperSlider, "value", SIGNAL(valueEdited(double)),
+                          m_thresholdRepresentation, upperProp);
+
+  // Keep the slider ranges up-to-date with the data
+  new pqWidgetRangeDomain(lowerSlider, "minimum", "maximum", lowerProp);
+  new pqWidgetRangeDomain(upperSlider, "minimum", "maximum", upperProp);
 
   QFormLayout* formLayout = new QFormLayout;
   formLayout->setHorizontalSpacing(5);
@@ -214,10 +265,10 @@ void ModuleThreshold::addToPanel(QWidget* panel)
           &pqPropertyWidget::apply);
   connect(arraySelection, &pqPropertyWidget::changeFinished, this,
           &Module::renderNeeded);
-  connect(range, &pqPropertyWidget::changeFinished, range,
-          &pqPropertyWidget::apply);
-  connect(range, &pqPropertyWidget::changeFinished, this,
-          &Module::renderNeeded);
+  connect(lowerSlider, &DoubleSliderWidget::valueEdited, this,
+          &ModuleThreshold::dataUpdated);
+  connect(upperSlider, &DoubleSliderWidget::valueEdited, this,
+          &ModuleThreshold::dataUpdated);
   connect(representations, &QComboBox::currentTextChanged, this,
           &ModuleThreshold::dataUpdated);
   connect(opacitySlider, &DoubleSliderWidget::valueEdited, this,
@@ -231,6 +282,8 @@ void ModuleThreshold::addToPanel(QWidget* panel)
 void ModuleThreshold::dataUpdated()
 {
   m_links.accept();
+  // FIXME: why aren't threshold filter changes being pushed automatically?
+  m_thresholdFilter->UpdateVTKObjects();
   emit renderNeeded();
 }
 
@@ -254,8 +307,8 @@ QJsonObject ModuleThreshold::serialize() const
   vtkSMPropertyHelper scalars(m_thresholdFilter, "SelectInputScalars");
   props["scalarArray"] = scalars.GetAsInt();
   double range[2];
-  vtkSMPropertyHelper minMax(m_thresholdFilter, "ThresholdBetween");
-  minMax.Get(range, 2);
+  vtkSMPropertyHelper(m_thresholdFilter, "LowerThreshold").Get(&range[0]);
+  vtkSMPropertyHelper(m_thresholdFilter, "UpperThreshold").Get(&range[1]);
   props["minimum"] = range[0];
   props["maximum"] = range[1];
   vtkSMPropertyHelper representationHelper(rep->GetProperty("Representation"));
@@ -282,10 +335,10 @@ bool ModuleThreshold::deserialize(const QJsonObject& json)
     auto rep = m_thresholdRepresentation;
     vtkSMPropertyHelper scalars(m_thresholdFilter, "SelectInputScalars");
     scalars.Set(props["scalarArray"].toInt());
-    double range[2] = { props["minimum"].toDouble(),
-                        props["maximum"].toDouble() };
-    vtkSMPropertyHelper minMax(m_thresholdFilter, "ThresholdBetween");
-    minMax.Set(range, 2);
+    vtkSMPropertyHelper(m_thresholdFilter, "LowerThreshold")
+      .Set(props["minimum"].toDouble());
+    vtkSMPropertyHelper(m_thresholdFilter, "UpperThreshold")
+      .Set(props["maximum"].toDouble());
     vtkSMPropertyHelper repHelper(rep, "Representation");
     repHelper.Set(props["representation"].toString().toStdString().c_str());
     vtkSMPropertyHelper specular(rep, "Specular");

@@ -354,7 +354,7 @@ bool vtkOMETiffReader::vtkOMETiffReaderInternal::Initialize()
       cerr << "Cannot read OME-XML" << endl;
       return false;
     }
-  
+
     if (this->OmeXml)
     {
       pugi::xml_node rootNode = this->OmeXml.root().child("OME");
@@ -858,7 +858,7 @@ void vtkOMETiffReader::ReadVolume(T* buffer)
     }
     else if (!this->InternalImage->CanRead())
     {
-      uint32 *tempImage = new uint32[width * height];
+      uint32_t* tempImage = new uint32_t[width * height];
       if (!TIFFReadRGBAImage(this->InternalImage->Image,
                              width, height,
                              tempImage, 1))
@@ -873,7 +873,7 @@ void vtkOMETiffReader::ReadVolume(T* buffer)
       fimage += width * height * 4 * slice;
       for (int yy = 0; yy < height; ++yy)
       {
-        uint32* ssimage;
+        uint32_t* ssimage;
         if (flip)
         {
           ssimage = tempImage + yy * width;
@@ -1336,14 +1336,14 @@ void vtkOMETiffReader::ReadImageInternal(T* outPtr)
   if (!this->InternalImage->CanRead())
   {
     // Why do we read the image for the ! CanRead case?
-    uint32 *tempImage = reinterpret_cast<uint32*>(outPtr);
+    uint32_t* tempImage = reinterpret_cast<uint32_t*>(outPtr);
 
     if (this->OutputExtent[0] != 0 ||
         this->OutputExtent[1] != width - 1 ||
         this->OutputExtent[2] != 0 ||
         this->OutputExtent[3] != height - 1)
     {
-      tempImage = new uint32[ width * height ];
+      tempImage = new uint32_t[width * height];
     }
     // This should really be fixed to read only the rows necessary.
     if (!TIFFReadRGBAImage(this->InternalImage->Image,
@@ -1351,13 +1351,12 @@ void vtkOMETiffReader::ReadImageInternal(T* outPtr)
                            tempImage, 0))
     {
       vtkErrorMacro("Problem reading RGB image");
-      if (tempImage != reinterpret_cast<uint32*>(outPtr))
-      {
+      if (tempImage != reinterpret_cast<uint32_t*>(outPtr)) {
         delete [] tempImage;
       }
       return;
     }
-    uint32* ssimage = tempImage;
+    uint32_t* ssimage = tempImage;
     T* fimage = outPtr;
     for (int yy = 0; yy < height; ++yy)
     {
@@ -1378,8 +1377,7 @@ void vtkOMETiffReader::ReadImageInternal(T* outPtr)
       }
     }
 
-    if (tempImage != reinterpret_cast<uint32*>(outPtr))
-    {
+    if (tempImage != reinterpret_cast<uint32_t*>(outPtr)) {
       delete [] tempImage;
     }
     return;

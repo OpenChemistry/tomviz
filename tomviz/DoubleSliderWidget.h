@@ -35,6 +35,12 @@ public:
 
   void setLineEditWidth(int width);
 
+  bool sliderTracking() const;
+  void setSliderTracking(bool b);
+
+  bool keyboardTracking() const;
+  void setKeyboardTracking(bool b);
+
 signals:
   void valueChanged(double);
   void valueEdited(double);
@@ -52,6 +58,9 @@ private slots:
   void editingFinished();
   void updateValidator();
   void updateSlider();
+  void onSliderReleased();
+  void setValueFromSlider(int);
+  void updateSliderFromText(const QString&);
 
 private:
   int Resolution;
@@ -62,6 +71,8 @@ private:
   pqLineEdit* LineEdit;
   bool StrictRange;
   bool BlockUpdate;
+  bool SliderTracking;
+  bool KeyboardTracking;
 };
 } // namespace tomviz
 #endif

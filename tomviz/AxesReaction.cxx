@@ -137,12 +137,15 @@ void AxesReaction::pickCenterOfRotation(int posx, int posy)
   if (renderView) {
     int posxy[2] = { posx, posy };
     double center[3];
+    double normal[3];
 
     vtkSMRenderViewProxy* proxy = renderView->getRenderViewProxy();
-    if (proxy->ConvertDisplayToPointOnSurface(posxy, center)) {
-      renderView->setCenterOfRotation(center);
-      renderView->render();
-    }
+    // This function is supposed to pick a point on a surface. It will
+    // return false if it did not find a surface, but it still moves the
+    // center to where we want it to be. So use it anyways.
+    proxy->ConvertDisplayToPointOnSurface(posxy, center, normal);
+    renderView->setCenterOfRotation(center);
+    renderView->render();
   }
 }
 

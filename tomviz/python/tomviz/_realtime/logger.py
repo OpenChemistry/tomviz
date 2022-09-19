@@ -58,7 +58,7 @@ class Logger:
 
                 # Account for Python's disdain for AxAx1 arrays
                 # (compresses to 2D)
-                if(len(self.logTiltSeries0) == 0):
+                if (len(self.logTiltSeries0) == 0):
                     dataDim = np.shape(newProj)
                     self.logTiltSeries0 = np.zeros([dataDim[0], dataDim[1], 1])
                     self.logTiltSeries0[:, :, 0] = newProj

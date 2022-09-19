@@ -967,7 +967,7 @@ unsigned int DataSource::getNumberOfComponents()
 QString DataSource::getUnits()
 {
   if (this->Internals->Units) {
-    return QString(this->Internals->Units->GetValue(0));
+    return QString(this->Internals->Units->GetValue(0).c_str());
   } else {
     return "nm";
   }

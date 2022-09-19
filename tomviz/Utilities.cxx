@@ -185,8 +185,21 @@ bool deserialize(vtkSMProxy* proxy, const QJsonObject& json)
     createXmlProperty(propNode, "RGBPoints", json["id"].toInt(),
                       json["colors"].toArray());
 
+    if (json.contains("colorSpace")) {
+      QMap<QString, int> colorSpaceToIntMap = {
+        { "RGB", 0 },       { "HSV", 1 },  { "CIELAB", 2 },
+        { "CIEDE2000", 4 }, { "Step", 5 },
+      };
+      if (colorSpaceToIntMap.contains(json["colorSpace"].toString())) {
+        auto propNode2 = proxyNode.append_child("Property");
+        auto id = colorSpaceToIntMap[json["colorSpace"].toString()];
+        createXmlProperty(propNode2, "ColorSpace", json["id"].toInt(), { id });
+      }
+    }
+
     proxyNode.append_attribute("id").set_value(json["id"].toInt());
     proxyNode.append_attribute("servers").set_value(json["servers"].toInt());
+
     std::ostringstream stream;
     document.first_child().print(stream);
     vtkNew<vtkPVXMLParser> parser;
@@ -289,8 +302,19 @@ bool deserialize(vtkDiscretizableColorTransferFunction* func,
       values[i] = colors[i].toDouble();
     }
     func->FillFromDataPointer(colors.size(), values);
+
+    if (json.contains("colorSpace")) {
+      QMap<QString, int> colorSpaceToIntMap = {
+        { "RGB", 0 },       { "HSV", 1 },  { "CIELAB", 2 },
+        { "CIEDE2000", 4 }, { "Step", 5 },
+      };
+      if (colorSpaceToIntMap.contains(json["colorSpace"].toString())) {
+        func->SetColorSpace(colorSpaceToIntMap[json["colorSpace"].toString()]);
+      }
+    }
     return true;
   }
+
   return false;
 }
 
@@ -961,10 +985,7 @@ QJsonValue toJson(vtkVariant variant)
   auto type = variant.GetType();
   switch (type) {
     case VTK_STRING:
-      return QJsonValue(variant.ToString());
-    case VTK_UNICODE_STRING:
-      return QJsonValue(
-        QString::fromUtf8(variant.ToUnicodeString().utf8_str()));
+      return QJsonValue(variant.ToString().c_str());
     case VTK_CHAR:
       return QJsonValue(QString(QChar(variant.ToChar())));
     case VTK_SIGNED_CHAR:

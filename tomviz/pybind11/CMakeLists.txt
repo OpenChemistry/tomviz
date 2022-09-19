@@ -29,7 +29,7 @@ target_link_libraries(ctvlib
 
 add_dependencies(ctvlib VTK::eigen)
 
-include_directories(ctvlib ${TBB_INCLUDE_DIRS})
+include_directories(ctvlib ${TBB_INCLUDE_DIR})
 
 set_target_properties(ctvlib PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY "${tomviz_python_binary_dir}/tomviz/_realtime"

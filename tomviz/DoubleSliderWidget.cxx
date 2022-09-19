@@ -8,6 +8,7 @@
 // Qt includes
 #include <QDoubleValidator>
 #include <QHBoxLayout>
+#include <QSignalBlocker>
 #include <QSlider>
 
 namespace tomviz {
@@ -21,6 +22,8 @@ DoubleSliderWidget::DoubleSliderWidget(bool showLineEdit, QWidget* p)
   this->Maximum = 1;
   this->Resolution = 100;
   this->StrictRange = false;
+  this->SliderTracking = true;
+  this->KeyboardTracking = true;
 
   QHBoxLayout* l = new QHBoxLayout(this);
   l->setMargin(0);
@@ -40,6 +43,8 @@ DoubleSliderWidget::DoubleSliderWidget(bool showLineEdit, QWidget* p)
 
   QObject::connect(this->Slider, SIGNAL(valueChanged(int)), this,
                    SLOT(sliderChanged(int)));
+  QObject::connect(this->Slider, SIGNAL(sliderReleased()), this,
+                   SLOT(onSliderReleased()));
   if (showLineEdit) {
     QObject::connect(this->LineEdit, SIGNAL(textChanged(const QString&)), this,
                      SLOT(textChanged(const QString&)));
@@ -100,6 +105,26 @@ void DoubleSliderWidget::setValue(double val)
   emit this->valueChanged(this->Value);
 }
 
+bool DoubleSliderWidget::sliderTracking() const
+{
+  return this->SliderTracking;
+}
+
+void DoubleSliderWidget::setSliderTracking(bool b)
+{
+  this->SliderTracking = b;
+}
+
+bool DoubleSliderWidget::keyboardTracking() const
+{
+  return this->KeyboardTracking;
+}
+
+void DoubleSliderWidget::setKeyboardTracking(bool b)
+{
+  this->KeyboardTracking = b;
+}
+
 double DoubleSliderWidget::maximum() const
 {
   return this->Maximum;
@@ -155,6 +180,34 @@ void DoubleSliderWidget::setStrictRange(bool s)
 
 void DoubleSliderWidget::sliderChanged(int val)
 {
+  if (this->SliderTracking) {
+    // If slider tracking is turned on, update for every slider value
+    setValueFromSlider(val);
+  } else {
+    // If slider tracking is off, wait until the mouse is released to
+    // update, but still display the new value in the text.
+    if (this->LineEdit) {
+      double fraction = val / static_cast<double>(this->Resolution);
+      double range = this->Maximum - this->Minimum;
+      double v = (fraction * range) + this->Minimum;
+
+      QSignalBlocker blocked(this->LineEdit);
+      this->LineEdit->setTextAndResetCursor(QString().setNum(v));
+    }
+  }
+}
+
+void DoubleSliderWidget::onSliderReleased()
+{
+  if (!this->SliderTracking) {
+    // We are supposed to update the slider when it is released.
+    // Do so now.
+    setValueFromSlider(this->Slider->value());
+  }
+}
+
+void DoubleSliderWidget::setValueFromSlider(int val)
+{
   if (!this->BlockUpdate) {
     double fraction = val / static_cast<double>(this->Resolution);
     double range = this->Maximum - this->Minimum;
@@ -171,6 +224,13 @@ void DoubleSliderWidget::sliderChanged(int val)
 
 void DoubleSliderWidget::textChanged(const QString& text)
 {
+  if (this->KeyboardTracking) {
+    updateSliderFromText(text);
+  }
+}
+
+void DoubleSliderWidget::updateSliderFromText(const QString& text)
+{
   if (!this->BlockUpdate) {
     double val = text.toDouble();
     this->BlockUpdate = true;
@@ -185,6 +245,11 @@ void DoubleSliderWidget::textChanged(const QString& text)
 
 void DoubleSliderWidget::editingFinished()
 {
+  if (!this->KeyboardTracking && this->LineEdit) {
+    // Slider needs to be updated
+    updateSliderFromText(this->LineEdit->text());
+  }
+
   emit this->valueEdited(this->Value);
 }
 

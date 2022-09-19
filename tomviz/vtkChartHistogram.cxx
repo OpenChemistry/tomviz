@@ -9,6 +9,7 @@
 #include <vtkContextMouseEvent.h>
 #include <vtkContextScene.h>
 #include <vtkDataArray.h>
+#include <vtkFloatArray.h>
 #include <vtkObjectFactory.h>
 #include <vtkPen.h>
 #include <vtkPiecewiseFunction.h>
@@ -77,6 +78,19 @@ vtkChartHistogram::vtkChartHistogram()
   this->HistogramPlotBar->SetColor(0, 0, 255, 255);
   this->HistogramPlotBar->GetPen()->SetLineType(vtkPen::NO_PEN);
   this->HistogramPlotBar->SetSelectable(false);
+
+  // Need to start with an empty table to prevent vtkPlotBar from crashing
+  vtkNew<vtkTable> table;
+
+  vtkNew<vtkFloatArray> emptyX;
+  emptyX->SetName("X");
+  table->AddColumn(emptyX);
+
+  vtkNew<vtkFloatArray> emptyY;
+  emptyY->SetName("Y");
+  table->AddColumn(emptyY);
+
+  this->HistogramPlotBar->SetInputData(table, "X", "Y");
 
   // Set up and add the opacity editor chart items
   this->OpacityFunctionItem->SetOpacity(
