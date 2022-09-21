@@ -52,10 +52,12 @@ public:
   {
     m_ui.setupUi(this);
     m_ui.name->setText(o->label());
+    auto* highlighter =
+      new pqPythonSyntaxHighlighter(m_ui.script, *m_ui.script);
+    highlighter->ConnectHighligter();
     if (!o->script().isEmpty()) {
       m_ui.script->setPlainText(o->script());
     }
-    new pqPythonSyntaxHighlighter(this, *m_ui.script);
     if (customWidget) {
       QVBoxLayout* layout = new QVBoxLayout();
       m_customWidget->setupUI(m_op);
