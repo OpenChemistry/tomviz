@@ -63,6 +63,8 @@ private:
 
   void restoreImageViewerSettings();
 
+  void setupLookingGlassPlaceholder(QMainWindow* mainWindow);
+
   QPointer<QAction> m_perspectiveProjectionAction;
   QPointer<QAction> m_orthographicProjectionAction;
   QPointer<QAction> m_showCenterAxesAction;

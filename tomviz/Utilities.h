@@ -299,7 +299,17 @@ void removePointsOutOfRange(vtkColorTransferFunction* lut, DataSource* ds);
 void removePointsOutOfRange(vtkPiecewiseFunction* opacity, DataSource* ds);
 
 // Load a plugin by path
-bool loadPlugin(const QString& path);
+bool loadPlugin(QString path);
+
+// Load plugins with the specified substring in the file name
+bool loadPluginsWithSubstring(const QString& substring);
+QStringList pluginsWithSubstring(const QString& substring);
+
+// Is the looking glass plugin location set?
+bool hasLookingGlassPlugin();
+
+// Load the looking glass plugin
+bool loadLookingGlassPlugin();
 
 // Automatically load plugins specified in the TOMVIZ_PLUGIN_PATHS macro
 bool loadPlugins();

@@ -25,8 +25,10 @@
 #include <QActionGroup>
 #include <QDebug>
 #include <QDialog>
+#include <QDockWidget>
 #include <QHBoxLayout>
 #include <QJsonObject>
+#include <QMainWindow>
 #include <QMenu>
 
 #include "ActiveObjects.h"
@@ -129,6 +131,10 @@ ViewMenuManager::ViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
   Menu->addSeparator();
 
   m_previousImageViewerSettings.reset(new PreviousImageViewerSettings);
+
+  if (hasLookingGlassPlugin()) {
+    setupLookingGlassPlaceholder(mainWindow);
+  }
 }
 
 ViewMenuManager::~ViewMenuManager()
@@ -477,6 +483,37 @@ void ViewMenuManager::showDarkWhiteData()
   m_sliceViewDialog->switchToDark();
 
   m_sliceViewDialog->exec();
+}
+
+void ViewMenuManager::setupLookingGlassPlaceholder(QMainWindow* mainWindow)
+{
+  // Add the Looking Glass menu item placeholder, which, when checked,
+  // will cause the plugin to load, and the placeholder will remove itself.
+  // This needs to be done so that the EULA will only pop up if the user
+  // tries to use the looking glass plugin.
+  // We're gonna take advantage of the fact that
+  // pqViewMenuManager::updateMenu() automatically adds entries for dock
+  // widgets in order. We will make a fake dock widget, which will get added,
+  // then when that action is triggered, we will load the plugin and replace
+  // the fake action with the real one.
+
+  // Create the fake dock widget
+  QPointer<QDockWidget> lgPlaceholderWidget = new QDockWidget(mainWindow);
+  lgPlaceholderWidget->setVisible(false);
+
+  // Get the action
+  auto* lgPlaceholderAction = lgPlaceholderWidget->toggleViewAction();
+  lgPlaceholderAction->setText("Looking Glass");
+
+  // This will place the dock widget action in the menu
+  this->updateMenu();
+
+  // If the action is triggered, load the plugin and remove the placeholder
+  connect(lgPlaceholderAction, &QAction::triggered, lgPlaceholderWidget,
+          [lgPlaceholderWidget]() {
+            loadLookingGlassPlugin();
+            lgPlaceholderWidget->deleteLater();
+          });
 }
 
 } // namespace tomviz
