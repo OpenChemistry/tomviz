@@ -1662,13 +1662,61 @@ void removePointsOutOfRange(vtkPiecewiseFunction* opacity, DataSource* ds)
   opacity->AddPoint(range[1], endY);
 }
 
-bool loadPlugin(const QString& path)
+bool loadPlugin(QString path)
 {
+  if (!path.startsWith("/")) {
+    // A relative path. Prepend it with the application directory path.
+    path = QApplication::applicationDirPath() + "/" + path;
+  }
+
   auto pluginManager = vtkSMProxyManager::GetProxyManager()->GetPluginManager();
   bool success = pluginManager->LoadLocalPlugin(path.toLatin1().data());
   if (!success) {
     qCritical() << "Failed to load plugin:" << path;
   }
+  return success;
+}
+
+bool loadLookingGlassPlugin()
+{
+  return loadPluginsWithSubstring("LookingGlass");
+}
+
+bool hasLookingGlassPlugin()
+{
+  return pluginsWithSubstring("LookingGlass").size() != 0;
+}
+
+QStringList pluginsWithSubstring(const QString& substring)
+{
+  QStringList ret;
+
+  auto pluginPaths =
+    QString(TOMVIZ_PLUGIN_PATHS).split(';', QString::SkipEmptyParts);
+  for (auto path : pluginPaths) {
+    QFileInfo info(path);
+    if (info.fileName().contains(substring)) {
+      ret.append(path);
+    }
+  }
+
+  return ret;
+}
+
+bool loadPluginsWithSubstring(const QString& substring)
+{
+  auto plugins = pluginsWithSubstring(substring);
+  if (plugins.size() == 0) {
+    return false;
+  }
+
+  bool success = true;
+  for (auto& plugin : plugins) {
+    if (!loadPlugin(plugin)) {
+      success = false;
+    }
+  }
+
   return success;
 }
 
@@ -1680,10 +1728,6 @@ bool loadPlugins()
   auto pluginPaths =
     QString(TOMVIZ_PLUGIN_PATHS).split(';', QString::SkipEmptyParts);
   for (auto path : pluginPaths) {
-    if (!path.startsWith("/")) {
-      // A relative path. Prepend it with the application directory path.
-      path = QApplication::applicationDirPath() + "/" + path;
-    }
     if (!loadPlugin(path)) {
       success = false;
     }
