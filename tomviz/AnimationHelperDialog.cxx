@@ -7,6 +7,7 @@
 #include "ActiveObjects.h"
 #include "ContourAnimation.h"
 #include "ModuleManager.h"
+#include "SliceAnimation.h"
 #include "Utilities.h"
 
 #include <pqAnimationCue.h>
@@ -304,6 +305,8 @@ public:
 
     if (qobject_cast<ModuleContour*>(module)) {
       setupContourTab();
+    } else if (qobject_cast<ModuleSlice*>(module)) {
+      setupSliceTab();
     }
 
     updateEnableStates();
@@ -341,6 +344,33 @@ public:
     ui.contourStop->setValue((range[1] - range[0]) * 2 / 3 + range[0]);
   }
 
+  void setupSliceTab()
+  {
+    auto* module = qobject_cast<ModuleSlice*>(selectedModule());
+    double max = module->maxSlice();
+
+    ui.sliceStart->setMinimum(0);
+    ui.sliceStart->setMaximum(max);
+    ui.sliceStop->setMinimum(0);
+    ui.sliceStop->setMaximum(max);
+
+    // Default to the full range
+    ui.sliceStart->setValue(0);
+    ui.sliceStop->setValue(max);
+
+    // Update the range if the slice direction changes
+    connect(module, &ModuleSlice::directionChanged, this, [this, module]() {
+      if (module != this->selectedModule()) {
+        // Disconnect, as we are no longer looking at this module.
+        disconnect(module, nullptr, this, nullptr);
+        return;
+      }
+
+      // Update the slice tab min/max
+      this->setupSliceTab();
+    });
+  }
+
   void addModuleAnimation()
   {
     auto* module = selectedModule();
@@ -360,6 +390,8 @@ public:
 
     if (qobject_cast<ModuleContour*>(module)) {
       addContourAnimation();
+    } else if (qobject_cast<ModuleSlice*>(module)) {
+      addSliceAnimation();
     } else {
       qDebug() << "Unknown module type: " << module;
     }
@@ -374,6 +406,14 @@ public:
     auto stop = ui.contourStop->value();
     auto* module = qobject_cast<ModuleContour*>(selectedModule());
     moduleAnimations.append(new ContourAnimation(module, start, stop));
+  }
+
+  void addSliceAnimation()
+  {
+    auto start = ui.sliceStart->value();
+    auto stop = ui.sliceStop->value();
+    auto* module = qobject_cast<ModuleSlice*>(selectedModule());
+    moduleAnimations.append(new SliceAnimation(module, start, stop));
   }
 
   void clearModuleAnimations()

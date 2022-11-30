@@ -86,6 +86,8 @@ signals:
 
   void sliceChanged(int slice);
 
+  void directionChanged(Direction direction);
+
 protected:
   void updateColorMap() override;
   void updateSliceWidget();
