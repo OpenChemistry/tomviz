@@ -120,6 +120,8 @@ private slots:
 
   void onTextureInterpolateChanged(bool flag);
 
+  void setNormalToView();
+
 private:
   bool setupWidget(vtkSMViewProxy* view);
 

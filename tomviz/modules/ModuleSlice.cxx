@@ -3,6 +3,7 @@
 
 #include "ModuleSlice.h"
 
+#include "ActiveObjects.h"
 #include "DataSource.h"
 #include "DoubleSliderWidget.h"
 #include "IntSliderWidget.h"
@@ -10,6 +11,7 @@
 #include "Utilities.h"
 #include "vtkActiveScalarsProducer.h"
 
+#include <vtkCamera.h>
 #include <vtkCommand.h>
 #include <vtkDataObject.h>
 #include <vtkImageData.h>
@@ -24,7 +26,9 @@
 
 #include <pqCoreUtilities.h>
 #include <pqLineEdit.h>
+#include <pqRenderView.h>
 #include <vtkPVDiscretizableColorTransferFunction.h>
+#include <vtkSMRenderViewProxy.h>
 #include <vtkSMViewProxy.h>
 
 #include <QCheckBox>
@@ -35,6 +39,7 @@
 #include <QHBoxLayout>
 #include <QJsonArray>
 #include <QLabel>
+#include <QPushButton>
 #include <QSpinBox>
 #include <QVBoxLayout>
 
@@ -296,6 +301,12 @@ void ModuleSlice::addToPanel(QWidget* panel)
 
   // Update the Qt widget values
   onPlaneChanged();
+
+  auto* normalToViewButton = new QPushButton("Set Normal to View");
+  connect(normalToViewButton, &QPushButton::clicked, this,
+          &ModuleSlice::setNormalToView);
+  normalToViewButton->setToolTip("Set the plane normal to the view direction");
+  layout->addWidget(normalToViewButton);
 
   layout->addStretch();
 
@@ -846,6 +857,32 @@ bool ModuleSlice::updateClippingPlane(vtkPlane* plane, bool newFilter)
   emit renderNeeded();
 
   return true;
+}
+
+void ModuleSlice::setNormalToView()
+{
+  // First, make sure we have a custom direction
+  if (m_direction != Direction::Custom) {
+    onDirectionChanged(Direction::Custom);
+  }
+
+  // Now set the normal to match that of the view direction
+  auto* renderView =
+    ActiveObjects::instance().activePqRenderView()->getRenderViewProxy();
+
+  double* position = renderView->GetActiveCamera()->GetPosition();
+  double* focalPoint = renderView->GetActiveCamera()->GetFocalPoint();
+
+  double normal[3];
+
+  for (int i = 0; i < 3; ++i) {
+    normal[i] = focalPoint[i] - position[i];
+  }
+
+  m_widget->SetNormal(normal);
+  m_widget->UpdatePlacement();
+  onPlaneChanged();
+  emit renderNeeded();
 }
 
 } // namespace tomviz
