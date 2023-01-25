@@ -24,55 +24,6 @@
      </property>
     </widget>
    </item>
-   <item row="0" column="1" colspan="2">
-    <widget class="pqVCRToolbar" name="vcrToolbar">
-     <property name="windowTitle">
-      <string>VCR Toolbar</string>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="1" colspan="2">
-    <spacer name="verticalSpacer_4">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeType">
-      <enum>QSizePolicy::Fixed</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>5</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="6" column="1" colspan="2">
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="0" column="0">
-    <spacer name="horizontalSpacer">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>40</width>
-       <height>20</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
    <item row="0" column="3">
     <spacer name="horizontalSpacer_2">
      <property name="orientation">
@@ -82,6 +33,46 @@
       <size>
        <width>40</width>
        <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="3" column="2" colspan="2">
+    <widget class="QSpinBox" name="numberOfFrames">
+     <property name="keyboardTracking">
+      <bool>false</bool>
+     </property>
+     <property name="minimum">
+      <number>1</number>
+     </property>
+     <property name="maximum">
+      <number>10000000</number>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="0" colspan="4">
+    <widget class="QPushButton" name="clearAllAnimations">
+     <property name="text">
+      <string>Clear All Animations</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1" colspan="2">
+    <widget class="pqVCRToolbar" name="vcrToolbar">
+     <property name="windowTitle">
+      <string>VCR Toolbar</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="1" colspan="2">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
       </size>
      </property>
     </spacer>
@@ -364,23 +355,39 @@
      </widget>
     </widget>
    </item>
-   <item row="3" column="2" colspan="2">
-    <widget class="QSpinBox" name="numberOfFrames">
-     <property name="keyboardTracking">
-      <bool>false</bool>
+   <item row="4" column="1" colspan="2">
+    <spacer name="verticalSpacer_4">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
      </property>
-     <property name="minimum">
-      <number>1</number>
+     <property name="sizeType">
+      <enum>QSizePolicy::Fixed</enum>
      </property>
-     <property name="maximum">
-      <number>10000000</number>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>5</height>
+      </size>
      </property>
-    </widget>
+    </spacer>
+   </item>
+   <item row="0" column="0">
+    <spacer name="horizontalSpacer">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>40</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
    </item>
    <item row="5" column="0" colspan="4">
-    <widget class="QPushButton" name="clearAllAnimations">
+    <widget class="QPushButton" name="exportMovie">
      <property name="text">
-      <string>Clear All Animations</string>
+      <string>Export Movie</string>
      </property>
     </widget>
    </item>
@@ -406,6 +413,7 @@
   <tabstop>addModuleAnimation</tabstop>
   <tabstop>clearModuleAnimations</tabstop>
   <tabstop>numberOfFrames</tabstop>
+  <tabstop>exportMovie</tabstop>
   <tabstop>clearAllAnimations</tabstop>
  </tabstops>
  <resources>

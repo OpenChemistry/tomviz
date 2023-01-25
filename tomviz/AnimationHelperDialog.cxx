@@ -17,6 +17,7 @@
 #include <pqPropertyLinks.h>
 #include <pqRenderView.h>
 #include <pqSMAdaptor.h>
+#include <pqSaveAnimationReaction.h>
 
 #include <QPointer>
 #include <QPushButton>
@@ -96,6 +97,8 @@ public:
                             0);
     connect(ui.numberOfFrames, QOverload<int>::of(&QSpinBox::valueChanged),
             this, &Internal::numberOfFramesModified);
+    connect(ui.exportMovie, &QPushButton::clicked, this,
+            &Internal::exportMovie);
     connect(ui.clearAllAnimations, &QPushButton::clicked, this,
             &Internal::clearAllAnimations);
   }
@@ -146,6 +149,7 @@ public:
     ui.selectedDataSource->setEnabled(hasDataSourceOptions);
     ui.selectedModule->setEnabled(hasModuleOptions);
     ui.clearModuleAnimations->setEnabled(hasModuleAnimations);
+    ui.exportMovie->setEnabled(hasAnyAnimations);
     ui.clearAllAnimations->setEnabled(hasAnyAnimations);
   }
 
@@ -436,6 +440,8 @@ public:
     pqSMAdaptor::setEnumerationProperty(
       scene()->getProxy()->GetProperty("PlayMode"), "Sequence");
   }
+
+  void exportMovie() { pqSaveAnimationReaction::saveAnimation(); }
 
   void clearAllAnimations()
   {
