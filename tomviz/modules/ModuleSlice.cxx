@@ -686,6 +686,8 @@ void ModuleSlice::onDirectionChanged(Direction direction)
   onSliceChanged(slice);
   onPlaneChanged();
   dataUpdated();
+
+  emit directionChanged(m_direction);
 }
 
 bool ModuleSlice::isOrtho() const

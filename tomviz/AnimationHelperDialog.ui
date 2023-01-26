@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>699</width>
-    <height>448</height>
+    <height>449</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -89,7 +89,7 @@
    <item row="1" column="0" colspan="4">
     <widget class="QTabWidget" name="AnimationTypeTabWidget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>2</number>
      </property>
      <widget class="QWidget" name="camera_tab">
       <attribute name="title">
@@ -179,7 +179,7 @@
        <item row="3" column="1" colspan="3">
         <widget class="QTabWidget" name="modulesTabWidget">
          <property name="currentIndex">
-          <number>1</number>
+          <number>2</number>
          </property>
          <widget class="QWidget" name="None">
           <attribute name="title">
@@ -261,6 +261,53 @@
               </size>
              </property>
             </spacer>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QWidget" name="Slice">
+          <attribute name="title">
+           <string>Slice</string>
+          </attribute>
+          <layout class="QGridLayout" name="gridLayout_6">
+           <item row="0" column="0">
+            <widget class="QLabel" name="sliceRangeLabel">
+             <property name="text">
+              <string>Range:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QDoubleSpinBox" name="sliceStart">
+             <property name="decimals">
+              <number>0</number>
+             </property>
+             <property name="maximum">
+              <double>100000.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="3">
+            <widget class="QDoubleSpinBox" name="sliceStop">
+             <property name="decimals">
+              <number>0</number>
+             </property>
+             <property name="maximum">
+              <double>100000.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="2">
+            <widget class="QLabel" name="sliceRangeHyphen">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>-</string>
+             </property>
+            </widget>
            </item>
           </layout>
          </widget>
