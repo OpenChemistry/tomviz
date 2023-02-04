@@ -101,6 +101,9 @@ bool ModuleSlice::setupWidget(vtkSMViewProxy* vtkView)
   // render window is using.
   m_widget->SetInteractor(rwi);
 
+  // Set the thick slice mode to the current setting
+  m_widget->SetThickSliceMode(m_thickSliceMode);
+
   // Setup the color of the border of the widget.
   {
     double color[3] = { 1, 0, 0 };
