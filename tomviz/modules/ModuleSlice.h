@@ -142,7 +142,7 @@ private:
   Direction m_direction = Direction::XY;
   int m_slice = 0;
   int m_sliceThickness = 1;
-  Mode m_thickSliceMode = Mode::Sum;
+  Mode m_thickSliceMode = Mode::Mean;
 
   QPointer<QCheckBox> m_interpolateCheckBox;
   bool m_interpolate = false;
