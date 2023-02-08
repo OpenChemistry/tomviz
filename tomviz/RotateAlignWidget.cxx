@@ -241,8 +241,35 @@ public:
       this->reconSliceMapper[i]->SetSliceNumber(0);
       this->reconSliceMapper[i]->Update();
 
-      double range[2];
-      reconArray->GetRange(range);
+      double range[2] = {DBL_MAX, -DBL_MAX};
+
+      // Get the range of the inscribed circle only
+      auto radius = static_cast<double>(Nray) / 2;
+
+      // The max distance for what we will keep is the radius multiplied by
+      // some reduction factor in order to exclude edge pixels. The images come
+      // out better if we exclude edge pixels since the pixel values tend to
+      // drop fast near the edges. So this factor is a magic number.
+      auto maxDistance = radius * 0.97;
+      for (int j = 0; j < Nray; ++j) {
+        for (int k = 0; k < Nray; ++k) {
+          auto distance = std::sqrt(std::pow(radius - j, 2) + std::pow(radius - k, 2));
+          if (distance > maxDistance) {
+            // Not in the inscribed circle (or is an edge pixel). Continue.
+            continue;
+          }
+
+          auto idx = j * Nray + k;
+          auto val = reconArray->GetTuple1(idx);
+          if (val < range[0]) {
+            range[0] = val;
+          }
+          if (val > range[1]) {
+            range[1] = val;
+          }
+        }
+      }
+
       vtkSMTransferFunctionProxy::RescaleTransferFunction(
         this->ReconColorMap[i], range);
       this->reconSlice[i]->GetProperty()->SetLookupTable(
