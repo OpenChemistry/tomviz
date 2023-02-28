@@ -181,6 +181,10 @@ public:
 
     double rotate = -this->m_tiltRotation;
     if (m_orientation == 1) {
+      // Rotate in the opposite direction for vertical tilt axes
+      // This is a quick fix so that the drawn axis matches the drawn
+      // images correctly. See #2241.
+      rotate *= -1;
       // Rotate an extra 90 degrees for orientation == 1
       rotate -= 90.0;
     }
