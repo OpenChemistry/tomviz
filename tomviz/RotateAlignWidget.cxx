@@ -69,6 +69,7 @@ class RotateAlignWidget::RAWInternal
 public:
   Ui::RotateAlignWidget Ui;
   vtkSmartPointer<vtkImageData> m_image;
+  vtkNew<vtkImageData> m_summedImage;
   vtkNew<vtkImageSlice> mainSlice;
   vtkNew<vtkImageData> reconImage[3];
   vtkNew<vtkImageSlice> reconSlice[3];
@@ -85,6 +86,7 @@ public:
   bool m_reconSliceDirty[3];
   QTimer m_updateSlicesTimer;
 
+  bool m_sumProjections = false;
   int m_projectionNum;
   int m_shiftRotation;
   double m_tiltRotation;
@@ -92,6 +94,8 @@ public:
   int m_slice1;
   int m_slice2;
   int m_orientation;
+
+  bool m_summedImageInitialized = false;
 
   RAWInternal()
   {
@@ -338,6 +342,72 @@ public:
     auto settings = pqApplicationCore::instance()->settings();
     settings->setValue("RotateAlignWidget.orientation", m_orientation);
   }
+
+  void initializeSummedImage()
+  {
+    if (m_summedImageInitialized) {
+      // Already initialized. This data is static and does not change.
+      return;
+    }
+
+    auto image = m_image;
+    auto summedImage = m_summedImage.Get();
+
+    const auto* dims = image->GetDimensions();
+
+    // The summed image will have only one dimension in Z
+    summedImage->SetDimensions(dims[0], dims[1], 1);
+    summedImage->SetOrigin(image->GetOrigin());
+    summedImage->SetSpacing(image->GetSpacing());
+    summedImage->AllocateScalars(VTK_DOUBLE, 1);
+
+    auto imageArray = image->GetPointData()->GetScalars();
+    auto summedImageArray = summedImage->GetPointData()->GetScalars();
+
+    // Initialize values to zero
+    for (int i = 0; i < summedImageArray->GetNumberOfTuples(); ++i) {
+      summedImageArray->SetTuple1(i, 0);
+    }
+
+    // Now sum the values in the image data
+    // Fortran ordering
+    for (int k = 0; k < dims[2]; ++k) {
+      for (int j = 0; j < dims[1]; ++j) {
+        for (int i = 0; i < dims[0]; ++i) {
+          auto summedIdx = static_cast<size_t>(j) * dims[0] + i;
+          auto imgIdx = (static_cast<size_t>(k) * dims[1] + j) * dims[0] + i;
+          auto prevValue = summedImageArray->GetTuple1(summedIdx);
+          auto newValue = prevValue + imageArray->GetTuple1(imgIdx);
+          summedImageArray->SetTuple1(summedIdx, newValue);
+        }
+      }
+    }
+
+    summedImageArray->Modified();
+
+    // Rescale the data range to the original range
+    // We are doing this because I was having issues rescaling the
+    // color range to be in the new range. Cosmetically, for the image,
+    // rescaling this data to be in the original range should result in
+    // exactly the same image as rescaling the color range to be in the
+    // new range.
+    const auto* newRange = imageArray->GetRange();
+    const auto* oldRange = summedImageArray->GetRange();
+
+    const double newSpread = newRange[1] - newRange[0];
+    const double oldSpread = oldRange[1] - oldRange[0];
+    const double multiplier = newSpread / oldSpread;
+
+    for (int i = 0; i < summedImageArray->GetNumberOfTuples(); ++i) {
+      double oldVal = summedImageArray->GetTuple1(i);
+      double newVal = (oldVal - oldRange[0]) * multiplier + newRange[0];
+      summedImageArray->SetTuple1(i, newVal);
+    }
+
+    summedImageArray->Modified();
+
+    m_summedImageInitialized = true;
+  }
 };
 
 RotateAlignWidget::RotateAlignWidget(Operator* op,
@@ -432,6 +502,8 @@ RotateAlignWidget::RotateAlignWidget(Operator* op,
       this->Internals->reconSliceLineActor[i]);
   }
 
+  QObject::connect(this->Internals->Ui.sumProjections, &QCheckBox::toggled,
+                   this, &RotateAlignWidget::onSumProjectionsToggled);
   QObject::connect(this->Internals->Ui.projection,
                    QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
                    &RotateAlignWidget::onProjectionNumberChanged);
@@ -481,7 +553,6 @@ RotateAlignWidget::RotateAlignWidget(Operator* op,
     ds = op->dataSource();
   else
     ds = ActiveObjects::instance().activeDataSource();
-
 
   vtkScalarsToColors* lut =
     vtkScalarsToColors::SafeDownCast(ds->colorMap()->GetClientSideObject());
@@ -587,6 +658,29 @@ bool RotateAlignWidget::eventFilter(QObject* o, QEvent* e)
     }
   }
   return QObject::eventFilter(o, e);
+}
+
+void RotateAlignWidget::onSumProjectionsToggled(bool sumProjections)
+{
+  if (sumProjections == this->Internals->m_sumProjections) {
+    return;
+  }
+
+  this->Internals->m_sumProjections = sumProjections;
+
+  if (sumProjections) {
+    this->Internals->initializeSummedImage();
+    this->Internals->mainSliceMapper->SetInputData(
+      this->Internals->m_summedImage);
+    this->Internals->mainSliceMapper->SetSliceNumber(0);
+  } else {
+    this->Internals->mainSliceMapper->SetInputData(this->Internals->m_image);
+    this->Internals->mainSliceMapper->SetSliceNumber(
+      this->Internals->m_projectionNum);
+  }
+
+  this->Internals->mainSliceMapper->Update();
+  this->Internals->Ui.sliceView->renderWindow()->Render();
 }
 
 void RotateAlignWidget::onProjectionNumberChanged(int val)

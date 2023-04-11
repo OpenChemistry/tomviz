@@ -37,6 +37,7 @@ signals:
   void creatingAlignedData();
 
 protected slots:
+  void onSumProjectionsToggled(bool);
   void onProjectionNumberChanged(int);
   void onRotationShiftChanged(int);
   void onRotationAngleChanged(double);
