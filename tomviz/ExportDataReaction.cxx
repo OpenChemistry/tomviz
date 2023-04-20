@@ -131,18 +131,18 @@ void ExportDataReaction::onTriggered()
 namespace {
 
 template <typename FromType, typename ToType>
-void convert(vtkDataArray* outArray, int nComps, int nTuples, void* data)
+void convert(vtkDataArray* outArray, int nComps, vtkIdType nTuples, void* data)
 {
   FromType* d = static_cast<FromType*>(data);
   ToType* a = static_cast<ToType*>(outArray->GetVoidPointer(0));
-  for (int i = 0; i < nComps * nTuples; ++i) {
+  for (vtkIdType i = 0; i < nComps * nTuples; ++i) {
     a[i] = static_cast<ToType>(d[i]);
   }
 }
 
 template <typename FromType>
-void convertToUnsignedChar(vtkDataArray* outArray, int nComps, int nTuples,
-                           void* data)
+void convertToUnsignedChar(vtkDataArray* outArray, int nComps,
+                           vtkIdType nTuples, void* data)
 {
   convert<FromType, unsigned char>(outArray, nComps, nTuples, data);
 }
