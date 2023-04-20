@@ -104,8 +104,8 @@ template <typename vtkInputDataType, typename vtkOutputArrayType,
           typename = std::enable_if<std::is_unsigned<
             decltype(vtkOutputArrayType::GetDataTypeValueMax())>::value>>
 void wrangleVtkArrayTypeUnsigned(vtkOutputArrayType* array, int nComps,
-                                 int componentToKeep, int nTuples, void* data,
-                                 double oldrange[2])
+                                 int componentToKeep, vtkIdType nTuples,
+                                 void* data, double oldrange[2])
 {
   // We can't divide by zero...
   // assert(oldrange[1] != oldrange[0]);
