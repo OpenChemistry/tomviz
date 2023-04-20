@@ -11,11 +11,12 @@
 namespace {
 
 template <typename T>
-void convertToFloat(vtkFloatArray* fArray, int nComps, int nTuples, void* data)
+void convertToFloat(vtkFloatArray* fArray, int nComps, vtkIdType nTuples,
+                    void* data)
 {
   auto d = static_cast<T*>(data);
   auto a = static_cast<float*>(fArray->GetVoidPointer(0));
-  for (int i = 0; i < nComps * nTuples; ++i) {
+  for (vtkIdType i = 0; i < nComps * nTuples; ++i) {
     a[i] = static_cast<float>(d[i]);
   }
 }
