@@ -494,6 +494,9 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   connect(userGuideAction, SIGNAL(triggered()), SLOT(openUserGuide()));
   QAction* introAction = m_ui->menuHelp->addAction("Intro to 3D Visualization");
   connect(introAction, SIGNAL(triggered()), SLOT(openVisIntro()));
+  QAction* realTimeAction =
+    m_ui->menuHelp->addAction("Real-Time Tomography User Manual");
+  connect(realTimeAction, SIGNAL(triggered()), SLOT(openRealTimeManual()));
 #ifdef TOMVIZ_DATA
   QAction* reconAction =
     sampleDataMenu->addAction("Star Nanoparticle (Reconstruction)");
@@ -706,6 +709,21 @@ void MainWindow::openUserGuide()
   if (info.exists()) {
     QUrl userGuideUrl = QUrl::fromLocalFile(path);
     openUrl(userGuideUrl);
+  } else {
+    QMessageBox::warning(
+      this, "User Guide not found",
+      QString("The user guide \"%1\" was not found.").arg(path));
+  }
+}
+
+void MainWindow::openRealTimeManual()
+{
+  QString path = QApplication::applicationDirPath() +
+                 "/../share/tomviz/docs/RealTimeTomographyManual.pdf";
+  QFileInfo info(path);
+  if (info.exists()) {
+    QUrl realTimeUrl = QUrl::fromLocalFile(path);
+    openUrl(realTimeUrl);
   } else {
     QMessageBox::warning(
       this, "User Guide not found",
