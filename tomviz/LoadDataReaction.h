@@ -45,6 +45,14 @@ public:
   static DataSource* loadData(const QString& fileName,
                               const QJsonObject& options = QJsonObject());
 
+  /// Approximate how much memory will be used by loading in the file,
+  /// compare that to what is available on the user's system, and warn the
+  /// user if they may run out of memory. If the warning appears, the user
+  /// may choose to cancel or proceed. If they cancel, this will return
+  /// `false`. If the warning doesn't appear or the user doesn't cancel,
+  /// this returns `true`.
+  static bool checkMemoryUsage(const QString& fileName);
+
   /// Load data files from the specified locations, options can be used to pass
   /// additional parameters to the method, such as defaultModules, addToRecent,
   /// and child, or pvXML to pass to the ParaView reader.
