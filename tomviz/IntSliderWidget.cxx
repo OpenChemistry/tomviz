@@ -4,7 +4,7 @@
 #include "IntSliderWidget.h"
 
 #include "pqLineEdit.h"
-#include "vtkPVConfig.h"
+#include "vtkPVVersion.h"
 
 // Qt includes
 #include <QHBoxLayout>
