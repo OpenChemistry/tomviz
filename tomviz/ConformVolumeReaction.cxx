@@ -24,7 +24,7 @@ void ConformVolumeReaction::onTriggered()
 {
   // Check which volume should be the conforming one
   ConformVolumeDialog dialog;
-  dialog.setVolumes(m_dataSources.toList());
+  dialog.setVolumes(m_dataSources.values());
 
   if (dialog.exec() == QDialog::Rejected) {
     return;
@@ -57,7 +57,7 @@ void ConformVolumeReaction::updateVisibleState()
     return;
   }
 
-  QList<DataSource*> sourceList = m_dataSources.toList();
+  QList<DataSource*> sourceList = m_dataSources.values();
   // Check that both DataSources are volumes
   for (auto ds : m_dataSources) {
     if (ds->type() != DataSource::Volume) {

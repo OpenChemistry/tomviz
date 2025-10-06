@@ -68,7 +68,7 @@ void MergeImagesReaction::updateEnableState()
   // Check for compatibility of the DataSource extents. Ignore overlap in
   // physical space for now.
   if (enabled) {
-    QList<DataSource*> sourceList = m_dataSources.toList();
+    QList<DataSource*> sourceList = m_dataSources.values();
     auto info = sourceList[0]->proxy()->GetDataInformation();
     int refExtent[6];
     info->GetExtent(refExtent);
@@ -91,7 +91,7 @@ DataSource* MergeImagesReaction::mergeArrays()
     return nullptr;
   }
 
-  QList<DataSource*> sourceList = m_dataSources.toList();
+  QList<DataSource*> sourceList = m_dataSources.values();
 
   // Eventually, we'll offer the option to merge components in a single array.
   // For now, we will simply append the point data arrays.
@@ -125,7 +125,7 @@ DataSource* MergeImagesReaction::mergeComponents()
     return nullptr;
   }
 
-  QList<DataSource*> sourceList = m_dataSources.toList();
+  QList<DataSource*> sourceList = m_dataSources.values();
   QStringList sourceLabels;
 
   vtkSMSessionProxyManager* pxm = ActiveObjects::instance().proxyManager();
