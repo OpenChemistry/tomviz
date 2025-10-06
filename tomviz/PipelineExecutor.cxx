@@ -73,7 +73,7 @@ const char* ExternalPipelineExecutor::PROGRESS_PATH = "progress";
 
 Pipeline::Future* ExternalPipelineExecutor::execute(vtkDataObject* data,
                                                     QList<Operator*> operators,
-                                                    int start, int end)
+                                                    int, int end)
 {
   if (end == -1) {
     end = operators.size();
