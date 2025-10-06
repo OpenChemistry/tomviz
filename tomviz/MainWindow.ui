@@ -202,7 +202,7 @@
    <attribute name="dockWidgetArea">
     <number>8</number>
    </attribute>
-   <widget class="pqPVAnimationWidget" name="animationWidget"/>
+   <widget class="pqTimeManagerWidget" name="animationWidget"/>
   </widget>
   <widget class="pqVCRToolbar" name="vcrToolbar">
    <property name="windowTitle">
@@ -542,9 +542,9 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>pqPVAnimationWidget</class>
+   <class>pqTimeManagerWidget</class>
    <extends>QWidget</extends>
-   <header>pqPVAnimationWidget.h</header>
+   <header>pqTimeManagerWidget.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
