@@ -37,7 +37,7 @@ class CentralWidget : public QWidget
   Q_OBJECT
 
 public:
-  CentralWidget(QWidget* parent = nullptr, Qt::WindowFlags f = nullptr);
+  CentralWidget(QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
   ~CentralWidget() override;
 
 public slots:

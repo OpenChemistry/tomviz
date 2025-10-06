@@ -34,7 +34,7 @@ class MainWindow : public QMainWindow
   Q_OBJECT
 
 public:
-  MainWindow(QWidget* parent = nullptr, Qt::WindowFlags flags = nullptr);
+  MainWindow(QWidget* parent = nullptr, Qt::WindowFlags flags = Qt::WindowFlags());
   ~MainWindow() override;
   void openFiles(int argc, char** argv);
 
