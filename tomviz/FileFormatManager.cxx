@@ -146,7 +146,8 @@ void FileFormatManager::setPythonWritersMap(
 
 QList<PythonReaderFactory*> FileFormatManager::pythonReaderFactories()
 {
-  return m_pythonExtReaderMap.values().toSet().values();
+  QList<PythonReaderFactory*> l = m_pythonExtReaderMap.values();
+  return QSet<PythonReaderFactory*>(l.begin(), l.end()).values();
 }
 
 PythonReaderFactory* FileFormatManager::pythonReaderFactory(const QString& ext)
@@ -156,7 +157,8 @@ PythonReaderFactory* FileFormatManager::pythonReaderFactory(const QString& ext)
 
 QList<PythonWriterFactory*> FileFormatManager::pythonWriterFactories()
 {
-  return m_pythonExtWriterMap.values().toSet().values();
+  QList<PythonWriterFactory*> l = m_pythonExtWriterMap.values();
+  return QSet<PythonWriterFactory*>(l.begin(), l.end()).values();
 }
 
 PythonWriterFactory* FileFormatManager::pythonWriterFactory(const QString& ext)
