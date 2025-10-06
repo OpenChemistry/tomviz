@@ -4,6 +4,7 @@
 #include "PythonUtilities.h"
 
 #include "vtkPython.h" // must be first
+#include "py3c.h"
 
 #include "core/DataSourceBase.h"
 
@@ -97,7 +98,7 @@ bool Python::Object::isBool() const
 
 bool Python::Object::isString() const
 {
-  return PyString_Check(m_smartPyObject->GetPointer());
+  return PyStr_Check(m_smartPyObject->GetPointer());
 }
 
 bool Python::Object::isInt() const
@@ -327,7 +328,7 @@ void Python::Dict::set(const QString& key, const Variant& value)
 QString Python::Dict::toString()
 {
   PyObject* objectRepr = PyObject_Repr(*this);
-  return PyString_AsString(objectRepr);
+  return PyStr_AsString(objectRepr);
 }
 
 Variant Python::Dict::toVariant()
@@ -425,7 +426,7 @@ Python::Object Python::Function::call(Tuple& args, Dict& kwargs)
 QString Python::Function::toString()
 {
   PyObject* objectRepr = PyObject_Repr(*this);
-  return PyString_AsString(objectRepr);
+  return PyStr_AsString(objectRepr);
 }
 
 Python::Object Python::VTK::GetObjectFromPointer(vtkObjectBase* ptr)
