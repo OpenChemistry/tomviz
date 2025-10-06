@@ -16,6 +16,10 @@ import traceback
 import tomviz
 import tomviz.operators
 
+from .fix_pdb import fix_pdb
+
+fix_pdb()
+
 
 def in_application():
     return os.environ.get('TOMVIZ_APPLICATION', False)
