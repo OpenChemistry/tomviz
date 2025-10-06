@@ -29,6 +29,11 @@ def get_scalars(dataobject, name=None):
     return vtkarray
 
 
+@with_vtk_dataobject
+def get_active_scalars_name(dataobject):
+    return dataobject.GetPointData().GetScalars().GetName()
+
+
 def is_numpy_vtk_type(newscalars):
     # Indicate whether the type is known/supported by VTK to NumPy routines.
     require_internal_mode()
@@ -92,7 +97,7 @@ def arrays(dataobject):
 
 
 @with_vtk_dataobject
-def set_array(dataobject, newarray, minextent=None, isFortran=True):
+def set_array(dataobject, newarray, minextent=None, isFortran=True, name=None):
     # Set the extent if needed, i.e. if the minextent is not the same as
     # the data object starting index, or if the newarray shape is not the same
     # as the size of the dataobject.
@@ -134,13 +139,19 @@ def set_array(dataobject, newarray, minextent=None, isFortran=True):
     vtkarray = np_s.numpy_to_vtk(arr)
     vtkarray.Association = dsa.ArrayAssociation.POINT
     do = dsa.WrapDataObject(dataobject)
-    oldscalars = do.PointData.GetScalars()
-    arrayname = "Scalars"
-    if oldscalars is not None:
-        arrayname = oldscalars.GetName()
-    del oldscalars
+
+    if name is None:
+        oldscalars = do.PointData.GetScalars()
+        arrayname = "Scalars"
+        if oldscalars is not None:
+            arrayname = oldscalars.GetName()
+    else:
+        arrayname = name
+
     do.PointData.append(arr, arrayname)
-    do.PointData.SetActiveScalars(arrayname)
+
+    if do.PointData.GetNumberOfArrays() == 1:
+        do.PointData.SetActiveScalars(arrayname)
 
 
 @with_vtk_dataobject

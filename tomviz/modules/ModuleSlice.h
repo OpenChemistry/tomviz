@@ -76,6 +76,7 @@ public:
   bool updateClippingPlane(vtkPlane* plane, bool newFilter) override;
 
   bool isOrtho() const;
+  int slice() const { return m_slice; }
   int maxSlice() const;
 
   void onDirectionChanged(Direction direction);

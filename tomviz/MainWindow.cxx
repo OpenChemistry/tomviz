@@ -318,6 +318,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     "Image Alignment (Auto: Cross Correlation)");
   QAction* autoAlignCOMAction =
     m_ui->menuTomography->addAction("Image Alignment (Auto: Center of Mass)");
+  QAction* autoAlignPyStackRegAction =
+    m_ui->menuTomography->addAction("Image Alignment (Auto: PyStackReg)");
   QAction* alignAction =
     m_ui->menuTomography->addAction("Image Alignment (Manual)");
   QAction* autoRotateAlignAction =
@@ -421,6 +423,11 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     autoAlignCOMAction, "Auto Tilt Image Align (CoM)",
     readInPythonScript("AutoCenterOfMassTiltImageAlignment"), false, false,
     false, readInJSONDescription("AutoCenterOfMassTiltImageAlignment"));
+  new AddPythonTransformReaction(
+    autoAlignPyStackRegAction, "Auto Tilt Image Align (PyStackReg)",
+    readInPythonScript("PyStackRegImageAlignment"), false, false,
+    false, readInJSONDescription("PyStackRegImageAlignment"));
+
   new AddPythonTransformReaction(reconDFMAction, "Reconstruct (Direct Fourier)",
                                  readInPythonScript("Recon_DFT"), true, false,
                                  false, readInJSONDescription("Recon_DFT"));

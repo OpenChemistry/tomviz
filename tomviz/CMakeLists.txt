@@ -446,6 +446,7 @@ set(python_files
   AutoTiltAxisShiftAlignment.py
   AutoCenterOfMassTiltImageAlignment.py
   AutoCrossCorrelationTiltImageAlignment.py
+  PyStackRegImageAlignment.py
   ctf_correct.py
   Recon_DFT.py
   Recon_DFT_constraint.py
@@ -506,6 +507,7 @@ set(json_files
   AddPoissonNoise.json
   AutoCenterOfMassTiltImageAlignment.json
   AutoCrossCorrelationTiltImageAlignment.json
+  PyStackRegImageAlignment.json
   BinaryThreshold.json
   CircleMask.json
   ConnectedComponents.json

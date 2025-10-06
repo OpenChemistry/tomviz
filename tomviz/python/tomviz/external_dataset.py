@@ -31,11 +31,11 @@ class Dataset:
 
     @property
     def active_scalars(self):
-        return self.arrays[self.active_name]
+        return self.scalars(self.active_name)
 
     @active_scalars.setter
     def active_scalars(self, array):
-        self.arrays[self.active_name] = array
+        self.set_scalars(self.active_name, array)
 
     @property
     def num_scalars(self):
@@ -49,6 +49,9 @@ class Dataset:
         if name is None:
             name = self.active_name
         return self.arrays[name]
+
+    def set_scalars(self, name, array):
+        self.arrays[name] = array
 
     @property
     def spacing(self):

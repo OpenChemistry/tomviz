@@ -6,6 +6,8 @@
 #include "ActiveObjects.h"
 #include "DataSource.h"
 #include "EditOperatorDialog.h"
+#include "ModuleManager.h"
+#include "ModuleSlice.h"
 #include "OperatorDialog.h"
 #include "OperatorFactory.h"
 #include "OperatorPython.h"
@@ -211,11 +213,30 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
   }
 
   bool hasJson = this->jsonSource.size() > 0;
+
   if (hasJson) {
     OperatorPython* opPython = new OperatorPython(source);
     opPython->setJSONDescription(jsonSource);
     opPython->setLabel(scriptLabel);
     opPython->setScript(scriptSource);
+    if (scriptLabel == "Auto Tilt Image Align (PyStackReg)") {
+      // If there are any slice modules on this data source, use the
+      // slice index as the default value for the slice index.
+      int defaultSliceIdx = 0;
+      // Use the output data source of the pipeline if it is available. If
+      // one is not available, this just defaults to the root data source.
+      auto tSource = source->pipeline()->transformedDataSource();
+      auto sliceModules = ModuleManager::instance().findModules<ModuleSlice*>(
+          tSource, nullptr);
+      if (sliceModules.size() > 0 && sliceModules[0]) {
+        defaultSliceIdx = std::max(sliceModules[0]->slice(), 0);
+      }
+
+      QMap<QString, QVariant> arguments{{"ref_slice_index", defaultSliceIdx}};
+      QMap<QString, QString> typeInfo{{"ref_slice_index", "int"}};
+      opPython->setArguments(arguments);
+      opPython->setTypeInfo(typeInfo);
+    }
 
     // Use JSON to build the interface via the EditOperatorDialog
     // If the operator doesn't have parameters, don't show the dialog on first
