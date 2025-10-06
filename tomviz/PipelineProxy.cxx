@@ -80,7 +80,7 @@ Pipeline* findPipeline(QStringList& path, QString id = QString())
 
 Pipeline* findPipeline(const QString& path, QString id = QString())
 {
-  auto parts = path.split("/", QString::SkipEmptyParts);
+  auto parts = path.split("/", Qt::SkipEmptyParts);
 
   return findPipeline(parts, id);
 }
@@ -135,7 +135,7 @@ Operator* findOperator(QStringList& path, QString id = QString())
 
 Operator* findOperator(const QString& path, QString id = QString())
 {
-  auto parts = path.split("/", QString::SkipEmptyParts);
+  auto parts = path.split("/", Qt::SkipEmptyParts);
 
   return findOperator(parts, id);
 }
@@ -189,7 +189,7 @@ DataSource* findDataSource(QStringList& path, QString id = QString())
 
 DataSource* findDataSource(const QString& path, QString id = QString())
 {
-  auto parts = path.split("/", QString::SkipEmptyParts);
+  auto parts = path.split("/", Qt::SkipEmptyParts);
 
   return findDataSource(parts, id);
 }
@@ -245,7 +245,7 @@ Module* findModule(QStringList& path, QString id = QString())
 
 Module* findModule(const QString& path, QString id = QString())
 {
-  auto parts = path.split("/", QString::SkipEmptyParts);
+  auto parts = path.split("/", Qt::SkipEmptyParts);
 
   return findModule(parts, id);
 }

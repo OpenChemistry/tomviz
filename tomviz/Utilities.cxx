@@ -1692,7 +1692,7 @@ QStringList pluginsWithSubstring(const QString& substring)
   QStringList ret;
 
   auto pluginPaths =
-    QString(TOMVIZ_PLUGIN_PATHS).split(';', QString::SkipEmptyParts);
+    QString(TOMVIZ_PLUGIN_PATHS).split(';', Qt::SkipEmptyParts);
   for (auto path : pluginPaths) {
     QFileInfo info(path);
     if (info.fileName().contains(substring)) {
@@ -1726,7 +1726,7 @@ bool loadPlugins()
 
   // TOMVIZ_PLUGIN_PATHS is a semicolon delimited list of plugins to load
   auto pluginPaths =
-    QString(TOMVIZ_PLUGIN_PATHS).split(';', QString::SkipEmptyParts);
+    QString(TOMVIZ_PLUGIN_PATHS).split(';', Qt::SkipEmptyParts);
   for (auto path : pluginPaths) {
     if (!loadPlugin(path)) {
       success = false;

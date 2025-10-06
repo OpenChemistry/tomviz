@@ -91,7 +91,7 @@ void SaveDataReaction::onTriggered()
     int n = format.indexOf(")") - startPos;
     QString extensionString = format.mid(startPos, n);
     QStringList extensions = extensionString.split(QRegularExpression(" ?\\*"),
-                                                   QString::SkipEmptyParts);
+                                                   Qt::SkipEmptyParts);
     bool hasExtension = false;
     for (QString& str : extensions) {
       if (filename.endsWith(str)) {
