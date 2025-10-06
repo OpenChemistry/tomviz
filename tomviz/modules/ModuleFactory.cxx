@@ -21,6 +21,7 @@
 #include <vtkSMViewProxy.h>
 
 #include <QtAlgorithms>
+#include <algorithm>
 
 namespace tomviz {
 
@@ -40,7 +41,7 @@ QList<QString> ModuleFactory::moduleTypes()
         << "Threshold"
         << "Molecule"
         << "Clip";
-  qSort(reply);
+  std::sort(reply.begin(), reply.end());
   return reply;
 }
 
