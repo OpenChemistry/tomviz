@@ -494,7 +494,7 @@ LocalSocketProgressReader::LocalSocketProgressReader(
               &LocalSocketProgressReader::readProgress);
       connect(connection, static_cast<void (QLocalSocket::*)(
                             QLocalSocket::LocalSocketError socketError)>(
-                            &QLocalSocket::error),
+                            &QLocalSocket::errorOccurred),
               [this](QLocalSocket::LocalSocketError socketError) {
                 if (socketError != QLocalSocket::PeerClosedError) {
                   qCritical()
