@@ -15,7 +15,8 @@
 #include "vtkSMViewProxy.h"
 #include "vtkSmartPointer.h"
 #include <pqColorChooserButton.h>
-#include <vtkGridAxes3DActor.h>
+#include <vtkGridAxesActor3D.h>
+#include <vtkGridAxesHelper.h>
 #include <vtkPVRenderView.h>
 #include <vtkProperty.h>
 #include <vtkRenderer.h>
@@ -353,7 +354,7 @@ void ModuleOutline::initializeGridAxes(DataSource* data,
   m_gridAxes->SetVisibility(0);
   m_gridAxes->SetGenerateGrid(false);
 
-  // Work around a bug in vtkGridAxes3DActor. GetProperty() returns the
+  // Work around a bug in vtkGridAxesActor3D. GetProperty() returns the
   // vtkProperty associated with a single face, so to get a property associated
   // with all the faces, we need to create a new one and set it.
   vtkNew<vtkProperty> prop;
@@ -361,20 +362,20 @@ void ModuleOutline::initializeGridAxes(DataSource* data,
   m_gridAxes->SetProperty(prop);
 
   // Set mask to show labels on all axes
-  m_gridAxes->SetLabelMask(vtkGridAxes3DActor::LabelMasks::MIN_X |
-                           vtkGridAxes3DActor::LabelMasks::MIN_Y |
-                           vtkGridAxes3DActor::LabelMasks::MIN_Z |
-                           vtkGridAxes3DActor::LabelMasks::MAX_X |
-                           vtkGridAxes3DActor::LabelMasks::MAX_Y |
-                           vtkGridAxes3DActor::LabelMasks::MAX_Z);
+  m_gridAxes->SetLabelMask(vtkGridAxesHelper::LabelMasks::MIN_X |
+                           vtkGridAxesHelper::LabelMasks::MIN_Y |
+                           vtkGridAxesHelper::LabelMasks::MIN_Z |
+                           vtkGridAxesHelper::LabelMasks::MAX_X |
+                           vtkGridAxesHelper::LabelMasks::MAX_Y |
+                           vtkGridAxesHelper::LabelMasks::MAX_Z);
 
   // Set mask to render all faces
-  m_gridAxes->SetFaceMask(vtkGridAxes3DActor::FaceMasks::MAX_XY |
-                          vtkGridAxes3DActor::FaceMasks::MAX_YZ |
-                          vtkGridAxes3DActor::FaceMasks::MAX_ZX |
-                          vtkGridAxes3DActor::FaceMasks::MIN_XY |
-                          vtkGridAxes3DActor::FaceMasks::MIN_YZ |
-                          vtkGridAxes3DActor::FaceMasks::MIN_ZX);
+  m_gridAxes->SetFaceMask(vtkGridAxesHelper::Faces::MAX_XY |
+                          vtkGridAxesHelper::Faces::MAX_YZ |
+                          vtkGridAxesHelper::Faces::MAX_ZX |
+                          vtkGridAxesHelper::Faces::MIN_XY |
+                          vtkGridAxesHelper::Faces::MIN_YZ |
+                          vtkGridAxesHelper::Faces::MIN_ZX);
 
   // Enable front face culling
   prop->SetFrontfaceCulling(1);

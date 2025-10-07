@@ -738,7 +738,6 @@ target_link_libraries(tomvizlib
     ParaView::pqPython
     ParaView::RemotingExport
     ParaView::RemotingViews
-    VTK::glew
     VTK::jsoncpp
     VTK::pugixml
     VTK::tiff

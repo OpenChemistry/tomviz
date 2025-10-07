@@ -12,7 +12,7 @@
 class vtkSMSourceProxy;
 class vtkSMProxy;
 class vtkPVRenderView;
-class vtkGridAxes3DActor;
+class vtkGridAxesActor3D;
 
 namespace tomviz {
 
@@ -53,7 +53,7 @@ private:
   vtkWeakPointer<vtkSMSourceProxy> m_outlineFilter;
   vtkWeakPointer<vtkSMProxy> m_outlineRepresentation;
   vtkWeakPointer<vtkPVRenderView> m_view;
-  vtkNew<vtkGridAxes3DActor> m_gridAxes;
+  vtkNew<vtkGridAxesActor3D> m_gridAxes;
   pqPropertyLinks m_links;
 
   bool m_axesVisibility = false;

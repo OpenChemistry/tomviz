@@ -4,6 +4,10 @@
 #include "AboutDialog.h"
 #include "ui_AboutDialog.h"
 
+#include "pqApplicationCore.h"
+#include "pqServerManagerModel.h"
+#include "pqServer.h"
+
 #include "PythonUtilities.h"
 #include "tomvizConfig.h"
 
@@ -11,8 +15,9 @@
 
 #include <vtkNew.h>
 #include <vtkRenderWindow.h>
-
-#include <vtk_glew.h>
+#include "vtkPVOpenGLInformation.h"
+#include "vtkPVRenderingCapabilitiesInformation.h"
+#include "vtkSMSession.h"
 
 #include <QString>
 #include <QTreeWidget>
@@ -36,17 +41,23 @@ void buildJson(QJsonObject& details)
 // Get OpenGL information, focus on VTK's view.
 void buildOpenGL(QJsonObject& details)
 {
-  vtkNew<vtkRenderWindow> window;
-  window->SetOffScreenRendering(1);
-  window->Render();
-  details["openglVendor"] =
-    QString(reinterpret_cast<const char*>(glGetString(GL_VENDOR)));
-  details["openglVersion"] =
-    QString(reinterpret_cast<const char*>(glGetString(GL_VERSION)));
-  details["openglRenderer"] =
-    QString(reinterpret_cast<const char*>(glGetString(GL_RENDERER)));
-  details["openglShaderVersion"] = QString(
-    reinterpret_cast<const char*>(glGetString(GL_SHADING_LANGUAGE_VERSION)));
+  pqServerManagerModel* smmodel = pqApplicationCore::instance()->getServerManagerModel();
+  QList<pqServer*> servers = smmodel->findItems<pqServer*>();
+  if (!servers.empty())
+  {
+    vtkSMSession* session = servers[0]->session();
+    vtkNew<vtkPVRenderingCapabilitiesInformation> renInfo;
+    session->GatherInformation(vtkPVSession::RENDER_SERVER, renInfo.GetPointer(), 0);
+    if (renInfo->Supports(vtkPVRenderingCapabilitiesInformation::RENDERING))
+    {
+      vtkNew<vtkPVOpenGLInformation> OpenGLInfo;
+      session->GatherInformation(vtkPVSession::RENDER_SERVER, OpenGLInfo.GetPointer(), 0);
+      details["openglVendor"] = QString::fromStdString(OpenGLInfo->GetVendor());
+      details["openglVersion"] = QString::fromStdString(OpenGLInfo->GetVersion());
+      details["openglRenderer"] = QString::fromStdString(OpenGLInfo->GetRenderer());
+      details["openglShaderVersion"] = QString("unknown");
+    }
+  }
 }
 
 void buildPython(QJsonObject& details)
