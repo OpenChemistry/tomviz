@@ -78,13 +78,6 @@ Pipeline* findPipeline(QStringList& path, QString id = QString())
   return pipelines[pipelineIndex];
 }
 
-Pipeline* findPipeline(const QString& path, QString id = QString())
-{
-  auto parts = path.split("/", Qt::SkipEmptyParts);
-
-  return findPipeline(parts, id);
-}
-
 Operator* findOperator(QStringList& path, QString id = QString())
 {
   auto pipeline = findPipeline(path);
