@@ -3,6 +3,8 @@
 
 #include "PyXRFRunner.h"
 
+#include "DataExchangeFormat.h"
+#include "DataSource.h"
 #include "LoadDataReaction.h"
 #include "ProgressDialog.h"
 #include "PyXRFMakeHDF5Dialog.h"
@@ -13,10 +15,16 @@
 
 #include <QDebug>
 #include <QDir>
+#include <QFileInfo>
 #include <QFutureWatcher>
 #include <QMessageBox>
 #include <QPointer>
 #include <QtConcurrent>
+
+#include <vtkDataArray.h>
+#include <vtkImageData.h>
+#include <vtkNew.h>
+#include <vtkPointData.h>
 
 namespace tomviz {
 
@@ -460,16 +468,61 @@ public:
       ret.append(item.toString().c_str());
     }
 
+    if (ret.size() == 0) {
+      qCritical("No elements were extracted");
+      return;
+    }
+
     QString title = "Element extraction complete";
     auto text =
-      QString("Elements were extracted to \"%1\".\n\nLoad the first one "
-              "(\"%2\") into Tomviz?")
-        .arg(outputPath)
-        .arg(ret[0]);
+      QString("Elements were extracted to \"%1\".\n\nLoad them into Tomviz?")
+        .arg(outputPath);
     if (QMessageBox::question(parentWidget, title, text) == QMessageBox::Yes) {
-      // Load the first one
-      LoadDataReaction::loadData(ret[0]);
+      loadElementsIntoArray(ret);
     }
+  }
+
+  void loadElementsIntoArray(const QStringList& fileList) {
+    // Load the first file into a DataSource
+    auto* dataSource = LoadDataReaction::loadData(fileList[0]);
+    if (!dataSource || !dataSource->imageData()) {
+      qCritical() << "Failed to load file:" << fileList[0];
+      return;
+    }
+
+    auto* rootImageData = dataSource->imageData();
+    auto* rootPointData = rootImageData->GetPointData();
+    auto newRootName = QFileInfo(fileList[0]).baseName();
+    rootPointData->GetScalars()->SetName(newRootName.toStdString().c_str());
+
+    // The other files should have identical metadata. We'll just load
+    // the image data for those, and add them to the point data.
+    DataExchangeFormat format;
+    for (int i = 1; i < fileList.size(); ++i) {
+      vtkNew<vtkImageData> imageData;
+      format.read(fileList[i].toStdString(), imageData);
+      if (!imageData) {
+        qCritical() << "Failed to read image data for file:" << fileList[i];
+        continue;
+      }
+
+      auto* scalars = imageData->GetPointData()->GetScalars();
+      auto newName = QFileInfo(fileList[i]).baseName();
+      scalars->SetName(newName.toStdString().c_str());
+
+      // Add the array to the root image data
+      rootPointData->AddArray(scalars);
+    }
+
+    // Sort the list, and make the first one alphabetically be selected
+    auto sortedList = fileList;
+    sortedList.sort();
+    auto firstName = QFileInfo(sortedList[0]).baseName();
+
+    dataSource->setActiveScalars(firstName.toStdString().c_str());
+    dataSource->setFileNames(fileList);
+    dataSource->setLabel("Extracted Elements");
+    dataSource->dataModified();
   }
 };
 
