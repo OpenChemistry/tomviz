@@ -16,8 +16,6 @@
 
 class vtkImageData;
 
-Q_DECLARE_METATYPE(vtkSmartPointer<vtkImageData>)
-
 namespace tomviz {
 
 class DataBrokerCall : public QObject
