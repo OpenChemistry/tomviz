@@ -457,6 +457,9 @@ void addPathWidget(QGridLayout* layout, int row, QJsonObject& pathNode)
     if (type == "file") {
       path = QFileDialog::getOpenFileName(tomviz::mainWidget(), "Select File",
                                           browseDir, filter);
+    } else if (type == "save_file") {
+      path = QFileDialog::getSaveFileName(tomviz::mainWidget(), "Save File Path",
+                                          browseDir, filter);
     } else {
       path = QFileDialog::getExistingDirectory(tomviz::mainWidget(),
                                                "Select Directory", browseDir);
@@ -566,6 +569,8 @@ void addDatasetWidget(QGridLayout* layout, int row, QJsonObject& parameterNode)
   layout->addWidget(comboBox, row, 1, 1, 1);
 }
 
+static const QStringList PATH_TYPES = { "file", "save_file", "directory" };
+
 } // end anonymous namespace
 
 namespace tomviz {
@@ -646,7 +651,7 @@ QLayout* InterfaceBuilder::buildParameterInterface(QGridLayout* layout,
       addEnumerationWidget(layout, i + 1, parameterObject);
     } else if (typeString == "xyz_header") {
       addXYZHeaderWidget(layout, i + 1, parameterObject);
-    } else if (typeString == "file" || typeString == "directory") {
+    } else if (PATH_TYPES.contains(typeString)) {
       addPathWidget(layout, i + 1, parameterObject);
     } else if (typeString == "string") {
       addStringWidget(layout, i + 1, parameterObject);
@@ -910,14 +915,13 @@ QVariantMap InterfaceBuilder::parameterValues(const QObject* parent)
     }
   }
 
-  // QLineEdit's ( currently 'file' and 'directory' types ).
-  QStringList pathTypes = { "file", "directory" };
+  // QLineEdit's ( currently 'file', 'save_file', and 'directory' types ).
   QList<QLineEdit*> lineEdits = parent->findChildren<QLineEdit*>();
   for (int i = 0; i < lineEdits.size(); ++i) {
     auto lineEdit = lineEdits[i];
     QVariant type = lineEdit->property("type");
     bool canConvertTypeToString = QMetaType::canConvert(type.metaType(), QMetaType(QMetaType::QString));
-    if (canConvertTypeToString && pathTypes.contains(type.toString())) {
+    if (canConvertTypeToString && PATH_TYPES.contains(type.toString())) {
       map[lineEdit->objectName()] = lineEdit->text();
     } else if (canConvertTypeToString && type.toString() == "string") {
       map[lineEdit->objectName()] = lineEdit->text();
