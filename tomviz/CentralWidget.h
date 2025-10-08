@@ -10,10 +10,11 @@
 #include <QWidget>
 
 #include <vtkSmartPointer.h>
+#include <vtkTable.h>
 
 class vtkImageData;
 class vtkPVDiscretizableColorTransferFunction;
-class vtkTable;
+
 
 class QThread;
 class QTimer;

@@ -12,6 +12,7 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QMimeData>
+#include <QRegExp>
 
 #include <algorithm>
 #include <chrono>

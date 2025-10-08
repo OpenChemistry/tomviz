@@ -64,6 +64,7 @@
 #include <QJsonArray>
 #include <QLayout>
 #include <QMessageBox>
+#include <QStandardPaths>
 #include <QString>
 #include <QUrl>
 
