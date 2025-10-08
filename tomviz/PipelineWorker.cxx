@@ -93,9 +93,12 @@ private:
   QList<Operator*> m_operators;
   State m_state = State::CREATED;
 };
+} // namespace tomviz
 
 #include "PipelineWorker.moc"
 
+
+namespace tomviz {
 PipelineWorker::RunnableOperator::RunnableOperator(Operator* op,
                                                    vtkDataObject* data,
                                                    QObject* parent)
