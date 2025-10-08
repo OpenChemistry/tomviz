@@ -201,7 +201,8 @@ void PipelineWorker::Run::cancel()
   m_state = State::CANCELED;
   // Try to cancel the currently running operator
   if (m_running != nullptr) {
-    QThreadPool::globalInstance()->cancel(m_running);
+    if (QThreadPool::globalInstance()->tryTake(m_running))
+      m_running->deleteLater();
     m_running->cancel();
     m_running = nullptr;
   } else {
