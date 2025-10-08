@@ -212,7 +212,7 @@ public:
     progressDialog->clearOutputWidget();
     progressDialog->setText("Generating HDF5 Files...");
     progressDialog->show();
-    auto future = QtConcurrent::run(this, &Internal::_runMakeHDF5);
+    auto future = QtConcurrent::run(std::bind(&Internal::_runMakeHDF5, this));
     makeHDF5FutureWatcher.setFuture(future);
   }
 
@@ -303,7 +303,7 @@ public:
     progressDialog->clearOutputWidget();
     progressDialog->setText("Processing projections...");
     progressDialog->show();
-    auto future = QtConcurrent::run(this, &Internal::_runProcessProjections);
+    auto future = QtConcurrent::run(std::bind(&Internal::_runProcessProjections, this));
     processFutureWatcher.setFuture(future);
   }
 

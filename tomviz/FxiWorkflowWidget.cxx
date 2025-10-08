@@ -515,7 +515,7 @@ public:
   void startGeneratingTestImages()
   {
     progressDialog->show();
-    auto future = QtConcurrent::run(this, &Internal::generateTestImages);
+    auto future = QtConcurrent::run(std::bind(&Internal::generateTestImages, this));
     futureWatcher.setFuture(future);
   }
 
