@@ -21,7 +21,6 @@ void Connection::registerType()
   static bool registered = false;
   if (!registered) {
     registered = true;
-    qRegisterMetaTypeStreamOperators<tomviz::Connection>("tomviz::Connection");
   }
 }
 
