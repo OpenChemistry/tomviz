@@ -22,7 +22,7 @@ IntSliderWidget::IntSliderWidget(bool showLineEdit, QWidget* p) : QWidget(p)
   this->StrictRange = false;
 
   QHBoxLayout* l = new QHBoxLayout(this);
-  l->setMargin(0);
+  l->setContentsMargins(0, 0, 0, 0);
   this->Slider = new QSlider(Qt::Horizontal, this);
   this->Slider->setRange(this->Minimum, this->Maximum);
   this->Slider->setFocusPolicy(Qt::StrongFocus);

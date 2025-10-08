@@ -149,7 +149,7 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   m_timer->setInterval(200);
   m_timer->setSingleShot(true);
   connect(m_timer.data(), SIGNAL(timeout()), SLOT(refreshHistogram()));
-  layout()->setMargin(0);
+  layout()->setContentsMargins(0, 0, 0, 0);
   layout()->setSpacing(0);
 
   m_ui->imageViewerSlider->setVisible(false);
