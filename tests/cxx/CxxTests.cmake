@@ -25,7 +25,7 @@ macro(add_cxx_qtest name)
 
   set(_executable_name "qtest${name}")
   add_executable(${_executable_name} ${_test_src})
-  target_link_libraries(${_executable_name} tomvizlib Qt5::Test)
+  target_link_libraries(${_executable_name} tomvizlib Qt6::Test)
 
   add_test(NAME "${name}" COMMAND ${_executable_name})
   if(_pythonpath)
