@@ -13,10 +13,6 @@ namespace tomviz {
 QVTKGLWidget::QVTKGLWidget(QWidget* parent, Qt::WindowFlags f)
   : QVTKOpenGLNativeWidget(parent, f)
 {
-  // Set some defaults for our render window.
-  QSurfaceFormat glFormat = QVTKOpenGLNativeWidget::defaultFormat();
-  glFormat.setSamples(8);
-  setFormat(glFormat);
 }
 
 QVTKGLWidget::~QVTKGLWidget() = default;
