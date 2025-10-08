@@ -338,7 +338,7 @@ public slots:
 
       QStringList angleStrings = content.split(QRegularExpression("\\s+"));
       int maxRows =
-        std::min(angleStrings.size(), this->tableWidget->rowCount());
+        std::min(static_cast<int>(angleStrings.size()), this->tableWidget->rowCount());
       for (int i = 0; i < maxRows; ++i) {
         QTableWidgetItem* item = this->tableWidget->item(i, 0);
         item->setData(Qt::DisplayRole, angleStrings[i]);
