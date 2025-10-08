@@ -109,12 +109,11 @@ def set_array(dataobject, newarray, minextent=None, isFortran=True):
         arr = newarray.reshape(-1, order='F')
         vtkshape = newarray.shape
     else:
-        print('Warning, array does not have Fortran order, making deep copy '
-              'and fixing...')
+        # This used to print a warning, but we shouldn't worry about
+        # it...
         vtkshape = newarray.shape
         tmp = np.asfortranarray(newarray)
         arr = tmp.reshape(-1, order='F')
-        print('...done.')
 
     if not is_numpy_vtk_type(arr):
         arr = arr.astype(np.float32)
