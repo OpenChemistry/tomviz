@@ -199,7 +199,7 @@ void ModuleOutline::addToPanel(QWidget* panel)
   QCheckBox* showGrid = new QCheckBox(QString("Show Grid"));
   showGrid->setChecked(m_gridAxes->GetGenerateGrid());
 
-  connect(showGrid, &QCheckBox::stateChanged, this, [this](int state) {
+  connect(showGrid, &QCheckBox::checkStateChanged, this, [this](int state) {
     m_gridAxes->SetGenerateGrid(state == Qt::Checked);
     emit renderNeeded();
   });
@@ -274,7 +274,7 @@ void ModuleOutline::addToPanel(QWidget* panel)
     useCustomAxesTitles->setEnabled(false);
     customAxesTitlesGroupBox->setVisible(false);
   }
-  connect(showAxes, &QCheckBox::stateChanged, this,
+  connect(showAxes, &QCheckBox::checkStateChanged, this,
           [this, showGrid, useCustomAxesTitles](int state) {
             m_gridAxes->SetVisibility(state == Qt::Checked);
             m_axesVisibility = state == Qt::Checked;

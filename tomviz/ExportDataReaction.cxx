@@ -274,7 +274,7 @@ bool ExportDataReaction::exportData(const QString& filename)
         QCheckBox* checkBox = new QCheckBox;
         checkBox->setText("Show this message again");
         checkBox->setChecked(true);
-        connect(checkBox, &QCheckBox::stateChanged, [settings](int state) {
+        connect(checkBox, &QCheckBox::checkStateChanged, [settings](int state) {
           settings->setValue("tomviz/export/ShowFileTypeWarning",
                              QVariant(state != 0));
         });
@@ -304,7 +304,7 @@ bool ExportDataReaction::exportData(const QString& filename)
           QCheckBox* checkBox = new QCheckBox;
           checkBox->setText("Show this message again");
           checkBox->setChecked(true);
-          connect(checkBox, &QCheckBox::stateChanged, [settings](int state) {
+          connect(checkBox, &QCheckBox::checkStateChanged, [settings](int state) {
             settings->setValue("tomviz/export/ShowNormalizedFloatWarning",
                                QVariant(state != 0));
           });
