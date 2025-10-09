@@ -194,7 +194,7 @@ bool writeTheta(h5::H5ReadWrite& writer, vtkImageData* image)
     return false;
 
   // Assume /exchange already exists
-  return writer.writeData("/exchange", "theta", { angles.size() },
+  return writer.writeData("/exchange", "theta", { static_cast<int>(angles.size()) },
                           angles.data());
 }
 
