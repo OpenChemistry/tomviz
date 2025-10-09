@@ -780,12 +780,10 @@ QVariantMap InterfaceBuilder::parameterValues(const QObject* parent)
   for (int i = 0; i < lineEdits.size(); ++i) {
     auto lineEdit = lineEdits[i];
     QVariant type = lineEdit->property("type");
-
-    if (type.canConvert(QMetaType::QString) &&
-        pathTypes.contains(type.toString())) {
+    bool canConvertTypeToString = QMetaType::canConvert(type.metaType(), QMetaType(QMetaType::QString));
+    if (canConvertTypeToString && pathTypes.contains(type.toString())) {
       map[lineEdit->objectName()] = lineEdit->text();
-    } else if (type.canConvert(QMetaType::QString) &&
-               type.toString() == "string") {
+    } else if (canConvertTypeToString && type.toString() == "string") {
       map[lineEdit->objectName()] = lineEdit->text();
     }
   }
