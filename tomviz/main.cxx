@@ -27,7 +27,6 @@ int main(int argc, char** argv)
   QCoreApplication::setApplicationName("tomviz");
   QCoreApplication::setApplicationVersion(TOMVIZ_VERSION);
   QCoreApplication::setOrganizationName("tomviz");
-  QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 
   tomviz::InitializePythonEnvironment(argc, argv);
 
