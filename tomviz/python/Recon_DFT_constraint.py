@@ -175,7 +175,7 @@ def dfm3(input, angles, Npad):
         projection = input[:, :, a].astype(np.float32) #2D projection image
         p = np.lib.pad(projection, ((0, 0), (pad_pre, pad_post)),
                        'constant', constant_values=(0, 0)) #pad zeros
-        p = np.fft.ifftshift(p)
+        p = np.ascontiguousarray(np.fft.ifftshift(p))
         p_fftw_object.update_arrays(p, pF)
         p_fftw_object()
 
