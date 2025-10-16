@@ -1,7 +1,10 @@
+from tomviz import utils
+
+
+@utils.apply_to_each_array
 def transform(dataset):
     """Downsample tilt images by a factor of 2"""
 
-    from tomviz import utils
     import scipy.ndimage
     import numpy as np
     import warnings

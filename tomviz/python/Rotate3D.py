@@ -1,11 +1,9 @@
-# Rotate a 3D dataset using SciPy Interpolation libraries.
-#
-# Developed as part of the tomviz project (www.tomviz.com).
+from tomviz import utils
 
 
+@utils.apply_to_each_array
 def transform(dataset, rotation_angle=90.0, rotation_axis=0):
 
-    from tomviz import utils
     import numpy as np
     from scipy import ndimage
 

@@ -17,6 +17,14 @@ class Dataset:
         utils.set_array(self._data_object, v)
 
     @property
+    def active_name(self):
+        return utils.get_active_scalars_name(self._data_object)
+
+    @property
+    def num_scalars(self):
+        return len(self.scalars_names)
+
+    @property
     def scalars_names(self):
         return utils.array_names(self._data_object)
 

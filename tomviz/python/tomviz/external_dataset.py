@@ -38,6 +38,10 @@ class Dataset:
         self.arrays[self.active_name] = array
 
     @property
+    def num_scalars(self):
+        return len(self.arrays)
+
+    @property
     def scalars_names(self):
         return list(self.arrays.keys())
 
