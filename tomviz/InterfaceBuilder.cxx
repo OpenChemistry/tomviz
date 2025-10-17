@@ -345,12 +345,6 @@ void addEnumerationWidget(QGridLayout* layout, int row,
   }
   layout->addWidget(label, row, 0, 1, 1);
 
-  int defaultOption = 0;
-  QJsonValueRef defaultNode = parameterNode["default"];
-  if (!defaultNode.isUndefined() && isType<int>(defaultNode)) {
-    defaultOption = getAs<int>(defaultNode);
-  }
-
   QComboBox* comboBox = new QComboBox();
   comboBox->setObjectName(nameValue.toString());
   label->setBuddy(comboBox);
@@ -373,7 +367,19 @@ void addEnumerationWidget(QGridLayout* layout, int row,
     }
   }
 
-  comboBox->setCurrentIndex(defaultOption);
+  // Set the default if present
+  QJsonValueRef defaultNode = parameterNode["default"];
+  if (!defaultNode.isUndefined()) {
+    if (isType<int>(defaultNode)) {
+      comboBox->setCurrentIndex(getAs<int>(defaultNode));
+    } else if (defaultNode.isString()) {
+      // Find the data that matches, and set it
+      int defaultIndex = comboBox->findData(getAs<QString>(defaultNode));
+      if (defaultIndex >= 0) {
+        comboBox->setCurrentIndex(defaultIndex);
+      }
+    }
+  }
 
   layout->addWidget(comboBox, row, 1, 1, 1);
 }
@@ -436,6 +442,14 @@ void addPathWidget(QGridLayout* layout, int row, QJsonObject& pathNode)
   pathField->setProperty("type", type);
   pathField->setObjectName(nameValue.toString());
   pathField->setMinimumWidth(500);
+
+  // Set default if present
+  QJsonValueRef defaultNode = pathNode["default"];
+  if (!defaultNode.isUndefined() && defaultNode.isString()) {
+    auto defaultValue = getAs<QString>(defaultNode);
+    pathField->setText(defaultValue);
+  }
+
   horizontalLayout->addWidget(pathField);
   auto filter = pathNode["filter"].toString();
 
