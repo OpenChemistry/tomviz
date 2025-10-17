@@ -49,7 +49,7 @@ void OperatorPropertiesPanel::setOperator(Operator* op)
     } else {
       auto description = new QLabel(op->label());
       layout()->addWidget(description);
-      connect(op, &Operator::labelModified, [this, description]() {
+      connect(op, &Operator::labelModified, m_activeOperator, [this, description]() {
         description->setText(m_activeOperator->label());
       });
     }
