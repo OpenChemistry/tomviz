@@ -47,7 +47,7 @@
 static_assert(EIGEN_VERSION_AT_LEAST(3, 2, 7),
               "Eigen support in pybind11 requires Eigen >= 3.2.7");
 
-NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
+PYBIND11_NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
 
 // Provide a convenience alias for easier pass-by-ref usage with fully dynamic
 // strides:
@@ -57,7 +57,7 @@ using EigenDRef = Eigen::Ref<MatrixType, 0, EigenDStride>;
 template <typename MatrixType>
 using EigenDMap = Eigen::Map<MatrixType, 0, EigenDStride>;
 
-NAMESPACE_BEGIN(detail)
+PYBIND11_NAMESPACE_BEGIN(detail)
 
 #if EIGEN_VERSION_AT_LEAST(3, 3, 0)
 using EigenIndex = Eigen::Index;
@@ -758,8 +758,8 @@ struct type_caster<Type, enable_if_t<is_eigen_sparse<Type>::value>>
                          npy_format_descriptor<Scalar>::name + _("]"));
 };
 
-NAMESPACE_END(detail)
-NAMESPACE_END(PYBIND11_NAMESPACE)
+PYBIND11_NAMESPACE_END(detail)
+PYBIND11_NAMESPACE_END(PYBIND11_NAMESPACE)
 
 #if defined(__GNUG__) || defined(__clang__)
 #pragma GCC diagnostic pop
