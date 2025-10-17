@@ -116,9 +116,9 @@ struct EigenConformable
     }
   }
   // Vector type:
-  EigenConformable(EigenIndex r, EigenIndex c, EigenIndex stride)
-    : EigenConformable(r, c, r == 1 ? c * stride : stride,
-                       c == 1 ? r : r * stride)
+  EigenConformable(EigenIndex r, EigenIndex c, EigenIndex stride_)
+    : EigenConformable(r, c, r == 1 ? c * stride_ : stride_,
+                       c == 1 ? r : r * stride_)
   {
   }
 
