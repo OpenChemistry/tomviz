@@ -3,7 +3,11 @@
 
 #include "PythonUtilities.h"
 
+#pragma push_macro("slots")
+#undef slots
 #include "vtkPython.h" // must be first
+#pragma pop_macro("slots")
+
 #include "py3c.h"
 
 #include "core/DataSourceBase.h"
