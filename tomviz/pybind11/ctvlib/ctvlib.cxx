@@ -154,7 +154,7 @@ void ctvlib::normalization()
 // Create Local Copy of Reconstruction.
 void ctvlib::copy_recon()
 {
-  memcpy(temp_recon, recon, sizeof(recon));
+  temp_recon = recon;
 }
 
 // Measure the 2 norm between temporary and current reconstruction.
