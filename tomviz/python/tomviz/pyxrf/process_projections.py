@@ -55,6 +55,8 @@ def process_projections(working_directory, parameters_file_name, log_file_name,
     }
     process_proj(**kwargs)
 
+    # Ensure the output directory exists
+    Path(output_directory).mkdir(parents=True, exist_ok=True)
     kwargs = {
         'fn': 'tomo.h5',
         'fn_log': log_file_name,
