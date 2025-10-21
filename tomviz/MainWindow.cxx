@@ -258,6 +258,11 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   auto dataBrokerSaveReaction =
     new DataBrokerSaveReaction(m_ui->actionExportToDataBroker, this);
 
+  // Workflows menu
+  auto pyXRFRunner = new PyXRFRunner(this);
+  connect(m_ui->actionPyXRFWorkflow, &QAction::triggered, pyXRFRunner,
+          &PyXRFRunner::start);
+
   // Build Data Transforms menu
   new DataTransformMenu(this, m_ui->menuData, m_ui->menuSegmentation);
 
@@ -562,10 +567,6 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   auto pipelineSettingsDialog = new PipelineSettingsDialog(this);
   connect(m_ui->actionPipelineSettings, &QAction::triggered,
           pipelineSettingsDialog, &QWidget::show);
-
-  auto pyXRFRunner = new PyXRFRunner(this);
-  connect(m_ui->actionPyXRFWorkflow, &QAction::triggered, pyXRFRunner,
-          &PyXRFRunner::start);
 
   // Prepopulate the previously seen python readers/writers
   // This operation is fast since it fetches the readers description
