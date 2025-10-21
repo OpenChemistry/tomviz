@@ -711,7 +711,7 @@ void InterfaceBuilder::setupEnableStates(const QObject* parent,
       qCritical() << text << "parameters must have a name. Ignoring...";
       continue;
     }
-    auto* widget = findWidgetByName(parent, widgetName);
+    auto* widget = parent->findChild<QWidget*>(widgetName);
     if (!widget) {
       qCritical() << "Failed to find widget with name:" << widgetName;
       continue;
@@ -726,7 +726,7 @@ void InterfaceBuilder::setupEnableStates(const QObject* parent,
     auto refWidgetName = split[0];
     auto comparator = split[1];
     auto compareValue = split[2];
-    auto* refWidget = findWidgetByName(parent, refWidgetName);
+    auto* refWidget = parent->findChild<QWidget*>(refWidgetName);
 
     if (!refWidget) {
       qCritical() << "Invalid widget name in" << text << "string:" << enableIfValue;
@@ -743,16 +743,6 @@ void InterfaceBuilder::setupEnableStates(const QObject* parent,
       qCritical() << "Failed to set up" << text << "trigger for" << widgetName;
     }
   }
-}
-
-QWidget* InterfaceBuilder::findWidgetByName(const QObject* parent, const QString& name) const
-{
-  for (auto* child : parent->findChildren<QWidget*>()) {
-    if (child->objectName() == name) {
-      return child;
-    }
-  }
-  return nullptr;
 }
 
 QLayout* InterfaceBuilder::buildInterface() const
