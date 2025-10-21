@@ -1,18 +1,19 @@
+import abc
 import collections
 import copy
-import h5py
-import importlib
-import os
-import numpy as np
-import logging
-import tempfile
-import socket
-import abc
-import stat
-import json
-import six
 import errno
+import importlib
+import json
+import logging
+import os
+from pathlib import Path
+import socket
+import stat
+import tempfile
 
+import h5py
+import numpy as np
+import six
 from tqdm import tqdm
 
 from tomviz._internal import find_transform_function
@@ -592,7 +593,8 @@ def _read_data_exchange(path, options=None):
                 # Swap x and z axes
                 swap_keys = ['data', 'data_dark', 'data_white']
                 for key in swap_keys:
-                    datasets[key] = np.transpose(datasets[key], [2, 1, 0])
+                    if key in datasets:
+                        datasets[key] = np.transpose(datasets[key], [2, 1, 0])
 
         tilt_axis = None
         if 'theta' in datasets:
@@ -721,6 +723,7 @@ def _write_child_data(result, operator_index, output_file_path, dims):
 
 
 def load_dataset(data_file_path, read_options=None):
+    data_file_path = Path(data_file_path)
     if _is_data_exchange(data_file_path):
         output = _read_data_exchange(data_file_path, read_options)
     else:
