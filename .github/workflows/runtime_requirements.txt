@@ -1,0 +1,16 @@
+# General runtime dependencies
+numpy
+scipy
+marshmallow
+jsonpatch
+jsonpointer
+pyfftw
+pygments
+pystackreg
+# These are PyXRF workflow dependencies
+h5py
+pyxrf
+xrf-tomo
+xraylib
+scikit-beam
+tomopy
