@@ -1,0 +1,30 @@
+[project]
+name = "tomviz"
+authors = [
+    "Wei (Celia) Xu <xuw@bnl.gov>",
+    "Padraic Shafer <pshafer@bnl.gov>",
+    "https://github.com/silx-kit/pymca/blob/master/copyright",
+]
+channels = ["conda-forge"]
+description = "NSLS-II development branch for tomviz"
+platforms = ["linux-64"]
+version = "0.1.0"
+
+[tasks]
+tomviz = "bash ./tomviz.sh"
+
+[dependencies]
+python = "==3.11"
+
+[pypi-dependencies]
+bluesky-tiled-plugins = ">=2.0.0b64, <3"
+numpy = "<2"
+pydantic = ">=2.7"
+pyqt5 = ">=5.15.11, <6"
+qtconsole = ">=5.6.1, <6"
+tiled = { version = ">=0.1.6", extras = ["client"] }
+yq = "*"
+
+# Intentionally excluded 
+# Require a package version of tomviz from conda-forge or pixi-build-cmake
+# tomviz = { git = "https://github.com/nsls2/tomviz", branch = "master" }
