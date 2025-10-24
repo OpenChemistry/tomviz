@@ -140,6 +140,8 @@ public:
   {
     importModule();
 
+    Python python;
+
     if (!makeHDF5Func.isValid()) {
       makeHDF5Func = pyxrfModule.findFunction("make_hdf5");
       if (!makeHDF5Func.isValid()) {
