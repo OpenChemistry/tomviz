@@ -559,7 +559,11 @@ QJsonObject LoadDataReaction::readerProperties(vtkSMProxy* reader)
       props["fileNames"] = fileNames;
     }
     // Normalize to fileNames for single value.
-    else {
+    // FIXME: this used to always have at least one file name,
+    // but since the update to ParaView 6.0, it does not. Maybe
+    // we don't need it? Or maybe we need to use a different
+    // property name instead than "FileNames".
+    else if (fileNames.size() == 1) {
       props["fileName"] = fileNames[0];
     }
   }
