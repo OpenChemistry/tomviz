@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: ${{ matrix.config.name }}
+    name: ${{ matrix.config.name }} (Python ${{ matrix.python-version}})
     runs-on: ${{ matrix.config.os }}
     strategy:
       fail-fast: false
@@ -17,7 +17,7 @@ jobs:
         paraview-version: [v6.0.1]
         config:
         - {
-            name: "Linux",
+            name: Linux,
             os: ubuntu-latest
           }
 
