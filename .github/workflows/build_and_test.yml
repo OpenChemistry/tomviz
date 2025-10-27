@@ -1,10 +1,8 @@
-name: test
+name: build and test
 
 on:
   push:
-    # FIXME: switch this to master only
-    branches: ['**']
-    # branches: [ master ]
+    branches: [ master ]
   pull_request:
     branches: [ master ]
 
