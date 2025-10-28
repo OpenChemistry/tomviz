@@ -439,6 +439,10 @@ public:
     QStringList args;
 
     auto* process = new QProcess(this);
+
+    // Forward stdout/stderr to this process
+    process->setProcessChannelMode(QProcess::ForwardedChannels);
+
     process->start(program, args);
 
     pyxrfIsRunning = true;
