@@ -5,7 +5,6 @@ ninja
 pkg-config
 git-lfs
 tbb-devel
-py3c
 libprotobuf
 cgns
 libboost-headers

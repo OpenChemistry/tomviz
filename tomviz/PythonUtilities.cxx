@@ -8,8 +8,6 @@
 #include "vtkPython.h" // must be first
 #pragma pop_macro("slots")
 
-#include "py3c.h"
-
 #include "core/DataSourceBase.h"
 
 #include "DataSource.h"
@@ -106,7 +104,7 @@ bool Python::Object::isBool() const
 
 bool Python::Object::isString() const
 {
-  return PyStr_Check(m_smartPyObject->GetPointer());
+  return PyUnicode_Check(m_smartPyObject->GetPointer());
 }
 
 bool Python::Object::isInt() const
@@ -336,7 +334,7 @@ void Python::Dict::set(const QString& key, const Variant& value)
 QString Python::Dict::toString()
 {
   PyObject* objectRepr = PyObject_Repr(*this);
-  return PyStr_AsString(objectRepr);
+  return PyUnicode_AsUTF8(objectRepr);
 }
 
 Variant Python::Dict::toVariant()
@@ -434,7 +432,7 @@ Python::Object Python::Function::call(Tuple& args, Dict& kwargs)
 QString Python::Function::toString()
 {
   PyObject* objectRepr = PyObject_Repr(*this);
-  return PyStr_AsString(objectRepr);
+  return PyUnicode_AsUTF8(objectRepr);
 }
 
 Python::Object Python::VTK::GetObjectFromPointer(vtkObjectBase* ptr)
