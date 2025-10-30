@@ -29,6 +29,7 @@
 #include <QMimeData>
 #include <QPointer>
 #include <QPushButton>
+#include <QRegularExpression>
 #include <QSpinBox>
 #include <QString>
 #include <QTabWidget>
@@ -335,9 +336,9 @@ public slots:
           << QString("Unable to read '%1'.").arg(dialog.selectedFiles()[0]);
       }
 
-      QStringList angleStrings = content.split(QRegExp("\\s+"));
+      QStringList angleStrings = content.split(QRegularExpression("\\s+"));
       int maxRows =
-        std::min(angleStrings.size(), this->tableWidget->rowCount());
+        std::min(static_cast<int>(angleStrings.size()), this->tableWidget->rowCount());
       for (int i = 0; i < maxRows; ++i) {
         QTableWidgetItem* item = this->tableWidget->item(i, 0);
         item->setData(Qt::DisplayRole, angleStrings[i]);

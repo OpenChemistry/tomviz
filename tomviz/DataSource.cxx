@@ -442,7 +442,7 @@ QString DataSource::label() const
 
 QString DataSource::id() const
 {
-  return QString().sprintf("%p", static_cast<const void*>(this));
+  return QString::asprintf("%p", static_cast<const void*>(this));
 }
 
 template <typename T>

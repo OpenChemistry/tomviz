@@ -15,7 +15,7 @@
 #include <vtkCamera.h>
 #include <vtkColorTransferFunction.h>
 #include <vtkCommand.h>
-#include <vtkGridAxes3DActor.h>
+#include <vtkGridAxesActor3D.h>
 #include <vtkImageData.h>
 #include <vtkProperty.h>
 #include <vtkRenderWindow.h>

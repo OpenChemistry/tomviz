@@ -116,8 +116,8 @@ def main(data_path, state_file_path, output_file_path, progress_method,
          socket_path, operator_index, selected_data_source):
 
     # Extract the pipeline
-    with open(state_file_path) as fp:
-        state = json.load(fp, encoding='utf-8')
+    with open(state_file_path, encoding='utf-8') as fp:
+        state = json.load(fp)
 
     data_source, operators = _extract_pipeline(state, selected_data_source)
 

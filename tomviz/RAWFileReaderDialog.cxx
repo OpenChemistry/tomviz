@@ -41,7 +41,7 @@ RAWFileReaderDialog::RAWFileReaderDialog(vtkSMProxy* reader, QWidget* p)
     m_ui->dataType,
     static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
     this, &RAWFileReaderDialog::dataTypeChanged);
-  connect(m_ui->signedness, &QCheckBox::stateChanged, this,
+  connect(m_ui->signedness, &QCheckBox::checkStateChanged, this,
           &RAWFileReaderDialog::sanityCheckSize);
   connect(m_ui->numComponents,
           static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged), this,

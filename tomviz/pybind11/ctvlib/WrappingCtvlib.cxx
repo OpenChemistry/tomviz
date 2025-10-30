@@ -9,9 +9,9 @@
 
 namespace py = pybind11;
 
-PYBIND11_PLUGIN(ctvlib)
+PYBIND11_MODULE(ctvlib, m)
 {
-  py::module m("ctvlib", "C++ Tomography Reconstruction Scripts");
+  m.doc() = "C++ Tomography Reconstruction Scripts";
 
   py::class_<ctvlib>(m, "ctvlib")
     .def(pybind11::init<int, int, int>())
@@ -46,6 +46,4 @@ PYBIND11_PLUGIN(ctvlib)
          "Return the projection matrix to python")
     .def("restart_recon", &ctvlib::restart_recon,
          "Set all the Slices Equal to Zero");
-
-  return m.ptr();
 }

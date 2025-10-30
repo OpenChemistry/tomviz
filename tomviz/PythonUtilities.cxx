@@ -3,7 +3,10 @@
 
 #include "PythonUtilities.h"
 
+#pragma push_macro("slots")
+#undef slots
 #include "vtkPython.h" // must be first
+#pragma pop_macro("slots")
 
 #include "core/DataSourceBase.h"
 
@@ -16,7 +19,11 @@
 #include <vtkSmartPyObject.h>
 
 #include "pybind11/PythonTypeConversions.h"
+
+#pragma push_macro("slots")
+#undef slots
 #include <pybind11/pybind11.h>
+#pragma pop_macro("slots")
 
 namespace py = pybind11;
 
@@ -97,7 +104,7 @@ bool Python::Object::isBool() const
 
 bool Python::Object::isString() const
 {
-  return PyString_Check(m_smartPyObject->GetPointer());
+  return PyUnicode_Check(m_smartPyObject->GetPointer());
 }
 
 bool Python::Object::isInt() const
@@ -327,7 +334,7 @@ void Python::Dict::set(const QString& key, const Variant& value)
 QString Python::Dict::toString()
 {
   PyObject* objectRepr = PyObject_Repr(*this);
-  return PyString_AsString(objectRepr);
+  return PyUnicode_AsUTF8(objectRepr);
 }
 
 Variant Python::Dict::toVariant()
@@ -425,7 +432,7 @@ Python::Object Python::Function::call(Tuple& args, Dict& kwargs)
 QString Python::Function::toString()
 {
   PyObject* objectRepr = PyObject_Repr(*this);
-  return PyString_AsString(objectRepr);
+  return PyUnicode_AsUTF8(objectRepr);
 }
 
 Python::Object Python::VTK::GetObjectFromPointer(vtkObjectBase* ptr)

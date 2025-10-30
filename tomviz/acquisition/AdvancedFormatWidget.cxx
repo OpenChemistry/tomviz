@@ -4,6 +4,7 @@
 #include "AdvancedFormatWidget.h"
 
 #include "ui_AdvancedFormatWidget.h"
+#include <QRegExp>
 
 namespace tomviz {
 

@@ -1,8 +1,8 @@
 find_package(OpenGL REQUIRED)
 
 include_directories(SYSTEM
-  ${Qt5Widgets_INCLUDE_DIRS}
-  ${Qt5Concurrent_INCLUDE_DIRS}
+  ${Qt6Widgets_INCLUDE_DIRS}
+  ${Qt6Concurrent_INCLUDE_DIRS}
   ${PROJECT_SOURCE_DIR}/thirdparty/pybind11/include)
 
 add_subdirectory(core)
@@ -738,7 +738,6 @@ target_link_libraries(tomvizlib
     ParaView::pqPython
     ParaView::RemotingExport
     ParaView::RemotingViews
-    VTK::glew
     VTK::jsoncpp
     VTK::pugixml
     VTK::tiff
@@ -749,11 +748,12 @@ target_link_libraries(tomvizlib
     VTK::InteractionStyle
     VTK::RenderingVolume
     VTK::RenderingVolumeOpenGL2
-    Qt5::Network
+    Qt6::Network
   PRIVATE
+    Qt6::Core5Compat
     Python3::Python)
 if(WIN32)
-  target_link_libraries(tomvizlib PUBLIC Qt5::WinMain)
+  target_link_libraries(tomvizlib PUBLIC Qt6::WinMain)
 endif()
 if(APPLE)
   set_target_properties(tomviz

@@ -10,13 +10,14 @@
 #include <QObject>
 #include <QPointer>
 
+#include <vtkDataObject.h>
 #include <vtkObject.h>
 #include <vtkSmartPointer.h>
 #include <vtk_pugixml.h>
 
 #include "DataSource.h"
 
-class vtkDataObject;
+
 class vtkImageData;
 class QWidget;
 

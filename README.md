@@ -1,7 +1,5 @@
 ![tomviz_logo]
 
-[![Build Status](https://dev.azure.com/OpenChemistry/tomviz/_apis/build/status/OpenChemistry.tomviz?branchName=master)](https://dev.azure.com/OpenChemistry/tomviz/_build/latest?definitionId=1&branchName=master)
-
 The [Tomviz project][tomviz] is developing a cross platform, open source
 application for the processing, visualization, and analysis of 3D tomographic
 data. It features a complete pipeline capable processing data from alignment,

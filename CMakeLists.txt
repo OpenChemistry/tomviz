@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.3)
+cmake_minimum_required(VERSION 3.6)
 project(tomviz)
 
 include(GNUInstallDirs)
@@ -105,7 +105,7 @@ set(tomviz_version
   "${tomviz_version_major}.${tomviz_version_minor}.${tomviz_version_patch}")
 
 # These dependencies are inherited from ParaView.
-find_package(Qt5 REQUIRED COMPONENTS Concurrent Network Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Concurrent Network Widgets Core Core5Compat)
 find_package(ParaView REQUIRED)
 
 # Use automoc, autouic, and autorcc for our Qt code.

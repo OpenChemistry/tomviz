@@ -65,7 +65,7 @@ JsonRpcReply* JsonRpcClient::sendRequest(const QJsonObject& requestBody)
 
   connect(networkReply,
           static_cast<void (QNetworkReply::*)(QNetworkReply::NetworkError)>(
-            &QNetworkReply::error),
+            &QNetworkReply::errorOccurred),
           [rpcReply, networkReply](QNetworkReply::NetworkError code) {
             Q_UNUSED(code);
             QVariant statusCode =

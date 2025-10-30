@@ -33,7 +33,8 @@ QVariant PresetModel::data(const QModelIndex& index, int role) const
       return m_colorMaps.renderPreview(index.row());
 
     case Qt::TextAlignmentRole:
-      return Qt::AlignCenter + Qt::AlignVCenter;
+      // centers in both directions
+      return Qt::AlignCenter;
 
     case Qt::FontRole:
       if (m_colorMaps.presetName(index.row())

@@ -552,7 +552,7 @@ bool PipelineModel::setData(const QModelIndex& index, const QVariant& value,
 Qt::ItemFlags PipelineModel::flags(const QModelIndex& index) const
 {
   if (!index.isValid())
-    return 0;
+    return Qt::ItemFlags();
 
   auto treeItem = this->treeItem(index);
   auto module = treeItem->module();

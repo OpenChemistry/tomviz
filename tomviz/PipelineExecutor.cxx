@@ -73,7 +73,7 @@ const char* ExternalPipelineExecutor::PROGRESS_PATH = "progress";
 
 Pipeline::Future* ExternalPipelineExecutor::execute(vtkDataObject* data,
                                                     QList<Operator*> operators,
-                                                    int start, int end)
+                                                    int, int end)
 {
   if (end == -1) {
     end = operators.size();
@@ -494,7 +494,7 @@ LocalSocketProgressReader::LocalSocketProgressReader(
               &LocalSocketProgressReader::readProgress);
       connect(connection, static_cast<void (QLocalSocket::*)(
                             QLocalSocket::LocalSocketError socketError)>(
-                            &QLocalSocket::error),
+                            &QLocalSocket::errorOccurred),
               [this](QLocalSocket::LocalSocketError socketError) {
                 if (socketError != QLocalSocket::PeerClosedError) {
                   qCritical()

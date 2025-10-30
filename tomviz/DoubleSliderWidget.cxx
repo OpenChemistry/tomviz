@@ -26,7 +26,7 @@ DoubleSliderWidget::DoubleSliderWidget(bool showLineEdit, QWidget* p)
   this->KeyboardTracking = true;
 
   QHBoxLayout* l = new QHBoxLayout(this);
-  l->setMargin(0);
+  l->setContentsMargins(0, 0, 0, 0);
   this->Slider = new QSlider(Qt::Horizontal, this);
   this->Slider->setRange(0, this->Resolution);
   l->addWidget(this->Slider, 4);

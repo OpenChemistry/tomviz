@@ -1,9 +1,9 @@
-import collections
+import collections.abc
 import copy
 
 import numpy as np
 
-ARRAY_TYPES = (collections.Sequence, np.ndarray)
+ARRAY_TYPES = (collections.abc.Sequence, np.ndarray)
 
 
 class Dataset:

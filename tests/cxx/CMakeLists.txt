@@ -1,11 +1,11 @@
 include(CxxTests.cmake)
 
 find_package(GTest REQUIRED)
-find_package(Qt5 REQUIRED COMPONENTS Test)
+find_package(Qt6 REQUIRED COMPONENTS Test)
 
 include_directories(SYSTEM
   ${QtCore_INCLUDE_DIRS}
-  ${Qt5Test_INCLUDE_DIRS}
+  ${Qt6Test_INCLUDE_DIRS}
   ${PARAVIEW_INCLUDE_DIRS}
   ${GTEST_INCLUDE_DIRS})
 include_directories(${PROJECT_SOURCE_DIR}/tomviz)
@@ -57,4 +57,4 @@ add_cxx_qtest(AcquisitionClient PYTHONPATH "${CMAKE_SOURCE_DIR}/acquisition")
 # Generate the executable
 create_test_executable(tomvizTests)
 
-target_link_libraries(tomvizTests Qt5::Test)
+target_link_libraries(tomvizTests Qt6::Test)

@@ -129,7 +129,7 @@ bool ModuleSegment::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   Q_ASSERT(d->ContourRepresentation);
   vtkSMPropertyHelper(d->ContourRepresentation, "Representation")
     .Set("Surface");
-  vtkSMPropertyHelper(d->ContourRepresentation, "Position")
+  vtkSMPropertyHelper(d->ContourRepresentation, "Translation")
     .Set(data->displayPosition(), 3);
 
   updateColorMap();
@@ -255,7 +255,7 @@ void ModuleSegment::updateColorMap()
 void ModuleSegment::dataSourceMoved(double newX, double newY, double newZ)
 {
   double pos[3] = { newX, newY, newZ };
-  vtkSMPropertyHelper(d->ContourRepresentation, "Position").Set(pos, 3);
+  vtkSMPropertyHelper(d->ContourRepresentation, "Translation").Set(pos, 3);
 }
 
 } // namespace tomviz

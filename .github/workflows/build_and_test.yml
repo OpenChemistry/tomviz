@@ -1,0 +1,104 @@
+name: build and test
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    name: ${{ matrix.config.name }} (Python ${{ matrix.python-version}})
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.11, 3.12, 3.13]
+        paraview-version: [v6.0.1]
+        config:
+        - {
+            name: Linux,
+            os: ubuntu-latest
+          }
+
+    defaults:
+      run:
+        # Using a login shell is necessary to persist the conda environment
+        shell: bash -l {0}
+
+    steps:
+    - name: Set up Miniconda
+      uses: conda-incubator/setup-miniconda@v3
+      with:
+        channels: conda-forge
+        conda-remove-defaults: "true"
+        auto-update-conda: true
+        conda-solver: libmamba
+        python-version: ${{ matrix.python-version }}
+        activate-environment: tomviz
+
+    - name: Checkout Tomviz
+      uses: actions/checkout@v5
+      with:
+        submodules: recursive
+        path: tomviz
+
+    - name: Install Build Requirements
+      # I can't get the defaults channel fully removed, so we have to
+      # --override-channels here.
+      run: |
+        conda install -y --override-channels -c conda-forge --file tomviz/.github/workflows/build_requirements.txt
+        # Record the whole build environment for caching
+        conda env export > build_env.yml
+        echo "build_env.yml file contents is:"
+        cat build_env.yml
+
+    - name: Checkout ParaView
+      run: git clone -b ${{ matrix.paraview-version }} --recursive https://gitlab.kitware.com/paraview/paraview
+
+    # If nothing in the build environment changes, restore a cache of the
+    # ParaView build so we can skip rebuilding it and save a lot of time.
+    - name: Restore ParaView Build Cache
+      id: cache-paraview-restore
+      uses: actions/cache/restore@v4
+      with:
+        path: paraview-build
+        key: ${{ matrix.paraview-version }}-paraview-${{ hashFiles('build_env.yml') }}
+
+    - name: Build ParaView
+      if: steps.cache-paraview-restore.outputs.cache-hit != 'true'
+      run: bash tomviz/.github/workflows/scripts/build_paraview.sh
+
+    - name: Save ParaView Build Cache
+      if: steps.cache-paraview-restore.outputs.cache-hit != 'true'
+      id: cache-paraview-save
+      uses: actions/cache/save@v4
+      with:
+        path: paraview-build
+        key: ${{ steps.cache-paraview-restore.outputs.cache-primary-key }}
+
+    - name: Build Tomviz
+      run: bash tomviz/.github/workflows/scripts/build_tomviz.sh
+
+    - name: Install Runtime Requirements
+      # I can't get the defaults channel fully removed, so we have to
+      # --override-channels here.
+      run: conda install -y --override-channels -c conda-forge --file tomviz/.github/workflows/runtime_requirements.txt
+
+    - name: Install Test Requirements
+      run: |
+        conda install -y --override-channels -c conda-forge --file tomviz/tests/python/requirements-dev.txt
+        pip install --no-build-isolation --no-deps -U tomviz/tomviz/python
+        pip install --no-build-isolation --no-deps -U tomviz/acquisition
+
+    - name: Run Tests
+      run: |
+        cd tomviz-build
+        TOMVIZ_TEST_PYTHON_EXECUTABLE=$(which python3) ctest --output-on-failure
+
+    - name: Upload CTest Log (On Failure Only)
+      if: ${{ failure() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: TomvizCTestLog.log
+        path: tomviz-build/Testing/Temporary/LastTest.log
