@@ -95,3 +95,10 @@ jobs:
       run: |
         cd tomviz-build
         TOMVIZ_TEST_PYTHON_EXECUTABLE=$(which python3) ctest --output-on-failure
+
+    - name: Upload CTest Log (On Failure Only)
+      if: ${{ failure() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: TomvizCTestLog.log
+        path: tomviz-build/Testing/Temporary/LastTest.log
