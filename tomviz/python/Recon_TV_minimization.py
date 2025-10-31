@@ -139,7 +139,7 @@ class ReconTVOperator(tomviz.operators.CompletableOperator):
 
 
 def tv_derivative(recon):
-    r = np.lib.pad(recon, ((1, 1), (1, 1), (1, 1)), 'edge')
+    r = np.pad(recon, ((1, 1), (1, 1), (1, 1)), 'edge')
     v1n = 3 * r - np.roll(r, 1, axis=0) - \
                           np.roll(r, 1, axis=1) - np.roll(r, 1, axis=2) # noqa TODO reformat this
     v1d = np.sqrt(1e-8 + (r - np.roll(r, 1, axis=0))**2 + (r -
@@ -169,7 +169,7 @@ def tv_derivative(recon):
 
 
 def tv(recon):
-    r = np.lib.pad(recon, ((1, 1), (1, 1), (1, 1)), 'edge')
+    r = np.pad(recon, ((1, 1), (1, 1), (1, 1)), 'edge')
     tv = np.sqrt(1e-8 + (r - np.roll(r, -1, axis=0))**2 +
                  (r - np.roll(r, -1, axis=1))**2 +
                  (r - np.roll(r, -1, axis=2))**2)

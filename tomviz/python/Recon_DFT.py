@@ -54,8 +54,8 @@ class ReconDFMOperator(tomviz.operators.CancelableOperator):
 
             ang = tiltAngles[a] * np.pi / 180
             projection = tiltSeries[:, :, a] #2D projection image
-            p = np.lib.pad(projection, ((0, 0), (pad_pre, pad_post)),
-                           'constant', constant_values=(0, 0)) #pad zeros
+            p = np.pad(projection, ((0, 0), (pad_pre, pad_post)),
+                       'constant', constant_values=(0, 0)) #pad zeros
             p = np.ascontiguousarray(np.float32(np.fft.ifftshift(p)))
             p_fftw_object.update_arrays(p, pF)
             p_fftw_object()
