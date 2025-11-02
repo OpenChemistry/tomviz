@@ -4,10 +4,14 @@
 #ifndef ctvlib_h
 #define ctvlib_h
 
+#if TOMVIZ_USE_EXTERNAL_VTK
+#include <Eigen/Core>
+#include <Eigen/SparseCore>
+#else
 #include <vtk_eigen.h>
-
 #include VTK_EIGEN(Core)
 #include VTK_EIGEN(SparseCore)
+#endif
 
 class ctvlib
 {

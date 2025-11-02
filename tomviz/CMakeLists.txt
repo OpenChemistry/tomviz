@@ -755,6 +755,7 @@ target_link_libraries(tomvizlib
 if(WIN32)
   target_link_libraries(tomvizlib PUBLIC Qt6::WinMain)
 endif()
+
 if(APPLE)
   set_target_properties(tomviz
     PROPERTIES
