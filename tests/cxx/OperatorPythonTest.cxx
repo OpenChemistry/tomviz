@@ -74,7 +74,7 @@ TEST_F(OperatorPythonTest, transform_function)
 TEST_F(OperatorPythonTest, operator_transform)
 {
   pythonOperator->setLabel("operator_transform");
-  QFile file(QString("%1/fixtures/operator.py").arg(SOURCE_DIR));
+  QFile file(QString("%1/fixtures/test_operator.py").arg(SOURCE_DIR));
   if (file.open(QIODevice::ReadOnly)) {
     QByteArray array = file.readAll();
     QString script(array);
