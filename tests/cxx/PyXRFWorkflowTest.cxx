@@ -173,7 +173,8 @@ private slots:
     QVERIFY(allFound);
 
     // Verify that one of the output files now exist
-
+    auto exampleFile = workingDir + "recon/extracted_elements/Cl_K.h5";
+    QVERIFY(QFileInfo::exists(exampleFile));
   }
 
 };

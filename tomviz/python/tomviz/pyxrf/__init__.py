@@ -1,3 +1,5 @@
+import os
+
 try:
     from .load_output import list_elements, extract_elements  # noqa
     from .make_hdf5 import make_hdf5  # noqa
@@ -8,6 +10,10 @@ except ImportError:
 
     import traceback
     import_error_exc = traceback.format_exc()
+
+    if 'TOMVIZ_REQUIRE_PYXRF' in os.environ:
+        # Raise an exception so we can be notified if PyXRF import fails
+        raise
 
 
 def installed():
