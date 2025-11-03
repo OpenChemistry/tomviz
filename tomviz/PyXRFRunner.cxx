@@ -304,6 +304,9 @@ public:
     icName = processDialog->icName();
     outputDirectory = processDialog->outputDirectory();
 
+    // Make sure the output directory exists
+    QDir().mkpath(outputDirectory);
+
     // Run process projections
     runProcessProjections();
   }

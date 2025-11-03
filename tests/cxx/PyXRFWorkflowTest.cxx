@@ -25,7 +25,8 @@
 
 using namespace tomviz;
 
-const QDir DATA_DIR = QString(SOURCE_DIR) + "/data/Pt_Zn_Phase";
+const QDir ROOT_DATA_DIR = QString(SOURCE_DIR) + "/data";
+const QDir DATA_DIR = ROOT_DATA_DIR.absolutePath() + "/Pt_Zn_Phase";
 
 template <typename T>
 T* findWidget()
@@ -64,11 +65,8 @@ private:
 
     // We unzip into the parent directory, which will then have `Pt_Zn_Phase`
     // after unzipping.
-    QDir dataDirParent = DATA_DIR;
-    dataDirParent.cdUp();
-
     QStringList arguments;
-    arguments << scriptPath << url << dataDirParent.absolutePath();
+    arguments << scriptPath << url << ROOT_DATA_DIR.absolutePath();
 
     QProcess process;
     process.setProcessChannelMode(QProcess::ForwardedChannels);
@@ -173,6 +171,9 @@ private slots:
 
     // Verify everything was found
     QVERIFY(allFound);
+
+    // Verify that one of the output files now exist
+
   }
 
 };
