@@ -1,22 +1,7 @@
-qt6-main>=6.9.3
 cxx-compiler
 cmake
 ninja
-pkg-config
-git-lfs
-tbb-devel
-libprotobuf
-cgns
-libboost-headers
-libzip
-libcurl
-icu
-libharu
-libxml2-devel=2.14*
-vtk==9.5.2
+paraview==6.0.1
+vtk
 # This is needed for building the tests
 gtest
-# Next three are Linux only
-libgl-devel
-libegl-devel
-libglvnd-devel
