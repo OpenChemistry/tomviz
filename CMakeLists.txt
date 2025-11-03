@@ -104,9 +104,17 @@ endif()
 set(tomviz_version
   "${tomviz_version_major}.${tomviz_version_minor}.${tomviz_version_patch}")
 
+option(TOMVIZ_USE_EXTERNAL_VTK "Use an external VTK." OFF)
+mark_as_advanced(TOMVIZ_USE_EXTERNAL_VTK)
+
 # These dependencies are inherited from ParaView.
 find_package(Qt6 REQUIRED COMPONENTS Concurrent Network Widgets Core Core5Compat)
 find_package(ParaView REQUIRED)
+
+if(TOMVIZ_USE_EXTERNAL_VTK)
+  find_package(VTK REQUIRED)
+  add_definitions(-DTOMVIZ_USE_EXTERNAL_VTK)
+endif()
 
 # Use automoc, autouic, and autorcc for our Qt code.
 set(CMAKE_AUTOMOC ON)

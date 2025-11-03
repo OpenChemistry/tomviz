@@ -35,10 +35,14 @@
   disable : 4996) // warning C4996: std::unary_negate is deprecated in C++17
 #endif
 
+#if TOMVIZ_USE_EXTERNAL_VTK
+#include <Eigen/Core>
+#include <Eigen/SparseCore>
+#else
 #include <vtk_eigen.h>
-
 #include VTK_EIGEN(Core)
 #include VTK_EIGEN(SparseCore)
+#endif
 
 // Eigen prior to 3.2.7 doesn't have proper move constructors--but worse, some
 // classes get implicit move constructors that break things.  We could detect
