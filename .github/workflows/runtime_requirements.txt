@@ -9,6 +9,7 @@ pygments
 pystackreg
 # These are PyXRF workflow dependencies
 h5py
+hxntools
 pyxrf
 xrf-tomo
 xraylib
