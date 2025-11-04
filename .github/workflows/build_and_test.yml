@@ -14,7 +14,6 @@ jobs:
       fail-fast: false
       matrix:
         python-version: [3.11, 3.12, 3.13]
-        paraview-version: [v6.0.1]
         config:
         - {
             name: Linux,
@@ -52,30 +51,6 @@ jobs:
         conda env export > build_env.yml
         echo "build_env.yml file contents is:"
         cat build_env.yml
-
-    - name: Checkout ParaView
-      run: git clone -b ${{ matrix.paraview-version }} --recursive https://gitlab.kitware.com/paraview/paraview
-
-    # If nothing in the build environment changes, restore a cache of the
-    # ParaView build so we can skip rebuilding it and save a lot of time.
-    - name: Restore ParaView Build Cache
-      id: cache-paraview-restore
-      uses: actions/cache/restore@v4
-      with:
-        path: paraview-build
-        key: ${{ matrix.paraview-version }}-paraview-${{ hashFiles('build_env.yml') }}
-
-    - name: Build ParaView
-      if: steps.cache-paraview-restore.outputs.cache-hit != 'true'
-      run: bash tomviz/.github/workflows/scripts/build_paraview.sh
-
-    - name: Save ParaView Build Cache
-      if: steps.cache-paraview-restore.outputs.cache-hit != 'true'
-      id: cache-paraview-save
-      uses: actions/cache/save@v4
-      with:
-        path: paraview-build
-        key: ${{ steps.cache-paraview-restore.outputs.cache-primary-key }}
 
     - name: Build Tomviz
       run: bash tomviz/.github/workflows/scripts/build_tomviz.sh
