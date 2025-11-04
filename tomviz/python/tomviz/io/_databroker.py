@@ -10,11 +10,11 @@ TILED_URL = os.getenv("TILED_URL", DEFAULT_URL)
 try:
     from tiled.client import from_uri
     from tiled.client.cache import Cache
-    c = from_uri(TILED_URL, cache=Cache.in_memory(capacity=1e6))
     #from tiled.client import from_profile
     #c = from_profile("fxi")
     from databroker.queries import TimeRange, ScanID
     _installed = True
+    c = None
 except ImportError:
     pass
 except Exception:
@@ -26,7 +26,15 @@ def installed():
     return _installed
 
 
+def initialize():
+    global c
+    if c is None:
+        c = from_uri(TILED_URL, cache=Cache(capacity=1e6))
+
+
 def catalogs():
+    initialize()
+
     cats = []
     for name in c:
         cats.append({
@@ -40,6 +48,8 @@ def catalogs():
 
 
 def runs(catalog_name, id, since, until, limit):
+    initialize()
+
     runs = []
 
     current = c[catalog_name]['raw']
