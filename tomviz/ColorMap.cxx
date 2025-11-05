@@ -108,10 +108,14 @@ QPixmap ColorMap::renderPreview(int index) const
 
   QJsonDocument doc(pqPreset);
   QString preset(doc.toJson(QJsonDocument::Compact));
+  QByteArray presetLatin1 = preset.toLatin1();
 
   Json::Value colors;
-  Json::Reader reader;
-  reader.parse(preset.toLatin1().data(), colors);
+  std::string errors;
+  Json::CharReaderBuilder builder;
+  std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
+  reader->parse(presetLatin1.data(), presetLatin1.data() + presetLatin1.size(),
+               &colors, &errors);
 
   pqPresetToPixmap PixMapRenderer;
   return PixMapRenderer.render(colors, QSize(135, 20));
@@ -141,9 +145,15 @@ void ColorMap::applyPreset(int index, vtkSMProxy* proxy) const
 
   QJsonDocument doc(pqPreset);
   QString chosen(doc.toJson(QJsonDocument::Compact));
+  QByteArray chosenLatin1 = chosen.toLatin1();
   Json::Value value;
-  Json::Reader reader;
-  reader.parse(chosen.toLatin1().data(), value);
+  std::string errors;
+  Json::CharReaderBuilder builder;
+  std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
+  reader->parse(chosenLatin1.data(), chosenLatin1.data() + chosenLatin1.size(),
+               &value, &errors);
+
+
   vtkSMTransferFunctionProxy::ApplyPreset(proxy, value, true);
 }
 

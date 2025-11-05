@@ -19,9 +19,9 @@ using tomviz::MetadataType;
 
 PYBIND11_VTK_TYPECASTER(vtkImageData)
 
-PYBIND11_PLUGIN(_wrapping)
+PYBIND11_MODULE(_wrapping, m)
 {
-  py::module m("_wrapping", "tomviz wrapped classes");
+  m.doc() = "tomviz wrapped classes";
 
   py::class_<OperatorPythonWrapper>(m, "OperatorPythonWrapper")
     .def(py::init([](void* op) { return new OperatorPythonWrapper(op); }))
@@ -80,5 +80,4 @@ PYBIND11_PLUGIN(_wrapping)
     .def("execute_pipeline", &PipelineStateManager::executePipeline)
     .def("pipeline_paused", &PipelineStateManager::pipelinePaused);
 
-  return m.ptr();
 }

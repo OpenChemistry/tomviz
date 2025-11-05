@@ -397,11 +397,11 @@ void PassiveAcquisitionWidget::startLocalServer()
   });
 
   connect(
-    m_serverProcess, static_cast<void (QProcess::*)(int)>(&QProcess::finished),
-    [](int exitCode) {
+    m_serverProcess, static_cast<void (QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished),
+    [](int exitCode, QProcess::ExitStatus exitStatus) {
       qWarning() << QString(
-                      "The acquisition server has exited with exit code: %1")
-                      .arg(exitCode);
+                      "The acquisition server has exited with exit code: %1 %2")
+        .arg(exitCode, exitStatus);
     });
 
   connect(m_serverProcess, &QProcess::readyReadStandardError,

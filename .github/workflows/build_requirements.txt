@@ -1,0 +1,8 @@
+cxx-compiler
+cmake
+ninja
+paraview==6.0.1
+vtk
+libxml2-devel=2.14*
+# This is needed for building the tests
+gtest

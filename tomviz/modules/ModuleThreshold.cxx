@@ -89,7 +89,7 @@ bool ModuleThreshold::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   Q_ASSERT(m_thresholdRepresentation);
   vtkSMRepresentationProxy::SetRepresentationType(m_thresholdRepresentation,
                                                   "Surface");
-  vtkSMPropertyHelper(m_thresholdRepresentation, "Position")
+  vtkSMPropertyHelper(m_thresholdRepresentation, "Translation")
     .Set(data->displayPosition(), 3);
   vtkSMPropertyHelper(m_thresholdRepresentation, "Orientation")
     .Set(data->displayOrientation(), 3);
@@ -357,7 +357,7 @@ bool ModuleThreshold::deserialize(const QJsonObject& json)
 void ModuleThreshold::dataSourceMoved(double newX, double newY, double newZ)
 {
   double pos[3] = { newX, newY, newZ };
-  vtkSMPropertyHelper(m_thresholdRepresentation, "Position").Set(pos, 3);
+  vtkSMPropertyHelper(m_thresholdRepresentation, "Translation").Set(pos, 3);
   m_thresholdRepresentation->UpdateVTKObjects();
 }
 

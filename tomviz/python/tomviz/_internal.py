@@ -8,7 +8,8 @@ import inspect
 import sys
 import os
 import fnmatch
-import imp
+import importlib.machinery
+import importlib.util
 import json
 import traceback
 
@@ -126,9 +127,13 @@ def find_transform_function(transform_module, op=None):
 
 def _load_module(operator_dir, python_file):
     module_name, _ = os.path.splitext(python_file)
-    fp, pathname, description = imp.find_module(module_name, [operator_dir])
-    module = imp.load_module(module_name, fp, pathname, description)
-
+    spec = importlib.machinery.PathFinder.find_spec(module_name, [operator_dir])
+    if spec is None:
+        raise ImportError(f"No module named '{module_name}' found in {operator_dir}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    if spec.loader:
+        spec.loader.exec_module(module)
     return module
 
 

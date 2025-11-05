@@ -173,12 +173,12 @@ void CameraReaction::addAllActionsToToolBar(QToolBar* toolBar)
     QIcon(":/pqWidgets/Icons/pqZMinus.svg"), "-Z");
   new CameraReaction(setViewMinusZ, CameraReaction::RESET_NEGATIVE_Z);
 
-  QScopedPointer<QToolButton> toolButton(new QToolButton);
+  std::unique_ptr<QToolButton> toolButton(new QToolButton);
   toolButton->setIcon(QIcon(":/pqWidgets/Icons/pqXPlus.svg"));
   toolButton->setMenu(menuResetViewDirection);
   toolButton->setToolTip(tr("Reset view direction"));
   toolButton->setPopupMode(QToolButton::InstantPopup);
-  toolBar->addWidget(toolButton.take());
+  toolBar->addWidget(toolButton.release());
 
   QAction* rotateCameraCW =
     toolBar->addAction(QIcon(":/pqWidgets/Icons/pqRotateCameraCW.svg"),

@@ -264,7 +264,7 @@ QJsonObject Module::serialize() const
   }
   json["properties"] = props;
   json["activeScalars"] = activeScalarsName();
-  json["id"] = QString().sprintf("%p", static_cast<const void*>(this));
+  json["id"] = QString::asprintf("%p", static_cast<const void*>(this));
   json["type"] = ModuleFactory::moduleType(this);
   json["viewId"] = static_cast<int>(this->view()->GetGlobalID());
 
@@ -341,7 +341,7 @@ bool Module::setVisibility(bool val) {
   return true;
 }
 
-bool Module::updateClippingPlane(vtkPlane* plane, bool newFilter)
+bool Module::updateClippingPlane(vtkPlane*, bool)
 {
   return false;
 }

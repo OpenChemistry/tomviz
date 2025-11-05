@@ -10,10 +10,11 @@
 #include <QWidget>
 
 #include <vtkSmartPointer.h>
+#include <vtkTable.h>
 
 class vtkImageData;
 class vtkPVDiscretizableColorTransferFunction;
-class vtkTable;
+
 
 class QThread;
 class QTimer;
@@ -37,7 +38,7 @@ class CentralWidget : public QWidget
   Q_OBJECT
 
 public:
-  CentralWidget(QWidget* parent = nullptr, Qt::WindowFlags f = nullptr);
+  CentralWidget(QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
   ~CentralWidget() override;
 
 public slots:

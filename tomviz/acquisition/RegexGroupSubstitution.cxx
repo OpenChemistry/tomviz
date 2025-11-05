@@ -23,8 +23,6 @@ void RegexGroupSubstitution::registerType()
   static bool registered = false;
   if (!registered) {
     registered = true;
-    qRegisterMetaTypeStreamOperators<tomviz::RegexGroupSubstitution>(
-      "tomviz::RegexGroupSubstitution");
   }
 }
 

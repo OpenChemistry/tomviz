@@ -612,7 +612,7 @@ void RotateAlignWidget::getValues(QMap<QString, QVariant>& map)
   // Swap x and y for the shift if we are doing vertical alignment
   auto orientation = this->Internals->m_orientation;
   if (orientation != 0)
-    shift.swap(0, 1);
+    shift.swapItemsAt(0, 1);
 
   map.insert("SHIFT", shift);
   map.insert("rotation_angle", this->Internals->m_tiltRotation);

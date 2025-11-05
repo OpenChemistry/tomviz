@@ -102,7 +102,7 @@
          </widget>
         </item>
         <item row="1" column="1">
-         <layout class="QHBoxLayout" name="filterByID">
+         <layout class="QHBoxLayout" name="filterByID1">
           <item>
            <widget class="QLineEdit" name="idLineEdit">
             <property name="enabled">
@@ -156,7 +156,7 @@
          </layout>
         </item>
         <item row="2" column="1">
-         <layout class="QHBoxLayout" name="filterByID">
+         <layout class="QHBoxLayout" name="filterByID2">
           <item>
            <widget class="QSpinBox" name="limitSpinBox">
             <property name="maximum">

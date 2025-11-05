@@ -35,10 +35,14 @@
   disable : 4996) // warning C4996: std::unary_negate is deprecated in C++17
 #endif
 
+#if TOMVIZ_USE_EXTERNAL_VTK
+#include <Eigen/Core>
+#include <Eigen/SparseCore>
+#else
 #include <vtk_eigen.h>
-
 #include VTK_EIGEN(Core)
 #include VTK_EIGEN(SparseCore)
+#endif
 
 // Eigen prior to 3.2.7 doesn't have proper move constructors--but worse, some
 // classes get implicit move constructors that break things.  We could detect
@@ -47,7 +51,7 @@
 static_assert(EIGEN_VERSION_AT_LEAST(3, 2, 7),
               "Eigen support in pybind11 requires Eigen >= 3.2.7");
 
-NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
+PYBIND11_NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
 
 // Provide a convenience alias for easier pass-by-ref usage with fully dynamic
 // strides:
@@ -57,7 +61,7 @@ using EigenDRef = Eigen::Ref<MatrixType, 0, EigenDStride>;
 template <typename MatrixType>
 using EigenDMap = Eigen::Map<MatrixType, 0, EigenDStride>;
 
-NAMESPACE_BEGIN(detail)
+PYBIND11_NAMESPACE_BEGIN(detail)
 
 #if EIGEN_VERSION_AT_LEAST(3, 3, 0)
 using EigenIndex = Eigen::Index;
@@ -116,9 +120,9 @@ struct EigenConformable
     }
   }
   // Vector type:
-  EigenConformable(EigenIndex r, EigenIndex c, EigenIndex stride)
-    : EigenConformable(r, c, r == 1 ? c * stride : stride,
-                       c == 1 ? r : r * stride)
+  EigenConformable(EigenIndex r, EigenIndex c, EigenIndex stride_)
+    : EigenConformable(r, c, r == 1 ? c * stride_ : stride_,
+                       c == 1 ? r : r * stride_)
   {
   }
 
@@ -758,8 +762,8 @@ struct type_caster<Type, enable_if_t<is_eigen_sparse<Type>::value>>
                          npy_format_descriptor<Scalar>::name + _("]"));
 };
 
-NAMESPACE_END(detail)
-NAMESPACE_END(PYBIND11_NAMESPACE)
+PYBIND11_NAMESPACE_END(detail)
+PYBIND11_NAMESPACE_END(PYBIND11_NAMESPACE)
 
 #if defined(__GNUG__) || defined(__clang__)
 #pragma GCC diagnostic pop

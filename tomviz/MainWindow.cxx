@@ -94,7 +94,7 @@ QString getAutosaveFile()
 {
   // workaround to get user config location
   QString dataPath;
-  dataPath = QStandardPaths::writableLocation(QStandardPaths::DataLocation);
+  dataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
   QDir dataDir(dataPath);
   if (!dataDir.exists()) {
     dataDir.mkpath(dataPath);
@@ -1086,8 +1086,8 @@ std::vector<OperatorDescription> MainWindow::findCustomOperators()
   }
   // Search in data locations.
   // For example on window C:/Users/<USER>/AppData/Local/tomviz
-  foreach (QString path,
-           QStandardPaths::standardLocations(QStandardPaths::DataLocation)) {
+  for (QString path:
+           QStandardPaths::standardLocations(QStandardPaths::AppDataLocation)) {
     if (QFile(path).exists()) {
       paths.append(path);
     }

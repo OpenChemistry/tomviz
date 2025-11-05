@@ -95,7 +95,7 @@ void SaveScreenshotReaction::saveScreenshot(MainWindow* mw)
   int n = format.indexOf(")") - startPos;
   QString extensionString = format.mid(startPos, n);
   QStringList extensions =
-    extensionString.split(QRegularExpression(" ?\\*"), QString::SkipEmptyParts);
+    extensionString.split(QRegularExpression(" ?\\*"), Qt::SkipEmptyParts);
   bool hasExtension = false;
   for (QString& str : extensions) {
     if (filename.endsWith(str)) {

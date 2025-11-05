@@ -64,6 +64,7 @@
 #include <QJsonArray>
 #include <QLayout>
 #include <QMessageBox>
+#include <QStandardPaths>
 #include <QString>
 #include <QUrl>
 
@@ -432,26 +433,26 @@ bool deserialize(vtkSMProxy* proxy, const pugi::xml_node& in,
 
 bool serialize(const QVariant& value, pugi::xml_node& out)
 {
-  switch (value.type()) {
-    case QVariant::Int:
+  switch (value.typeId()) {
+    case QMetaType::Int:
       out.append_attribute("type").set_value("int");
       out.append_attribute("value").set_value(value.toInt());
       return true;
-    case QVariant::Double:
+    case QMetaType::Double:
       out.append_attribute("type").set_value("double");
       out.append_attribute("value").set_value(value.toDouble());
       return true;
-    case QVariant::Bool:
+    case QMetaType::Bool:
       out.append_attribute("type").set_value("bool");
       out.append_attribute("value").set_value(value.toBool());
       return true;
-    case QVariant::String: {
+    case QMetaType::QString: {
       out.append_attribute("type").set_value("string");
       out.append_attribute("value").set_value(
         value.toString().toLatin1().data());
       return true;
     }
-    case QVariant::List: {
+    case QMetaType::QVariantList: {
       out.append_attribute("type").set_value("list");
       QVariantList list = value.toList();
       for (auto itr = list.begin(); itr != list.end(); ++itr) {
@@ -864,22 +865,22 @@ void deleteLayoutContents(QLayout* layout)
 
 Variant toVariant(const QVariant& value)
 {
-  switch (value.type()) {
-    case QVariant::Int:
+  switch (value.typeId()) {
+    case QMetaType::Int:
       return Variant(value.toInt());
-    case QVariant::Double:
+    case QMetaType::Double:
       return Variant(value.toDouble());
-    case QVariant::Bool:
+    case QMetaType::Bool:
       return Variant(value.toBool());
-    case QVariant::String: {
+    case QMetaType::QString: {
       QString str = value.toString();
       return Variant(str.toStdString());
     }
-    case QVariant::List: {
+    case QMetaType::QVariantList: {
       QVariantList list = value.toList();
       return toVariant(list);
     }
-    case QVariant::Map: {
+    case QMetaType::QVariantMap: {
       QVariantMap map = value.toMap();
       return toVariant(map);
     }
@@ -1692,7 +1693,7 @@ QStringList pluginsWithSubstring(const QString& substring)
   QStringList ret;
 
   auto pluginPaths =
-    QString(TOMVIZ_PLUGIN_PATHS).split(';', QString::SkipEmptyParts);
+    QString(TOMVIZ_PLUGIN_PATHS).split(';', Qt::SkipEmptyParts);
   for (auto path : pluginPaths) {
     QFileInfo info(path);
     if (info.fileName().contains(substring)) {
@@ -1726,7 +1727,7 @@ bool loadPlugins()
 
   // TOMVIZ_PLUGIN_PATHS is a semicolon delimited list of plugins to load
   auto pluginPaths =
-    QString(TOMVIZ_PLUGIN_PATHS).split(';', QString::SkipEmptyParts);
+    QString(TOMVIZ_PLUGIN_PATHS).split(';', Qt::SkipEmptyParts);
   for (auto path : pluginPaths) {
     if (!loadPlugin(path)) {
       success = false;

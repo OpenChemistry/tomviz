@@ -58,7 +58,7 @@ bool Tvh5Format::write(const std::string& fileName)
   H5ReadWrite::OpenMode mode = H5ReadWrite::OpenMode::ReadWrite;
   H5ReadWrite writer(fileName, mode);
 
-  if (!writer.writeData("/", "tomviz_state", { state.size() }, state.data())) {
+  if (!writer.writeData("/", "tomviz_state", { static_cast<int>(state.size()) }, state.data())) {
     cerr << "Failed to write tomviz_state" << endl;
     return false;
   }

@@ -618,6 +618,7 @@ void Pipeline::moveModulesDown(DataSource* newChildDataSource)
   }
 }
 
+} // namespace tomviz
 #include "Pipeline.moc"
 
-} // namespace tomviz
+

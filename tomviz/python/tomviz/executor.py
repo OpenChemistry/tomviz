@@ -540,15 +540,15 @@ def _write_emd(path, dataset, dims=None):
         tomography_group = data_group.create_group('tomography')
         tomography_group.attrs.create('emd_group_type', 1, dtype='uint32')
         data = tomography_group.create_dataset('data', data=active_array)
-        data.attrs['name'] = np.string_(dataset.active_name)
+        data.attrs['name'] = np.bytes_(dataset.active_name)
 
         dims = _get_dims_for_writing(dataset, data, dims)
 
         # add dimension vectors
         for dim in dims:
             d = tomography_group.create_dataset(dim.path, dim.values.shape)
-            d.attrs['name'] = np.string_(dim.name)
-            d.attrs['units'] = np.string_(dim.units)
+            d.attrs['name'] = np.bytes_(dim.name)
+            d.attrs['units'] = np.bytes_(dim.units)
             d[:] = dim.values
 
         # If we have extra scalars add them under tomviz_scalars

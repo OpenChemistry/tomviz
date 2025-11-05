@@ -6,6 +6,7 @@
 #include "ui_BasicFormatWidget.h"
 
 #include <QDebug>
+#include <QRegExp>
 
 namespace tomviz {
 
