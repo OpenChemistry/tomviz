@@ -145,6 +145,9 @@ set(PYTHON_INCLUDE_DIR ${Python3_INCLUDE_DIR} CACHE PATH "Tomviz")
 set(PYTHON_LIBRARY ${Python3_LIBRARY} CACHE PATH "Tomviz")
 set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE} CACHE PATH "Tomviz")
 
+# This will be used by tomvizPythonConfig.h.in
+add_definitions(-DPYTHON_VERSION_MINOR="${Python3_VERSION_MINOR}")
+
 set(PYBIND11_CPP_STANDARD "-std=c++11" CACHE STRING "")
 add_subdirectory(${PROJECT_SOURCE_DIR}/thirdparty/pybind11)
 
