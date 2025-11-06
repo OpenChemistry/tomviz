@@ -5,7 +5,7 @@ authors = [
     "Padraic Shafer <pshafer@bnl.gov>",
     "https://github.com/OpenChemistry/tomviz?tab=readme-ov-file#cite-tomviz",
 ]
-description = "NSLS-II development branch for tomviz"
+description = "Environment to run tomviz"
 version = "0.1.0"
 channels = ["conda-forge"]
 platforms = ["linux-64"]
