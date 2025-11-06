@@ -18,6 +18,7 @@
 #define TOMVIZ_DATA_INSTALL_DIR "@tomviz_data_install_dir@/Data"
 #define TOMVIZ_PATH_FROM_EXE_TO_PYTHON_INSTALL_DIR "@tomviz_path_from_exe_to_python_install_dir@"
 
+#include <cstdlib>
 #include <string>
 #include <vtksys/SystemTools.hxx>
 
@@ -66,6 +67,12 @@ void PythonAppInitPrependPathWindows(const std::string& exe_dir)
                                    "/../lib/paraview/site-packages/vtk");
     PythonAppInitPrependPythonPath(exe_dir + "/../lib/itk/site-packages");
   }
+
+  // Prepend conda prefix site packages if available
+  std::string conda_prefix = std::getenv("CONDA_PREFIX");
+  if (!conda_prefix.empty()) {
+    PythonAppInitPrependPythonPath(conda_prefix + "/Lib/site-packages");
+  }
 }
 
 //---------------------------------------------------------------------------
@@ -101,6 +108,17 @@ void PythonAppInitPrependPathLinux(const std::string& exe_dir)
     // Add the location of python .so libraries
     PythonAppInitPrependPythonPath(python_path + "/lib-dynload");
   }
+
+  // Prepend conda prefix site packages if available
+  std::string conda_prefix = std::getenv("CONDA_PREFIX");
+  if (!conda_prefix.empty()) {
+    PythonAppInitPrependPythonPath(
+        conda_prefix +
+        "/lib/python" +
+        PYTHON_VER +
+        "/site-packages"
+    );
+  }
 }
 
 //---------------------------------------------------------------------------
@@ -130,6 +148,17 @@ void PythonAppInitPrependPathOsX(const std::string& exe_dir)
     PythonAppInitPrependPythonPath(exe_dir + "/../Python");
     PythonAppInitPrependPythonPath(exe_dir + "/../Python/lib-dynload");
     PythonAppInitPrependPythonPath(exe_dir + "/../Python/site-packages");
+  }
+
+  // Prepend conda prefix site packages if available
+  std::string conda_prefix = std::getenv("CONDA_PREFIX");
+  if (!conda_prefix.empty()) {
+    PythonAppInitPrependPythonPath(
+        conda_prefix +
+        "/lib/python" +
+        PYTHON_VER +
+        "/site-packages"
+    );
   }
 }
 
