@@ -66,6 +66,10 @@ void PythonAppInitPrependPathWindows(const std::string& exe_dir)
     PythonAppInitPrependPythonPath(exe_dir +
                                    "/../lib/paraview/site-packages/vtk");
     PythonAppInitPrependPythonPath(exe_dir + "/../lib/itk/site-packages");
+    PythonAppInitPrependPythonPath(exe_dir +
+                                   "/../lib/python" +
+                                   PYTHON_VER +
+                                   "/site-packages");
   }
 
   // Prepend conda prefix site packages if available

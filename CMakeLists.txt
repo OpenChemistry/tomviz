@@ -32,8 +32,18 @@ if(UNIX AND NOT APPLE)
   endif()
 endif()
 
+find_package(Python3 COMPONENTS Interpreter Development)
+
+# Just add these to the cache so we can check them more easily...
+set(PYTHON_INCLUDE_DIR ${Python3_INCLUDE_DIR} CACHE PATH "Tomviz")
+set(PYTHON_LIBRARY ${Python3_LIBRARY} CACHE PATH "Tomviz")
+set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE} CACHE PATH "Tomviz")
+
+# This will be used by tomvizPythonConfig.h.in
+add_definitions(-DPYTHON_VERSION_MINOR="${Python3_VERSION_MINOR}")
+
 # Location where Python modules will be installed.
-set(tomviz_python_install_dir "${INSTALL_LIBRARY_DIR}/tomviz/site-packages")
+set(tomviz_python_install_dir "${INSTALL_LIBRARY_DIR}/python3.${Python3_VERSION_MINOR}/site-packages")
 # Location where Python modules will be copied to in binary tree.
 set(tomviz_python_binary_dir "${tomviz_BINARY_DIR}/lib/site-packages")
 # Location where sample data will be installed.
@@ -55,12 +65,14 @@ if(APPLE)
   set(INSTALL_DATA_DIR    "${prefix}/${INSTALL_DATA_DIR}")
   set(INSTALL_DOC_DIR     "${prefix}/${INSTALL_DOC_DIR}")
   set(INSTALL_CMAKE_DIR   "${prefix}/Resources")
-  set(tomviz_python_install_dir "${prefix}/Python")
   set(tomviz_data_install_dir "${prefix}/share/tomviz")
   set(tomviz_web_install_dir "${prefix}/share/tomviz/web")
   if(NOT CMAKE_INSTALL_NAME_DIR)
     set(CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/${INSTALL_LIBRARY_DIR}")
   endif()
+elseif(WIN32)
+  # Windows is a little different...
+  set(tomviz_python_install_dir "lib/site-packages")
 endif()
 
 # Get the relative path from the tomviz executable install location
@@ -133,20 +145,6 @@ if(NOT PARAVIEW_ENABLE_PYTHON)
 endif()
 
 find_package(ITK 4.9)
-
-# Many things changed in the find Python logic and ParaView's willingness to
-# share what version of Python it built against. In the end it wasn't worth
-# trying to support doing this automatically - try to feed everything the same
-# version of Python, using a superbuild will make this easier for you.
-find_package(Python3 COMPONENTS Interpreter Development)
-
-# Just add these to the cache so we can check them more easily...
-set(PYTHON_INCLUDE_DIR ${Python3_INCLUDE_DIR} CACHE PATH "Tomviz")
-set(PYTHON_LIBRARY ${Python3_LIBRARY} CACHE PATH "Tomviz")
-set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE} CACHE PATH "Tomviz")
-
-# This will be used by tomvizPythonConfig.h.in
-add_definitions(-DPYTHON_VERSION_MINOR="${Python3_VERSION_MINOR}")
 
 set(PYBIND11_CPP_STANDARD "-std=c++11" CACHE STRING "")
 add_subdirectory(${PROJECT_SOURCE_DIR}/thirdparty/pybind11)
