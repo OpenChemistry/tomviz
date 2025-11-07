@@ -91,6 +91,7 @@ private slots:
     QString workingDir = DATA_DIR.absolutePath() + "/";
 
     auto* runner = new PyXRFRunner(this);
+    runner->setAutoLoadFinalData(false);
     runner->start();
 
     auto* makeHDF5Dialog = findWidget<PyXRFMakeHDF5Dialog>();
@@ -128,31 +129,16 @@ private slots:
 
     // After accepting, a modal dialog will appear. Start posting
     // events to check it and accept it when it appears.
-    bool allFound = false;
-    auto checkFunc = [&allFound](){
+    bool found = false;
+    auto checkFunc = [&found](){
       auto* dialog = findWidget<SelectItemsDialog>();
       if (!dialog) {
         return;
       }
 
       // Just accept the dialog
-      // Another dialog will appear asking to load the datasets into
-      // Tomviz. We can just decline it.
-      // Declare the function first so we can call it recursively.
-      std::function<void()> declineNextDialog;
-      declineNextDialog = [&allFound, &declineNextDialog]() {
-        auto* finalDialog = qobject_cast<QDialog*>(QApplication::activeModalWidget());
-        if (!finalDialog) {
-          QTimer::singleShot(500, declineNextDialog);
-          return;
-        }
-
-        allFound = true;
-        finalDialog->reject();
-      };
-      QTimer::singleShot(0, declineNextDialog);
+      found = true;
       dialog->accept();
-      QApplication::processEvents();
     };
 
     QTimer::singleShot(0, checkFunc);
@@ -162,7 +148,7 @@ private slots:
     // been found and accepted/rejected.
     int timeElapsed = 0;
     int maxTime = 30;
-    while (!allFound && timeElapsed < maxTime) {
+    while (!found && timeElapsed < maxTime) {
       QThread::sleep(1);
       QTimer::singleShot(0, checkFunc);
       QApplication::processEvents();
@@ -170,7 +156,7 @@ private slots:
     }
 
     // Verify everything was found
-    QVERIFY(allFound);
+    QVERIFY(found);
 
     // Verify that one of the output files now exist
     auto exampleFile = workingDir + "recon/extracted_elements/Cl_K.h5";

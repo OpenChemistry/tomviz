@@ -66,6 +66,8 @@ public:
   // Recon options
   QStringList selectedElements;
 
+  bool autoLoadFinalData = true;
+
   Internal(PyXRFRunner* p) : parent(p)
   {
     setParent(p);
@@ -479,12 +481,14 @@ public:
       return;
     }
 
-    loadElementsIntoArray(ret);
-    QString title = "Element extraction complete";
-    auto text =
-      QString("Elements were extracted to \"%1\" and loaded into Tomviz")
-        .arg(outputPath);
-    QMessageBox::information(parentWidget, title, text);
+    if (autoLoadFinalData) {
+      loadElementsIntoArray(ret);
+      QString title = "Element extraction complete";
+      auto text =
+        QString("Elements were extracted to \"%1\" and loaded into Tomviz")
+          .arg(outputPath);
+      QMessageBox::information(parentWidget, title, text);
+    }
   }
 
   void loadElementsIntoArray(const QStringList& fileList) {
@@ -551,6 +555,11 @@ QString PyXRFRunner::importError()
 void PyXRFRunner::start()
 {
   m_internal->start();
+}
+
+void PyXRFRunner::setAutoLoadFinalData(bool b)
+{
+  m_internal->autoLoadFinalData = b;
 }
 
 } // namespace tomviz

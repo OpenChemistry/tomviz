@@ -22,6 +22,9 @@ public:
 
   void start();
 
+  // Whether to auto-load the final dataset after it finishes
+  void setAutoLoadFinalData(bool b);
+
   // Get the import error if the needed modules are not installed
   QString importError();
 
