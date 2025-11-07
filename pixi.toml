@@ -24,3 +24,35 @@ tiled = { version = ">=0.2.0", extras = ["client"] }
 # Launch Tomviz from the pixi environment
 tomviz = "tomviz"
 
+# -------------------------
+# Environments
+# -------------------------
+[environments]
+default = { solve-group = "default" }
+dev     = { features = ["dev"], solve-group = "default" }
+
+# -------------------------
+# Features
+# -------------------------
+# Dev-only tools and tasks (enabled when -e dev is used)
+[feature.dev.dependencies]
+pytest = "*"
+pytest-cov = "*"
+flake8 = "*"
+black = "*"
+mypy = "*"
+coverage = "*"
+codecov = "*"
+sphinx = "*"
+numpydoc = "*"
+ipython = "*"
+matplotlib = "*"
+sphinx-copybutton = "*"
+sphinx_rtd_theme = "*"
+
+[feature.dev.tasks]
+# Run tests + coverage + flake8 in one go (xviewlite-style)
+lint = "coverage run -m pytest && coverage report -m && codecov && flake8"
+# Build docs after linting (inline table syntax is required here)
+docs = { cmd = "make -C docs html", depends-on = ["lint"] }
+
