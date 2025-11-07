@@ -36,7 +36,7 @@ class ReconConstrintedDFMOperator(tomviz.operators.CancelableOperator):
         I_data = radial_average(tiltSeries, kr_cutoffs)
 
         (Nx, Ny, Nz) = recon_F.shape
-        #Note: Nz = np.int(Ny/2+1)
+        #Note: Nz = np.int64(Ny/2+1)
         Ntot = Nx * Ny * Ny
         f = pyfftw.n_byte_align_empty((Nx, Ny, Nz), 16, dtype=np.complex64)
         r = pyfftw.n_byte_align_empty((Nx, Ny, Ny), 16, dtype=np.float32)
@@ -186,7 +186,7 @@ def dfm3(input, angles, Npad):
             ang = np.pi + ang
 
         # Bilinear extrapolation
-        for i in range(0, np.int(np.ceil(Npad / 2)) + 1):
+        for i in range(0, np.int64(np.ceil(Npad / 2)) + 1):
             ky = i * dk
             #kz = 0
             ky_new = np.cos(ang) * ky #new coord. after rotation
