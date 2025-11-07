@@ -355,6 +355,8 @@ public:
     setIcName(settings->value("icName", "").toString());
     setOutputDirectory(
       settings->value("outputDirectory", defaultOutputDirectory()).toString());
+    setRotateDatasets(
+      settings->value("rotateDatasets", true).toBool());
 
     settings->endGroup();
     settings->endGroup();
@@ -370,6 +372,7 @@ public:
     settings->setValue("logFile", logFile());
     settings->setValue("icName", icName());
     settings->setValue("outputDirectory", outputDirectory());
+    settings->setValue("rotateDatasets", rotateDatasets());
 
     settings->endGroup();
     settings->endGroup();
@@ -530,6 +533,10 @@ public:
   QString outputDirectory() const { return ui.outputDirectory->text(); }
 
   void setOutputDirectory(QString s) { ui.outputDirectory->setText(s); }
+
+  bool rotateDatasets() const { return ui.rotateDatasets->isChecked(); }
+
+  void setRotateDatasets(bool b) { ui.rotateDatasets->setChecked(b); }
 };
 
 PyXRFProcessDialog::PyXRFProcessDialog(QString workingDirectory,
@@ -564,6 +571,11 @@ QString PyXRFProcessDialog::icName() const
 QString PyXRFProcessDialog::outputDirectory() const
 {
   return m_internal->outputDirectory();
+}
+
+bool PyXRFProcessDialog::rotateDatasets() const
+{
+  return m_internal->rotateDatasets();
 }
 
 } // namespace tomviz

@@ -61,6 +61,7 @@ public:
   QString icName;
   QString outputDirectory;
   bool skipProcessed = true;
+  bool rotateDatasets = true;
 
   // Recon options
   QStringList selectedElements;
@@ -303,6 +304,7 @@ public:
     logFile = processDialog->logFile();
     icName = processDialog->icName();
     outputDirectory = processDialog->outputDirectory();
+    rotateDatasets = processDialog->rotateDatasets();
 
     // Make sure the output directory exists
     QDir().mkpath(outputDirectory);
@@ -459,6 +461,7 @@ public:
     kwargs.set("filename", outputFile());
     kwargs.set("elements", variantList);
     kwargs.set("output_path", outputPath);
+    kwargs.set("rotate_datasets", rotateDatasets);
     auto res = extractElementsFunc.call(kwargs);
 
     if (!res.isValid()) {
@@ -476,13 +479,12 @@ public:
       return;
     }
 
+    loadElementsIntoArray(ret);
     QString title = "Element extraction complete";
     auto text =
-      QString("Elements were extracted to \"%1\".\n\nLoad them into Tomviz?")
+      QString("Elements were extracted to \"%1\" and loaded into Tomviz")
         .arg(outputPath);
-    if (QMessageBox::question(parentWidget, title, text) == QMessageBox::Yes) {
-      loadElementsIntoArray(ret);
-    }
+    QMessageBox::information(parentWidget, title, text);
   }
 
   void loadElementsIntoArray(const QStringList& fileList) {

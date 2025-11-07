@@ -23,6 +23,7 @@ public:
   QString logFile() const;
   QString icName() const;
   QString outputDirectory() const;
+  bool rotateDatasets() const;
 
 private:
   class Internal;
