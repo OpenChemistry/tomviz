@@ -563,7 +563,7 @@ def _write_emd(path, dataset, dims=None):
         tomviz_scalars[active_name] = h5py.SoftLink('/data/tomography/data')
 
 
-def _read_data_exchange(path, options=None):
+def _read_data_exchange(path: Path, options: dict | None = None):
     with h5py.File(path, 'r') as f:
         g = f['/exchange']
 
@@ -601,7 +601,7 @@ def _read_data_exchange(path, options=None):
             tilt_axis = 2 if to_fortran else 0
 
         output = {
-            'arrays': [('data', datasets.get('data'))],
+            'arrays': [(path.stem, datasets.get('data'))],
             'data_dark': datasets.get('data_dark'),
             'data_white': datasets.get('data_white'),
             'tilt_angles': datasets.get('theta'),
