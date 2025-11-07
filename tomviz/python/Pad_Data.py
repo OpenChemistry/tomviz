@@ -1,3 +1,7 @@
+from tomviz.utils import apply_to_each_array
+
+
+@apply_to_each_array
 def transform(dataset, pad_size_before=[0, 0, 0], pad_size_after=[0, 0, 0],
               pad_mode_index=0):
     """Pad dataset"""
