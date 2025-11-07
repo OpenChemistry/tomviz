@@ -1,0 +1,23 @@
+{
+  "name" : "AutoTiltAxisShiftAlignment",
+  "label" : "Auto Tilt Axis Shift Align",
+  "description" : "Automatically center images along the tilt axis",
+  "parameters" : [
+    {
+      "name" : "padding",
+      "label" : "Padding",
+      "description" : "Array padding along non-tilt axes when determining the shift",
+      "type" : "int",
+      "default" : 10,
+      "minimum" : 0,
+      "maximum" : 1000000
+    },
+    {
+      "name" : "apply_to_all_arrays",
+      "label": "Apply to All Arrays",
+      "description": "Apply the shift alignment to all arrays within this data source (not just the currently selected one). The shift is computed only using the currently selected array.",
+      "type" : "bool",
+      "default": true
+    }
+  ]
+}

@@ -1,11 +1,13 @@
 import numpy as np
 from scipy.interpolate import interp1d
+
 import tomviz.operators
+from tomviz.utils import pad_array
 
 
 class AutoTiltAxisShiftAlignmentOperator(tomviz.operators.CancelableOperator):
 
-    def transform(self, dataset):
+    def transform(self, dataset, padding=0, apply_to_all_arrays=True):
         """Automatic align the tilt axis to the center of images"""
         self.progress.maximum = 1
 
@@ -15,6 +17,9 @@ class AutoTiltAxisShiftAlignmentOperator(tomviz.operators.CancelableOperator):
         tiltSeries = dataset.active_scalars
         if tiltSeries is None:
             raise RuntimeError("No scalars found!")
+
+        axis = 2
+        tiltSeries = pad_array(tiltSeries, padding, axis)
 
         Nx, Ny, Nz = tiltSeries.shape
 
@@ -52,11 +57,18 @@ class AutoTiltAxisShiftAlignmentOperator(tomviz.operators.CancelableOperator):
 
         print('shift: %d' % shifts[np.argmax(I)])
 
-        result = np.roll(tiltSeries, shifts[np.argmax(I)], axis=1)
-        result = np.asfortranarray(result)
+        if apply_to_all_arrays:
+            names = dataset.scalars_names
+        else:
+            names = [dataset.active_name]
 
-        # Set the result as the new scalars.
-        dataset.active_scalars = result
+        for name in names:
+            array = dataset.scalars(name)
+            result = np.roll(array, shifts[np.argmax(I)], axis=1)
+            result = np.asfortranarray(result)
+
+            # Set the result as the new scalars.
+            dataset.set_scalars(name, result)
 
 
 def wbp2(sinogram, angles, N=None, filter="ramp", interp="linear"):

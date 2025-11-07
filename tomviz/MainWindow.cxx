@@ -418,7 +418,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     readInPythonScript("AutoTiltAxisRotationAlignment"), true);
   new AddPythonTransformReaction(
     autoRotateAlignShiftAction, "Auto Tilt Axis Shift Align",
-    readInPythonScript("AutoTiltAxisShiftAlignment"), true);
+    readInPythonScript("AutoTiltAxisShiftAlignment"), true, false, false,
+    readInJSONDescription("AutoTiltAxisShiftAlignment"));
 
   new AddPythonTransformReaction(
     autoAlignCCAction, "Auto Tilt Image Align (XCORR)",
