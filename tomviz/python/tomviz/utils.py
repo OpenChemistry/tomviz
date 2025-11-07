@@ -662,3 +662,28 @@ def apply_to_each_array(func):
         return result
 
     return wrapper
+
+
+def pad_array(array, padding, tilt_axis):
+    # Add padding to an array. Ignore the tilt axis.
+    if padding <= 0:
+        return array
+
+    pad_list = []
+    for i in range(3):
+        pad_list.append([0, 0] if i == tilt_axis else [padding, padding])
+
+    return np.pad(array, pad_list)
+
+
+def depad_array(array, padding, tilt_axis):
+    # Remove padding from an array. Ignore the tilt axis.
+    if padding <= 0:
+        return array
+
+    slice_list = []
+    for i in range(3):
+        start = padding if i != tilt_axis else 0
+        end = padding * -1 if i != tilt_axis else array.shape[i]
+        slice_list.append(slice(start, end))
+    return array[tuple(slice_list)]

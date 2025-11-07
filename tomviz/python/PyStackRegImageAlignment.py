@@ -1,5 +1,7 @@
 import numpy as np
 
+from tomviz.utils import pad_array, depad_array
+
 
 def transform(
     dataset,
@@ -122,29 +124,6 @@ def transform_from_file(dataset, transform_file, padding=0,
     from pystackreg import StackReg
     sr = StackReg(transform_type_map()[transform_type])
     apply_tmats(sr, dataset, tmats, padding, axis, apply_to_all_arrays)
-
-
-def pad_array(array, padding, tilt_axis):
-    if padding <= 0:
-        return array
-
-    pad_list = []
-    for i in range(3):
-        pad_list.append([0, 0] if i == tilt_axis else [padding, padding])
-
-    return np.pad(array, pad_list)
-
-
-def depad_array(array, padding, tilt_axis):
-    if padding <= 0:
-        return array
-
-    slice_list = []
-    for i in range(3):
-        start = padding if i != tilt_axis else 0
-        end = padding * -1 if i != tilt_axis else array.shape[i]
-        slice_list.append(slice(start, end))
-    return array[tuple(slice_list)]
 
 
 def transform_type_map():
