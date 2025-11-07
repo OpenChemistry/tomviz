@@ -1,3 +1,7 @@
+from tomviz.utils import apply_to_each_array
+
+
+@apply_to_each_array
 def transform(dataset, resampling_factor=[1, 1, 1]):
     """Resample dataset"""
 

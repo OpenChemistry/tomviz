@@ -1,3 +1,7 @@
+from tomviz.utils import apply_to_each_array
+
+
+@apply_to_each_array
 def transform(dataset):
     """Downsample volume by a factor of 2"""
 
