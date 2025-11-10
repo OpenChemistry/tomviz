@@ -476,7 +476,7 @@ set(python_files
   PeronaMalikAnisotropicDiffusion.py
   MedianFilter.py
   Resample.py
-  deleteSlices.py
+  DeleteSlices.py
   ClearVolume.py
   ConstantDataset.py
   RandomParticles.py
@@ -527,6 +527,7 @@ set(json_files
   Shift_Stack_Uniformly.json
   Pad_Data.json
   Resample.json
+  DeleteSlices.json
   GaussianFilter.json
   GaussianFilterTiltSeries.json
   PeronaMalikAnisotropicDiffusion.json
