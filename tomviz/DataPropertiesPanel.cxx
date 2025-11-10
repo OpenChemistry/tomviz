@@ -277,6 +277,22 @@ QList<ArrayInfo> DataPropertiesPanel::getArraysInfo(DataSource* dataSource)
     }
   }
 
+  // Remove any invalid scalar indices to prevent a crash
+  QList<int> toRemove;
+  for (auto i : m_scalarIndexes) {
+    // name, type, data range, data type, active
+    auto arrayName = dataSource->scalarsName(i);
+    auto array = dataSource->getScalarsArray(arrayName);
+    if (!array) {
+      toRemove.append(i);
+    }
+  }
+
+  while (toRemove.size() != 0) {
+    m_scalarIndexes.remove(toRemove[0]);
+    toRemove.removeAt(0);
+  }
+
   for (auto i : m_scalarIndexes) {
     // name, type, data range, data type, active
     auto arrayName = dataSource->scalarsName(i);
