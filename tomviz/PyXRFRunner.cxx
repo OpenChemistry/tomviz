@@ -5,6 +5,7 @@
 
 #include "DataExchangeFormat.h"
 #include "DataSource.h"
+#include "EmdFormat.h"
 #include "LoadDataReaction.h"
 #include "ProgressDialog.h"
 #include "PyXRFMakeHDF5Dialog.h"
@@ -529,9 +530,13 @@ public:
     auto firstName = QFileInfo(sortedList[0]).baseName();
 
     dataSource->setActiveScalars(firstName.toStdString().c_str());
-    dataSource->setFileNames(fileList);
     dataSource->setLabel("Extracted Elements");
     dataSource->dataModified();
+
+    // Write this to an EMD format
+    QString saveFile = QFileInfo(sortedList[0]).dir().absoluteFilePath("extracted_elements.emd");
+    EmdFormat::write(saveFile.toStdString(), dataSource);
+    dataSource->setFileName(saveFile);
   }
 };
 
