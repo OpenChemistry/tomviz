@@ -7,7 +7,8 @@ from tomviz.utils import pad_array
 
 class AutoTiltAxisShiftAlignmentOperator(tomviz.operators.CancelableOperator):
 
-    def transform(self, dataset, padding=0, apply_to_all_arrays=True):
+    def transform(self, dataset, padding=0, num_slices: int = 5,
+                  apply_to_all_arrays=True):
         """Automatic align the tilt axis to the center of images"""
         self.progress.maximum = 1
 
@@ -24,13 +25,19 @@ class AutoTiltAxisShiftAlignmentOperator(tomviz.operators.CancelableOperator):
         Nx, Ny, Nz = tiltSeries.shape
 
         shifts = (np.linspace(-20, 20, 41)).astype('int')
-        numberOfSlices = 5  # number of slices used for recon
 
         # randomly choose slices with top 50% total intensities
         tiltSeriesSum = np.sum(tiltSeries, axis=(1, 2))
         temp = tiltSeriesSum.argsort()[Nx // 2:]
-        slices = temp[np.random.permutation(temp.size)[:numberOfSlices]]
-        print('Reconstruction slices:')
+
+        if num_slices > temp.size:
+            print(f'Warning: number of slices selected, "{num_slices}", '
+                  f'exceeded the max size of "{temp.size}". '
+                  f'Reducing the number of slices to "{temp.size}"')
+            num_slices = temp.size
+
+        slices = np.sort(temp[np.random.permutation(temp.size)[:num_slices]])
+        print('Trial reconstruction slices:')
         print(slices)
 
         I = np.zeros(shifts.size)
@@ -43,10 +50,10 @@ class AutoTiltAxisShiftAlignmentOperator(tomviz.operators.CancelableOperator):
                 return
             shiftedTiltSeries = np.roll(
                 tiltSeries[slices, :, :, ], shifts[i], axis=1)
-            for s in range(numberOfSlices):
+            for s in range(num_slices):
                 self.progress.message = ('Reconstructing slice No.%d/%d with a '
                                          'shift of %d pixels' %
-                                         (s, numberOfSlices, shifts[i]))
+                                         (s, num_slices, shifts[i]))
 
                 recon = wbp2(shiftedTiltSeries[s, :, :],
                              tilt_angles, Ny, 'ramp', 'linear')

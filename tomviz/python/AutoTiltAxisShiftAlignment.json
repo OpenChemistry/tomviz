@@ -13,6 +13,15 @@
       "maximum" : 1000000
     },
     {
+      "name" : "num_slices",
+      "label" : "Number of Test Slices",
+      "description" : "Number of slices to randomly sample to determine ideal recon shift.",
+      "type" : "int",
+      "default" : 5,
+      "minimum" : 2,
+      "maximum" : 1000000
+    },
+    {
       "name" : "apply_to_all_arrays",
       "label": "Apply to All Arrays",
       "description": "Apply the shift alignment to all arrays within this data source (not just the currently selected one). The shift is computed only using the currently selected array.",
