@@ -14,6 +14,7 @@
 #include <vtkNew.h>
 #include <vtkObjectFactory.h>
 
+#include "loguru.hpp"
 #include "MainWindow.h"
 #include "tomvizConfig.h"
 #include "tomvizPythonConfig.h"
@@ -22,6 +23,10 @@
 
 int main(int argc, char** argv)
 {
+  // Set up loguru, for printing stack traces on crashes
+  loguru::g_stderr_verbosity = loguru::Verbosity_ERROR;
+  loguru::init(argc, argv);
+
   QSurfaceFormat::setDefaultFormat(QVTKOpenGLStereoWidget::defaultFormat());
 
   QCoreApplication::setApplicationName("tomviz");

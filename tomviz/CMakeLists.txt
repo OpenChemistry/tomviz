@@ -278,6 +278,12 @@ set(SOURCES
 )
 
 list(APPEND SOURCES
+  loguru/loguru.cpp
+  loguru/loguru.hpp
+)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/loguru)
+
+list(APPEND SOURCES
   modules/Module.cxx
   modules/Module.h
   modules/ModuleClip.cxx

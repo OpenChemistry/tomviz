@@ -1,0 +1,3 @@
+VTK contains loguru, but it does not appear to be compiled with the
+correct settings to print a stack trace. Thus, we have to include and
+compile it on our own...
