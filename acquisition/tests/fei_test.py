@@ -4,17 +4,17 @@ import hashlib
 import sys
 import os
 
-from tomviz.jsonrpc import jsonrpc_message
+from tomviz_acquisition.jsonrpc import jsonrpc_message
 
 # Add mock modules to path
-mock_dir = os.path.join(os.path.dirname(__file__), '..', 'tomviz',
+mock_dir = os.path.join(os.path.dirname(__file__), '..', 'tomviz_acquisition',
                         'acquisition', 'vendors', 'fei', 'mock')
 sys.path.append(mock_dir)
 
 
 @pytest.fixture(scope="module")
 def fei_acquisition_server(acquisition_server):
-    acquisition_server.setup('tomviz.acquisition.vendors.fei.FeiAdapter')
+    acquisition_server.setup('tomviz_acquisition.acquisition.vendors.fei.FeiAdapter')
     yield acquisition_server
 
 

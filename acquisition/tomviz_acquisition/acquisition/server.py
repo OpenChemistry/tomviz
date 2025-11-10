@@ -8,10 +8,9 @@ import logging.handlers
 import bottle
 from bottle import run, route, request, HTTPResponse, Bottle
 
-import tomviz
-from tomviz import jsonrpc
-from tomviz.utility import inject
-from tomviz.acquisition import AbstractSource
+from tomviz_acquisition import jsonrpc
+from tomviz_acquisition.utility import inject
+from tomviz_acquisition.acquisition import AbstractSource
 import shutil
 
 # For python 3
@@ -26,7 +25,7 @@ HOST = 'localhost'
 PORT = 8080
 LOG_BUF_SIZE = 65536
 
-logger = logging.getLogger('tomviz')
+logger = logging.getLogger('tomviz_acquisition')
 app = Bottle()
 
 

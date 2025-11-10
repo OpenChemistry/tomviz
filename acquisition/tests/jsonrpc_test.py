@@ -1,6 +1,6 @@
 import pytest
 
-from tomviz.jsonrpc import JsonRpcHandler, jsonrpc_message
+from tomviz_acquisition.jsonrpc import JsonRpcHandler, jsonrpc_message
 
 
 @pytest.fixture

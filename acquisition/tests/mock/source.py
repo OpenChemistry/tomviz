@@ -1,6 +1,6 @@
-from tomviz.acquisition import AbstractSource
+from tomviz_acquisition.acquisition import AbstractSource
 from . import mock_api
-from tomviz.acquisition import describe
+from tomviz_acquisition.acquisition import describe
 
 
 class ApiAdapter(AbstractSource):
