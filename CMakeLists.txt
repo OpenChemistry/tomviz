@@ -146,17 +146,6 @@ endif()
 
 find_package(ITK 4.9)
 
-# Many things changed in the find Python logic and ParaView's willingness to
-# share what version of Python it built against. In the end it wasn't worth
-# trying to support doing this automatically - try to feed everything the same
-# version of Python, using a superbuild will make this easier for you.
-find_package(Python3 COMPONENTS Interpreter Development)
-
-# Just add these to the cache so we can check them more easily...
-set(PYTHON_INCLUDE_DIR ${Python3_INCLUDE_DIR} CACHE PATH "Tomviz")
-set(PYTHON_LIBRARY ${Python3_LIBRARY} CACHE PATH "Tomviz")
-set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE} CACHE PATH "Tomviz")
-
 set(PYBIND11_CPP_STANDARD "-std=c++17" CACHE STRING "")
 add_subdirectory(${PROJECT_SOURCE_DIR}/thirdparty/pybind11)
 
