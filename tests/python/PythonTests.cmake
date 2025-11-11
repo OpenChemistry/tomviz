@@ -25,14 +25,18 @@ function(add_python_test case)
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
     COMMAND "${_python_executable}" -m pytest -k ${module}
   )
-  set(_pythonpath "${tomviz_python_binary_dir}")
-  set(_pythonpath "${_pythonpath}${_separator}${fn_PYTHONPATH}")
-  set(_pythonpath "$ENV{PYTHONPATH}${_separator}${_pythonpath}")
-  if (WIN32)
-    string(REPLACE "\\;" ";" _pythonpath "${_pythonpath}")
-    string(REPLACE ";" "\\;" _pythonpath "${_pythonpath}")
+
+  # Don't modify the PYTHONPATH if we are in a conda environment
+  if (NOT DEFINED ENV{CONDA_PREFIX})
+    set(_pythonpath "${tomviz_python_binary_dir}")
+    set(_pythonpath "${_pythonpath}${_separator}${fn_PYTHONPATH}")
+    set(_pythonpath "$ENV{PYTHONPATH}${_separator}${_pythonpath}")
+    if (WIN32)
+      string(REPLACE "\\;" ";" _pythonpath "${_pythonpath}")
+      string(REPLACE ";" "\\;" _pythonpath "${_pythonpath}")
+    endif()
+    set_property(TEST ${name} PROPERTY ENVIRONMENT
+      "PYTHONPATH=${_pythonpath}"
+    )
   endif()
-  set_property(TEST ${name} PROPERTY ENVIRONMENT
-    "PYTHONPATH=${_pythonpath}"
-  )
 endfunction()
