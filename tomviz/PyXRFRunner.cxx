@@ -264,6 +264,8 @@ public:
       QString msg = "Make HDF5 failed";
       qCritical() << msg;
       QMessageBox::critical(parentWidget, "Tomviz", msg);
+      // Show the dialog again
+      showMakeHDF5Dialog();
       return;
     }
 
@@ -283,6 +285,10 @@ public:
     processDialog = new PyXRFProcessDialog(workingDirectory, parentWidget);
     connect(processDialog.data(), &QDialog::accepted, this,
             &Internal::processDialogAccepted);
+    // If the user rejects the process dialog, go back to
+    // the make HDF5 dialog.
+    connect(processDialog.data(), &QDialog::rejected, this,
+            &Internal::showMakeHDF5Dialog);
     processDialog->show();
   }
 
@@ -360,6 +366,8 @@ public:
       QString msg = "Process projections failed";
       qCritical() << msg;
       QMessageBox::critical(parentWidget, "Tomviz", msg);
+      // Show the dialog again
+      showProcessProjectionsDialog();
       return;
     }
 
