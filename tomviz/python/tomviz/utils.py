@@ -4,6 +4,7 @@
 # This source file is part of the Tomviz project, https://tomviz.org/.
 # It is released under the 3-Clause BSD License, see "LICENSE".
 ###############################################################################
+import copy
 import functools
 import math
 import numpy as np
@@ -661,6 +662,7 @@ def apply_to_each_array(func):
                     dataset = copy.deepcopy(orig_dataset)
 
                 dataset.arrays[name] = all_arrays[i]
+                dataset.active_name = name
 
             print('Transforming array:', name)
             result = func(dataset, *args, **kwargs)

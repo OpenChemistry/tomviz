@@ -453,7 +453,7 @@ def _read_emd(path, options=None):
             'metadata': {},
         }
 
-        if dims is not None and dims[-1].name == b'angles':
+        if dims is not None and dims[-1].name in ('angles', b'angles'):
             output['tilt_angles'] = dims[-1].values[:].astype(np.float64)
 
         return output
@@ -526,7 +526,7 @@ def _get_dims_for_writing(dataset, data, default_dims=None):
     else:
         # In case the input was a tilt series, make the first dim x,
         # and the units [n_m]
-        if dims[0].name == 'angles':
+        if dims[0].name in ('angles', b'angles'):
             dims[0].name = 'x'
             dims[0].units = '[n_m]'
 
