@@ -20,11 +20,11 @@ def data_dir() -> Path:
 
 
 @pytest.fixture
-def hxn_example_output_dir(data_dir: Path) -> Path:
-    output_dir = data_dir / 'Pt_Zn_recon_output'
+def hxn_xrf_example_output_dir(data_dir: Path) -> Path:
+    output_dir = data_dir / 'Pt_Zn_XRF_recon_output'
     if not output_dir.exists():
         # Download it
-        url = DATA_URL + '/690e309e83abdcd84d150c7b/download'
+        url = DATA_URL + '/6914b90283abdcd84d150c9e/download'
         download_and_unzip_file(url, output_dir.parent)
 
     return output_dir

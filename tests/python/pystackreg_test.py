@@ -7,7 +7,7 @@ from utils import download_and_unzip_file, load_operator_module
 from tomviz.executor import load_dataset
 
 
-def test_pystackreg(hxn_example_output_dir: Path,
+def test_pystackreg(hxn_xrf_example_output_dir: Path,
                     pystackreg_reference_output: dict[str, np.ndarray]):
     # Load two files so we can test applying to all arrays
     example_files = [
@@ -15,7 +15,7 @@ def test_pystackreg(hxn_example_output_dir: Path,
         'Zn_K.h5',
     ]
     example_files = [
-        hxn_example_output_dir / 'extracted_elements' / name
+        hxn_xrf_example_output_dir / 'extracted_elements' / name
         for name in example_files
     ]
     dataset = load_dataset(example_files[0])

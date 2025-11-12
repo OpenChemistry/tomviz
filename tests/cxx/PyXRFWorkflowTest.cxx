@@ -26,7 +26,7 @@
 using namespace tomviz;
 
 const QDir ROOT_DATA_DIR = QString(SOURCE_DIR) + "/data";
-const QDir DATA_DIR = ROOT_DATA_DIR.absolutePath() + "/Pt_Zn_Phase";
+const QDir DATA_DIR = ROOT_DATA_DIR.absolutePath() + "/Pt_Zn_XRF";
 
 template <typename T>
 T* findWidget()
@@ -61,9 +61,9 @@ private:
     auto scriptFile = QFileInfo(QString(SOURCE_DIR) + "/fixtures/download_and_unzip.py");
     QString scriptPath = scriptFile.absoluteFilePath();
 
-    QString url = "https://data.kitware.com/api/v1/file/690891b803d1a144cbcf422b/download";
+    QString url = "https://data.kitware.com/api/v1/file/6914b15783abdcd84d150c97/download";
 
-    // We unzip into the parent directory, which will then have `Pt_Zn_Phase`
+    // We unzip into the parent directory, which will then have `Pt_Zn_XRF`
     // after unzipping.
     QStringList arguments;
     arguments << scriptPath << url << ROOT_DATA_DIR.absolutePath();
