@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PtychoDialog</class>
+ <widget class="QDialog" name="PtychoDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>595</width>
+    <height>377</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Ptycho Dialog</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <property name="leftMargin">
+    <number>6</number>
+   </property>
+   <property name="topMargin">
+    <number>6</number>
+   </property>
+   <property name="rightMargin">
+    <number>6</number>
+   </property>
+   <property name="bottomMargin">
+    <number>6</number>
+   </property>
+   <item row="8" column="1">
+    <widget class="QLineEdit" name="outputDirectory">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The directory where the output files will be written. If one is not specified, the Ptycho directory will be used.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+    </widget>
+   </item>
+   <item row="10" column="0" colspan="3">
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Close|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="0" colspan="3">
+    <widget class="QTableWidget" name="createSIDsTable">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select which SIDs to use for each version.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The list of SIDs to use can be specified via numpy slice syntax (for example, '157391:157637'), a comma-delimited list (for example, '157391, 157394'), or loaded from a txt/csv file.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Any SIDs which are missing data or angles will be automatically ignored. A list of the ones ignored may be seen from the console and messages output.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="editTriggers">
+      <set>QAbstractItemView::NoEditTriggers</set>
+     </property>
+     <property name="selectionMode">
+      <enum>QAbstractItemView::NoSelection</enum>
+     </property>
+     <attribute name="horizontalHeaderStretchLastSection">
+      <bool>true</bool>
+     </attribute>
+    </widget>
+   </item>
+   <item row="8" column="2">
+    <widget class="QPushButton" name="selectOutputDirectory">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The directory where the output files will be written. If one is not specified, the Ptycho directory will be used.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Select</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="1">
+    <widget class="QLineEdit" name="ptychoDirectory">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The Ptycho directory should contain data organized as created from the Ptycho GUI output. It will be used to determine the contents of the table below.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The Ptycho directory is expected to have, at its top level, a list of scan directories all starting with 'S'. For example, 'S157391' is the directory for scan number 157391.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Within the scan directory are version directories. For example, 't1'.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Within the version directories are 'recon_data' and 'recon_pic'. The 'recon_data' should contain all the necessary datasets from the ptychography reconstruction.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="0">
+    <widget class="QLabel" name="outputDirectoryLabel">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The directory where the output files will be written. If one is not specified, the Ptycho directory will be used.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Output Directory:</string>
+     </property>
+     <property name="buddy">
+      <cstring>outputDirectory</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="0" colspan="3">
+    <widget class="QCheckBox" name="rotateDatasets">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The orientation of the tilt series does match what Tomviz expects internally. Rotating the data ensures that the later Tomviz operators will be able to run properly.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Rotate datasets to Tomviz convention?</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="QLabel" name="ptychoDirectoryLabel">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The Ptycho directory should contain data organized as created from the Ptycho GUI output. It will be used to determine the contents of the table below.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The Ptycho directory is expected to have, at its top level, a list of scan directories all starting with 'S'. For example, 'S157391' is the directory for scan number 157391.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Within the scan directory are version directories. For example, 't1'.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Within the version directories are 'recon_data' and 'recon_pic'. The 'recon_data' should contain all the necessary datasets from the ptychography reconstruction.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Ptycho Directory:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="2">
+    <widget class="QPushButton" name="selectPtychoDirectory">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The Ptycho directory should contain data organized as created from the Ptycho GUI output. It will be used to determine the contents of the table below.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The Ptycho directory is expected to have, at its top level, a list of scan directories all starting with 'S'. For example, 'S157391' is the directory for scan number 157391.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Within the scan directory are version directories. For example, 't1'.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Within the version directories are 'recon_data' and 'recon_pic'. The 'recon_data' should contain all the necessary datasets from the ptychography reconstruction.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Select</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0" colspan="3">
+    <widget class="QPushButton" name="startPtychoGUI">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Run the command to start the Ptycho GUI.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The Ptycho GUI should be used to download the data and produce image stacks within what will be the &amp;quot;Ptycho Directory&amp;quot;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Start Ptycho GUI</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0" colspan="3">
+    <layout class="QHBoxLayout" name="ptychoGUICommandLayout">
+     <item>
+      <widget class="QLabel" name="ptychoGUICommandLabel">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Command used when &amp;quot;Start Ptycho GUI&amp;quot; is clicked.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The Ptycho GUI should be used to download the data and produce image stacks within what will be the &amp;quot;Ptycho Directory&amp;quot;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>Start Ptycho GUI Command:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="ptychoGUICommand">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Command used when &amp;quot;Start Ptycho GUI&amp;quot; is clicked.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The Ptycho GUI should be used to download the data and produce image stacks within what will be the &amp;quot;Ptycho Directory&amp;quot;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>run-ptycho</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <tabstops>
+  <tabstop>ptychoGUICommand</tabstop>
+  <tabstop>startPtychoGUI</tabstop>
+  <tabstop>ptychoDirectory</tabstop>
+  <tabstop>selectPtychoDirectory</tabstop>
+  <tabstop>createSIDsTable</tabstop>
+  <tabstop>outputDirectory</tabstop>
+  <tabstop>selectOutputDirectory</tabstop>
+  <tabstop>rotateDatasets</tabstop>
+ </tabstops>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>PtychoDialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>316</x>
+     <y>260</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>286</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

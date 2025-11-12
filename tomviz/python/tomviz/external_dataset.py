@@ -14,10 +14,10 @@ class Dataset:
         self.tilt_axis = None
         # The currently active scalar
         self.active_name = active
-        # If we weren't given the active array and we only have one array, set
-        # it as the active array.
+        # If we weren't given the active array, set the first as the active
+        # array.
         if active is None and len(arrays.keys()):
-            (self.active_name,) = arrays.keys()
+            self.active_name = next(iter(arrays.keys()))
 
         self._spacing = None
 

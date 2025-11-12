@@ -172,6 +172,10 @@ set(SOURCES
   ProgressDialog.h
   ProgressDialogManager.cxx
   ProgressDialogManager.h
+  PtychoDialog.cxx
+  PtychoDialog.h
+  PtychoRunner.cxx
+  PtychoRunner.h
   PythonGeneratedDatasetReaction.cxx
   PythonGeneratedDatasetReaction.h
   PythonReader.cxx
@@ -686,6 +690,18 @@ foreach(file ${tomviz_python_pyxrf_modules})
   execute_process(COMMAND ${CMAKE_COMMAND} -E ${script_cmd}
     "${tomviz_SOURCE_DIR}/tomviz/python/tomviz/pyxrf/${file}"
     "${tomviz_python_binary_dir}/tomviz/pyxrf/${file}")
+endforeach()
+
+set(tomviz_python_ptycho_modules
+  __init__.py
+  ptycho.py
+)
+
+file(MAKE_DIRECTORY "${tomviz_python_binary_dir}/tomviz/ptycho")
+foreach(file ${tomviz_python_ptycho_modules})
+  execute_process(COMMAND ${CMAKE_COMMAND} -E ${script_cmd}
+    "${tomviz_SOURCE_DIR}/tomviz/python/tomviz/ptycho/${file}"
+    "${tomviz_python_binary_dir}/tomviz/ptycho/${file}")
 endforeach()
 
 file(GLOB tomviz_python_state_modules "${tomviz_SOURCE_DIR}/tomviz/python/tomviz/state/*.py")

@@ -56,6 +56,9 @@ public:
     Object();
     Object(const Object& other);
     Object(const QString& str);
+    Object(const QStringList& str);
+    Object(const QList<long>& intList);
+    Object(const QList<double>& floatList);
     Object(const Variant& value);
     Object(const DataSourceBase& source);
     Object(PyObject* obj);
