@@ -109,13 +109,6 @@ namespace tomviz {
 MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   : QMainWindow(parent, flags), m_ui(new Ui::MainWindow)
 {
-  // Override the default setting for showing full messages. This needs to be
-  // done prior to calling m_ui->setupUi(this) which sets the default to false.
-  pqSettings* qtSettings = pqApplicationCore::instance()->settings();
-  if (!qtSettings->contains("pqOutputWidget.ShowFullMessages")) {
-    qtSettings->setValue("pqOutputWidget.ShowFullMessages", true);
-  }
-
   VolumeManager::instance();
   connect(&ModuleManager::instance(), &ModuleManager::enablePythonConsole, this,
           &MainWindow::setEnabledPythonConsole);
@@ -137,6 +130,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
 
   // checkOpenGL();
   m_ui->setupUi(this);
+  // Force full messages to be shown
+  m_ui->outputWidget->showFullMessages(true);
   m_timer = new QTimer(this);
   connect(m_timer, SIGNAL(timeout()), SLOT(autosave()));
   m_timer->start(5 /*minutes*/ * 60 /*seconds per minute*/ *

@@ -14,6 +14,8 @@ ProgressDialog::ProgressDialog(const QString& title, const QString& msg,
   : QDialog(parent), m_ui(new Ui::ProgressDialog)
 {
   m_ui->setupUi(this);
+  // Force full messages to be shown
+  m_ui->outputWidget->showFullMessages(true);
   setWindowTitle(title);
   m_ui->label->setText(msg);
 
