@@ -11,6 +11,7 @@ from tomviz._internal import in_application
 from tomviz._internal import require_internal_mode
 from tomviz._internal import with_vtk_dataobject
 from tomviz._internal import with_dataset
+from tomviz.internal_dataset import Dataset as InternalDataset
 # Only import vtk if we are running within the tomviz application ( not cli )
 if in_application():
     import vtk.numpy_interface.dataset_adapter as dsa
@@ -619,44 +620,73 @@ def apply_to_each_array(func):
         array_names = dataset.scalars_names
         active_name = dataset.active_name
 
-        # Run the function multiple times. Each time with a single, different
-        # array on the shallow-copied data object
-        from vtk import vtkImageData
-        orig_do = dataset._data_object
-        pd = orig_do.GetPointData()
-        all_arrays = [pd.GetAbstractArray(i) for i in range(num_arrays)]
+        is_internal = isinstance(dataset, InternalDataset)
 
-        # Remove all arrays
-        while pd.GetNumberOfArrays() > 0:
-            pd.RemoveArray(0)
+        if is_internal:
+            # Run the function multiple times. Each time with a single, different
+            # array on the shallow-copied data object
+            from vtk import vtkImageData
+            orig_do = dataset._data_object
+            pd = orig_do.GetPointData()
+            all_arrays = [pd.GetAbstractArray(i) for i in range(num_arrays)]
+
+            # Remove all arrays
+            while pd.GetNumberOfArrays() > 0:
+                pd.RemoveArray(0)
+        else:
+            all_arrays = [dataset.arrays[name] for name in array_names]
+            dataset.arrays.clear()
+            orig_dataset = dataset
 
         output_arrays = []
         results = []
         for i, name in enumerate(array_names):
-            if i == num_arrays - 1:
-                # Use the original data object
-                image_data = orig_do
-            else:
-                image_data = vtkImageData()
-                image_data.ShallowCopy(orig_do)
+            if is_internal:
+                if i == num_arrays - 1:
+                    # Use the original data object
+                    image_data = orig_do
+                else:
+                    image_data = vtkImageData()
+                    image_data.ShallowCopy(orig_do)
 
-            this_pd = image_data.GetPointData()
-            this_pd.AddArray(all_arrays[i])
-            this_pd.SetActiveScalars(name)
-            dataset._data_object = image_data
+                this_pd = image_data.GetPointData()
+                this_pd.AddArray(all_arrays[i])
+                this_pd.SetActiveScalars(name)
+                dataset._data_object = image_data
+            else:
+                if i == num_arrays - 1:
+                    # Use the original dataset for the final one
+                    dataset = orig_dataset
+                else:
+                    dataset = copy.deepcopy(orig_dataset)
+
+                dataset.arrays[name] = all_arrays[i]
 
             print('Transforming array:', name)
             result = func(dataset, *args, **kwargs)
             results.append(result)
-            output_arrays.append(this_pd.GetAbstractArray(0))
 
-        # Now add back in the arrays in the same order
-        this_pd.RemoveArray(0)
-        for array in output_arrays:
-            this_pd.AddArray(array)
+            if is_internal:
+                output_arrays.append(this_pd.GetAbstractArray(0))
+            else:
+                output_arrays.append(dataset.arrays[name])
 
-        # Set the active one
-        this_pd.SetActiveScalars(active_name)
+        if is_internal:
+            # Now add back in the arrays in the same order
+            this_pd.RemoveArray(0)
+            for array in output_arrays:
+                this_pd.AddArray(array)
+
+            # Set the active one
+            this_pd.SetActiveScalars(active_name)
+        else:
+            # The metadata should have been modified on this dataset
+            # object from the last call to the function
+            dataset.arrays.clear()
+            for name, array in zip(array_names, output_arrays):
+                dataset.arrays[name] = array
+
+            dataset.active_name = active_name
 
         # Return the final result
         return result

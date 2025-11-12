@@ -13,7 +13,6 @@ import tempfile
 
 import h5py
 import numpy as np
-import six
 from tqdm import tqdm
 
 from tomviz._internal import find_transform_function
@@ -433,7 +432,10 @@ def _read_emd(path, options=None):
 
         # If this is a tilt series, swap the X and Z axes
         tilt_axis = None
-        if dims[0].name == b'angles' or dims[0].units in ANGLE_UNITS:
+        if (
+            dims[0].name in ('angles', b'angles') or
+            dims[0].units in ANGLE_UNITS
+        ):
             arrays = [(name, np.transpose(data, [2, 1, 0])) for (name, data)
                       in arrays]
 
@@ -697,7 +699,7 @@ def _load_transform_functions(operators):
 
 
 def _write_child_data(result, operator_index, output_file_path, dims):
-    for (label, dataobject) in six.iteritems(result):
+    for label, dataobject in result.items():
         # Only need write out data if the operator made updates.
         output_path = '.'
         if output_file_path is not None:
