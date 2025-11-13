@@ -26,6 +26,9 @@ macro(add_cxx_qtest name)
   set(_executable_name "qtest${name}")
   add_executable(${_executable_name} ${_test_src})
   target_link_libraries(${_executable_name} tomvizlib Qt6::Test)
+  # Need to set this property so that in stack traces, tomviz symbols
+  # can be resolved.
+  set_target_properties(${_executable_name} PROPERTIES ENABLE_EXPORTS TRUE)
 
   add_test(NAME "${name}" COMMAND ${_executable_name})
   if(_pythonpath)
@@ -50,6 +53,10 @@ macro(create_test_executable name)
   add_executable(${name} ${_test_srcs})
   target_link_libraries(${name} tomvizlib
     GTest::gtest GTest::gtest_main ${EXTRA_LINK_LIB})
+
+  # Need to set this property so that in stack traces, tomviz symbols
+  # can be resolved.
+  set_target_properties(${_executable_name} PROPERTIES ENABLE_EXPORTS TRUE)
 
   foreach(_test_name ${_tomviz_cxx_tests})
     add_test(NAME "${_test_name}"

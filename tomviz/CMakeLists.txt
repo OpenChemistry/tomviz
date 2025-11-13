@@ -737,10 +737,18 @@ configure_file(tomvizPythonConfig.h.in tomvizPythonConfig.h @ONLY)
 add_library(tomvizlib STATIC ${SOURCES} ${accel_srcs})
 set_target_properties(tomvizlib PROPERTIES OUTPUT_NAME tomviz)
 
+# Need to set this property so that in stack traces, tomviz symbols
+# can be resolved.
+set_target_properties(tomvizlib PROPERTIES ENABLE_EXPORTS TRUE)
+
 set_property(TARGET tomvizlib PROPERTY POSITION_INDEPENDENT_CODE TRUE)
 
 add_executable(tomviz WIN32 MACOSX_BUNDLE ${exec_sources} resources.qrc)
-target_link_libraries(tomviz PRIVATE tomvizlib ${OPENGL_LIBRARIES})
+target_link_libraries(tomviz PRIVATE tomvizlib ${OPENGL_LIBRARIES} ${extra_link_libraries})
+
+# Need to set this property so that in stack traces, tomviz symbols
+# can be resolved.
+set_target_properties(tomviz PROPERTIES ENABLE_EXPORTS TRUE)
 
 target_link_libraries(tomvizlib
   PUBLIC
