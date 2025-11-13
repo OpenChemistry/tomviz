@@ -167,6 +167,24 @@ public:
       return false;
     }
 
+    // Check if there are any duplicate angles selected
+    QStringList anglesUsed;
+    for (int i = 0; i < logFileData.size(); ++i) {
+      auto use = logFileValue(i, "Use");
+      if (use != "x" && use != "1") {
+        // This angle wasn't used.
+        continue;
+      }
+
+      auto angle = logFileValue(i, "Theta");
+      if (anglesUsed.contains(angle)) {
+        reason = "Angle '" + angle + "' was selected more than once.";
+        return false;
+      }
+
+      anglesUsed.append(angle);
+    }
+
     return true;
   }
 
