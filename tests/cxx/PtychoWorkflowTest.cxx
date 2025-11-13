@@ -108,7 +108,7 @@ private slots:
 
     dialog->accept();
 
-    QStringList outputFileNames = {"ptycho_arrays.emd", "ptycho_probe.emd"};
+    QStringList outputFileNames = {"ptycho_object.emd", "ptycho_probe.emd"};
 
     auto checkAllExist = [&outputDir, &outputFileNames]() {
       for (const auto& filename : outputFileNames) {

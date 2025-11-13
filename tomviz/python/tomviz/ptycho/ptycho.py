@@ -288,8 +288,8 @@ def load_stack_ptycho(version_list: list[str],
         ampdatanew[n, :, :] = ta
 
     arrays = {
-        'Ptycho': ptychodatanew,
-        'Amp': ampdatanew,
+        'Phase': ptychodatanew,
+        'Amplitude': ampdatanew,
         'Probes': probes,
     }
 
@@ -305,7 +305,7 @@ def load_stack_ptycho(version_list: list[str],
     output_files = []
     datasets = {
         # Ptycho and Amp have the same shape, so we write them together
-        'ptycho_arrays.emd': ['Ptycho', 'Amp'],
+        'ptycho_object.emd': ['Phase', 'Amplitude'],
         # Probe has a different shape
         'ptycho_probe.emd': ['Probes'],
     }
