@@ -182,14 +182,13 @@ def rescale_tmats(tmats, transform_type, shape1, spacing1, shape2,
         )
         raise Exception(msg)
 
-    # FIXME: do we need to use the shape at all?
     w1 = spacing1[0]
     h1 = spacing1[1]
     w2 = spacing2[0]
     h2 = spacing2[1]
 
-    s = np.eye(3)
-    s[0][0] = w2 / w1
-    s[1][1] = h2 / h1
-
-    return tmats @ s
+    ret = tmats.copy()
+    # Translation is in the top-right and middle-right numbers.
+    ret[:, 0, 2] *= h1 / h2
+    ret[:, 1, 2] *= w1 / w2
+    return ret
