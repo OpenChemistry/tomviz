@@ -224,7 +224,7 @@ def load_stack_ptycho(version_list: list[str],
         g_path = dir_path / f'recon_{i}_{version}_probe_ave.npy'
         if f_path.exists():
             filespty_obj.append(f_path)
-            currentsidlist.append((n, i, angle_list[n]))
+            currentsidlist.append((n, i, angle_list[n], version))
             filespty_prb.append(g_path)
         else:
             if flags:
@@ -316,6 +316,35 @@ def load_stack_ptycho(version_list: list[str],
         output_path = Path(output_dir) / filename
         _write_emd(output_path, dataset)
         output_files.append(str(output_path))
+
+    # Now write out the text file containing info about what was used
+    # FIXME: also add reconstruction pixel sizes
+    currentsidlist_str = []
+    for row in currentsidlist:
+        this_row = []
+        for entry in row:
+            if isinstance(entry, float):
+                s = f'{entry:.3f}'
+            else:
+                s = entry
+            this_row.append(s)
+
+        currentsidlist_str.append(this_row)
+
+    col_delim = ' '
+    headers = ['Angle', 'SID', 'Version']
+    index_order = [2, 1, 3]
+    col_width = 10
+    with open(Path(output_dir) / 'stacked_ptycho_info.txt', 'w') as wf:
+        header_str = col_delim.join([f'{x:>{col_width}}' for x in headers])
+        # Replace first character with '#'
+        header_str = '#' + header_str[1:]
+        wf.write(header_str + '\n')
+        for row in currentsidlist_str:
+            row_str = col_delim.join([
+                f'{row[idx]:>{col_width}}' for idx in index_order
+            ])
+            wf.write(row_str + '\n')
 
     return output_files
 
