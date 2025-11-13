@@ -53,6 +53,4 @@ sphinx_rtd_theme = "*"
 [feature.dev.tasks]
 # Run tests + coverage + flake8 in one go (xviewlite-style)
 lint = "coverage run -m pytest && coverage report -m && codecov && flake8"
-# Build docs after linting (inline table syntax is required here)
-docs = { cmd = "make -C docs html", depends-on = ["lint"] }
 
