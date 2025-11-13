@@ -16,6 +16,7 @@
 #include <QMessageBox>
 #include <QPointer>
 #include <QProcess>
+#include <QProcessEnvironment>
 
 namespace tomviz {
 
@@ -332,6 +333,14 @@ public:
     QStringList args;
 
     auto* process = new QProcess(this);
+
+    auto processEnv = QProcessEnvironment::systemEnvironment();
+
+    // Remove variables related to python environment
+    processEnv.remove("PYTHONHOME");
+    processEnv.remove("PYTHONPATH");
+
+    process->setProcessEnvironment(processEnv);
 
     // Forward stdout/stderr to this process
     process->setProcessChannelMode(QProcess::ForwardedChannels);
