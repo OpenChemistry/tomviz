@@ -1,5 +1,5 @@
 pytest>=8.3
-requests>=2.23.3
+requests>=2.32.4
 Pillow==10.3.0
 # Need this for testing so we can stop there server, change when the required
 # get into a release.
