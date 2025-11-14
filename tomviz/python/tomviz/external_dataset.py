@@ -3,9 +3,13 @@ import copy
 
 import numpy as np
 
+from tomviz.dataset import Dataset as AbstractDataset
+
 ARRAY_TYPES = (collections.abc.Sequence, np.ndarray)
 
 
+# FIXME: do this
+# class Dataset(AbstractDataset):
 class Dataset:
     def __init__(self, arrays, active=None):
         # Holds the map of scalars name => array
@@ -65,6 +69,62 @@ class Dataset:
             raise Exception('Length of spacing must be 3')
 
         self._spacing = v
+
+    @property
+    def active_name(self) -> str:
+        return self._active_name
+
+    @active_name.setter
+    def active_name(self, v: str):
+        self._active_name = v
+
+    @property
+    def tilt_axis(self) -> int | None:
+        return self._tilt_axis
+
+    @tilt_axis.setter
+    def tilt_axis(self, v: int | None):
+        self._tilt_axis = v
+
+    @property
+    def tilt_angles(self) -> np.ndarray | None:
+        return self._tilt_angles
+
+    @tilt_angles.setter
+    def tilt_angles(self, v: np.ndarray | None):
+        self._tilt_angles = v
+
+    @property
+    def file_name(self) -> str | None:
+        return self._file_name
+
+    @file_name.setter
+    def file_name(self, v: str | None):
+        self._file_name = v
+
+    @property
+    def metadata(self) -> dict:
+        return self._metadata
+
+    @metadata.setter
+    def metadata(self, v: dict):
+        self._metadata = v
+
+    @property
+    def dark(self) -> np.ndarray | None:
+        return self._dark
+
+    @dark.setter
+    def dark(self, v: np.ndarray | None):
+        self._dark = v
+
+    @property
+    def white(self) -> np.ndarray | None:
+        return self._white
+
+    @white.setter
+    def white(self, v: np.ndarray | None):
+        self._white = v
 
     def create_child_dataset(self):
         child = copy.deepcopy(self)

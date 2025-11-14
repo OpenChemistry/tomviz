@@ -5,11 +5,11 @@ import tomviz.operators
 
 class CenterOfMassAlignmentOperator(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset):
+    def transform(self, dataset):
         """Automatically align tilt images by center of mass method"""
         self.progress.maximum = 1
 
-        tiltSeries = utils.get_array(dataset).astype(float)
+        tiltSeries = dataset.active_scalars.astype(float)
 
         self.progress.maximum = tiltSeries.shape[2]
         step = 1
@@ -29,7 +29,7 @@ class CenterOfMassAlignmentOperator(tomviz.operators.CancelableOperator):
             step += 1
             self.progress.value = step
 
-        utils.set_array(dataset, tiltSeries)
+        dataset.active_scalars = tiltSeries
 
         # Create a spreadsheet data set from table data
         column_names = ["X Offset", "Y Offset"]

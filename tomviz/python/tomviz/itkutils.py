@@ -254,7 +254,7 @@ def convert_vtk_to_itk_image(vtk_image_data, itk_pixel_type=None):
     import itkTypes
     from vtkmodules.util import vtkConstants
     from vtkmodules.vtkImagingCore import vtkImageCast
-    from tomviz import utils
+    from tomviz import internal_utils
 
     itk_to_vtk_type_map = {
         itkTypes.F: vtkConstants.VTK_FLOAT,
@@ -286,7 +286,7 @@ def convert_vtk_to_itk_image(vtk_image_data, itk_pixel_type=None):
         caster.Update()
         vtk_image_data = caster.GetOutput()
 
-    array = utils.get_array(vtk_image_data, order='C')
+    array = internal_utils.get_array(vtk_image_data, order='C')
 
     image_type = _get_itk_image_type(vtk_image_data)
     itk_converter = itk.PyBuffer[image_type]
@@ -326,11 +326,11 @@ def set_array_from_itk_image(dataobject, itk_image):
     #new_array.SetName(name)
     #------------------------------------------
     import itk
-    from . import utils
+    from . import internal_utils
     result = itk.PyBuffer[
         itk_output_image_type].GetArrayFromImage(itk_image)
     result = result.copy()
-    utils.set_array(dataobject, result, isFortran=False)
+    internal_utils.set_array(dataobject, result, isFortran=False)
 
 
 @with_dataset
@@ -384,6 +384,132 @@ def get_label_object_attributes(dataset, progress_callback=None):
     except Exception as exc:
         print("Problem encountered while running label_object_attributes")
         raise (exc)
+
+
+@with_dataset
+def label_object_principal_axes(dataset, label_value):
+    import numpy as np
+
+    labels = dataset.active_scalars
+    num_voxels = np.sum(labels == label_value)
+    xx, yy, zz = get_coordinate_arrays(dataset)
+
+    data = np.zeros((num_voxels, 3))
+    selection = labels == label_value
+    assert np.any(selection), \
+        "No voxels with label %d in label map" % label_value
+    data[:, 0] = xx[selection]
+    data[:, 1] = yy[selection]
+    data[:, 2] = zz[selection]
+
+    # Compute PCA on coordinates
+    from scipy import linalg as la
+    m, n = data.shape
+    center = data.mean(axis=0)
+    data -= center
+    R = np.cov(data, rowvar=False)
+    evals, evecs = la.eigh(R)
+    idx = np.argsort(evals)[::-1]
+    evecs = evecs[:, idx]
+    evals = evals[idx]
+    return (evecs, center)
+
+
+
+
+@with_dataset
+def connected_components(dataset, background_value=0, progress_callback=None):
+    try:
+        import numpy as np
+        import itk
+    except Exception as exc:
+        print("Could not import necessary module(s)")
+        print(exc)
+
+    if np.issubdtype(dataset.active_scalars.dtype, np.floating):
+        raise Exception(
+            "Connected Components works only on images with integral types.")
+
+    # Add a try/except around the ITK portion. ITK exceptions are
+    # passed up to the Python layer, so we can at least report what
+    # went wrong with the script, e.g,, unsupported image type.
+    try:
+        # Get the ITK image. The input is assumed to have an integral type.
+        # Take care of casting to an unsigned short image so we can store up
+        # to 65,535 connected components (the number of connected components
+        # is limited to the maximum representable number in the voxel type
+        # of the input image in the ConnectedComponentsFilter).
+        array = dataset.active_scalars.astype(np.uint16)
+        itk_image = itk.GetImageViewFromArray(array)
+        itk_image.SetSpacing(dataset.spacing)
+        itk_image_type = type(itk_image)
+
+        # ConnectedComponentImageFilter
+        connected_filter = itk.ConnectedComponentImageFilter[
+            itk_image_type, itk_image_type].New()
+        connected_filter.SetBackgroundValue(background_value)
+        connected_filter.SetInput(itk_image)
+
+        if progress_callback is not None:
+
+            def connected_progress_func():
+                progress = connected_filter.GetProgress()
+                abort = progress_callback(progress * 0.5)
+                connected_filter.SetAbortGenerateData(abort)
+
+            connected_observer = itk.PyCommand.New()
+            connected_observer.SetCommandCallable(connected_progress_func)
+            connected_filter.AddObserver(itk.ProgressEvent(),
+                                         connected_observer)
+
+        # Relabel filter. This will compress the label numbers to a
+        # continugous range between 1 and n where n is the number of
+        # labels. It will also sort the components from largest to
+        # smallest, where the largest component has label 1, the
+        # second largest has label 2, and so on...
+        relabel_filter = itk.RelabelComponentImageFilter[
+            itk_image_type, itk_image_type].New()
+        relabel_filter.SetInput(connected_filter.GetOutput())
+        relabel_filter.SortByObjectSizeOn()
+
+        if progress_callback is not None:
+
+            def relabel_progress_func():
+                progress = relabel_filter.GetProgress()
+                abort = progress_callback(progress * 0.5 + 0.5)
+                relabel_filter.SetAbortGenerateData(abort)
+
+            relabel_observer = itk.PyCommand.New()
+            relabel_observer.SetCommandCallable(relabel_progress_func)
+            relabel_filter.AddObserver(itk.ProgressEvent(), relabel_observer)
+
+        try:
+            relabel_filter.Update()
+        except RuntimeError:
+            return
+
+        itk_image_data = relabel_filter.GetOutput()
+        label_buffer = itk.PyBuffer[
+            itk_image_type].GetArrayFromImage(itk_image_data)
+
+        # Flip the labels so that the largest component has the highest label
+        # value, e.g., the labeling ordering by size goes from [1, 2, ... N] to
+        # [N, N-1, N-2, ..., 1]. Note that zero is the background value, so we
+        # do not want to change it.
+        import numpy as np
+        minimum = 1  # Minimum label is always 1, background is 0
+        maximum = np.max(label_buffer)
+
+        # Try more memory-efficient approach
+        gt_zero = label_buffer > 0
+        label_buffer[gt_zero] = minimum - label_buffer[gt_zero] + maximum
+
+        # Transpose the data to Fortran indexing
+        dataset.active_scalars = label_buffer.transpose([2, 1, 0])
+
+    except Exception as exc:
+        print("Problem encountered while running ConnectedComponents")
+        raise exc
 
 
 @with_vtk_dataobject
@@ -448,3 +574,65 @@ def set_itk_image_on_dataset(itk_image, dataset, dtype=None):
 
     # Transpose the data to Fortran indexing
     dataset.active_scalars = array.transpose([2, 1, 0])
+
+
+@with_vtk_dataobject
+def set_principal_axes(dataobject, axes):
+    from vtkmodules.vtkCommonCore import vtkFloatArray
+
+    fd = dataobject.GetFieldData()
+
+    axis_array = vtkFloatArray()
+    axis_array.SetName('PrincipalAxes')
+    axis_array.SetNumberOfComponents(3)
+    axis_array.SetNumberOfTuples(3)
+    axis_array.InsertTypedTuple(0, list(axes[:, 0]))
+    axis_array.InsertTypedTuple(1, list(axes[:, 1]))
+    axis_array.InsertTypedTuple(2, list(axes[:, 2]))
+    fd.RemoveArray('PrincipalAxis')
+    fd.AddArray(axis_array)
+
+
+@with_vtk_dataobject
+def get_principal_axes(dataobject, principal_axis):
+    fd = dataobject.GetFieldData()
+    axis_array = fd.GetArray('PrincipalAxes')
+    assert axis_array is not None, \
+        "Dataset does not have a PrincipalAxes field data array"
+    assert axis_array.GetNumberOfTuples() == 3, \
+        "PrincipalAxes array requires 3 tuples"
+    assert axis_array.GetNumberOfComponents() == 3, \
+        "PrincipalAxes array requires 3 components"
+    assert principal_axis >= 0 and principal_axis <= 2, \
+        "Invalid principal axis. Must be in range [0, 2]."
+
+    return np.array(axis_array.GetTuple(principal_axis))
+
+
+@with_vtk_dataobject
+def set_center(dataobject, center):
+    from vtkmodules.vtkCommonCore import vtkFloatArray
+
+    fd = dataobject.GetFieldData()
+
+    center_array = vtkFloatArray()
+    center_array.SetName('Center')
+    center_array.SetNumberOfComponents(3)
+    center_array.SetNumberOfTuples(1)
+    center_array.InsertTypedTuple(0, list(center))
+    fd.RemoveArray('Center')
+    fd.AddArray(center_array)
+
+
+@with_vtk_dataobject
+def get_center(dataobject):
+    fd = dataobject.GetFieldData()
+    center_array = fd.GetArray('Center')
+    assert center_array is not None, \
+        "Dataset does not have a Center field data array"
+    assert center_array.GetNumberOfTuples() == 1, \
+        "Center array requires 1 tuple"
+    assert center_array.GetNumberOfComponents() == 3, \
+        "Center array requires 3 components"
+
+    return np.array(center_array.GetTuple(0))

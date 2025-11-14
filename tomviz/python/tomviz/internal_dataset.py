@@ -1,7 +1,8 @@
-from tomviz import utils
+from tomviz import internal_utils
+from tomviz.dataset import Dataset as AbstractDataset
 
 
-class Dataset:
+class Dataset(AbstractDataset):
     def __init__(self, data_object, data_source):
         self._data_object = data_object
         self._data_source = data_source
@@ -10,15 +11,15 @@ class Dataset:
 
     @property
     def active_scalars(self):
-        return utils.get_array(self._data_object)
+        return internal_utils.get_array(self._data_object)
 
     @active_scalars.setter
     def active_scalars(self, v):
-        utils.set_array(self._data_object, v)
+        internal_utils.set_array(self._data_object, v)
 
     @property
     def active_name(self):
-        return utils.get_active_scalars_name(self._data_object)
+        return internal_utils.get_active_scalars_name(self._data_object)
 
     @property
     def num_scalars(self):
@@ -26,29 +27,29 @@ class Dataset:
 
     @property
     def scalars_names(self):
-        return utils.array_names(self._data_object)
+        return internal_utils.array_names(self._data_object)
 
     def scalars(self, name=None):
-        return utils.get_array(self._data_object, name)
+        return internal_utils.get_array(self._data_object, name)
 
     def set_scalars(self, name, array):
-        utils.set_array(self._data_object, array, name=name)
+        internal_utils.set_array(self._data_object, array, name=name)
 
     @property
     def spacing(self):
-        return utils.get_spacing(self._data_object)
+        return internal_utils.get_spacing(self._data_object)
 
     @spacing.setter
     def spacing(self, v):
-        utils.set_spacing(self._data_object, v[0], v[1], v[2])
+        internal_utils.set_spacing(self._data_object, v[0], v[1], v[2])
 
     @property
     def tilt_angles(self):
-        return utils.get_tilt_angles(self._data_object)
+        return internal_utils.get_tilt_angles(self._data_object)
 
     @tilt_angles.setter
     def tilt_angles(self, v):
-        utils.set_tilt_angles(self._data_object, v)
+        internal_utils.set_tilt_angles(self._data_object, v)
 
     @property
     def tilt_axis(self):
@@ -62,13 +63,13 @@ class Dataset:
     def dark(self):
         if not self._data_source.dark_data:
             return None
-        return utils.get_array(self._data_source.dark_data)
+        return internal_utils.get_array(self._data_source.dark_data)
 
     @property
     def white(self):
         if not self._data_source.white_data:
             return None
-        return utils.get_array(self._data_source.white_data)
+        return internal_utils.get_array(self._data_source.white_data)
 
     @property
     def file_name(self):
@@ -79,7 +80,7 @@ class Dataset:
         return self._data_source.metadata
 
     def create_child_dataset(self):
-        new_data = utils.make_child_dataset(self._data_object)
+        new_data = internal_utils.make_child_dataset(self._data_object)
         return Dataset(new_data, self._data_source)
 
     def rename_active(self, new_name: str):

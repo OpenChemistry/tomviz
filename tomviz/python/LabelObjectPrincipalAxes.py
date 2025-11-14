@@ -10,13 +10,13 @@ def transform(dataset, label_value=1):
     locations to determine the principal axes.
     """
 
-    from tomviz import utils
+    from tomviz import itkutils
 
-    (axes, center) = utils.label_object_principal_axes(dataset, label_value)
+    (axes, center) = itkutils.label_object_principal_axes(dataset, label_value)
 
     print('Axes is:', axes)
     print('Center is:', center)
 
     # These set the field data on the vtkDataObject
-    utils.set_principal_axes(dataset, axes)
-    utils.set_center(dataset, center)
+    itkutils.set_principal_axes(dataset, axes)
+    itkutils.set_center(dataset, center)

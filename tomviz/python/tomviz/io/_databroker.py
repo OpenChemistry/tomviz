@@ -1,6 +1,6 @@
 import os
 import numpy as np
-import tomviz.utils
+import tomviz.internal_utils
 
 from vtk import vtkImageData
 
@@ -156,7 +156,7 @@ def load_variable(catalog_name, run_uid, table, variable):
     image_data.SetOrigin(0, 0, 0)
     image_data.SetSpacing(1, 1, 1)
     image_data.SetExtent(0, x - 1, 0, y - 1, 0, z - 1)
-    tomviz.utils.set_array(image_data, data)
+    tomviz.internal_utils.set_array(image_data, data)
 
     # Now load the angles
     if 'zps_pi_r_monitor' not in run or \
@@ -165,13 +165,13 @@ def load_variable(catalog_name, run_uid, table, variable):
         raise Exception("No angles found!")
 
     angles = _nsls2_fxi_load_thetas(run)
-    tomviz.utils.set_tilt_angles(image_data, angles)
+    tomviz.internal_utils.set_tilt_angles(image_data, angles)
 
     return image_data
 
 
 def save_data(catalog_name, name, data):
-    scalars = tomviz.utils.get_scalars(data)
+    scalars = tomviz.internal_utils.get_scalars(data)
     r = c[catalog_name]["sandbox"].write_array(scalars, metadata={"name": name})
 
     return r

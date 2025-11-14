@@ -14,7 +14,6 @@ class LabelObjectDistanceFromPrincipalAxis(tomviz.operators.CancelableOperator):
         import copy
         import numpy as np
         from tomviz import itkutils
-        from tomviz import utils
 
         self.progress.maximum = 100
         self.progress.value = 0
@@ -22,8 +21,8 @@ class LabelObjectDistanceFromPrincipalAxis(tomviz.operators.CancelableOperator):
         STEP_PCT = [20, 60, 80, 100]
 
         # These are obtained from the vtkDataObject
-        axis = utils.get_principal_axes(dataset, principal_axis)
-        center = utils.get_center(dataset)
+        axis = itkutils.get_principal_axes(dataset, principal_axis)
+        center = itkutils.get_center(dataset)
 
         # Blank out the undesired label values
         data_shape = dataset.active_scalars.shape
@@ -38,7 +37,7 @@ class LabelObjectDistanceFromPrincipalAxis(tomviz.operators.CancelableOperator):
                 int(fraction * (STEP_PCT[1] - STEP_PCT[0]) + STEP_PCT[0])
             return self.canceled
 
-        utils.connected_components(dataset, 0, connected_progress_func)
+        itkutils.connected_components(dataset, 0, connected_progress_func)
 
         # Get shape attributes
         def label_progress_func(fraction):
