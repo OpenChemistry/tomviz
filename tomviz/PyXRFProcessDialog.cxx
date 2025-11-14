@@ -364,15 +364,15 @@ public:
     settings->beginGroup("pyxrf");
     settings->beginGroup("process");
 
-    // Only set the log file if it isn't already set
-    if (logFile().isEmpty() || !QFile::exists(logFile())) {
-      setLogFile(settings->value("logFile", "").toString());
+    // Only load these settings if we are re-using the same previous
+    // working directory. Otherwise, use all new settings
+    auto previousWorkingDir = settings->value("previousProcessWorkingDir", "");
+    if (workingDirectory == previousWorkingDir) {
+      setParametersFile(settings->value("parametersFile", "").toString());
+      setOutputDirectory(
+        settings->value("outputDirectory", defaultOutputDirectory()).toString());
     }
-
-    setParametersFile(settings->value("parametersFile", "").toString());
     setIcName(settings->value("icName", "").toString());
-    setOutputDirectory(
-      settings->value("outputDirectory", defaultOutputDirectory()).toString());
     setRotateDatasets(
       settings->value("rotateDatasets", true).toBool());
 
@@ -386,6 +386,7 @@ public:
     settings->beginGroup("pyxrf");
     settings->beginGroup("process");
 
+    settings->setValue("previousProcessWorkingDir", workingDirectory);
     settings->setValue("parametersFile", parametersFile());
     settings->setValue("logFile", logFile());
     settings->setValue("icName", icName());
@@ -502,8 +503,9 @@ public:
   {
     QString caption = "Select log file";
     QString filter = "*.csv";
+    auto startPath = logFile() != "" ? logFile() : workingDirectory;
     auto file =
-      QFileDialog::getOpenFileName(parent.data(), caption, logFile(), filter);
+      QFileDialog::getOpenFileName(parent.data(), caption, startPath, filter);
     if (file.isEmpty()) {
       return;
     }
@@ -515,8 +517,9 @@ public:
   {
     QString caption = "Select parameters file";
     QString filter = "*.json";
+    auto startPath = parametersFile() != "" ? parametersFile() : workingDirectory;
     auto file = QFileDialog::getOpenFileName(parent.data(), caption,
-                                             parametersFile(), filter);
+                                             startPath, filter);
     if (file.isEmpty()) {
       return;
     }
@@ -527,8 +530,9 @@ public:
   void selectOutputDirectory()
   {
     QString caption = "Select output directory";
+    auto startPath = outputDirectory() != "" ? outputDirectory() : workingDirectory;
     auto dir = QFileDialog::getExistingDirectory(parent.data(), caption,
-                                                 outputDirectory());
+                                                 startPath);
     if (dir.isEmpty()) {
       return;
     }

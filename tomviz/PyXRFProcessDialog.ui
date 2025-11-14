@@ -181,6 +181,9 @@
      <property name="text">
       <string>Rotate datasets to Tomviz convention?</string>
      </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
     </widget>
    </item>
   </layout>
