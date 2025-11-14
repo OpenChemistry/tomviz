@@ -38,6 +38,9 @@ public:
   QMap<QString, int> logFileColumnIndices;
   QMap<int, QString> tableColumns;
 
+  double pixelSizeX = -1;
+  double pixelSizeY = -1;
+
   Python::Module pyxrfModule;
 
   Internal(QString workingDir, PyXRFProcessDialog* p)
@@ -126,6 +129,7 @@ public:
       return;
     }
 
+    readPixelSizes();
     writeLogFile();
     writeSettings();
     parent->accept();
@@ -267,6 +271,68 @@ public:
       auto line = reader.readLine();
       logFileData.append(line.split(','));
     }
+  }
+
+  void readPixelSizes()
+  {
+    pixelSizeX = -1;
+    pixelSizeY = -1;
+
+    // Find the first selected scan index
+    int firstScanIdx = -1;
+    for (int i = 0; i < logFileData.size(); ++i) {
+      auto use = logFileValue(i, "Use");
+      if (use == "x" || use == "1") {
+        firstScanIdx = i;
+        break;
+      }
+    }
+
+    if (firstScanIdx == -1) {
+      // Don't need to print an error message here, because we have
+      // bigger problems that will be reported elsewhere.
+      return;
+    }
+
+    auto scanId = logFileValue(firstScanIdx, "Scan ID");
+    qInfo() << "Reading pixel sizes from the first checked scan: " << scanId;
+
+    static QStringList columnsNeeded = {
+      "X Start",
+      "X Stop",
+      "Num X",
+      "Y Start",
+      "Y Stop",
+      "Num Y"
+    };
+
+    // We will store the values in here
+    QMap<QString, double> values;
+    for (const auto& colName : columnsNeeded) {
+      auto value = logFileValue(firstScanIdx, colName);
+      if (value.isEmpty()) {
+        qCritical() << "Failed to locate value for column:" << colName;
+        qCritical() << "Pixel sizes will not be set.";
+        return;
+      }
+
+      bool ok;
+      auto valueD = value.toDouble(&ok);
+      if (!ok) {
+        qCritical() << "Failed to convert column value for column" << colName
+                    << "to double. Column value was:" << value;
+        qCritical() << "Pixel sizes will not be set.";
+        return;
+      }
+      values[colName] = valueD;
+    }
+
+    // If we made it here, we must have all column values we need.
+    // Compute and set.
+    pixelSizeX = (values["X Stop"] - values["X Start"]) / values["Num X"] * 1e3;
+    pixelSizeY = (values["Y Stop"] - values["Y Start"]) / values["Num Y"] * 1e3;
+
+    qInfo() << "Pixel sizes determined to be: " << pixelSizeX << pixelSizeY;
   }
 
   void writeLogFile()
@@ -593,6 +659,16 @@ QString PyXRFProcessDialog::icName() const
 QString PyXRFProcessDialog::outputDirectory() const
 {
   return m_internal->outputDirectory();
+}
+
+double PyXRFProcessDialog::pixelSizeX() const
+{
+  return m_internal->pixelSizeX;
+}
+
+double PyXRFProcessDialog::pixelSizeY() const
+{
+  return m_internal->pixelSizeY;
 }
 
 bool PyXRFProcessDialog::rotateDatasets() const

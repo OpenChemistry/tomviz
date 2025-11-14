@@ -3,7 +3,6 @@
 
 #include "PyXRFRunner.h"
 
-#include "DataExchangeFormat.h"
 #include "DataSource.h"
 #include "EmdFormat.h"
 #include "LoadDataReaction.h"
@@ -62,6 +61,8 @@ public:
   QString icName;
   QString outputDirectory;
   bool skipProcessed = true;
+  double pixelSizeX = -1;
+  double pixelSizeY = -1;
   bool rotateDatasets = true;
 
   // Recon options
@@ -313,6 +314,8 @@ public:
     logFile = processDialog->logFile();
     icName = processDialog->icName();
     outputDirectory = processDialog->outputDirectory();
+    pixelSizeX = processDialog->pixelSizeX();
+    pixelSizeY = processDialog->pixelSizeY();
     rotateDatasets = processDialog->rotateDatasets();
 
     // Make sure the output directory exists
@@ -473,6 +476,8 @@ public:
     kwargs.set("elements", variantList);
     kwargs.set("output_path", outputPath);
     kwargs.set("rotate_datasets", rotateDatasets);
+    kwargs.set("pixel_size_x", pixelSizeX);
+    kwargs.set("pixel_size_y", pixelSizeY);
     auto res = extractElementsFunc.call(kwargs);
 
     if (!res.isValid()) {
@@ -515,11 +520,11 @@ public:
 
     // The other files should have identical metadata. We'll just load
     // the image data for those, and add them to the point data.
-    DataExchangeFormat format;
+    EmdFormat format;
     for (int i = 1; i < fileList.size(); ++i) {
       vtkNew<vtkImageData> imageData;
       format.read(fileList[i].toStdString(), imageData);
-      if (!imageData) {
+      if (!imageData || !imageData->GetPointData()->GetScalars()) {
         qCritical() << "Failed to read image data for file:" << fileList[i];
         continue;
       }
