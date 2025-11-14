@@ -1,4 +1,5 @@
 from pathlib import Path
+import sys
 
 import numpy as np
 from scipy.ndimage.interpolation import rotate
@@ -208,31 +209,36 @@ def load_stack_ptycho(version_list: list[str],
     filespty_obj = []
     filespty_prb = []
     currentsidlist = []
-    flags = True
 
     if len(version_list) == 1:
         version_list = np.repeat(version_list, len(sid_list))
 
     ptycho_dir = Path(ptycho_dir)
 
-    for n, i in tqdm(enumerate(sid_list[0: len(version_list)]),
+    pixel_size_x = None
+    pixel_size_y = None
+    for i, sid in tqdm(enumerate(sid_list[0: len(version_list)]),
                      desc="Loading Ptycho"):
-        i = int(i)
-        version = version_list[n]
-        dir_path = ptycho_dir / f'S{i}/{version}/recon_data'
-        f_path = dir_path / f'recon_{i}_{version}_object_ave.npy'
-        g_path = dir_path / f'recon_{i}_{version}_probe_ave.npy'
+        sid = int(sid)
+        version = version_list[i]
+        dir_path = ptycho_dir / f'S{sid}/{version}/recon_data'
+        f_path = dir_path / f'recon_{sid}_{version}_object_ave.npy'
+        g_path = dir_path / f'recon_{sid}_{version}_probe_ave.npy'
         if f_path.exists():
             filespty_obj.append(f_path)
-            currentsidlist.append((n, i, angle_list[n], version))
+            currentsidlist.append((i, sid, angle_list[i], version))
             filespty_prb.append(g_path)
+            if i == 0:
+                print('Attempting to read pixel sizes from the '
+                      f'first scan ID: {sid}')
+                result = attempt_to_read_pixel_sizes(dir_path)
+                if result is not None:
+                    pixel_size_x, pixel_size_y = result
         else:
-            if flags:
-                print(f"didn't find: {i}")
-            continue
+            print(f"didn't find: {sid}")
 
-    if flags:
-        print(f"found: {len(filespty_obj)}")
+    has_pixel_sizes = pixel_size_x is not None
+    print(f"found: {len(filespty_obj)}")
 
     tempPtyobj = []
     tempPtyprb = []
@@ -315,6 +321,9 @@ def load_stack_ptycho(version_list: list[str],
         dataset = Dataset({key: arrays[key] for key in array_names})
         dataset.tilt_angles = np.array([x[2] for x in currentsidlist])
         dataset.tilt_axis = 2
+        if filename == 'ptycho_object.emd' and has_pixel_sizes:
+            # Also set the pixel sizes if they are available
+            dataset.spacing = (pixel_size_x, pixel_size_y, 1)
         output_path = Path(output_dir) / filename
         _write_emd(output_path, dataset)
         output_files.append(str(output_path))
@@ -369,6 +378,29 @@ def fit_func(
     return lambda x, y: p0 + x * px1 + py1 * y
 
 
+def attempt_to_read_pixel_sizes(dir_path: Path) -> tuple[float, float] | None:
+    matches = list(dir_path.glob('*ptycho_hyan*.txt'))
+    if not matches:
+        print(
+            f'Failed to locate config file in {dir_path}\n'
+            f'Pixel sizes will not be read',
+            file=sys.stderr,
+        )
+        return None
+
+    result = fetch_pixel_sizes_from_ptycho_hyan_file(matches[0].resolve())
+    if result is None:
+        print(
+            f'Failed to obtain pixel sizes. Pixel sizes '
+            f'will not be applied to datasets.',
+            file=sys.stderr,
+        )
+        return None
+
+    print('Pixel sizes identified as:', result[0], result[1])
+    return result[0], result[1]
+
+
 def fetch_angle_from_ptycho_hyan_file(filepath: PathLike) -> float | None:
     with open(filepath, 'r') as rf:
         for line in rf:
@@ -379,3 +411,44 @@ def fetch_angle_from_ptycho_hyan_file(filepath: PathLike) -> float | None:
 
     # Angle was not found
     return np.nan
+
+
+def fetch_pixel_sizes_from_ptycho_hyan_file(
+    filepath: PathLike,
+) -> tuple[float, float] | None:
+    print(f'Obtaining pixel sizes from config file: {filepath})')
+    vars_required = [
+        'lambda_nm', 'z_m', 'x_arr_size', 'y_arr_size', 'ccd_pixel_um'
+    ]
+    results = {}
+    try:
+        with open(filepath, 'r') as rf:
+            for line in rf:
+                if '=' not in line:
+                    continue
+
+                lhs = line.split('=')[0].strip()
+                if lhs in vars_required:
+                    value = float(line.split('=')[1].strip())
+                    results[lhs] = value
+    except Exception as e:
+        print('Failed to fetch pixel sizes with error:', e, file=sys.stderr)
+        return None
+
+    missing = [x for x in vars_required if x not in results]
+    if missing:
+        print(
+            'Failed to fetch pixel sizes. Some required variables '
+            f'were not found: {missing}'
+        )
+        return None
+
+    # Now compute them. They can both use the same numerator
+    numerator = (
+        results['lambda_nm'] * results['z_m'] * 1e6 / results['ccd_pixel_um']
+    )
+
+    x_pixel_size = numerator / results['x_arr_size']
+    y_pixel_size = numerator / results['y_arr_size']
+
+    return x_pixel_size, y_pixel_size
