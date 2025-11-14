@@ -212,11 +212,11 @@ class ReaderSchema(Schema):
 
 
 class DataSourceSchema(Schema):
-    operators = fields.List(OperatorField, missing=lambda: [])
+    operators = fields.List(OperatorField)
     colorMap2DBox = fields.Nested(ColorMap2DBoxSchema)
     colorOpacityMap = fields.Nested(ColorOpacityMap)
     gradientOpacityMap = fields.Nested(GradientOpacityMap)
-    modules = fields.List(ModuleField, missing=lambda: [])
+    modules = fields.List(ModuleField)
     useDetachedColorMap = fields.Boolean()
     spacing = fields.List(fields.Float)
     units = fields.String()
