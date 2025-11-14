@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.interpolate import interp1d
+from scipy import ndimage
 
 import tomviz.operators
 from tomviz.utils import pad_array
@@ -7,9 +8,38 @@ from tomviz.utils import pad_array
 
 class AutoTiltAxisShiftAlignmentOperator(tomviz.operators.CancelableOperator):
 
-    def transform(self, dataset, padding=0, num_slices: int = 5,
-                  apply_to_all_arrays=True):
+    def transform(self, dataset, transform_source: str = 'generate',
+                  transform_file: str = '', padding: int = 0,
+                  num_slices: int = 5, seed: int = 0,
+                  apply_to_all_arrays: bool = True,
+                  transforms_save_file: str = ''):
         """Automatic align the tilt axis to the center of images"""
+        shared_kwargs = {
+            'dataset': dataset,
+            'apply_to_all_arrays': apply_to_all_arrays,
+        }
+        if transform_source == 'generate':
+            kwargs = {
+                **shared_kwargs,
+                'padding': padding,
+                'num_slices': num_slices,
+                'seed': seed,
+                'transforms_save_file': transforms_save_file,
+            }
+            f = self.transform_generate
+        elif transform_source == 'from_file':
+            kwargs = {
+                **shared_kwargs,
+                'transform_file': transform_file,
+            }
+            f = self.transform_from_file
+
+        return f(**kwargs)
+
+    def transform_generate(self, dataset, padding: int = 0,
+                           num_slices: int = 5, seed: int = 0,
+                           apply_to_all_arrays: bool = True,
+                           transforms_save_file: str = ''):
         self.progress.maximum = 1
 
         # Get Tilt angles
@@ -36,7 +66,8 @@ class AutoTiltAxisShiftAlignmentOperator(tomviz.operators.CancelableOperator):
                   f'Reducing the number of slices to "{temp.size}"')
             num_slices = temp.size
 
-        slices = np.sort(temp[np.random.permutation(temp.size)[:num_slices]])
+        random_state = np.random.RandomState(seed=seed)
+        slices = np.sort(temp[random_state.permutation(temp.size)[:num_slices]])
         print('Trial reconstruction slices:')
         print(slices)
 
@@ -62,8 +93,36 @@ class AutoTiltAxisShiftAlignmentOperator(tomviz.operators.CancelableOperator):
             step += 1
             self.progress.value = step
 
-        print('shift: %d' % shifts[np.argmax(I)])
+        shift = shifts[np.argmax(I)]
+        print(f'shift: {shift}')
 
+        if transforms_save_file:
+            np.savez(
+                transforms_save_file,
+                shift=shift,
+                spacing=dataset.spacing,
+            )
+            print('Saved transforms file to:', transforms_save_file)
+
+        return self.apply_shift_to_arrays(dataset, shift, apply_to_all_arrays)
+
+    def transform_from_file(self, dataset, transform_file: str = '',
+                            apply_to_all_arrays: bool = True):
+
+        with np.load(transform_file) as f:
+            transform_shift = f['shift']
+            transform_spacing = f['spacing']
+
+        # The true shift will depend on the voxel size ratio, along
+        # the shift direction, which is Y.
+        axis = 1
+        shift = (
+            transform_shift * transform_spacing[axis] / dataset.spacing[axis]
+        )
+        return self.apply_shift_to_arrays(dataset, shift, apply_to_all_arrays)
+
+    def apply_shift_to_arrays(self, dataset, shift,
+                              apply_to_all_arrays: bool = True):
         if apply_to_all_arrays:
             names = dataset.scalars_names
         else:
@@ -71,7 +130,7 @@ class AutoTiltAxisShiftAlignmentOperator(tomviz.operators.CancelableOperator):
 
         for name in names:
             array = dataset.scalars(name)
-            result = np.roll(array, shifts[np.argmax(I)], axis=1)
+            result = ndimage.shift(array, shift=(0, shift, 0), order=1)
             result = np.asfortranarray(result)
 
             # Set the result as the new scalars.
