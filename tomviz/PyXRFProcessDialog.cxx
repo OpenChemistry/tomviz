@@ -437,6 +437,9 @@ public:
       setParametersFile(settings->value("parametersFile", "").toString());
       setOutputDirectory(
         settings->value("outputDirectory", defaultOutputDirectory()).toString());
+      if (logFile().isEmpty()) {
+        setLogFile(settings->value("logFile", "").toString());
+      }
     }
     setIcName(settings->value("icName", "").toString());
     setRotateDatasets(
