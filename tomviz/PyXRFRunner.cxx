@@ -19,6 +19,7 @@
 #include <QFutureWatcher>
 #include <QMessageBox>
 #include <QPointer>
+#include <QProcess>
 #include <QtConcurrent>
 
 #include <vtkDataArray.h>
@@ -41,13 +42,12 @@ public:
 
   // Python modules and functions
   Python::Module pyxrfModule;
-  Python::Function makeHDF5Func;
-  Python::Function processProjectionsFunc;
 
   // Options we will use as arguments to various pieces
 
   // General options
   QString workingDirectory;
+  QString pyxrfUtilsCommand;
 
   // Make HDF5 options
   int scanStart = 0;
@@ -152,22 +152,6 @@ public:
   void importFunctions()
   {
     importModule();
-
-    Python python;
-
-    if (!makeHDF5Func.isValid()) {
-      makeHDF5Func = pyxrfModule.findFunction("make_hdf5");
-      if (!makeHDF5Func.isValid()) {
-        qCritical() << "Failed to find function \"make_hdf5\"";
-      }
-    }
-
-    if (!processProjectionsFunc.isValid()) {
-      processProjectionsFunc = pyxrfModule.findFunction("process_projections");
-      if (!processProjectionsFunc.isValid()) {
-        qCritical() << "Failed to find function \"process_projections\"";
-      }
-    }
   }
 
   template <typename T>
@@ -191,7 +175,7 @@ public:
   void start()
   {
     clear();
-    importFunctions();
+    importModule();
     showMakeHDF5Dialog();
   }
 
@@ -208,6 +192,7 @@ public:
   void makeHDF5DialogAccepted()
   {
     // Gather the settings and decide what to do
+    pyxrfUtilsCommand = makeHDF5Dialog->command();
     workingDirectory = makeHDF5Dialog->workingDirectory();
     scanStart = makeHDF5Dialog->scanStart();
     scanStop = makeHDF5Dialog->scanStop();
@@ -233,23 +218,26 @@ public:
 
   bool _runMakeHDF5()
   {
-    Python python;
+    QString program = pyxrfUtilsCommand;
+    QStringList args;
 
-    if (!makeHDF5Func.isValid()) {
-      qCritical() << "Failed to find function \"make_hdf5\"";
-      return false;
+    args << "make-hdf5" << workingDirectory
+         << "-s" << QString::number(scanStart)
+         << "-e" << QString::number(scanStop)
+         << "-l" << defaultLogFileName;
+
+    if (successfulScansOnly) {
+      args.append("-b");
     }
 
-    Python::Dict kwargs;
-    kwargs.set("start_scan", scanStart);
-    kwargs.set("stop_scan", scanStop);
-    kwargs.set("successful_scans_only", successfulScansOnly);
-    kwargs.set("working_directory", workingDirectory);
-    kwargs.set("log_file_name", defaultLogFileName);
-    auto res = makeHDF5Func.call(kwargs);
+    QProcess process;
+    process.setProcessChannelMode(QProcess::ForwardedChannels);
+    process.start(program, args);
+    process.waitForFinished();
 
-    if (!res.isValid()) {
-      qCritical() << "Error calling tomviz.pyxrf.make_hdf5";
+    if (process.exitStatus() != QProcess::NormalExit) {
+      qCritical() << "Error running program:" << program << args;
+      qCritical() << "Exit code: " << process.exitCode();
       return false;
     }
 
@@ -310,6 +298,7 @@ public:
   void processDialogAccepted()
   {
     // Pull out the options that were chosen
+    pyxrfUtilsCommand = processDialog->command();
     parametersFile = processDialog->parametersFile();
     logFile = processDialog->logFile();
     icName = processDialog->icName();
@@ -336,24 +325,27 @@ public:
 
   bool _runProcessProjections()
   {
-    Python python;
+    QString program = pyxrfUtilsCommand;
+    QStringList args;
 
-    if (!processProjectionsFunc.isValid()) {
-      qCritical() << "Failed to find function \"process_projections\"";
-      return false;
+    args << "process-projections" << workingDirectory
+         << "-p" << parametersFile
+         << "-l" << logFile
+         << "-i" << icName
+         << "-o" << outputDirectory;
+
+    if (skipProcessed) {
+      args << "-s";
     }
 
-    Python::Dict kwargs;
-    kwargs.set("working_directory", workingDirectory);
-    kwargs.set("parameters_file_name", parametersFile);
-    kwargs.set("log_file_name", logFile);
-    kwargs.set("ic_name", icName);
-    kwargs.set("skip_processed", skipProcessed);
-    kwargs.set("output_directory", outputDirectory);
-    auto res = processProjectionsFunc.call(kwargs);
+    QProcess process;
+    process.setProcessChannelMode(QProcess::ForwardedChannels);
+    process.start(program, args);
+    process.waitForFinished();
 
-    if (!res.isValid()) {
-      qCritical() << "Error calling tomviz.pyxrf.process_projections";
+    if (process.exitStatus() != QProcess::NormalExit) {
+      qCritical() << "Error running program:" << program << args;
+      qCritical() << "Exit code: " << process.exitCode();
       return false;
     }
 

@@ -42,6 +42,16 @@ public:
             &Internal::accepted);
   }
 
+  QString command() const
+  {
+    return ui.command->text();
+  }
+
+  void setCommand(const QString& cmd)
+  {
+    ui.command->setText(cmd);
+  }
+
   bool useAlreadyExistingData() const
   {
     return ui.method->currentText() == "Already Existing";
@@ -154,8 +164,11 @@ public:
   {
     auto settings = pqApplicationCore::instance()->settings();
     settings->beginGroup("pyxrf");
-    settings->beginGroup("makeHDF5");
 
+    // Do this in the general pyxrf settings
+    setCommand(settings->value("pyxrfUtilsCommand", "pyxrf-utils").toString());
+
+    settings->beginGroup("makeHDF5");
     setMethod(settings->value("method", "New").toString());
     setWorkingDirectory(
       settings->value("workingDirectory", defaultWorkingDirectory())
@@ -164,8 +177,8 @@ public:
     setScanStop(settings->value("scanStop", 0).toInt());
     setSuccessfulScansOnly(
       settings->value("successfulScansOnly", true).toBool());
-
     settings->endGroup();
+
     settings->endGroup();
   }
 
@@ -173,15 +186,18 @@ public:
   {
     auto settings = pqApplicationCore::instance()->settings();
     settings->beginGroup("pyxrf");
-    settings->beginGroup("makeHDF5");
 
+    // Do this in the general pyxrf settings
+    settings->setValue("pyxrfUtilsCommand", command());
+
+    settings->beginGroup("makeHDF5");
     settings->setValue("method", method());
     settings->setValue("workingDirectory", workingDirectory());
     settings->setValue("scanStart", scanStart());
     settings->setValue("scanStop", scanStop());
     settings->setValue("successfulScansOnly", successfulScansOnly());
-
     settings->endGroup();
+
     settings->endGroup();
   }
 };
@@ -197,6 +213,11 @@ void PyXRFMakeHDF5Dialog::show()
 {
   m_internal->readSettings();
   QDialog::show();
+}
+
+QString PyXRFMakeHDF5Dialog::command() const
+{
+  return m_internal->command();
 }
 
 bool PyXRFMakeHDF5Dialog::useAlreadyExistingData() const

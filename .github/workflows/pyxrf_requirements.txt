@@ -1,0 +1,7 @@
+# These are PyXRF workflow dependencies
+hxntools
+pyxrf
+xrf-tomo
+xraylib
+scikit-beam
+tomopy

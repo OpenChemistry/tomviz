@@ -680,9 +680,8 @@ endforeach()
 
 set(tomviz_python_pyxrf_modules
   __init__.py
+  ic_names.py
   load_output.py
-  make_hdf5.py
-  process_projections.py
 )
 
 file(MAKE_DIRECTORY "${tomviz_python_binary_dir}/tomviz/pyxrf")

@@ -49,10 +49,6 @@ public:
     ui.setupUi(p);
     setParent(p);
 
-    // Our embedded python in conda doesn't seem to have its paths set up
-    // correctly. No idea why. Fix it.
-    fixPythonPaths();
-
     setupTable();
     setupComboBoxes();
     setupConnections();
@@ -428,24 +424,29 @@ public:
   {
     auto settings = pqApplicationCore::instance()->settings();
     settings->beginGroup("pyxrf");
-    settings->beginGroup("process");
 
+    setCommand(settings->value("pyxrfUtilsCommand", "pyxrf-utils").toString());
+
+    settings->beginGroup("process");
     // Only load these settings if we are re-using the same previous
     // working directory. Otherwise, use all new settings
     auto previousWorkingDir = settings->value("previousProcessWorkingDir", "");
+    setPyxrfGUICommand(
+      settings->value("pyxrfGUICommand", "pyxrf").toString());
     if (workingDirectory == previousWorkingDir) {
-      setParametersFile(settings->value("parametersFile", "").toString());
-      setOutputDirectory(
-        settings->value("outputDirectory", defaultOutputDirectory()).toString());
       if (logFile().isEmpty()) {
         setLogFile(settings->value("logFile", "").toString());
       }
+      setParametersFile(settings->value("parametersFile", "").toString());
+      setOutputDirectory(
+        settings->value("outputDirectory", defaultOutputDirectory()).toString());
     }
-    setIcName(settings->value("icName", "").toString());
+    setIcName(settings->value("icName", "sclr1_ch4").toString());
+    setSkipProcessed(settings->value("skipProcessed", true).toBool());
     setRotateDatasets(
       settings->value("rotateDatasets", true).toBool());
-
     settings->endGroup();
+
     settings->endGroup();
   }
 
@@ -453,35 +454,22 @@ public:
   {
     auto settings = pqApplicationCore::instance()->settings();
     settings->beginGroup("pyxrf");
+
+    // Do this in the general pyxrf settings
+    settings->setValue("pyxrfUtilsCommand", command());
+
     settings->beginGroup("process");
-
     settings->setValue("previousProcessWorkingDir", workingDirectory);
-    settings->setValue("parametersFile", parametersFile());
     settings->setValue("logFile", logFile());
-    settings->setValue("icName", icName());
+    settings->setValue("pyxrfGUICommand", pyxrfGUICommand());
+    settings->setValue("parametersFile", parametersFile());
     settings->setValue("outputDirectory", outputDirectory());
+    settings->setValue("icName", icName());
+    settings->setValue("skipProcessed", skipProcessed());
     settings->setValue("rotateDatasets", rotateDatasets());
+    settings->endGroup();
 
     settings->endGroup();
-    settings->endGroup();
-  }
-
-  void fixPythonPaths()
-  {
-    importModule();
-
-    Python python;
-
-    auto func = pyxrfModule.findFunction("fix_python_paths");
-    if (!func.isValid()) {
-      qCritical() << "Failed to import tomviz.pyxrf.fix_python_paths";
-      return;
-    }
-
-    auto res = func.call();
-    if (!res.isValid()) {
-      qCritical() << "Error calling tomviz.pyxrf.fix_python_paths";
-    }
   }
 
   QStringList icNames()
@@ -521,7 +509,7 @@ public:
       return;
     }
 
-    QString program = "pyxrf";
+    QString program = pyxrfGUICommand();
     auto environment = QProcessEnvironment::systemEnvironment();
     if (environment.contains("TOMVIZ_PYXRF_EXECUTABLE")) {
       program = environment.value("TOMVIZ_PYXRF_EXECUTABLE");
@@ -609,6 +597,14 @@ public:
     setOutputDirectory(dir);
   }
 
+  QString command() const { return ui.command->text(); }
+
+  void setCommand(const QString& s) { ui.command->setText(s); }
+
+  QString pyxrfGUICommand() const { return ui.pyxrfGUICommand->text(); }
+
+  void setPyxrfGUICommand(const QString& s) { ui.pyxrfGUICommand->setText(s); }
+
   QString parametersFile() const { return ui.parametersFile->text(); }
 
   void setParametersFile(QString s) { ui.parametersFile->setText(s); }
@@ -624,6 +620,10 @@ public:
   QString outputDirectory() const { return ui.outputDirectory->text(); }
 
   void setOutputDirectory(QString s) { ui.outputDirectory->setText(s); }
+
+  bool skipProcessed() const { return ui.skipProcessed->isChecked(); }
+
+  void setSkipProcessed(bool b) { ui.skipProcessed->setChecked(b); }
 
   bool rotateDatasets() const { return ui.rotateDatasets->isChecked(); }
 
@@ -642,6 +642,11 @@ void PyXRFProcessDialog::show()
 {
   m_internal->readSettings();
   QDialog::show();
+}
+
+QString PyXRFProcessDialog::command() const
+{
+  return m_internal->command();
 }
 
 QString PyXRFProcessDialog::parametersFile() const
@@ -672,6 +677,11 @@ double PyXRFProcessDialog::pixelSizeX() const
 double PyXRFProcessDialog::pixelSizeY() const
 {
   return m_internal->pixelSizeY;
+}
+
+bool PyXRFProcessDialog::skipProcessed() const
+{
+  return m_internal->skipProcessed();
 }
 
 bool PyXRFProcessDialog::rotateDatasets() const

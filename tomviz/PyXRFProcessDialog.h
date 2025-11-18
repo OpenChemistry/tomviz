@@ -19,12 +19,14 @@ public:
 
   virtual void show();
 
+  QString command() const;
   QString parametersFile() const;
   QString logFile() const;
   QString icName() const;
   QString outputDirectory() const;
   double pixelSizeX() const;
   double pixelSizeY() const;
+  bool skipProcessed() const;
   bool rotateDatasets() const;
 
 private:

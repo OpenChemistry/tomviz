@@ -19,6 +19,7 @@ public:
 
   void show();
 
+  QString command() const;
   bool useAlreadyExistingData() const;
   QString workingDirectory() const;
   int scanStart() const;
