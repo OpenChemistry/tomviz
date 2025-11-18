@@ -6,6 +6,8 @@
 #include "ActiveObjects.h"
 #include "DataSource.h"
 #include "EditOperatorDialog.h"
+#include "ModuleManager.h"
+#include "ModuleSlice.h"
 #include "OperatorDialog.h"
 #include "OperatorFactory.h"
 #include "OperatorPython.h"
@@ -35,108 +37,6 @@
 #include <QtDebug>
 
 #include <cassert>
-
-namespace {
-
-class SelectSliceRangeWidget : public QWidget
-{
-  Q_OBJECT
-  typedef QWidget Superclass;
-
-public:
-  SelectSliceRangeWidget(int* ext, bool showAxisSelector = true,
-                         QWidget* p = nullptr)
-    : Superclass(p), firstSlice(new tomviz::SpinBox(this)),
-      lastSlice(new tomviz::SpinBox(this)), axisSelect(new QComboBox(this))
-  {
-    for (int i = 0; i < 6; ++i) {
-      this->Extent[i] = ext[i];
-    }
-    QHBoxLayout* rangeLayout = new QHBoxLayout;
-    QLabel* startLabel = new QLabel("Start:", this);
-    QLabel* endLabel = new QLabel("End:", this);
-
-    this->firstSlice->setRange(0, ext[5] - ext[4]);
-    this->firstSlice->setValue(0);
-    this->lastSlice->setRange(0, ext[5] - ext[4]);
-    this->lastSlice->setValue(0);
-
-    rangeLayout->addWidget(startLabel);
-    rangeLayout->addWidget(this->firstSlice);
-    rangeLayout->addWidget(endLabel);
-    rangeLayout->addWidget(this->lastSlice);
-
-    QHBoxLayout* axisSelectLayout = new QHBoxLayout;
-    QLabel* axisLabel = new QLabel("Axis:", this);
-    this->axisSelect->addItem("X");
-    this->axisSelect->addItem("Y");
-    this->axisSelect->addItem("Z");
-    this->axisSelect->setCurrentIndex(2);
-
-    axisSelectLayout->addWidget(axisLabel);
-    axisSelectLayout->addWidget(this->axisSelect);
-
-    QVBoxLayout* widgetLayout = new QVBoxLayout;
-    widgetLayout->addLayout(rangeLayout);
-    widgetLayout->addLayout(axisSelectLayout);
-
-    if (!showAxisSelector) {
-      axisLabel->hide();
-      this->axisSelect->hide();
-    }
-
-    this->setLayout(widgetLayout);
-
-    QObject::connect(this->firstSlice, SIGNAL(editingFinished()), this,
-                     SLOT(onMinimumChanged()));
-    QObject::connect(this->lastSlice, SIGNAL(editingFinished()), this,
-                     SLOT(onMaximumChanged()));
-    this->connect(axisSelect, SIGNAL(currentIndexChanged(int)),
-                  SLOT(onAxisChanged(int)));
-  }
-
-  ~SelectSliceRangeWidget() {}
-
-  int startSlice() const { return this->firstSlice->value(); }
-
-  int endSlice() const { return this->lastSlice->value(); }
-
-  int axis() const { return this->axisSelect->currentIndex(); }
-
-public slots:
-  void onMinimumChanged()
-  {
-    int val = this->firstSlice->value();
-    if (this->lastSlice->value() < val) {
-      this->lastSlice->setValue(val);
-    }
-  }
-
-  void onMaximumChanged()
-  {
-    int val = this->lastSlice->value();
-    if (this->firstSlice->value() > val) {
-      this->firstSlice->setValue(val);
-    }
-  }
-
-  void onAxisChanged(int newAxis)
-  {
-    int newSliceMax = this->Extent[2 * newAxis + 1] - this->Extent[2 * newAxis];
-    this->firstSlice->setMaximum(newSliceMax);
-    this->lastSlice->setMaximum(newSliceMax);
-  }
-
-private:
-  Q_DISABLE_COPY(SelectSliceRangeWidget)
-  tomviz::SpinBox* firstSlice; // delete slices starting at this slice index
-  tomviz::SpinBox* lastSlice;  // delete slices ending at this slice index
-  QComboBox* axisSelect;
-  int Extent[6];
-};
-} // namespace
-
-#include "AddPythonTransformReaction.moc"
 
 namespace tomviz {
 
@@ -211,11 +111,30 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
   }
 
   bool hasJson = this->jsonSource.size() > 0;
+
   if (hasJson) {
     OperatorPython* opPython = new OperatorPython(source);
     opPython->setJSONDescription(jsonSource);
     opPython->setLabel(scriptLabel);
     opPython->setScript(scriptSource);
+    if (scriptLabel == "Auto Tilt Image Align (PyStackReg)") {
+      // If there are any slice modules on this data source, use the
+      // slice index as the default value for the slice index.
+      int defaultSliceIdx = 0;
+      // Use the output data source of the pipeline if it is available. If
+      // one is not available, this just defaults to the root data source.
+      auto tSource = source->pipeline()->transformedDataSource();
+      auto sliceModules = ModuleManager::instance().findModules<ModuleSlice*>(
+          tSource, nullptr);
+      if (sliceModules.size() > 0 && sliceModules[0]) {
+        defaultSliceIdx = std::max(sliceModules[0]->slice(), 0);
+      }
+
+      QMap<QString, QVariant> arguments{{"ref_slice_index", defaultSliceIdx}};
+      QMap<QString, QString> typeInfo{{"ref_slice_index", "int"}};
+      opPython->setArguments(arguments);
+      opPython->setTypeInfo(typeInfo);
+    }
 
     // Use JSON to build the interface via the EditOperatorDialog
     // If the operator doesn't have parameters, don't show the dialog on first
@@ -369,40 +288,6 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       QMap<QString, QString> typeInfo;
       typeInfo["START_CROP"] = "int";
       typeInfo["END_CROP"] = "int";
-      addPythonOperator(source, this->scriptLabel, this->scriptSource,
-                        arguments, typeInfo);
-    }
-  } else if (scriptLabel == "Delete Slices") {
-    auto t = source->producer();
-    auto data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
-    int* shape = data->GetExtent();
-
-    QDialog dialog(tomviz::mainWidget());
-
-    SelectSliceRangeWidget* sliceRange =
-      new SelectSliceRangeWidget(shape, true, &dialog);
-
-    QVBoxLayout* v = new QVBoxLayout;
-    QDialogButtonBox* buttons = new QDialogButtonBox(
-      QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, &dialog);
-    connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
-    connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
-    v->addWidget(sliceRange);
-    v->addWidget(buttons);
-    dialog.setLayout(v);
-    dialog.setWindowTitle("Delete Slices");
-    dialog.layout()->setSizeConstraint(
-      QLayout::SetFixedSize); // Make the UI non-resizeable
-
-    if (dialog.exec() == QDialog::Accepted) {
-      QMap<QString, QVariant> arguments;
-      arguments.insert("firstSlice", sliceRange->startSlice());
-      arguments.insert("lastSlice", sliceRange->endSlice());
-      arguments.insert("axis", sliceRange->axis());
-      QMap<QString, QString> typeInfo;
-      typeInfo["firstSlice"] = "int";
-      typeInfo["lastSlice"] = "int";
-      typeInfo["axis"] = "int";
       addPythonOperator(source, this->scriptLabel, this->scriptSource,
                         arguments, typeInfo);
     }

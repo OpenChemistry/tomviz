@@ -1,5 +1,5 @@
 import argparse
-from tomviz.utility import logging
+from tomviz_acquisition.utility import logging
 
 
 def main():
@@ -23,7 +23,7 @@ def main():
     if args.redirect:
         logging.setup_std_loggers()
 
-    from tomviz.acquisition import server
+    from tomviz_acquisition.acquisition import server
 
     logging.setup_loggers(args.debug, args.redirect)
     server_params = vars(args)

@@ -60,7 +60,7 @@ def setup_std_loggers():
 
 
 def setup_loggers(debug=False, redirect=False):
-    logger = logging.getLogger('tomviz')
+    logger = logging.getLogger('tomviz_acquisition')
     logger.setLevel(logging.DEBUG if debug else logging.INFO)
 
     file_handler = logging.handlers.RotatingFileHandler(

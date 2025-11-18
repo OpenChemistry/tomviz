@@ -2,6 +2,7 @@ import os
 import multiprocessing
 from pathlib import Path
 import shutil
+import sys
 
 import h5py
 from xrf_tomo import process_proj, make_single_hdf
@@ -55,6 +56,8 @@ def process_projections(working_directory, parameters_file_name, log_file_name,
     }
     process_proj(**kwargs)
 
+    # Ensure the output directory exists
+    Path(output_directory).mkdir(parents=True, exist_ok=True)
     kwargs = {
         'fn': 'tomo.h5',
         'fn_log': log_file_name,
@@ -82,11 +85,12 @@ def fix_python_paths():
     # its sys.path correctly.
     python_path_var = os.environ.get('PYTHONPATH', '')
     python_paths = python_path_var.split(':') if python_path_var else []
+    python_lib_path = f'lib/python3.{sys.version_info.minor}'
 
     conda_path = Path(os.environ.get('CONDA_PREFIX', ''))
     need_to_add = [
-        conda_path / 'lib/python3.7/site-packages',
-        conda_path / 'lib/python3.7/lib-dynload',
+        conda_path / f'{python_lib_path}/site-packages',
+        conda_path / f'{python_lib_path}/lib-dynload',
     ]
 
     for path in need_to_add:

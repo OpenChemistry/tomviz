@@ -137,6 +137,51 @@ QWidget* getNumericWidget(double defaultValue, double rangeMin, double rangeMax,
   return spinBox;
 }
 
+template<typename T>
+bool isWidgetType(const QWidget* widget) {
+  return qobject_cast<const T*>(widget) != nullptr;
+}
+
+bool isWidgetNumeric(const QWidget* widget) {
+  return isWidgetType<QDoubleSpinBox>(widget) || isWidgetType<QSpinBox>(widget);
+}
+
+template <typename T>
+auto changedSignal()
+{
+  // Get a generic symbol a widget has changed
+  if constexpr (std::is_same_v<T, QComboBox>) {
+    return QOverload<int>::of(&QComboBox::currentIndexChanged);
+  } else if constexpr (std::is_same_v<T, QCheckBox>) {
+    return &QCheckBox::toggled;
+  } else if constexpr (std::is_same_v<T, QDoubleSpinBox>) {
+    return QOverload<double>::of(&QDoubleSpinBox::valueChanged);
+  } else if constexpr (std::is_same_v<T, QSpinBox>) {
+    return QOverload<int>::of(&QSpinBox::valueChanged);
+  } else if constexpr (std::is_same_v<T, QLineEdit>) {
+    return &QLineEdit::textChanged;
+  }
+}
+
+template <typename T>
+auto widgetValue(const T* w)
+{
+  // Get the widget value.
+  // This will be an int for QSpinBox, double for QDoubleSpinBox,
+  // string for QComboBox, etc.
+  if constexpr (std::is_same_v<T, QComboBox>) {
+    return w->currentData().toString();
+  } else if constexpr (std::is_same_v<T, QCheckBox>) {
+    return w->isChecked();
+  } else if constexpr (std::is_same_v<T, QDoubleSpinBox>) {
+    return w->value();
+  } else if constexpr (std::is_same_v<T, QSpinBox>) {
+    return w->value();
+  } else if constexpr (std::is_same_v<T, QLineEdit>) {
+    return w->text();
+  }
+}
+
 void addBoolWidget(QGridLayout* layout, int row, QJsonObject& parameterNode)
 {
   QJsonValueRef nameValue = parameterNode["name"];
@@ -165,6 +210,7 @@ void addBoolWidget(QGridLayout* layout, int row, QJsonObject& parameterNode)
   QCheckBox* checkBox = new QCheckBox();
   checkBox->setObjectName(nameValue.toString());
   checkBox->setCheckState(defaultValue ? Qt::Checked : Qt::Unchecked);
+  label->setBuddy(checkBox);
   layout->addWidget(checkBox, row, 1, 1, 1);
 }
 
@@ -260,6 +306,7 @@ void addNumericWidget(QGridLayout* layout, int row, QJsonObject& parameterNode,
   horizontalLayout->setContentsMargins(0, 0, 0, 0);
   QWidget* horizontalWidget = new QWidget;
   horizontalWidget->setLayout(horizontalLayout);
+  label->setBuddy(horizontalWidget);
   layout->addWidget(horizontalWidget, row, 1, 1, 1);
 
   for (size_t i = 0; i < defaultValues.size(); ++i) {
@@ -298,14 +345,9 @@ void addEnumerationWidget(QGridLayout* layout, int row,
   }
   layout->addWidget(label, row, 0, 1, 1);
 
-  int defaultOption = 0;
-  QJsonValueRef defaultNode = parameterNode["default"];
-  if (!defaultNode.isUndefined() && isType<int>(defaultNode)) {
-    defaultOption = getAs<int>(defaultNode);
-  }
-
   QComboBox* comboBox = new QComboBox();
   comboBox->setObjectName(nameValue.toString());
+  label->setBuddy(comboBox);
   QJsonValueRef optionsNode = parameterNode["options"];
   if (!optionsNode.isUndefined()) {
     QJsonArray optionsArray = optionsNode.toArray();
@@ -325,7 +367,19 @@ void addEnumerationWidget(QGridLayout* layout, int row,
     }
   }
 
-  comboBox->setCurrentIndex(defaultOption);
+  // Set the default if present
+  QJsonValueRef defaultNode = parameterNode["default"];
+  if (!defaultNode.isUndefined()) {
+    if (isType<int>(defaultNode)) {
+      comboBox->setCurrentIndex(getAs<int>(defaultNode));
+    } else if (defaultNode.isString()) {
+      // Find the data that matches, and set it
+      int defaultIndex = comboBox->findData(getAs<QString>(defaultNode));
+      if (defaultIndex >= 0) {
+        comboBox->setCurrentIndex(defaultIndex);
+      }
+    }
+  }
 
   layout->addWidget(comboBox, row, 1, 1, 1);
 }
@@ -376,6 +430,7 @@ void addPathWidget(QGridLayout* layout, int row, QJsonObject& pathNode)
 
   QJsonValueRef labelValue = pathNode["label"];
   QLabel* label = new QLabel(nameValue.toString());
+  label->setBuddy(horizontalWidget);
   if (!labelValue.isUndefined()) {
     label->setText(labelValue.toString());
   }
@@ -387,11 +442,20 @@ void addPathWidget(QGridLayout* layout, int row, QJsonObject& pathNode)
   pathField->setProperty("type", type);
   pathField->setObjectName(nameValue.toString());
   pathField->setMinimumWidth(500);
+
+  // Set default if present
+  QJsonValueRef defaultNode = pathNode["default"];
+  if (!defaultNode.isUndefined() && defaultNode.isString()) {
+    auto defaultValue = getAs<QString>(defaultNode);
+    pathField->setText(defaultValue);
+  }
+
   horizontalLayout->addWidget(pathField);
+  auto filter = pathNode["filter"].toString();
 
   QPushButton* browseButton = new QPushButton("Browse");
   horizontalLayout->addWidget(browseButton);
-  QObject::connect(browseButton, &QPushButton::clicked, [type, pathField]() {
+  QObject::connect(browseButton, &QPushButton::clicked, [type, pathField, filter]() {
     // Determine the directory we should open the file browser at.
     QString browseDir;
     if (!pathField->text().isEmpty()) {
@@ -406,7 +470,10 @@ void addPathWidget(QGridLayout* layout, int row, QJsonObject& pathNode)
     QString path;
     if (type == "file") {
       path = QFileDialog::getOpenFileName(tomviz::mainWidget(), "Select File",
-                                          browseDir);
+                                          browseDir, filter);
+    } else if (type == "save_file") {
+      path = QFileDialog::getSaveFileName(tomviz::mainWidget(), "Save File Path",
+                                          browseDir, filter);
     } else {
       path = QFileDialog::getExistingDirectory(tomviz::mainWidget(),
                                                "Select Directory", browseDir);
@@ -458,6 +525,7 @@ void addStringWidget(QGridLayout* layout, int row, QJsonObject& pathNode)
   stringField->setProperty("type", type);
   stringField->setObjectName(nameValue.toString());
   stringField->setMinimumWidth(500);
+  label->setBuddy(stringField);
   horizontalLayout->addWidget(stringField);
 
   QJsonValueRef defaultNode = pathNode["default"];
@@ -488,6 +556,7 @@ void addDatasetWidget(QGridLayout* layout, int row, QJsonObject& parameterNode)
 
   QComboBox* comboBox = new QComboBox();
   comboBox->setObjectName(nameValue.toString());
+  labelWidget->setBuddy(comboBox);
   QStringList addedLabels;
   auto dataSources =
     tomviz::ModuleManager::instance().allDataSourcesDepthFirst();
@@ -514,9 +583,16 @@ void addDatasetWidget(QGridLayout* layout, int row, QJsonObject& parameterNode)
   layout->addWidget(comboBox, row, 1, 1, 1);
 }
 
+static const QStringList PATH_TYPES = { "file", "save_file", "directory" };
+
 } // end anonymous namespace
 
 namespace tomviz {
+
+bool setupEnableTriggerAbstract(QWidget* refWidget, QWidget* widget,
+                                const QString& comparator,
+                                const QVariant& compareValue,
+                                bool visibility);
 
 InterfaceBuilder::InterfaceBuilder(QObject* parentObject, DataSource* ds)
   : QObject(parentObject), m_dataSource(ds)
@@ -589,7 +665,7 @@ QLayout* InterfaceBuilder::buildParameterInterface(QGridLayout* layout,
       addEnumerationWidget(layout, i + 1, parameterObject);
     } else if (typeString == "xyz_header") {
       addXYZHeaderWidget(layout, i + 1, parameterObject);
-    } else if (typeString == "file" || typeString == "directory") {
+    } else if (PATH_TYPES.contains(typeString)) {
       addPathWidget(layout, i + 1, parameterObject);
     } else if (typeString == "string") {
       addStringWidget(layout, i + 1, parameterObject);
@@ -598,12 +674,81 @@ QLayout* InterfaceBuilder::buildParameterInterface(QGridLayout* layout,
     }
   }
 
+  setupEnableAndVisibleStates(layout->parentWidget(), parameters);
+
   return layout;
+}
+
+void InterfaceBuilder::setupEnableAndVisibleStates(
+  const QObject* parent,
+  QJsonArray& parameters) const
+{
+  setupEnableStates(parent, parameters, true);
+  setupEnableStates(parent, parameters, false);
+}
+
+void InterfaceBuilder::setupEnableStates(const QObject* parent,
+                                         QJsonArray& parameters,
+                                         bool visible) const
+{
+  static const QStringList validComparators = {
+    "==", "!=", ">", ">=", "<", "<="
+  };
+
+  QJsonObject::size_type numParameters = parameters.size();
+  for (QJsonObject::size_type i = 0; i < numParameters; ++i) {
+    QJsonValueRef parameterNode = parameters[i];
+    QJsonObject parameterObject = parameterNode.toObject();
+
+    QString text = visible ? "visible_if" : "enable_if";
+    QString enableIfValue = parameterObject[text].toString("");
+    if (enableIfValue.isEmpty()) {
+      continue;
+    }
+
+    QString widgetName = parameterObject["name"].toString("");
+    if (widgetName.isEmpty()) {
+      qCritical() << text << "parameters must have a name. Ignoring...";
+      continue;
+    }
+    auto* widget = parent->findChild<QWidget*>(widgetName);
+    if (!widget) {
+      qCritical() << "Failed to find widget with name:" << widgetName;
+      continue;
+    }
+
+    auto split = enableIfValue.simplified().split(" ");
+    if (split.size() != 3) {
+      qCritical() << "Invalid" << text << "string:" << enableIfValue;
+      continue;
+    }
+
+    auto refWidgetName = split[0];
+    auto comparator = split[1];
+    auto compareValue = split[2];
+    auto* refWidget = parent->findChild<QWidget*>(refWidgetName);
+
+    if (!refWidget) {
+      qCritical() << "Invalid widget name in" << text << "string:" << enableIfValue;
+      continue;
+    }
+
+    if (!validComparators.contains(comparator)) {
+      qCritical() << "Invalid comparator in" << text << "string:" << enableIfValue;
+      continue;
+    }
+
+    if (!setupEnableTriggerAbstract(refWidget, widget, comparator,
+                                    compareValue, visible)) {
+      qCritical() << "Failed to set up" << text << "trigger for" << widgetName;
+    }
+  }
 }
 
 QLayout* InterfaceBuilder::buildInterface() const
 {
   QWidget* widget = new QWidget;
+  widget->setProperty("isRootInterfaceWidget", true);
 
   QVBoxLayout* verticalLayout = new QVBoxLayout;
   verticalLayout->addWidget(widget);
@@ -774,14 +919,13 @@ QVariantMap InterfaceBuilder::parameterValues(const QObject* parent)
     }
   }
 
-  // QLineEdit's ( currently 'file' and 'directory' types ).
-  QStringList pathTypes = { "file", "directory" };
+  // QLineEdit's ( currently 'file', 'save_file', and 'directory' types ).
   QList<QLineEdit*> lineEdits = parent->findChildren<QLineEdit*>();
   for (int i = 0; i < lineEdits.size(); ++i) {
     auto lineEdit = lineEdits[i];
     QVariant type = lineEdit->property("type");
     bool canConvertTypeToString = QMetaType::canConvert(type.metaType(), QMetaType(QMetaType::QString));
-    if (canConvertTypeToString && pathTypes.contains(type.toString())) {
+    if (canConvertTypeToString && PATH_TYPES.contains(type.toString())) {
       map[lineEdit->objectName()] = lineEdit->text();
     } else if (canConvertTypeToString && type.toString() == "string") {
       map[lineEdit->objectName()] = lineEdit->text();
@@ -789,6 +933,165 @@ QVariantMap InterfaceBuilder::parameterValues(const QObject* parent)
   }
 
   return map;
+}
+
+QWidget* findRootInterfaceWidget(const QWidget* widget)
+{
+  auto* parent = widget->parent();
+  while (parent and not parent->property("isRootInterfaceWidget").toBool()) {
+    parent = parent->parent();
+  }
+
+  if (parent and parent->property("isRootInterfaceWidget").toBool()) {
+    return qobject_cast<QWidget*>(parent);
+  }
+
+  return nullptr;
+}
+
+QLabel* findLabelForWidget(const QWidget* widget)
+{
+  // We use the buddy system to keep track of which label is for
+  // which widget.
+  auto* parent = findRootInterfaceWidget(widget);
+  if (!parent) {
+    return nullptr;
+  }
+
+  for (auto* child : parent->findChildren<QLabel*>()) {
+    if (child->buddy() == widget) {
+      return child;
+    }
+  }
+
+  return nullptr;
+}
+
+void setWidgetProperty(QWidget* widget, const char* property, QVariant value)
+{
+  if (isWidgetNumeric(widget) || isWidgetType<QLineEdit>(widget)) {
+    // These types actually want the parent widget instead, because there
+    // is some parent widget holding everything (spinboxes, path button, etc.).
+    widget = widget->parentWidget();
+    if (!widget) {
+      // This hopefully should't happen.
+      return;
+    }
+  }
+
+  // First, set the property on the widget
+  widget->setProperty(property, value);
+
+  // Next, see if we can find the label corresponding to this widget, and
+  // set the property there as well.
+  auto* label = findLabelForWidget(widget);
+  if (label) {
+    label->setProperty(property, value);
+  }
+}
+
+template <typename T>
+bool compareGeneric(T value, T ref, const QString& comparator)
+{
+  // The generic one, for bools and strings, can only do `==` and `!=`.
+  if (comparator == "==") {
+    return value == ref;
+  } else if (comparator == "!=") {
+    return value != ref;
+  }
+
+  return false;
+}
+
+template <typename T>
+bool compareNumbers(T value, T ref, const QString& comparator)
+{
+  // This is for ints and floats. We can do inequality comparisons.
+  if (comparator == "==") {
+    return value == ref;
+  } else if (comparator == "!=") {
+    return value != ref;
+  } else if (comparator == ">") {
+    return value > ref;
+  } else if (comparator == "<") {
+    return value < ref;
+  } else if (comparator == ">=") {
+    return value >= ref;
+  } else if (comparator == "<=") {
+    return value <= ref;
+  }
+
+  return false;
+}
+
+template <typename T>
+bool compare(const T* widget, const QVariant& compareValue,
+             const QString& comparator)
+{
+  auto value = widgetValue(widget);
+  if constexpr (std::is_same_v<T, QComboBox> || std::is_same_v<T, QLineEdit>) {
+    QString ref = compareValue.toString();
+    if (ref.startsWith("'") || ref.startsWith("\"")) {
+      // Remove the first and last characters
+      ref = ref.mid(1, ref.length() - 2);
+    }
+    return compareGeneric(value, ref, comparator);
+  } else if constexpr (std::is_same_v<T, QCheckBox>) {
+    return compareGeneric(value, compareValue.toBool(), comparator);
+  } else if constexpr (std::is_same_v<T, QSpinBox>) {
+    return compareNumbers(value, compareValue.toInt(), comparator);
+  } else if constexpr (std::is_same_v<T, QDoubleSpinBox>) {
+    return compareNumbers(value, compareValue.toDouble(), comparator);
+  }
+
+  return false;
+}
+
+template <typename T>
+bool setupEnableTrigger(T* refWidget, QWidget* widget,
+                        const QString& comparator, const QVariant& compareValue,
+                        const char* property)
+{
+  // Set up the callback function
+  auto func = [=](){
+    auto result = compare(refWidget, compareValue, comparator);
+    setWidgetProperty(widget, property, result);
+  };
+  // Make the connection
+  widget->connect(refWidget, changedSignal<T>(), widget, func);
+
+  // Trigger the update one time, since defaults are already set.
+  func();
+
+  return true;
+}
+
+bool setupEnableTriggerAbstract(QWidget* refWidget, QWidget* widget,
+                                const QString& comparator,
+                                const QVariant& compareValue,
+                                bool visibility)
+{
+  const char* property = visibility ? "visible" : "enabled";
+  if (isWidgetType<QSpinBox>(refWidget)) {
+    return setupEnableTrigger(qobject_cast<QSpinBox*>(refWidget), widget,
+                              comparator, compareValue, property);
+  } else if (isWidgetType<QDoubleSpinBox>(refWidget)) {
+    return setupEnableTrigger(qobject_cast<QDoubleSpinBox*>(refWidget), widget,
+                              comparator, compareValue, property);
+  } else if (isWidgetType<QCheckBox>(refWidget)) {
+    return setupEnableTrigger(qobject_cast<QCheckBox*>(refWidget), widget,
+                              comparator, compareValue, property);
+  } else if (isWidgetType<QComboBox>(refWidget)) {
+    return setupEnableTrigger(qobject_cast<QComboBox*>(refWidget), widget,
+                              comparator, compareValue, property);
+  } else if (isWidgetType<QLineEdit>(refWidget)) {
+    return setupEnableTrigger(qobject_cast<QLineEdit*>(refWidget), widget,
+                              comparator, compareValue, property);
+  }
+
+  qCritical() << "Unhandled widget type for object: "
+              << refWidget->objectName();
+  return false;
 }
 
 } // namespace tomviz

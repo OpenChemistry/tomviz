@@ -1,0 +1,38 @@
+{
+  "name" : "DeleteSlices",
+  "label" : "Delete Slices",
+  "description" : "Delete slices, including associated tilt angles, from a dataset",
+  "parameters" : [
+    {
+      "name" : "firstSlice",
+      "label" : "First Slice",
+      "description" : "The first slice in the slice range (inclusive)",
+      "type" : "int",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    {
+      "name" : "lastSlice",
+      "label" : "Last Slice",
+      "description" : "The last slice in the slice range (inclusive)",
+      "type" : "int",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    {
+      "name" : "axis",
+      "label" : "Axis",
+      "description" : "Axis along which to delete slices",
+      "type" : "enumeration",
+      "default" : 2,
+      "options" : [
+        {"X" : 0},
+        {"Y" : 1},
+        {"Z" : 2}
+      ]
+    }
+  ]
+}
+

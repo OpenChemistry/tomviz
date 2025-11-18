@@ -27,7 +27,7 @@ class GenerateTiltSeriesOperator(tomviz.operators.CancelableOperator):
         pad_y_post = int(np.floor((N - Ny) / 2.0))
         pad_z_pre = int(np.ceil((N - Nz) / 2.0))
         pad_z_post = int(np.floor((N - Nz) / 2.0))
-        volume_pad = np.lib.pad(
+        volume_pad = np.pad(
             volume, ((0, 0), (pad_y_pre, pad_y_post), (pad_z_pre, pad_z_post)),
             'constant')
 

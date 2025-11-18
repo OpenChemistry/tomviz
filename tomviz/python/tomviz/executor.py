@@ -1,18 +1,18 @@
+import abc
 import collections
 import copy
-import h5py
-import importlib
-import os
-import numpy as np
-import logging
-import tempfile
-import socket
-import abc
-import stat
-import json
-import six
 import errno
+import importlib
+import json
+import logging
+import os
+from pathlib import Path
+import socket
+import stat
+import tempfile
 
+import h5py
+import numpy as np
 from tqdm import tqdm
 
 from tomviz._internal import find_transform_function
@@ -432,7 +432,10 @@ def _read_emd(path, options=None):
 
         # If this is a tilt series, swap the X and Z axes
         tilt_axis = None
-        if dims[0].name == b'angles' or dims[0].units in ANGLE_UNITS:
+        if (
+            dims[0].name in ('angles', b'angles') or
+            dims[0].units in ANGLE_UNITS
+        ):
             arrays = [(name, np.transpose(data, [2, 1, 0])) for (name, data)
                       in arrays]
 
@@ -450,7 +453,7 @@ def _read_emd(path, options=None):
             'metadata': {},
         }
 
-        if dims is not None and dims[-1].name == b'angles':
+        if dims is not None and dims[-1].name in ('angles', b'angles'):
             output['tilt_angles'] = dims[-1].values[:].astype(np.float64)
 
         return output
@@ -523,7 +526,7 @@ def _get_dims_for_writing(dataset, data, default_dims=None):
     else:
         # In case the input was a tilt series, make the first dim x,
         # and the units [n_m]
-        if dims[0].name == 'angles':
+        if dims[0].name in ('angles', b'angles'):
             dims[0].name = 'x'
             dims[0].units = '[n_m]'
 
@@ -562,7 +565,7 @@ def _write_emd(path, dataset, dims=None):
         tomviz_scalars[active_name] = h5py.SoftLink('/data/tomography/data')
 
 
-def _read_data_exchange(path, options=None):
+def _read_data_exchange(path: Path, options: dict | None = None):
     with h5py.File(path, 'r') as f:
         g = f['/exchange']
 
@@ -592,14 +595,15 @@ def _read_data_exchange(path, options=None):
                 # Swap x and z axes
                 swap_keys = ['data', 'data_dark', 'data_white']
                 for key in swap_keys:
-                    datasets[key] = np.transpose(datasets[key], [2, 1, 0])
+                    if key in datasets:
+                        datasets[key] = np.transpose(datasets[key], [2, 1, 0])
 
         tilt_axis = None
         if 'theta' in datasets:
             tilt_axis = 2 if to_fortran else 0
 
         output = {
-            'arrays': [('data', datasets.get('data'))],
+            'arrays': [(path.stem, datasets.get('data'))],
             'data_dark': datasets.get('data_dark'),
             'data_white': datasets.get('data_white'),
             'tilt_angles': datasets.get('theta'),
@@ -695,7 +699,7 @@ def _load_transform_functions(operators):
 
 
 def _write_child_data(result, operator_index, output_file_path, dims):
-    for (label, dataobject) in six.iteritems(result):
+    for label, dataobject in result.items():
         # Only need write out data if the operator made updates.
         output_path = '.'
         if output_file_path is not None:
@@ -721,6 +725,7 @@ def _write_child_data(result, operator_index, output_file_path, dims):
 
 
 def load_dataset(data_file_path, read_options=None):
+    data_file_path = Path(data_file_path)
     if _is_data_exchange(data_file_path):
         output = _read_data_exchange(data_file_path, read_options)
     else:

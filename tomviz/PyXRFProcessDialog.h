@@ -23,6 +23,9 @@ public:
   QString logFile() const;
   QString icName() const;
   QString outputDirectory() const;
+  double pixelSizeX() const;
+  double pixelSizeY() const;
+  bool rotateDatasets() const;
 
 private:
   class Internal;

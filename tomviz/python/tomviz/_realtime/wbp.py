@@ -31,8 +31,8 @@ class WBP:
         # Create Fourier filter
         F = self.makeFilter(filter)
         # Pad sinogram for filtering
-        s = np.lib.pad(sinogram, ((0, F.size - self.Nray), (0, 0)),
-                       'constant', constant_values=(0, 0))
+        s = np.pad(sinogram, ((0, F.size - self.Nray), (0, 0)),
+                   'constant', constant_values=(0, 0))
         # Apply Fourier filter
         s = np.fft.fft(s, axis=0) * F
         s = np.real(np.fft.ifft(s, axis=0))

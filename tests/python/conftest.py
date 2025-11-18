@@ -3,10 +3,42 @@ import requests
 import diskcache
 import tempfile
 import os
+from pathlib import Path
 import tarfile
 import shutil
 
+import numpy as np
+
+from utils import download_file, download_and_unzip_file
+
 DATA_URL = 'https://data.kitware.com/api/v1/file'
+
+
+@pytest.fixture
+def data_dir() -> Path:
+    return Path(__file__).parent / 'data'
+
+
+@pytest.fixture
+def hxn_xrf_example_output_dir(data_dir: Path) -> Path:
+    output_dir = data_dir / 'Pt_Zn_XRF_recon_output'
+    if not output_dir.exists():
+        # Download it
+        url = DATA_URL + '/6914b90283abdcd84d150c9e/download'
+        download_and_unzip_file(url, output_dir.parent)
+
+    return output_dir
+
+
+@pytest.fixture
+def pystackreg_reference_output(data_dir: Path) -> dict[str, np.ndarray]:
+    filepath = data_dir / 'test_pystackreg_reference_output.npz'
+    if not filepath.exists():
+        # Download it
+        url = DATA_URL + '/690e69aa83abdcd84d150c7e/download'
+        download_file(url, filepath)
+
+    return np.load(filepath)
 
 
 @pytest.fixture(scope="module")

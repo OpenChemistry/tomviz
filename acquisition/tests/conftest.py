@@ -4,7 +4,7 @@ import time
 from threading import Thread
 from bottle import default_app, WSGIRefServer
 
-from tomviz.acquisition import server
+from tomviz_acquisition.acquisition import server
 from .mock.tiltseries import TIFFWriter, DM3Writer
 
 

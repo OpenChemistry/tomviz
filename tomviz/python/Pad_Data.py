@@ -1,3 +1,7 @@
+from tomviz.utils import apply_to_each_array
+
+
+@apply_to_each_array
 def transform(dataset, pad_size_before=[0, 0, 0], pad_size_after=[0, 0, 0],
               pad_mode_index=0):
     """Pad dataset"""
@@ -24,7 +28,7 @@ def transform(dataset, pad_size_before=[0, 0, 0], pad_size_after=[0, 0, 0],
     result = np.empty(result_shape, array.dtype, order='F')
 
     # pad the data.
-    result[:] = np.lib.pad(array, pad_width, padMode)
+    result[:] = np.pad(array, pad_width, padMode)
 
     dataset.active_scalars = result
 
@@ -32,7 +36,7 @@ def transform(dataset, pad_size_before=[0, 0, 0], pad_size_after=[0, 0, 0],
     if padWidthZ[0] + padWidthZ[1] > 0:
         try:
             tilt_angles = dataset.tilt_angles
-            tilt_angles = np.lib.pad(tilt_angles, padWidthZ, padMode)
+            tilt_angles = np.pad(tilt_angles, padWidthZ, padMode)
             dataset.tilt_angles = tilt_angles
         except: # noqa
             # TODO What exception are we ignoring?

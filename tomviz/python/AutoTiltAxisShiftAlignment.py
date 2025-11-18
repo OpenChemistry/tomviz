@@ -1,12 +1,45 @@
 import numpy as np
 from scipy.interpolate import interp1d
+from scipy import ndimage
+
 import tomviz.operators
+from tomviz.utils import pad_array
 
 
 class AutoTiltAxisShiftAlignmentOperator(tomviz.operators.CancelableOperator):
 
-    def transform(self, dataset):
+    def transform(self, dataset, transform_source: str = 'generate',
+                  transform_file: str = '', padding: int = 0,
+                  num_slices: int = 5, seed: int = 0,
+                  apply_to_all_arrays: bool = True,
+                  transforms_save_file: str = ''):
         """Automatic align the tilt axis to the center of images"""
+        shared_kwargs = {
+            'dataset': dataset,
+            'apply_to_all_arrays': apply_to_all_arrays,
+        }
+        if transform_source == 'generate':
+            kwargs = {
+                **shared_kwargs,
+                'padding': padding,
+                'num_slices': num_slices,
+                'seed': seed,
+                'transforms_save_file': transforms_save_file,
+            }
+            f = self.transform_generate
+        elif transform_source == 'from_file':
+            kwargs = {
+                **shared_kwargs,
+                'transform_file': transform_file,
+            }
+            f = self.transform_from_file
+
+        return f(**kwargs)
+
+    def transform_generate(self, dataset, padding: int = 0,
+                           num_slices: int = 5, seed: int = 0,
+                           apply_to_all_arrays: bool = True,
+                           transforms_save_file: str = ''):
         self.progress.maximum = 1
 
         # Get Tilt angles
@@ -16,16 +49,26 @@ class AutoTiltAxisShiftAlignmentOperator(tomviz.operators.CancelableOperator):
         if tiltSeries is None:
             raise RuntimeError("No scalars found!")
 
+        axis = 2
+        tiltSeries = pad_array(tiltSeries, padding, axis)
+
         Nx, Ny, Nz = tiltSeries.shape
 
         shifts = (np.linspace(-20, 20, 41)).astype('int')
-        numberOfSlices = 5  # number of slices used for recon
 
         # randomly choose slices with top 50% total intensities
         tiltSeriesSum = np.sum(tiltSeries, axis=(1, 2))
         temp = tiltSeriesSum.argsort()[Nx // 2:]
-        slices = temp[np.random.permutation(temp.size)[:numberOfSlices]]
-        print('Reconstruction slices:')
+
+        if num_slices > temp.size:
+            print(f'Warning: number of slices selected, "{num_slices}", '
+                  f'exceeded the max size of "{temp.size}". '
+                  f'Reducing the number of slices to "{temp.size}"')
+            num_slices = temp.size
+
+        random_state = np.random.RandomState(seed=seed)
+        slices = np.sort(temp[random_state.permutation(temp.size)[:num_slices]])
+        print('Trial reconstruction slices:')
         print(slices)
 
         I = np.zeros(shifts.size)
@@ -38,10 +81,10 @@ class AutoTiltAxisShiftAlignmentOperator(tomviz.operators.CancelableOperator):
                 return
             shiftedTiltSeries = np.roll(
                 tiltSeries[slices, :, :, ], shifts[i], axis=1)
-            for s in range(numberOfSlices):
+            for s in range(num_slices):
                 self.progress.message = ('Reconstructing slice No.%d/%d with a '
                                          'shift of %d pixels' %
-                                         (s, numberOfSlices, shifts[i]))
+                                         (s, num_slices, shifts[i]))
 
                 recon = wbp2(shiftedTiltSeries[s, :, :],
                              tilt_angles, Ny, 'ramp', 'linear')
@@ -50,13 +93,48 @@ class AutoTiltAxisShiftAlignmentOperator(tomviz.operators.CancelableOperator):
             step += 1
             self.progress.value = step
 
-        print('shift: %d' % shifts[np.argmax(I)])
+        shift = shifts[np.argmax(I)]
+        print(f'shift: {shift}')
 
-        result = np.roll(tiltSeries, shifts[np.argmax(I)], axis=1)
-        result = np.asfortranarray(result)
+        if transforms_save_file:
+            np.savez(
+                transforms_save_file,
+                shift=shift,
+                spacing=dataset.spacing,
+            )
+            print('Saved transforms file to:', transforms_save_file)
 
-        # Set the result as the new scalars.
-        dataset.active_scalars = result
+        return self.apply_shift_to_arrays(dataset, shift, apply_to_all_arrays)
+
+    def transform_from_file(self, dataset, transform_file: str = '',
+                            apply_to_all_arrays: bool = True):
+
+        with np.load(transform_file) as f:
+            transform_shift = f['shift']
+            transform_spacing = f['spacing']
+
+        # The true shift will depend on the voxel size ratio, along
+        # the shift direction, which is Y.
+        axis = 1
+        shift = (
+            transform_shift * transform_spacing[axis] / dataset.spacing[axis]
+        )
+        return self.apply_shift_to_arrays(dataset, shift, apply_to_all_arrays)
+
+    def apply_shift_to_arrays(self, dataset, shift,
+                              apply_to_all_arrays: bool = True):
+        if apply_to_all_arrays:
+            names = dataset.scalars_names
+        else:
+            names = [dataset.active_name]
+
+        for name in names:
+            array = dataset.scalars(name)
+            result = ndimage.shift(array, shift=(0, shift, 0), order=1)
+            result = np.asfortranarray(result)
+
+            # Set the result as the new scalars.
+            dataset.set_scalars(name, result)
 
 
 def wbp2(sinogram, angles, N=None, filter="ramp", interp="linear"):
@@ -76,8 +154,8 @@ def wbp2(sinogram, angles, N=None, filter="ramp", interp="linear"):
     # Create Fourier filter
     F = makeFilter(Nray, filter)
     # Pad sinogram for filtering
-    s = np.lib.pad(sinogram, ((0, F.size - Nray), (0, 0)),
-                   'constant', constant_values=(0, 0))
+    s = np.pad(sinogram, ((0, F.size - Nray), (0, 0)),
+               'constant', constant_values=(0, 0))
     # Apply Fourier filter
     s = np.fft.fft(s, axis=0) * F
     s = np.real(np.fft.ifft(s, axis=0))

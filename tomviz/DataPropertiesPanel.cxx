@@ -53,6 +53,9 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
   m_ui->xLengthBox->setValidator(new QDoubleValidator(m_ui->xLengthBox));
   m_ui->yLengthBox->setValidator(new QDoubleValidator(m_ui->yLengthBox));
   m_ui->zLengthBox->setValidator(new QDoubleValidator(m_ui->zLengthBox));
+  m_ui->xVoxelSizeBox->setValidator(new QDoubleValidator(m_ui->xVoxelSizeBox));
+  m_ui->yVoxelSizeBox->setValidator(new QDoubleValidator(m_ui->yVoxelSizeBox));
+  m_ui->zVoxelSizeBox->setValidator(new QDoubleValidator(m_ui->zVoxelSizeBox));
   m_ui->TiltAnglesTable->installEventFilter(this);
   m_ui->ScalarsTable->setModel(&m_scalarsTableModel);
 
@@ -102,6 +105,13 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
           [this]() { this->updateLength(m_ui->yLengthBox, 1); });
   connect(m_ui->zLengthBox, &QLineEdit::editingFinished,
           [this]() { this->updateLength(m_ui->zLengthBox, 2); });
+
+  connect(m_ui->xVoxelSizeBox, &QLineEdit::editingFinished,
+          [this]() { this->updateVoxelSize(m_ui->xVoxelSizeBox, 0); });
+  connect(m_ui->yVoxelSizeBox, &QLineEdit::editingFinished,
+          [this]() { this->updateVoxelSize(m_ui->yVoxelSizeBox, 1); });
+  connect(m_ui->zVoxelSizeBox, &QLineEdit::editingFinished,
+          [this]() { this->updateVoxelSize(m_ui->zVoxelSizeBox, 2); });
 
   connect(m_ui->xOriginBox, &QLineEdit::editingFinished,
           [this]() { this->updateOrigin(m_ui->xOriginBox, 0); });
@@ -194,10 +204,15 @@ void DataPropertiesPanel::onDataPropertiesChanged()
   m_currentDataSource->getPhysicalDimensions(length);
   auto origin = m_currentDataSource->displayPosition();
   auto orientation = m_currentDataSource->displayOrientation();
+  auto* spacing = m_currentDataSource->getSpacing();
 
   m_ui->xLengthBox->setText(QString("%1").arg(length[0]));
   m_ui->yLengthBox->setText(QString("%1").arg(length[1]));
   m_ui->zLengthBox->setText(QString("%1").arg(length[2]));
+
+  m_ui->xVoxelSizeBox->setText(QString("%1").arg(spacing[0]));
+  m_ui->yVoxelSizeBox->setText(QString("%1").arg(spacing[1]));
+  m_ui->zVoxelSizeBox->setText(QString("%1").arg(spacing[2]));
 
   m_ui->xOriginBox->setText(QString("%1").arg(origin[0]));
   m_ui->yOriginBox->setText(QString("%1").arg(origin[1]));
@@ -275,6 +290,22 @@ QList<ArrayInfo> DataPropertiesPanel::getArraysInfo(DataSource* dataSource)
 
       m_scalarIndexes.push_back(index);
     }
+  }
+
+  // Remove any invalid scalar indices to prevent a crash
+  QList<int> toRemove;
+  for (auto i : m_scalarIndexes) {
+    // name, type, data range, data type, active
+    auto arrayName = dataSource->scalarsName(i);
+    auto array = dataSource->getScalarsArray(arrayName);
+    if (!array) {
+      toRemove.append(i);
+    }
+  }
+
+  while (toRemove.size() != 0) {
+    m_scalarIndexes.remove(toRemove[0]);
+    toRemove.removeAt(0);
   }
 
   for (auto i : m_scalarIndexes) {
@@ -631,6 +662,29 @@ void DataPropertiesPanel::updateLength(QLineEdit* widget, int axis)
   }
 
   updateSpacing(axis, newLength);
+  updateData();
+  DataSource* dsource = m_currentDataSource;
+  if (!dsource) {
+    return;
+  }
+  resetCamera();
+  emit dsource->dataPropertiesChanged();
+}
+
+void DataPropertiesPanel::updateVoxelSize(QLineEdit* widget, int axis)
+{
+  double newSize;
+  bool ok = DataPropertiesPanel::parseField(widget, newSize);
+
+  if (!ok) {
+    return;
+  }
+
+  double spacing[3];
+  m_currentDataSource->getSpacing(spacing);
+  spacing[axis] = newSize;
+  m_currentDataSource->setSpacing(spacing);
+
   updateData();
   DataSource* dsource = m_currentDataSource;
   if (!dsource) {

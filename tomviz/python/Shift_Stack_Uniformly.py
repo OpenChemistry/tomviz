@@ -2,7 +2,10 @@
 #
 # Developed as part of the tomviz project (www.tomviz.com).
 
+from tomviz.utils import apply_to_each_array
 
+
+@apply_to_each_array
 def transform(dataset, shift=[0, 0, 0]):
     import numpy as np
 

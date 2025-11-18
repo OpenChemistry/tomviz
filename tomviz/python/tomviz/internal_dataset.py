@@ -17,11 +17,22 @@ class Dataset:
         utils.set_array(self._data_object, v)
 
     @property
+    def active_name(self):
+        return utils.get_active_scalars_name(self._data_object)
+
+    @property
+    def num_scalars(self):
+        return len(self.scalars_names)
+
+    @property
     def scalars_names(self):
         return utils.array_names(self._data_object)
 
     def scalars(self, name=None):
         return utils.get_array(self._data_object, name)
+
+    def set_scalars(self, name, array):
+        utils.set_array(self._data_object, array, name=name)
 
     @property
     def spacing(self):

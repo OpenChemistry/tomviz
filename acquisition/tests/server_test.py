@@ -5,7 +5,7 @@ import tempfile
 import pytest
 import inspect
 
-from tomviz.jsonrpc import jsonrpc_message
+from tomviz_acquisition.jsonrpc import jsonrpc_message
 from tests.mock.source import ApiAdapter
 
 

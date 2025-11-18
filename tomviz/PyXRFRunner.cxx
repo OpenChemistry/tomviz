@@ -3,6 +3,8 @@
 
 #include "PyXRFRunner.h"
 
+#include "DataSource.h"
+#include "EmdFormat.h"
 #include "LoadDataReaction.h"
 #include "ProgressDialog.h"
 #include "PyXRFMakeHDF5Dialog.h"
@@ -13,10 +15,16 @@
 
 #include <QDebug>
 #include <QDir>
+#include <QFileInfo>
 #include <QFutureWatcher>
 #include <QMessageBox>
 #include <QPointer>
 #include <QtConcurrent>
+
+#include <vtkDataArray.h>
+#include <vtkImageData.h>
+#include <vtkNew.h>
+#include <vtkPointData.h>
 
 namespace tomviz {
 
@@ -53,9 +61,14 @@ public:
   QString icName;
   QString outputDirectory;
   bool skipProcessed = true;
+  double pixelSizeX = -1;
+  double pixelSizeY = -1;
+  bool rotateDatasets = true;
 
   // Recon options
   QStringList selectedElements;
+
+  bool autoLoadFinalData = true;
 
   Internal(PyXRFRunner* p) : parent(p)
   {
@@ -252,6 +265,8 @@ public:
       QString msg = "Make HDF5 failed";
       qCritical() << msg;
       QMessageBox::critical(parentWidget, "Tomviz", msg);
+      // Show the dialog again
+      showMakeHDF5Dialog();
       return;
     }
 
@@ -271,6 +286,10 @@ public:
     processDialog = new PyXRFProcessDialog(workingDirectory, parentWidget);
     connect(processDialog.data(), &QDialog::accepted, this,
             &Internal::processDialogAccepted);
+    // If the user rejects the process dialog, go back to
+    // the make HDF5 dialog.
+    connect(processDialog.data(), &QDialog::rejected, this,
+            &Internal::showMakeHDF5Dialog);
     processDialog->show();
   }
 
@@ -295,6 +314,12 @@ public:
     logFile = processDialog->logFile();
     icName = processDialog->icName();
     outputDirectory = processDialog->outputDirectory();
+    pixelSizeX = processDialog->pixelSizeX();
+    pixelSizeY = processDialog->pixelSizeY();
+    rotateDatasets = processDialog->rotateDatasets();
+
+    // Make sure the output directory exists
+    QDir().mkpath(outputDirectory);
 
     // Run process projections
     runProcessProjections();
@@ -344,6 +369,8 @@ public:
       QString msg = "Process projections failed";
       qCritical() << msg;
       QMessageBox::critical(parentWidget, "Tomviz", msg);
+      // Show the dialog again
+      showProcessProjectionsDialog();
       return;
     }
 
@@ -448,6 +475,9 @@ public:
     kwargs.set("filename", outputFile());
     kwargs.set("elements", variantList);
     kwargs.set("output_path", outputPath);
+    kwargs.set("rotate_datasets", rotateDatasets);
+    kwargs.set("pixel_size_x", pixelSizeX);
+    kwargs.set("pixel_size_y", pixelSizeY);
     auto res = extractElementsFunc.call(kwargs);
 
     if (!res.isValid()) {
@@ -460,16 +490,66 @@ public:
       ret.append(item.toString().c_str());
     }
 
-    QString title = "Element extraction complete";
-    auto text =
-      QString("Elements were extracted to \"%1\".\n\nLoad the first one "
-              "(\"%2\") into Tomviz?")
-        .arg(outputPath)
-        .arg(ret[0]);
-    if (QMessageBox::question(parentWidget, title, text) == QMessageBox::Yes) {
-      // Load the first one
-      LoadDataReaction::loadData(ret[0]);
+    if (ret.size() == 0) {
+      qCritical("No elements were extracted");
+      return;
     }
+
+    if (autoLoadFinalData) {
+      loadElementsIntoArray(ret);
+      QString title = "Element extraction complete";
+      auto text =
+        QString("Elements were extracted to \"%1\" and loaded into Tomviz")
+          .arg(outputPath);
+      QMessageBox::information(parentWidget, title, text);
+    }
+  }
+
+  void loadElementsIntoArray(const QStringList& fileList) {
+    // Load the first file into a DataSource
+    auto* dataSource = LoadDataReaction::loadData(fileList[0]);
+    if (!dataSource || !dataSource->imageData()) {
+      qCritical() << "Failed to load file:" << fileList[0];
+      return;
+    }
+
+    auto* rootImageData = dataSource->imageData();
+    auto* rootPointData = rootImageData->GetPointData();
+    auto newRootName = QFileInfo(fileList[0]).baseName();
+    rootPointData->GetScalars()->SetName(newRootName.toStdString().c_str());
+
+    // The other files should have identical metadata. We'll just load
+    // the image data for those, and add them to the point data.
+    EmdFormat format;
+    for (int i = 1; i < fileList.size(); ++i) {
+      vtkNew<vtkImageData> imageData;
+      format.read(fileList[i].toStdString(), imageData);
+      if (!imageData || !imageData->GetPointData()->GetScalars()) {
+        qCritical() << "Failed to read image data for file:" << fileList[i];
+        continue;
+      }
+
+      auto* scalars = imageData->GetPointData()->GetScalars();
+      auto newName = QFileInfo(fileList[i]).baseName();
+      scalars->SetName(newName.toStdString().c_str());
+
+      // Add the array to the root image data
+      rootPointData->AddArray(scalars);
+    }
+
+    // Sort the list, and make the first one alphabetically be selected
+    auto sortedList = fileList;
+    sortedList.sort();
+    auto firstName = QFileInfo(sortedList[0]).baseName();
+
+    dataSource->setActiveScalars(firstName.toStdString().c_str());
+    dataSource->setLabel("Extracted Elements");
+    dataSource->dataModified();
+
+    // Write this to an EMD format
+    QString saveFile = QFileInfo(sortedList[0]).dir().absoluteFilePath("extracted_elements.emd");
+    EmdFormat::write(saveFile.toStdString(), dataSource);
+    dataSource->setFileName(saveFile);
   }
 };
 
@@ -493,6 +573,11 @@ QString PyXRFRunner::importError()
 void PyXRFRunner::start()
 {
   m_internal->start();
+}
+
+void PyXRFRunner::setAutoLoadFinalData(bool b)
+{
+  m_internal->autoLoadFinalData = b;
 }
 
 } // namespace tomviz

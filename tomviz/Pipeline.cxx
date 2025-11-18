@@ -372,7 +372,8 @@ void Pipeline::branchFinished()
       lastOp->setChildDataSource(newChildDataSource);
       auto rootDataSource = dataSource();
       // connect signal to flow units and spacing to child data source.
-      connect(dataSource(), &DataSource::dataPropertiesChanged,
+      connect(rootDataSource, &DataSource::dataPropertiesChanged,
+              newChildDataSource,
               [rootDataSource, newChildDataSource]() {
                 // Only flow the properties if no user modifications have been
                 // made.

@@ -47,6 +47,7 @@ protected:
   void updateComponentsCombo();
   static bool parseField(QLineEdit* widget, double& value);
   void updateLength(QLineEdit* widget, int axis);
+  void updateVoxelSize(QLineEdit* widget, int axis);
   void updateOrigin(QLineEdit* widget, int axis);
   void updateOrientation(QLineEdit* widget, int axis);
 

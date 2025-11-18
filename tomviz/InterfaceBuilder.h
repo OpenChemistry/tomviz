@@ -40,6 +40,13 @@ public:
 
   void updateWidgetValues(const QObject* parent);
 
+  void setupEnableAndVisibleStates(const QObject* parent,
+                                   QJsonArray& parameters) const;
+  void setupEnableStates(const QObject* parent, QJsonArray& parameters,
+                         bool visible) const;
+
+  QWidget* findWidgetByName(const QObject* parent, const QString& name) const;
+
 private:
   Q_DISABLE_COPY(InterfaceBuilder)
 

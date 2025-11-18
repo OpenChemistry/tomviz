@@ -89,7 +89,7 @@ file(RELATIVE_PATH
 set(CMAKE_MODULE_PATH "${tomviz_SOURCE_DIR}/cmake")
 
 # Request C++11 standard, using new CMake variables.
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_EXTENSIONS False)
 
@@ -146,7 +146,7 @@ endif()
 
 find_package(ITK 4.9)
 
-set(PYBIND11_CPP_STANDARD "-std=c++11" CACHE STRING "")
+set(PYBIND11_CPP_STANDARD "-std=c++17" CACHE STRING "")
 add_subdirectory(${PROJECT_SOURCE_DIR}/thirdparty/pybind11)
 
 option(tomviz_ENABLE_LOOKING_GLASS "Enable the looking glass plugin" OFF)

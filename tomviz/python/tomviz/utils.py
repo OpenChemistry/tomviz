@@ -4,12 +4,15 @@
 # This source file is part of the Tomviz project, https://tomviz.org/.
 # It is released under the 3-Clause BSD License, see "LICENSE".
 ###############################################################################
+import copy
+import functools
 import math
 import numpy as np
 from tomviz._internal import in_application
 from tomviz._internal import require_internal_mode
 from tomviz._internal import with_vtk_dataobject
 from tomviz._internal import with_dataset
+from tomviz.internal_dataset import Dataset as InternalDataset
 # Only import vtk if we are running within the tomviz application ( not cli )
 if in_application():
     import vtk.numpy_interface.dataset_adapter as dsa
@@ -26,6 +29,11 @@ def get_scalars(dataobject, name=None):
     vtkarray = dsa.vtkDataArrayToVTKArray(rawarray, do)
     vtkarray.Association = dsa.ArrayAssociation.POINT
     return vtkarray
+
+
+@with_vtk_dataobject
+def get_active_scalars_name(dataobject):
+    return dataobject.GetPointData().GetScalars().GetName()
 
 
 def is_numpy_vtk_type(newscalars):
@@ -91,7 +99,7 @@ def arrays(dataobject):
 
 
 @with_vtk_dataobject
-def set_array(dataobject, newarray, minextent=None, isFortran=True):
+def set_array(dataobject, newarray, minextent=None, isFortran=True, name=None):
     # Set the extent if needed, i.e. if the minextent is not the same as
     # the data object starting index, or if the newarray shape is not the same
     # as the size of the dataobject.
@@ -109,12 +117,11 @@ def set_array(dataobject, newarray, minextent=None, isFortran=True):
         arr = newarray.reshape(-1, order='F')
         vtkshape = newarray.shape
     else:
-        print('Warning, array does not have Fortran order, making deep copy '
-              'and fixing...')
+        # This used to print a warning, but we shouldn't worry about
+        # it...
         vtkshape = newarray.shape
         tmp = np.asfortranarray(newarray)
         arr = tmp.reshape(-1, order='F')
-        print('...done.')
 
     if not is_numpy_vtk_type(arr):
         arr = arr.astype(np.float32)
@@ -134,13 +141,19 @@ def set_array(dataobject, newarray, minextent=None, isFortran=True):
     vtkarray = np_s.numpy_to_vtk(arr)
     vtkarray.Association = dsa.ArrayAssociation.POINT
     do = dsa.WrapDataObject(dataobject)
-    oldscalars = do.PointData.GetScalars()
-    arrayname = "Scalars"
-    if oldscalars is not None:
-        arrayname = oldscalars.GetName()
-    del oldscalars
+
+    if name is None:
+        oldscalars = do.PointData.GetScalars()
+        arrayname = "Scalars"
+        if oldscalars is not None:
+            arrayname = oldscalars.GetName()
+    else:
+        arrayname = name
+
     do.PointData.append(arr, arrayname)
-    do.PointData.SetActiveScalars(arrayname)
+
+    if do.PointData.GetNumberOfArrays() == 1:
+        do.PointData.SetActiveScalars(arrayname)
 
 
 @with_vtk_dataobject
@@ -594,3 +607,115 @@ def get_center(dataobject):
         "Center array requires 3 components"
 
     return np.array(center_array.GetTuple(0))
+
+
+def apply_to_each_array(func):
+
+    @functools.wraps(func)
+    def wrapper(dataset, *args, **kwargs):
+        if dataset.num_scalars == 1:
+            # Just run the function like we normally would...
+            return func(dataset, *args, **kwargs)
+
+        num_arrays = dataset.num_scalars
+        array_names = dataset.scalars_names
+        active_name = dataset.active_name
+
+        is_internal = isinstance(dataset, InternalDataset)
+
+        if is_internal:
+            # Run the function multiple times. Each time with a single, different
+            # array on the shallow-copied data object
+            from vtk import vtkImageData
+            orig_do = dataset._data_object
+            pd = orig_do.GetPointData()
+            all_arrays = [pd.GetAbstractArray(i) for i in range(num_arrays)]
+
+            # Remove all arrays
+            while pd.GetNumberOfArrays() > 0:
+                pd.RemoveArray(0)
+        else:
+            all_arrays = [dataset.arrays[name] for name in array_names]
+            dataset.arrays.clear()
+            orig_dataset = dataset
+
+        output_arrays = []
+        results = []
+        for i, name in enumerate(array_names):
+            if is_internal:
+                if i == num_arrays - 1:
+                    # Use the original data object
+                    image_data = orig_do
+                else:
+                    image_data = vtkImageData()
+                    image_data.ShallowCopy(orig_do)
+
+                this_pd = image_data.GetPointData()
+                this_pd.AddArray(all_arrays[i])
+                this_pd.SetActiveScalars(name)
+                dataset._data_object = image_data
+            else:
+                if i == num_arrays - 1:
+                    # Use the original dataset for the final one
+                    dataset = orig_dataset
+                else:
+                    dataset = copy.deepcopy(orig_dataset)
+
+                dataset.arrays[name] = all_arrays[i]
+                dataset.active_name = name
+
+            print('Transforming array:', name)
+            result = func(dataset, *args, **kwargs)
+            results.append(result)
+
+            if is_internal:
+                output_arrays.append(this_pd.GetAbstractArray(0))
+            else:
+                output_arrays.append(dataset.arrays[name])
+
+        if is_internal:
+            # Now add back in the arrays in the same order
+            this_pd.RemoveArray(0)
+            for array in output_arrays:
+                this_pd.AddArray(array)
+
+            # Set the active one
+            this_pd.SetActiveScalars(active_name)
+        else:
+            # The metadata should have been modified on this dataset
+            # object from the last call to the function
+            dataset.arrays.clear()
+            for name, array in zip(array_names, output_arrays):
+                dataset.arrays[name] = array
+
+            dataset.active_name = active_name
+
+        # Return the final result
+        return result
+
+    return wrapper
+
+
+def pad_array(array, padding, tilt_axis):
+    # Add padding to an array. Ignore the tilt axis.
+    if padding <= 0:
+        return array
+
+    pad_list = []
+    for i in range(3):
+        pad_list.append([0, 0] if i == tilt_axis else [padding, padding])
+
+    return np.pad(array, pad_list)
+
+
+def depad_array(array, padding, tilt_axis):
+    # Remove padding from an array. Ignore the tilt axis.
+    if padding <= 0:
+        return array
+
+    slice_list = []
+    for i in range(3):
+        start = padding if i != tilt_axis else 0
+        end = padding * -1 if i != tilt_axis else array.shape[i]
+        slice_list.append(slice(start, end))
+    return array[tuple(slice_list)]

@@ -1,0 +1,71 @@
+{
+  "name" : "AutoTiltAxisShiftAlignment",
+  "label" : "Auto Tilt Axis Shift Align",
+  "description" : "Automatically center images along the tilt axis",
+  "parameters" : [
+    {
+      "name" : "transform_source",
+      "label" : "Transformation Source",
+      "description" : "The source of the shift transformation value (i. e., generate it, load it from a file, etc.)",
+      "type" : "enumeration",
+      "default" : 0,
+      "options" : [
+        {"Generate" : "generate"},
+        {"Load From File": "from_file"}
+      ]
+    },
+    {
+      "name" : "transform_file",
+      "label" : "Transform File",
+      "description": "Transformation file (npz format) to apply",
+      "type" : "file",
+      "filter": "NPZ files (*npz)",
+      "visible_if" : "transform_source == 'from_file'"
+    },
+    {
+      "name" : "padding",
+      "label" : "Padding",
+      "description" : "Array padding along non-tilt axes when determining the shift",
+      "type" : "int",
+      "default" : 10,
+      "minimum" : 0,
+      "maximum" : 1000000,
+      "visible_if" : "transform_source == 'generate'"
+    },
+    {
+      "name" : "num_slices",
+      "label" : "Number of Test Slices",
+      "description" : "Number of slices to randomly sample to determine ideal recon shift.",
+      "type" : "int",
+      "default" : 5,
+      "minimum" : 2,
+      "maximum" : 1000000,
+      "visible_if" : "transform_source == 'generate'"
+    },
+    {
+      "name" : "seed",
+      "label" : "Random Number Generator Seed",
+      "description" : "Seed for the random number generator used to select slices. The seed is kept here so that when the pipeline is re-ran, the results are reproducible",
+      "type" : "int",
+      "default" : 0,
+      "minimum" : 0,
+      "maximum" : 10000000000000,
+      "visible_if" : "transform_source == 'generate'"
+    },
+    {
+      "name" : "apply_to_all_arrays",
+      "label": "Apply to All Arrays",
+      "description": "Apply the shift alignment to all arrays within this data source (not just the currently selected one). The shift is computed only using the currently selected array.",
+      "type" : "bool",
+      "default": true
+    },
+    {
+      "name" : "transforms_save_file",
+      "label" : "Save Transformations File",
+      "description": "Save transformations file to apply to other datasets later. Leave this blank to not save it.",
+      "type" : "save_file",
+      "filter": "NPZ files (*npz)",
+      "visible_if" : "transform_source == 'generate'"
+    }
+  ]
+}

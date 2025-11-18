@@ -8,7 +8,7 @@ def transform(dataset, threshold=None):
 
     for i in range(tiltSeries.shape[2]):
         I = tiltSeries[:, :, i]
-        I_pad = np.lib.pad(I, (1, 1), 'edge')
+        I_pad = np.pad(I, (1, 1), 'edge')
 
         # calculate standard deviation in a 3 x 3 window
         averageI2 = scipy.ndimage.filters.uniform_filter(I_pad ** 2)

@@ -668,8 +668,9 @@ QJsonObject OperatorPython::serialize() const
   }
 
   if (!helpUrl().isEmpty()) {
-    json["help"] = QJsonObject();
-    json["help"].toObject()["url"] = helpUrl();
+    auto helpObj = QJsonObject();
+    helpObj["url"] = helpUrl();
+    json["help"] = helpObj;
   }
 
   return json;
@@ -856,7 +857,9 @@ void OperatorPython::setHelpFromJson(const QJsonObject& json)
   setHelpUrl("");
   auto helpNode = json["help"];
   if (!helpNode.isUndefined() && !helpNode.isNull()) {
-    auto helpNodeUrl = helpNode.toObject()["url"];
+    // Need to keep a reference to the object or it gets deleted
+    auto obj = helpNode.toObject();
+    auto helpNodeUrl = obj["url"];
     if (!helpNodeUrl.isUndefined() && !helpNodeUrl.isNull()) {
       setHelpUrl(helpNodeUrl.toString());
     }

@@ -21,128 +21,137 @@ class ReconConstrintedDFMOperator(tomviz.operators.CancelableOperator):
         nonnegativeVoxels = True
         tiltAngles = dataset.tilt_angles #Get Tilt angles
 
-        tiltSeries = dataset.active_scalars
-        if tiltSeries is None:
+        if dataset.active_scalars is None:
             raise RuntimeError("No scalars found!")
 
-        self.progress.message = 'Initialization'
+        num_scalars = dataset.num_scalars
+        scalars_names = dataset.scalars_names
+        child_dataset = None
 
-        #Direct Fourier recon without constraints
-        (recon, recon_F) \
-            = dfm3(tiltSeries, tiltAngles, np.size(tiltSeries, 1) * 2)
+        self.progress.maximum = Niter * num_scalars
 
-        kr_cutoffs = np.linspace(0.05, 0.5, 10)
-        #average Fourier magnitude of tilt series as a function of kr
-        I_data = radial_average(tiltSeries, kr_cutoffs)
+        for array_idx, array_name in enumerate(scalars_names):
+            self.progress.message = f'{array_name}: Initialization'
 
-        (Nx, Ny, Nz) = recon_F.shape
-        #Note: Nz = np.int(Ny/2+1)
-        Ntot = Nx * Ny * Ny
-        f = pyfftw.n_byte_align_empty((Nx, Ny, Nz), 16, dtype=np.complex64)
-        r = pyfftw.n_byte_align_empty((Nx, Ny, Ny), 16, dtype=np.float32)
-        fft_forward = pyfftw.FFTW(r, f, axes=(0, 1, 2))
-        fft_inverse = pyfftw.FFTW(
-            f, r, direction='FFTW_BACKWARD', axes=(0, 1, 2))
+            tiltSeries = dataset.scalars(array_name)
 
-        kx = np.fft.fftfreq(Nx)
-        ky = np.fft.fftfreq(Ny)
-        kz = ky[0:Nz]
+            #Direct Fourier recon without constraints
+            (recon, recon_F) \
+                = dfm3(tiltSeries, tiltAngles, np.size(tiltSeries, 1) * 2)
 
-        kX, kY, kZ = np.meshgrid(ky, kx, kz)
-        kR = np.sqrt(kY**2 + kX**2 + kZ**2)
+            kr_cutoffs = np.linspace(0.05, 0.5, 10)
+            #average Fourier magnitude of tilt series as a function of kr
+            I_data = radial_average(tiltSeries, kr_cutoffs)
 
-        sigma = 0.5 * supportSigma
-        G = np.exp(-kR**2 / (2 * sigma**2))
+            (Nx, Ny, Nz) = recon_F.shape
+            #Note: Nz = np.int64(Ny/2+1)
+            Ntot = Nx * Ny * Ny
+            f = pyfftw.n_byte_align_empty((Nx, Ny, Nz), 16, dtype=np.complex64)
+            r = pyfftw.n_byte_align_empty((Nx, Ny, Ny), 16, dtype=np.float32)
+            fft_forward = pyfftw.FFTW(r, f, axes=(0, 1, 2))
+            fft_inverse = pyfftw.FFTW(
+                f, r, direction='FFTW_BACKWARD', axes=(0, 1, 2))
 
-        #create initial support using sw
-        f = (recon_F * G).astype(np.complex64)
-        fft_inverse.update_arrays(f, r)
-        fft_inverse.execute()
-        cutoff = np.amax(r) * supportThreshold
-        support = r >= cutoff
+            kx = np.fft.fftfreq(Nx)
+            ky = np.fft.fftfreq(Ny)
+            kz = ky[0:Nz]
 
-        recon_F[kR > kr_cutoffs[-1]] = 0
+            kX, kY, kZ = np.meshgrid(ky, kx, kz)
+            kR = np.sqrt(kY**2 + kX**2 + kZ**2)
 
-        x = np.random.rand(Nx, Ny, Ny).astype(np.float32) #initial solution
+            sigma = 0.5 * supportSigma
+            G = np.exp(-kR**2 / (2 * sigma**2))
 
-        self.progress.maximum = Niter
-        step = 0
-
-        t0 = time.time()
-        counter = 1
-        etcMessage = 'Estimated time to complete: n/a'
-
-        for i in range(Niter):
-            if self.canceled:
-                return
-            self.progress.message = 'Iteration No.%d/%d. ' % (
-                i + 1, Niter) + etcMessage
-
-            #image space projection
-            y1 = x.copy()
-
-            if nonnegativeVoxels:
-                y1[y1 < 0] = 0  #non-negative constraint
-
-            y1[np.logical_not(support)] = 0 #support constraint
-
-            #Fourier space projection
-            y2 = 2 * y1 - x
-            r = y2.copy().astype(np.float32)
-            fft_forward.update_arrays(r, f)
-            fft_forward.execute()
-
-            f[kR > kr_cutoffs[-1]] = 0 #apply low pass filter
-            f[recon_F != 0] = recon_F[recon_F != 0] #data constraint
-
-            #Fourier magnitude constraint
-            #leave the inner shell unchanged
-            for j in range(1, kr_cutoffs.size):
-                shell = np.logical_and(
-                    kR > kr_cutoffs[j - 1], kR <= kr_cutoffs[j])
-                shell[recon_F != 0] = False
-                I = np.sum(np.absolute(f[shell]))
-                if I != 0:
-                    I = I / np.sum(shell)
-                    # lower magnitude for high frequency information to reduce
-                    # artifacts
-                    f[shell] = f[shell] / I * I_data[j] * 0.5
-
+            #create initial support using sw
+            f = (recon_F * G).astype(np.complex64)
             fft_inverse.update_arrays(f, r)
             fft_inverse.execute()
-            y2 = r.copy() / Ntot
+            cutoff = np.amax(r) * supportThreshold
+            support = r >= cutoff
 
-            #update
-            x = x + y2 - y1
+            recon_F[kR > kr_cutoffs[-1]] = 0
 
-            #update support
-            if (i < Niter and np.mod(i, Niter_update_support) == 0):
-                recon[:] = (y2 + y1) / 2
-                r = recon.copy()
+            x = np.random.rand(Nx, Ny, Ny).astype(np.float32) #initial solution
+
+            step = 0
+
+            t0 = time.time()
+            counter = 1
+            etcMessage = 'Estimated time to complete: n/a'
+
+            for i in range(Niter):
+                if self.canceled:
+                    return
+                self.progress.message = f'{array_name}: Iteration No.%d/%d. ' % (
+                    i + 1, Niter) + etcMessage
+
+                #image space projection
+                y1 = x.copy()
+
+                if nonnegativeVoxels:
+                    y1[y1 < 0] = 0  #non-negative constraint
+
+                y1[np.logical_not(support)] = 0 #support constraint
+
+                #Fourier space projection
+                y2 = 2 * y1 - x
+                r = y2.copy().astype(np.float32)
                 fft_forward.update_arrays(r, f)
                 fft_forward.execute()
-                f = (f * G).astype(np.complex64)
+
+                f[kR > kr_cutoffs[-1]] = 0 #apply low pass filter
+                f[recon_F != 0] = recon_F[recon_F != 0] #data constraint
+
+                #Fourier magnitude constraint
+                #leave the inner shell unchanged
+                for j in range(1, kr_cutoffs.size):
+                    shell = np.logical_and(
+                        kR > kr_cutoffs[j - 1], kR <= kr_cutoffs[j])
+                    shell[recon_F != 0] = False
+                    I = np.sum(np.absolute(f[shell]))
+                    if I != 0:
+                        I = I / np.sum(shell)
+                        # lower magnitude for high frequency information to reduce
+                        # artifacts
+                        f[shell] = f[shell] / I * I_data[j] * 0.5
+
                 fft_inverse.update_arrays(f, r)
                 fft_inverse.execute()
-                cutoff = np.amax(r) * supportThreshold
-                support = r >= cutoff
-            step += 1
-            self.progress.value = step
-            timeLeft = (time.time() - t0) / counter * (Niter - counter)
-            counter += 1
-            timeLeftMin, timeLeftSec = divmod(timeLeft, 60)
-            timeLeftHour, timeLeftMin = divmod(timeLeftMin, 60)
-            etcMessage = 'Estimated time to complete: %02d:%02d:%02d' % (
-                timeLeftHour, timeLeftMin, timeLeftSec)
+                y2 = r.copy() / Ntot
 
-        recon[:] = (y2 + y1) / 2
-        recon[:] = np.fft.fftshift(recon)
+                #update
+                x = x + y2 - y1
 
-        child = dataset.create_child_dataset()
-        child.active_scalars = recon
+                #update support
+                if (i < Niter and np.mod(i, Niter_update_support) == 0):
+                    recon[:] = (y2 + y1) / 2
+                    r = recon.copy()
+                    fft_forward.update_arrays(r, f)
+                    fft_forward.execute()
+                    f = (f * G).astype(np.complex64)
+                    fft_inverse.update_arrays(f, r)
+                    fft_inverse.execute()
+                    cutoff = np.amax(r) * supportThreshold
+                    support = r >= cutoff
+                step += 1
+                self.progress.value = step + array_idx * Niter
+                timeLeft = (time.time() - t0) / counter * (Niter - counter)
+                counter += 1
+                timeLeftMin, timeLeftSec = divmod(timeLeft, 60)
+                timeLeftHour, timeLeftMin = divmod(timeLeftMin, 60)
+                etcMessage = 'Estimated time to complete: %02d:%02d:%02d' % (
+                    timeLeftHour, timeLeftMin, timeLeftSec)
+
+            recon[:] = (y2 + y1) / 2
+            recon[:] = np.fft.fftshift(recon)
+
+            if child_dataset is None:
+                child_dataset = dataset.create_child_dataset()
+
+            child_dataset.set_scalars(array_name, recon)
 
         returnValues = {}
-        returnValues["reconstruction"] = child
+        returnValues["reconstruction"] = child_dataset
         return returnValues
 
 
@@ -173,9 +182,9 @@ def dfm3(input, angles, Npad):
     for a in range(0, Nproj):
         ang = angles[a] * np.pi / 180
         projection = input[:, :, a].astype(np.float32) #2D projection image
-        p = np.lib.pad(projection, ((0, 0), (pad_pre, pad_post)),
-                       'constant', constant_values=(0, 0)) #pad zeros
-        p = np.fft.ifftshift(p)
+        p = np.pad(projection, ((0, 0), (pad_pre, pad_post)),
+                   'constant', constant_values=(0, 0)) #pad zeros
+        p = np.ascontiguousarray(np.fft.ifftshift(p))
         p_fftw_object.update_arrays(p, pF)
         p_fftw_object()
 
@@ -186,7 +195,7 @@ def dfm3(input, angles, Npad):
             ang = np.pi + ang
 
         # Bilinear extrapolation
-        for i in range(0, np.int(np.ceil(Npad / 2)) + 1):
+        for i in range(0, np.int64(np.ceil(Npad / 2)) + 1):
             ky = i * dk
             #kz = 0
             ky_new = np.cos(ang) * ky #new coord. after rotation

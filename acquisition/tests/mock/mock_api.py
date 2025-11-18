@@ -1,7 +1,7 @@
 import time
 from PIL import Image
 from . import test_image, test_black_image, angle_to_page
-from tomviz.acquisition.utility import tobytes
+from tomviz_acquisition.acquisition.utility import tobytes
 
 img = Image.open(test_image())
 black = test_black_image().read()

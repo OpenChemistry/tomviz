@@ -103,7 +103,9 @@ void DataTransformMenu::buildTransforms()
     readInPythonScript("Shift_Stack_Uniformly"), false, false, false,
     readInJSONDescription("Shift_Stack_Uniformly"));
   new AddPythonTransformReaction(deleteSliceAction, "Delete Slices",
-                                 readInPythonScript("deleteSlices"));
+                                 readInPythonScript("DeleteSlices"),
+                                 false, false, false,
+                                 readInJSONDescription("DeleteSlices"));
   new AddPythonTransformReaction(padVolumeAction, "Pad Volume",
                                  readInPythonScript("Pad_Data"), false, false,
                                  false, readInJSONDescription("Pad_Data"));

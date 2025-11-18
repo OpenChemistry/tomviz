@@ -278,6 +278,12 @@ set(SOURCES
 )
 
 list(APPEND SOURCES
+  loguru/loguru.cpp
+  loguru/loguru.hpp
+)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/loguru)
+
+list(APPEND SOURCES
   modules/Module.cxx
   modules/Module.h
   modules/ModuleClip.cxx
@@ -446,6 +452,7 @@ set(python_files
   AutoTiltAxisShiftAlignment.py
   AutoCenterOfMassTiltImageAlignment.py
   AutoCrossCorrelationTiltImageAlignment.py
+  PyStackRegImageAlignment.py
   ctf_correct.py
   Recon_DFT.py
   Recon_DFT_constraint.py
@@ -475,7 +482,7 @@ set(python_files
   PeronaMalikAnisotropicDiffusion.py
   MedianFilter.py
   Resample.py
-  deleteSlices.py
+  DeleteSlices.py
   ClearVolume.py
   ConstantDataset.py
   RandomParticles.py
@@ -506,6 +513,8 @@ set(json_files
   AddPoissonNoise.json
   AutoCenterOfMassTiltImageAlignment.json
   AutoCrossCorrelationTiltImageAlignment.json
+  AutoTiltAxisShiftAlignment.json
+  PyStackRegImageAlignment.json
   BinaryThreshold.json
   CircleMask.json
   ConnectedComponents.json
@@ -524,6 +533,7 @@ set(json_files
   Shift_Stack_Uniformly.json
   Pad_Data.json
   Resample.json
+  DeleteSlices.json
   GaussianFilter.json
   GaussianFilterTiltSeries.json
   PeronaMalikAnisotropicDiffusion.json
@@ -613,6 +623,7 @@ endforeach()
 set(tomviz_python_modules
   __init__.py
   _internal.py
+  fix_pdb.py
   operators.py
   internal_dataset.py
   itkutils.py
@@ -726,10 +737,18 @@ configure_file(tomvizPythonConfig.h.in tomvizPythonConfig.h @ONLY)
 add_library(tomvizlib STATIC ${SOURCES} ${accel_srcs})
 set_target_properties(tomvizlib PROPERTIES OUTPUT_NAME tomviz)
 
+# Need to set this property so that in stack traces, tomviz symbols
+# can be resolved.
+set_target_properties(tomvizlib PROPERTIES ENABLE_EXPORTS TRUE)
+
 set_property(TARGET tomvizlib PROPERTY POSITION_INDEPENDENT_CODE TRUE)
 
 add_executable(tomviz WIN32 MACOSX_BUNDLE ${exec_sources} resources.qrc)
-target_link_libraries(tomviz PRIVATE tomvizlib ${OPENGL_LIBRARIES})
+target_link_libraries(tomviz PRIVATE tomvizlib ${OPENGL_LIBRARIES} ${extra_link_libraries})
+
+# Need to set this property so that in stack traces, tomviz symbols
+# can be resolved.
+set_target_properties(tomviz PROPERTIES ENABLE_EXPORTS TRUE)
 
 target_link_libraries(tomvizlib
   PUBLIC

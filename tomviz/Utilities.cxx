@@ -1338,9 +1338,6 @@ double getVoxelValue(vtkImageData* data, const vtkVector3d& point,
     return 0;
   }
 
-  vtkVector3d position;
-  data->GetPoint(pointId, position.GetData());
-
   vtkVector3d origin;
   data->GetOrigin(origin.GetData());
 
@@ -1348,7 +1345,7 @@ double getVoxelValue(vtkImageData* data, const vtkVector3d& point,
   data->GetSpacing(spacing.GetData());
 
   for (int i = 0; i < 3; ++i) {
-    indices[i] = round((position[i] - origin[i]) / spacing[i]);
+    indices[i] = round((point[i] - origin[i]) / spacing[i]);
   }
 
   double scalar = data->GetScalarComponentAsDouble(

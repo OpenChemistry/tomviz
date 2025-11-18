@@ -5,9 +5,9 @@ import struct
 import os
 import dm3_lib as dm3
 
-from tomviz.acquisition import AbstractSource
-from tomviz.acquisition import describe
-from tomviz.acquisition.utility import tobytes
+from tomviz_acquisition.acquisition import AbstractSource
+from tomviz_acquisition.acquisition import describe
+from tomviz_acquisition.acquisition.utility import tobytes
 from .filesystem import Monitor
 
 try:

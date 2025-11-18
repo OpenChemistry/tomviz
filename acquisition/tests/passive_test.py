@@ -7,9 +7,9 @@ import re
 from PIL import Image
 import dm3_lib as dm3
 
-from tomviz.jsonrpc import jsonrpc_message
+from tomviz_acquisition.jsonrpc import jsonrpc_message
 from .mock import test_image, test_dm3_tilt_series
-from tomviz.acquisition.utility import tobytes
+from tomviz_acquisition.acquisition.utility import tobytes
 
 # Add mock modules to path
 mock_dir = os.path.join(os.path.dirname(__file__), '..', 'tomviz',
@@ -19,7 +19,7 @@ sys.path.append(mock_dir)
 
 @pytest.fixture(scope="module")
 def passive_acquisition_server(acquisition_server):
-    source = 'tomviz.acquisition.vendors.passive.PassiveWatchSource'
+    source = 'tomviz_acquisition.acquisition.vendors.passive.PassiveWatchSource'
     acquisition_server.setup(source)
     yield acquisition_server
 

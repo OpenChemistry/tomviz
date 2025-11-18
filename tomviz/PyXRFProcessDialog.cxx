@@ -38,6 +38,9 @@ public:
   QMap<QString, int> logFileColumnIndices;
   QMap<int, QString> tableColumns;
 
+  double pixelSizeX = -1;
+  double pixelSizeY = -1;
+
   Python::Module pyxrfModule;
 
   Internal(QString workingDir, PyXRFProcessDialog* p)
@@ -126,6 +129,7 @@ public:
       return;
     }
 
+    readPixelSizes();
     writeLogFile();
     writeSettings();
     parent->accept();
@@ -165,6 +169,24 @@ public:
     if (outputDirectory().isEmpty() || !QDir(outputDirectory()).exists()) {
       reason = "Output directory does not exist: " + outputDirectory();
       return false;
+    }
+
+    // Check if there are any duplicate angles selected
+    QStringList anglesUsed;
+    for (int i = 0; i < logFileData.size(); ++i) {
+      auto use = logFileValue(i, "Use");
+      if (use != "x" && use != "1") {
+        // This angle wasn't used.
+        continue;
+      }
+
+      auto angle = logFileValue(i, "Theta");
+      if (anglesUsed.contains(angle)) {
+        reason = "Angle '" + angle + "' was selected more than once.";
+        return false;
+      }
+
+      anglesUsed.append(angle);
     }
 
     return true;
@@ -249,6 +271,68 @@ public:
       auto line = reader.readLine();
       logFileData.append(line.split(','));
     }
+  }
+
+  void readPixelSizes()
+  {
+    pixelSizeX = -1;
+    pixelSizeY = -1;
+
+    // Find the first selected scan index
+    int firstScanIdx = -1;
+    for (int i = 0; i < logFileData.size(); ++i) {
+      auto use = logFileValue(i, "Use");
+      if (use == "x" || use == "1") {
+        firstScanIdx = i;
+        break;
+      }
+    }
+
+    if (firstScanIdx == -1) {
+      // Don't need to print an error message here, because we have
+      // bigger problems that will be reported elsewhere.
+      return;
+    }
+
+    auto scanId = logFileValue(firstScanIdx, "Scan ID");
+    qInfo() << "Reading pixel sizes from the first checked scan: " << scanId;
+
+    static QStringList columnsNeeded = {
+      "X Start",
+      "X Stop",
+      "Num X",
+      "Y Start",
+      "Y Stop",
+      "Num Y"
+    };
+
+    // We will store the values in here
+    QMap<QString, double> values;
+    for (const auto& colName : columnsNeeded) {
+      auto value = logFileValue(firstScanIdx, colName);
+      if (value.isEmpty()) {
+        qCritical() << "Failed to locate value for column:" << colName;
+        qCritical() << "Pixel sizes will not be set.";
+        return;
+      }
+
+      bool ok;
+      auto valueD = value.toDouble(&ok);
+      if (!ok) {
+        qCritical() << "Failed to convert column value for column" << colName
+                    << "to double. Column value was:" << value;
+        qCritical() << "Pixel sizes will not be set.";
+        return;
+      }
+      values[colName] = valueD;
+    }
+
+    // If we made it here, we must have all column values we need.
+    // Compute and set.
+    pixelSizeX = (values["X Stop"] - values["X Start"]) / values["Num X"] * 1e3;
+    pixelSizeY = (values["Y Stop"] - values["Y Start"]) / values["Num Y"] * 1e3;
+
+    qInfo() << "Pixel sizes determined to be: " << pixelSizeX << pixelSizeY;
   }
 
   void writeLogFile()
@@ -346,15 +430,20 @@ public:
     settings->beginGroup("pyxrf");
     settings->beginGroup("process");
 
-    // Only set the log file if it isn't already set
-    if (logFile().isEmpty() || !QFile::exists(logFile())) {
-      setLogFile(settings->value("logFile", "").toString());
+    // Only load these settings if we are re-using the same previous
+    // working directory. Otherwise, use all new settings
+    auto previousWorkingDir = settings->value("previousProcessWorkingDir", "");
+    if (workingDirectory == previousWorkingDir) {
+      setParametersFile(settings->value("parametersFile", "").toString());
+      setOutputDirectory(
+        settings->value("outputDirectory", defaultOutputDirectory()).toString());
+      if (logFile().isEmpty()) {
+        setLogFile(settings->value("logFile", "").toString());
+      }
     }
-
-    setParametersFile(settings->value("parametersFile", "").toString());
     setIcName(settings->value("icName", "").toString());
-    setOutputDirectory(
-      settings->value("outputDirectory", defaultOutputDirectory()).toString());
+    setRotateDatasets(
+      settings->value("rotateDatasets", true).toBool());
 
     settings->endGroup();
     settings->endGroup();
@@ -366,10 +455,12 @@ public:
     settings->beginGroup("pyxrf");
     settings->beginGroup("process");
 
+    settings->setValue("previousProcessWorkingDir", workingDirectory);
     settings->setValue("parametersFile", parametersFile());
     settings->setValue("logFile", logFile());
     settings->setValue("icName", icName());
     settings->setValue("outputDirectory", outputDirectory());
+    settings->setValue("rotateDatasets", rotateDatasets());
 
     settings->endGroup();
     settings->endGroup();
@@ -439,6 +530,10 @@ public:
     QStringList args;
 
     auto* process = new QProcess(this);
+
+    // Forward stdout/stderr to this process
+    process->setProcessChannelMode(QProcess::ForwardedChannels);
+
     process->start(program, args);
 
     pyxrfIsRunning = true;
@@ -477,8 +572,9 @@ public:
   {
     QString caption = "Select log file";
     QString filter = "*.csv";
+    auto startPath = logFile() != "" ? logFile() : workingDirectory;
     auto file =
-      QFileDialog::getOpenFileName(parent.data(), caption, logFile(), filter);
+      QFileDialog::getOpenFileName(parent.data(), caption, startPath, filter);
     if (file.isEmpty()) {
       return;
     }
@@ -490,8 +586,9 @@ public:
   {
     QString caption = "Select parameters file";
     QString filter = "*.json";
+    auto startPath = parametersFile() != "" ? parametersFile() : workingDirectory;
     auto file = QFileDialog::getOpenFileName(parent.data(), caption,
-                                             parametersFile(), filter);
+                                             startPath, filter);
     if (file.isEmpty()) {
       return;
     }
@@ -502,8 +599,9 @@ public:
   void selectOutputDirectory()
   {
     QString caption = "Select output directory";
+    auto startPath = outputDirectory() != "" ? outputDirectory() : workingDirectory;
     auto dir = QFileDialog::getExistingDirectory(parent.data(), caption,
-                                                 outputDirectory());
+                                                 startPath);
     if (dir.isEmpty()) {
       return;
     }
@@ -526,6 +624,10 @@ public:
   QString outputDirectory() const { return ui.outputDirectory->text(); }
 
   void setOutputDirectory(QString s) { ui.outputDirectory->setText(s); }
+
+  bool rotateDatasets() const { return ui.rotateDatasets->isChecked(); }
+
+  void setRotateDatasets(bool b) { ui.rotateDatasets->setChecked(b); }
 };
 
 PyXRFProcessDialog::PyXRFProcessDialog(QString workingDirectory,
@@ -560,6 +662,21 @@ QString PyXRFProcessDialog::icName() const
 QString PyXRFProcessDialog::outputDirectory() const
 {
   return m_internal->outputDirectory();
+}
+
+double PyXRFProcessDialog::pixelSizeX() const
+{
+  return m_internal->pixelSizeX;
+}
+
+double PyXRFProcessDialog::pixelSizeY() const
+{
+  return m_internal->pixelSizeY;
+}
+
+bool PyXRFProcessDialog::rotateDatasets() const
+{
+  return m_internal->rotateDatasets();
 }
 
 } // namespace tomviz

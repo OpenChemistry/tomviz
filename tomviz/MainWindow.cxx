@@ -109,13 +109,6 @@ namespace tomviz {
 MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   : QMainWindow(parent, flags), m_ui(new Ui::MainWindow)
 {
-  // Override the default setting for showing full messages. This needs to be
-  // done prior to calling m_ui->setupUi(this) which sets the default to false.
-  pqSettings* qtSettings = pqApplicationCore::instance()->settings();
-  if (!qtSettings->contains("pqOutputWidget.ShowFullMessages")) {
-    qtSettings->setValue("pqOutputWidget.ShowFullMessages", true);
-  }
-
   VolumeManager::instance();
   connect(&ModuleManager::instance(), &ModuleManager::enablePythonConsole, this,
           &MainWindow::setEnabledPythonConsole);
@@ -137,6 +130,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
 
   // checkOpenGL();
   m_ui->setupUi(this);
+  // Force full messages to be shown
+  m_ui->outputWidget->showFullMessages(true);
   m_timer = new QTimer(this);
   connect(m_timer, SIGNAL(timeout()), SLOT(autosave()));
   m_timer->start(5 /*minutes*/ * 60 /*seconds per minute*/ *
@@ -258,6 +253,11 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   auto dataBrokerSaveReaction =
     new DataBrokerSaveReaction(m_ui->actionExportToDataBroker, this);
 
+  // Workflows menu
+  auto pyXRFRunner = new PyXRFRunner(this);
+  connect(m_ui->actionPyXRFWorkflow, &QAction::triggered, pyXRFRunner,
+          &PyXRFRunner::start);
+
   // Build Data Transforms menu
   new DataTransformMenu(this, m_ui->menuData, m_ui->menuSegmentation);
 
@@ -318,6 +318,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     "Image Alignment (Auto: Cross Correlation)");
   QAction* autoAlignCOMAction =
     m_ui->menuTomography->addAction("Image Alignment (Auto: Center of Mass)");
+  QAction* autoAlignPyStackRegAction =
+    m_ui->menuTomography->addAction("Image Alignment (Auto: PyStackReg)");
   QAction* alignAction =
     m_ui->menuTomography->addAction("Image Alignment (Manual)");
   QAction* autoRotateAlignAction =
@@ -411,7 +413,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     readInPythonScript("AutoTiltAxisRotationAlignment"), true);
   new AddPythonTransformReaction(
     autoRotateAlignShiftAction, "Auto Tilt Axis Shift Align",
-    readInPythonScript("AutoTiltAxisShiftAlignment"), true);
+    readInPythonScript("AutoTiltAxisShiftAlignment"), true, false, false,
+    readInJSONDescription("AutoTiltAxisShiftAlignment"));
 
   new AddPythonTransformReaction(
     autoAlignCCAction, "Auto Tilt Image Align (XCORR)",
@@ -421,6 +424,11 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     autoAlignCOMAction, "Auto Tilt Image Align (CoM)",
     readInPythonScript("AutoCenterOfMassTiltImageAlignment"), false, false,
     false, readInJSONDescription("AutoCenterOfMassTiltImageAlignment"));
+  new AddPythonTransformReaction(
+    autoAlignPyStackRegAction, "Auto Tilt Image Align (PyStackReg)",
+    readInPythonScript("PyStackRegImageAlignment"), false, false,
+    false, readInJSONDescription("PyStackRegImageAlignment"));
+
   new AddPythonTransformReaction(reconDFMAction, "Reconstruct (Direct Fourier)",
                                  readInPythonScript("Recon_DFT"), true, false,
                                  false, readInJSONDescription("Recon_DFT"));
@@ -555,10 +563,6 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   auto pipelineSettingsDialog = new PipelineSettingsDialog(this);
   connect(m_ui->actionPipelineSettings, &QAction::triggered,
           pipelineSettingsDialog, &QWidget::show);
-
-  auto pyXRFRunner = new PyXRFRunner(this);
-  connect(m_ui->actionPyXRFWorkflow, &QAction::triggered, pyXRFRunner,
-          &PyXRFRunner::start);
 
   // Prepopulate the previously seen python readers/writers
   // This operation is fast since it fetches the readers description

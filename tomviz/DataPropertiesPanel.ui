@@ -150,6 +150,27 @@
         <property name="spacing">
          <number>2</number>
         </property>
+        <item row="0" column="7" alignment="Qt::AlignHCenter">
+         <widget class="QLabel" name="unitLabel">
+          <property name="text">
+           <string>Units</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="2">
+         <widget class="QLabel" name="multiplyLabel1">
+          <property name="text">
+           <string>x</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="5">
+         <widget class="QLineEdit" name="zVoxelSizeBox">
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
         <item row="1" column="0">
          <widget class="QLabel" name="leftBracketLabel">
           <property name="text">
@@ -157,15 +178,8 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="1">
-         <widget class="QLineEdit" name="xLengthBox">
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="7">
-         <widget class="QLineEdit" name="unitBox">
+        <item row="1" column="5">
+         <widget class="QLineEdit" name="zLengthBox">
           <property name="alignment">
            <set>Qt::AlignCenter</set>
           </property>
@@ -178,31 +192,17 @@
           </property>
          </widget>
         </item>
+        <item row="1" column="7">
+         <widget class="QLineEdit" name="unitBox">
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
         <item row="1" column="6">
          <widget class="QLabel" name="rightBracketLabel">
           <property name="text">
            <string>)</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="5">
-         <widget class="QLineEdit" name="zLengthBox">
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="5" alignment="Qt::AlignHCenter">
-         <widget class="QLabel" name="zLabel">
-          <property name="text">
-           <string>Z</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="3">
-         <widget class="QLineEdit" name="yLengthBox">
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
           </property>
          </widget>
         </item>
@@ -220,17 +220,83 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="7" alignment="Qt::AlignHCenter">
-         <widget class="QLabel" name="unitLabel">
-          <property name="text">
-           <string>Units</string>
+        <item row="3" column="1">
+         <widget class="QLineEdit" name="xVoxelSizeBox">
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
           </property>
          </widget>
         </item>
-        <item row="1" column="2">
-         <widget class="QLabel" name="multiplyLabel1">
+        <item row="1" column="1">
+         <widget class="QLineEdit" name="xLengthBox">
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="5" alignment="Qt::AlignHCenter">
+         <widget class="QLabel" name="zLabel">
+          <property name="text">
+           <string>Z</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="3">
+         <widget class="QLineEdit" name="yVoxelSizeBox">
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="3">
+         <widget class="QLineEdit" name="yLengthBox">
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0" colspan="8">
+         <widget class="Line" name="line">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="7">
+         <widget class="QLabel" name="voxelSizesLabel">
+          <property name="text">
+           <string>voxel sizes</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="2">
+         <widget class="QLabel" name="label_4">
           <property name="text">
            <string>x</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="4">
+         <widget class="QLabel" name="label_5">
+          <property name="text">
+           <string>x</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="label_6">
+          <property name="text">
+           <string>(</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="6">
+         <widget class="QLabel" name="label_7">
+          <property name="text">
+           <string>)</string>
           </property>
          </widget>
         </item>
@@ -438,12 +504,17 @@
  <tabstops>
   <tabstop>FileName</tabstop>
   <tabstop>ActiveScalars</tabstop>
+  <tabstop>showTimeSeriesLabel</tabstop>
+  <tabstop>editTimeSeries</tabstop>
   <tabstop>componentNamesEditor</tabstop>
   <tabstop>ScalarsTable</tabstop>
   <tabstop>xLengthBox</tabstop>
   <tabstop>yLengthBox</tabstop>
   <tabstop>zLengthBox</tabstop>
   <tabstop>unitBox</tabstop>
+  <tabstop>xVoxelSizeBox</tabstop>
+  <tabstop>yVoxelSizeBox</tabstop>
+  <tabstop>zVoxelSizeBox</tabstop>
   <tabstop>xOriginBox</tabstop>
   <tabstop>yOriginBox</tabstop>
   <tabstop>zOriginBox</tabstop>
