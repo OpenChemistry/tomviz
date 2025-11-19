@@ -71,7 +71,7 @@ public:
             &Internal::startPtychoGUI);
 
     connect(ui.ptychoDirectory, &QLineEdit::editingFinished,
-            this, &Internal::loadPtychoDir);
+            this, &Internal::ptychoDirEdited);
     connect(ui.selectPtychoDirectory, &QPushButton::clicked, this,
             &Internal::selectPtychoDirectory);
 
@@ -533,16 +533,26 @@ public:
     }
 
     setPtychoDirectory(file);
+    ptychoDirEdited();
+  }
+
+  void ptychoDirEdited()
+  {
+    // Whenever this is called, make sure we clear the CSV file and SID filters
+    setCsvFile("");
+    setFilterSIDsString("");
+
     loadPtychoDir();
   }
 
   void loadPtychoDir()
   {
+    clearTable();
+
     Python python;
 
     auto func = ptychoModule.findFunction("gather_ptycho_info");
     if (!func.isValid()) {
-      clearTable();
       QString msg = "Failed to import \"tomviz.ptycho.gather_ptycho_info\"";
       qCritical() << msg;
       return;
@@ -553,7 +563,6 @@ public:
     auto result = func.call(kwargs);
 
     if (!result.isValid() || !result.isDict()) {
-      clearTable();
       QString msg = "Error calling \"tomviz.ptycho.gather_ptycho_info\"";
       qCritical() << msg;
       return;
@@ -561,32 +570,31 @@ public:
 
     auto resultDict = result.toDict();
 
-    auto sidListPy = resultDict["sid_list"].toList();
-    auto versionDictPy = resultDict["version_dict"].toDict();
-    auto angleDictPy = resultDict["angle_dict"].toDict();
-    auto errorDictPy = resultDict["error_dict"].toDict();
+    auto sidListV = resultDict["sid_list"].toVariant().toList();
+    auto versionDictV = resultDict["version_list"].toVariant().toList();
+    auto angleDictV = resultDict["angle_list"].toVariant().toList();
+    auto errorDictV = resultDict["error_list"].toVariant().toList();
 
     sidList.clear();
     versionOptions.clear();
     angleOptions.clear();
     allErrorLists.clear();
-    for (int i = 0; i < sidListPy.length(); ++i) {
-      auto sid = sidListPy[i].toLong();
-      auto sidPy = Python::Object(Variant(sid));
+    for (size_t i = 0; i < sidListV.size(); ++i) {
+      auto sid = sidListV[i].toLong();
       sidList.append(sid);
 
-      auto versionOptionsPy = versionDictPy[sidPy].toList();
-      auto theseAnglesPy = angleDictPy[sidPy].toDict();
-      auto theseErrorsPy = errorDictPy[sidPy].toDict();
+      auto versionOptionsV = versionDictV[i].toList();
+      auto theseAnglesV = angleDictV[i].toList();
+      auto theseErrorsV = errorDictV[i].toList();
 
       QStringList versions;
       QMap<QString, double> angles;
       QMap<QString, QString> errors;
-      for (int j = 0; j < versionOptionsPy.length(); ++j) {
-        auto version = versionOptionsPy[j].toString();
+      for (size_t j = 0; j < versionOptionsV.size(); ++j) {
+        auto version = QString::fromStdString(versionOptionsV[j].toString());
         versions.append(version);
-        angles[version] = theseAnglesPy[version].toDouble();
-        errors[version] = theseErrorsPy[version].toString();
+        angles[version] = theseAnglesV[j].toDouble();
+        errors[version] = QString::fromStdString(theseErrorsV[j].toString());
       }
       versionOptions[sid] = versions;
       angleOptions[sid] = angles;

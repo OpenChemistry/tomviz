@@ -1,3 +1,4 @@
+import math
 from pathlib import Path
 import sys
 
@@ -37,12 +38,12 @@ def gather_ptycho_info(ptycho_dir: PathLike) -> dict:
     angle_dict = {}
     error_dict = {}
     for sid in sid_list:
-        these_angles = {}
-        these_errors = {}
+        these_angles = []
+        these_errors = []
         for version in version_dict[sid]:
-            these_angles[version] = load_angle_from_sid(sid, version,
-                                                        ptycho_dir)
-            these_errors[version] = validate_sid(sid, version, ptycho_dir)
+            these_angles.append(load_angle_from_sid(sid, version,
+                                                    ptycho_dir))
+            these_errors.append(validate_sid(sid, version, ptycho_dir))
 
         angle_dict[sid] = these_angles
         error_dict[sid] = these_errors
@@ -52,8 +53,8 @@ def gather_ptycho_info(ptycho_dir: PathLike) -> dict:
         if not angle_dict[sid]:
             return 1e300
 
-        valid_angle = np.nan
-        for angle in angle_dict[sid].values():
+        valid_angle = math.nan
+        for i, angle in enumerate(angle_dict[sid]):
             if not np.isnan(angle):
                 valid_angle = angle
 
@@ -62,13 +63,18 @@ def gather_ptycho_info(ptycho_dir: PathLike) -> dict:
 
         return valid_angle
 
+    # Sort by angles
+
     sid_list.sort(key=sort_func)
 
+    version_list = [version_dict[sid] for sid in sid_list]
+    angle_list = [angle_dict[sid] for sid in sid_list]
+    error_list = [error_dict[sid] for sid in sid_list]
     return {
         'sid_list': sid_list,
-        'version_dict': version_dict,
-        'angle_dict': angle_dict,
-        'error_dict': error_dict,
+        'version_list': version_list,
+        'angle_list': angle_list,
+        'error_list': error_list,
     }
 
 
@@ -96,12 +102,28 @@ def validate_sid(sid: int, version: str, ptycho_dir: PathLike) -> str:
 
 def load_angle_from_sid(sid: int, version: str,
                         ptycho_dir: PathLike) -> float:
-    recon_data_dir = Path(ptycho_dir) / f'S{sid}' / version / 'recon_data'
-    matches = list(recon_data_dir.glob('*ptycho_hyan*.txt'))
-    if not matches:
-        return np.nan
+    path = locate_ptycho_hyan_file(sid, version, ptycho_dir)
+    if path is None:
+        return math.nan
 
-    return fetch_angle_from_ptycho_hyan_file(matches[0].resolve())
+    return fetch_angle_from_ptycho_hyan_file(path)
+
+
+def locate_ptycho_hyan_file(sid: int, version: str,
+                            ptycho_dir: PathLike) -> str | None:
+    recon_data_dir = Path(ptycho_dir) / f'S{sid}' / version / 'recon_data'
+    matches = list(recon_data_dir.glob(f'{sid}_{version}*'))
+
+    for match in matches:
+        try:
+            with open(match.resolve(), 'r') as rf:
+                if 'angle =' in rf.read():
+                    return match.resolve()
+        except Exception:
+            # Move on to the next one
+            continue
+
+    return None
 
 
 def get_use_and_versions_from_csv(csv_path: str) -> dict:
@@ -211,7 +233,7 @@ def load_stack_ptycho(version_list: list[str],
             if i == 0:
                 print('Attempting to read pixel sizes from the '
                       f'first scan ID: {sid}')
-                result = attempt_to_read_pixel_sizes(dir_path)
+                result = attempt_to_read_pixel_sizes(sid, version, ptycho_dir)
                 if result is not None:
                     pixel_size_x, pixel_size_y = result
         else:
@@ -289,6 +311,9 @@ def load_stack_ptycho(version_list: list[str],
         array = array.swapaxes(0, 2)
         arrays[key] = array
 
+    # Make sure the output directory exists
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+
     # Now write out the datasets in EMD format
     output_files = []
     datasets = {
@@ -358,17 +383,18 @@ def fit_func(
     return lambda x, y: p0 + x * px1 + py1 * y
 
 
-def attempt_to_read_pixel_sizes(dir_path: Path) -> tuple[float, float] | None:
-    matches = list(dir_path.glob('*ptycho_hyan*.txt'))
-    if not matches:
+def attempt_to_read_pixel_sizes(sid, version, ptycho_dir) -> tuple[float, float] | None:
+    path = locate_ptycho_hyan_file(sid, version, ptycho_dir)
+    if path is None:
         print(
-            f'Failed to locate config file in {dir_path}\n'
+            f'Failed to locate config file for {sid} {version}\n'
             f'Pixel sizes will not be read',
             file=sys.stderr,
         )
         return None
 
-    result = fetch_pixel_sizes_from_ptycho_hyan_file(matches[0].resolve())
+
+    result = fetch_pixel_sizes_from_ptycho_hyan_file(path)
     if result is None:
         print(
             'Failed to obtain pixel sizes. Pixel sizes '
@@ -390,7 +416,7 @@ def fetch_angle_from_ptycho_hyan_file(filepath: PathLike) -> float | None:
                 return angle
 
     # Angle was not found
-    return np.nan
+    return math.nan
 
 
 def fetch_pixel_sizes_from_ptycho_hyan_file(
