@@ -16,8 +16,8 @@ PathLike = Path | str
 def gather_ptycho_info(ptycho_dir: PathLike) -> dict:
     ptycho_dir = Path(ptycho_dir)
 
-    sid_list = [int(x.name[1:]) for x in ptycho_dir.iterdir()
-                if x.is_dir() and x.name.startswith('S')]
+    sid_list = sorted([int(x.name[1:]) for x in ptycho_dir.iterdir()
+                      if x.is_dir() and x.name.startswith('S')])
 
     sid_dirs = [ptycho_dir / f'S{sid}' for sid in sid_list]
 
@@ -47,25 +47,6 @@ def gather_ptycho_info(ptycho_dir: PathLike) -> dict:
 
         angle_dict[sid] = these_angles
         error_dict[sid] = these_errors
-
-    # Sort the sid_list by angles
-    def sort_func(sid: int) -> float:
-        if not angle_dict[sid]:
-            return 1e300
-
-        valid_angle = math.nan
-        for i, angle in enumerate(angle_dict[sid]):
-            if not np.isnan(angle):
-                valid_angle = angle
-
-        if np.isnan(valid_angle):
-            return 1e300
-
-        return valid_angle
-
-    # Sort by angles
-
-    sid_list.sort(key=sort_func)
 
     version_list = [version_dict[sid] for sid in sid_list]
     angle_list = [angle_dict[sid] for sid in sid_list]
