@@ -2,10 +2,10 @@ import os
 
 try:
     from .ptycho import (
-        create_sid_list,
         gather_ptycho_info,
+        get_use_and_versions_from_csv,
+        filter_sid_list,
         load_stack_ptycho,
-        remove_sids_missing_data_or_angles,
     )
     requirements_installed = True
 except ImportError:

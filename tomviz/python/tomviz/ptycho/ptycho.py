@@ -20,86 +20,78 @@ def gather_ptycho_info(ptycho_dir: PathLike) -> dict:
 
     sid_dirs = [ptycho_dir / f'S{sid}' for sid in sid_list]
 
-    version_list = set()
-    for d in sid_dirs:
+    version_dict = {}
+    for sid, d in zip(sid_list, sid_dirs):
+        versions = []
         for subdir in d.iterdir():
             if subdir.is_dir():
-                version_list.add(subdir.name)
+                versions.append(subdir.name)
 
-    version_list = list(sorted(version_list))
+        if not versions:
+            # There will be an error, but at least put in 't1'
+            versions.append('t1')
 
-    # Create angles for each SID and version
-    angles_dict = {}
+        version_dict[sid] = sorted(versions)
+
+    # Create angles and error lists for each SID and version
+    angle_dict = {}
+    error_dict = {}
     for sid in sid_list:
-        angles_dict[sid] = {}
-        sid_dir = ptycho_dir / f'S{sid}'
-        for version_dir in sid_dir.iterdir():
-            angle = load_angle_from_sid(sid, version_dir.name, ptycho_dir)
-            if angle is not None:
-                angles_dict[sid][version_dir.name] = angle
+        these_angles = {}
+        these_errors = {}
+        for version in version_dict[sid]:
+            these_angles[version] = load_angle_from_sid(sid, version,
+                                                        ptycho_dir)
+            these_errors[version] = validate_sid(sid, version, ptycho_dir)
+
+        angle_dict[sid] = these_angles
+        error_dict[sid] = these_errors
+
+    # Sort the sid_list by angles
+    def sort_func(sid: int) -> float:
+        if not angle_dict[sid]:
+            return 1e300
+
+        valid_angle = np.nan
+        for angle in angle_dict[sid].values():
+            if not np.isnan(angle):
+                valid_angle = angle
+
+        if np.isnan(valid_angle):
+            return 1e300
+
+        return valid_angle
+
+    sid_list.sort(key=sort_func)
 
     return {
         'sid_list': sid_list,
-        'version_list': version_list,
-        'angles_dict': angles_dict,
-        # We return these so it's easier to identify them in C++
-        'min_sid': min(sid_list) if sid_list else 0,
-        'max_sid': max(sid_list) if sid_list else 0,
+        'version_dict': version_dict,
+        'angle_dict': angle_dict,
+        'error_dict': error_dict,
     }
 
 
-def find_missing_data(version_list: list[str],
-                      sid_list: list[int],
-                      ptycho_dir: PathLike) -> list[tuple[str, int]]:
-    missing = []
+def validate_sid(sid: int, version: str, ptycho_dir: PathLike) -> str:
+    # Validate the sid and version, that it contains the data and angles.
+    # If it is valid, the returned string will be empty. Otherwise, the
+    # returned string will contain the error message as to what is not
+    # valid.
     ptycho_dir = Path(ptycho_dir)
-    for version, sid in zip(version_list, sid_list):
-        dir_path = ptycho_dir / f'S{sid}/{version}/recon_data'
-        f_path = dir_path / f'recon_{sid}_{version}_object_ave.npy'
-        g_path = dir_path / f'recon_{sid}_{version}_probe_ave.npy'
-        if not f_path.exists() or not g_path.exists():
-            missing.append((version, sid))
+    dir_path = ptycho_dir / f'S{sid}/{version}/recon_data'
+    f_path = dir_path / f'recon_{sid}_{version}_object_ave.npy'
+    g_path = dir_path / f'recon_{sid}_{version}_probe_ave.npy'
+    if not f_path.exists():
+        return 'Ptycho data missing'
 
-    return missing
+    if not g_path.exists():
+        return 'Probe data missing'
 
+    angle = load_angle_from_sid(sid, version, ptycho_dir)
+    if np.isnan(angle):
+        return 'Angle not found'
 
-def find_sids_missing_angles(sid_list: list[int],
-                             angle_list: list[float]) -> list[int]:
-    return [sid_list[i] for i in range(len(angle_list))
-            if np.isnan(angle_list[i])]
-
-
-def remove_sids_missing_data_or_angles(version_list: list[str],
-                                       sid_list: list[int],
-                                       angle_list: list[float],
-                                       ptycho_dir: PathLike) -> bool:
-    missing_data = find_missing_data(version_list, sid_list, ptycho_dir)
-    missing_angles = find_sids_missing_angles(sid_list, angle_list)
-
-    for version, sid in missing_data:
-        # Find it in the sid_list and angle_list and remove it
-        for i in range(len(sid_list)):
-            if sid_list[i] == sid:
-                angle = angle_list[i]
-                print(f'Removing SID missing data: {sid} (angle: {angle})')
-                sid_list.pop(i)
-                angle_list.pop(i)
-                version_list.pop(i)
-                break
-
-    for sid in missing_angles:
-        for i in range(len(sid_list)):
-            if sid_list[i] == sid:
-                print('Removing SID missing angle:', sid)
-                sid_list.pop(i)
-                angle_list.pop(i)
-                version_list.pop(i)
-                break
-
-    if not sid_list or not angle_list or not version_list:
-        raise RuntimeError('All SIDs were invalid')
-
-    return True
+    return ''
 
 
 def load_angle_from_sid(sid: int, version: str,
@@ -110,6 +102,36 @@ def load_angle_from_sid(sid: int, version: str,
         return np.nan
 
     return fetch_angle_from_ptycho_hyan_file(matches[0].resolve())
+
+
+def get_use_and_versions_from_csv(csv_path: str) -> dict:
+    data = np.genfromtxt(csv_path, delimiter=',', names=True, dtype=None)
+
+    sids = []
+    try:
+        sids = data['Scan_ID'].tolist()
+    except Exception:
+        print('"Scan_ID" column not found in CSV file', file=sys.stderr)
+
+    use = []
+    try:
+        use = data['Use'].tolist()
+        # Convert to boolean
+        use = [x in (1, '1', 'x') for x in use]
+    except Exception:
+        print('"Use" column not found in CSV file', file=sys.stderr)
+
+    versions = []
+    try:
+        versions = data['Version'].tolist()
+    except Exception:
+        print('"Version" column not found in CSV file', file=sys.stderr)
+
+    return {
+        'sids': sids,
+        'use': use,
+        'versions': versions,
+    }
 
 
 def load_sids_from_file(filepath: PathLike) -> list:
@@ -130,71 +152,29 @@ def load_sids_from_file(filepath: PathLike) -> list:
     return sids, angles
 
 
-def create_sid_list(load_sid_settings: dict, ptycho_dir: PathLike) -> dict:
-    output_version_list = []
-    sid_list = []
-    angle_list = []
+def filter_sid_list(sid_list: list[int], filter_string: str) -> list[int]:
+    if not filter_string.strip():
+        # All SIDs are valid
+        return list(sid_list)
 
-    version_list = load_sid_settings['version_list']
-    load_methods = load_sid_settings['load_methods']
-    load_sids = load_sid_settings['load_sids']
+    # Either a comma-delimited list or numpy slicing
+    sid_strings = filter_string.split(',')
+    valid_sids = []
+    for this_str in sid_strings:
+        if ':' in this_str:
+            this_slice = slice(
+                *(int(s) if s else None for s in this_str.split(':'))
+            )
+            # If there was no stop specified, go to the end of the sid_list
+            if this_slice.stop is None:
+                this_slice = slice(this_slice.start, max(sid_list) + 1,
+                                   this_slice.step)
 
-    for version, method, sid_str in zip(version_list, load_methods, load_sids):
-        if not sid_str.strip():
-            # No file, nor numpy splicing, was selected.
-            continue
-
-        angles = None
-        if method == 'from_file':
-            # Load the SID list from a file
-            new_sids, angles = load_sids_from_file(sid_str)
+            valid_sids += np.r_[this_slice].tolist()
         else:
-            # Either a comma-delimited list or numpy slicing
-            sid_strings = sid_str.split(',')
-            new_sids = []
-            for this_str in sid_strings:
-                if ':' in this_str:
-                    this_slice = slice(
-                        *(int(s) if s else None for s in this_str.split(':'))
-                    )
-                    new_sids += np.r_[this_slice].tolist()
-                else:
-                    new_sids.append(int(this_str))
+            valid_sids.append(int(this_str))
 
-        if angles is None:
-            # Find all angles for the new SIDs
-            # Some of these angles might be None, if they could not
-            # be found. We'll have to check on that later.
-            angles = [load_angle_from_sid(sid, version, ptycho_dir)
-                      for sid in new_sids]
-
-        angle_list += angles
-        sid_list += new_sids
-        output_version_list += ([version] * len(angles))
-
-    def sort_with_nan(x):
-        if np.isnan(x[0]):
-            return 1e300
-
-        return x[0]
-
-    # Now sort them by angle
-    sorted_version_list = []
-    sorted_sid_list = []
-    sorted_angle_list = []
-    for angle, sid, version in sorted(
-        zip(angle_list, sid_list, output_version_list),
-        key=sort_with_nan,
-    ):
-        sorted_version_list.append(version)
-        sorted_sid_list.append(sid)
-        sorted_angle_list.append(angle)
-
-    return {
-        'version_list': sorted_version_list,
-        'sid_list': sorted_sid_list,
-        'angle_list': sorted_angle_list,
-    }
+    return [sid for sid in sid_list if sid in valid_sids]
 
 
 # Load all Ptycho data, stack with padded size for max
@@ -218,7 +198,7 @@ def load_stack_ptycho(version_list: list[str],
     pixel_size_x = None
     pixel_size_y = None
     for i, sid in tqdm(enumerate(sid_list[0: len(version_list)]),
-                     desc="Loading Ptycho"):
+                       desc="Loading Ptycho"):
         sid = int(sid)
         version = version_list[i]
         dir_path = ptycho_dir / f'S{sid}/{version}/recon_data'
@@ -391,8 +371,8 @@ def attempt_to_read_pixel_sizes(dir_path: Path) -> tuple[float, float] | None:
     result = fetch_pixel_sizes_from_ptycho_hyan_file(matches[0].resolve())
     if result is None:
         print(
-            f'Failed to obtain pixel sizes. Pixel sizes '
-            f'will not be applied to datasets.',
+            'Failed to obtain pixel sizes. Pixel sizes '
+            'will not be applied to datasets.',
             file=sys.stderr,
         )
         return None

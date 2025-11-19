@@ -35,7 +35,6 @@ public:
 
   // Ptycho options
   QString ptychoDirectory;
-  QMap<QString, QStringList> loadSIDSettings;
   QString outputDirectory;
   bool rotateDatasets = true;
 
@@ -180,171 +179,20 @@ public:
     ptychoDialog = new PtychoDialog(parentWidget);
     connect(ptychoDialog.data(), &QDialog::accepted, this,
             &Internal::ptychoDialogAccepted);
-    connect(ptychoDialog.data(), &PtychoDialog::needTableDataUpdate, this,
-            &Internal::updatePtychoDialogTableData);
     ptychoDialog->show();
-  }
-
-  void updatePtychoDialogTableData()
-  {
-    if (!ptychoDialog) {
-      return;
-    }
-
-    if (!QDir(ptychoDialog->ptychoDirectory()).exists()) {
-      // Just ignore it, if the directory doesn't even exist
-      ptychoDialog->clearTable();
-      return;
-    }
-
-    Python python;
-
-    auto func = ptychoModule.findFunction("gather_ptycho_info");
-    if (!func.isValid()) {
-      ptychoDialog->clearTable();
-      QString msg = "Failed to import \"tomviz.ptycho.gather_ptycho_info\"";
-      onFailure(msg);
-      return;
-    }
-
-    Python::Dict kwargs;
-    kwargs.set("ptycho_dir", ptychoDialog->ptychoDirectory());
-    auto result = func.call(kwargs);
-
-    if (!result.isValid() || !result.isDict()) {
-      ptychoDialog->clearTable();
-      QString msg = "Error calling \"tomviz.ptycho.gather_ptycho_info\"";
-      onFailure(msg);
-      return;
-    }
-
-    auto dict = result.toDict();
-    auto min = dict["min_sid"].toVariant().toLong();
-    auto max = dict["max_sid"].toVariant().toLong();
-    auto versionListPy = dict["version_list"].toList();
-    QStringList versionListStr;
-    for (int i = 0; i < versionListPy.length(); ++i) {
-      versionListStr.append(versionListPy[i].toString());
-    }
-
-    ptychoDialog->updateTableData(min, max, versionListStr);
   }
 
   void ptychoDialogAccepted()
   {
     // Gather the settings and decide what to do
     ptychoDirectory = ptychoDialog->ptychoDirectory();
-    loadSIDSettings = ptychoDialog->loadSIDSettings();
+    sidList = ptychoDialog->selectedSids();
+    versionList = ptychoDialog->selectedVersions();
+    angleList = ptychoDialog->selectedAngles();
     outputDirectory = ptychoDialog->outputDirectory();
     rotateDatasets = ptychoDialog->rotateDatasets();
 
-    // Generate the stack ptycho input
-    if (!generateStackPtychoInput()) {
-      // An error message will have already appeared. Show the dialog
-      // again and just return.
-      showPtychoDialog();
-      return;
-    }
-
     runStackPtycho();
-  }
-
-  bool generateStackPtychoInput()
-  {
-    // Make these invalid if they were used before
-    versionList.clear();
-    sidList.clear();
-    angleList.clear();
-
-    // Call functions to generate the input required to stack ptycho results
-    // Make sure the output directory exists
-    if (!QDir().mkpath(outputDirectory)) {
-      QString msg = "Failed to make output directory: " + outputDirectory;
-      return onFailure(msg);
-    }
-
-    Python python;
-
-    auto func = ptychoModule.findFunction("create_sid_list");
-    if (!func.isValid()) {
-      QString msg = "Failed to import \"tomviz.ptycho.create_sid_list\"";
-      return onFailure(msg);
-    }
-
-    Python::Dict kwargs;
-    kwargs.set("load_sid_settings", loadSIDSettingsAsPyObject());
-    kwargs.set("ptycho_dir", ptychoDirectory);
-    auto result = func.call(kwargs);
-
-    if (!result.isValid() || !result.isDict()) {
-      QString msg = "Error calling tomviz.ptycho.create_sid_list";
-      return onFailure(msg);
-    }
-
-    auto outputDict = result.toDict();
-    auto versionListPy = outputDict["version_list"];
-    if (!versionListPy.isValid() || !versionListPy.isList()) {
-      return onFailure("Invalid version_list from create_sid_list()");
-    }
-
-    auto sidListPy = outputDict["sid_list"];
-    if (!sidListPy.isValid() || !sidListPy.isList()) {
-      return onFailure("Invalid sid_list from create_sid_list()");
-    }
-
-    auto angleListPy = outputDict["angle_list"];
-    if (!angleListPy.isValid() || !angleListPy.isList()) {
-      return onFailure("Invalid angle_list from create_sid_list()");
-    }
-
-    // Now remove the invalid ones
-    func = ptychoModule.findFunction("remove_sids_missing_data_or_angles");
-    if (!func.isValid()) {
-      QString msg = "Failed to import \"tomviz.ptycho.remove_sids_missing_data_or_angles\"";
-      return onFailure(msg);
-    }
-
-    Python::Dict kwargs2;
-    kwargs2.set("version_list", versionListPy);
-    kwargs2.set("sid_list", sidListPy);
-    kwargs2.set("angle_list", angleListPy);
-    kwargs2.set("ptycho_dir", ptychoDirectory);
-
-    // This function raises an exception if there are no versions or SIDs left
-    // after removal. So check that the output is valid.
-    if (!func.call(kwargs2).isValid()) {
-      QString msg = "Error calling \"tomviz.ptycho.remove_sids_missing_data_or_angles\"";
-      return onFailure(msg);
-    }
-
-    // Now set all of these on our basic type
-    auto versionListPyList = versionListPy.toList();
-    for (int i = 0; i < versionListPyList.length(); ++i) {
-      versionList.append(versionListPyList[i].toString());
-    }
-
-    auto sidListPyList = sidListPy.toList();
-    for (int i = 0; i < sidListPyList.length(); ++i) {
-      sidList.append(sidListPyList[i].toLong());
-    }
-
-    auto angleListPyList = angleListPy.toList();
-    for (int i = 0; i < angleListPyList.length(); ++i) {
-      angleList.append(angleListPyList[i].toDouble());
-    }
-
-    return true;
-  }
-
-  Python::Dict loadSIDSettingsAsPyObject() const
-  {
-    Python python;
-
-    Python::Dict ret;
-    ret.set("version_list", loadSIDSettings["version_list"]);
-    ret.set("load_methods", loadSIDSettings["load_methods"]);
-    ret.set("load_sids", loadSIDSettings["load_sids"]);
-    return ret;
   }
 
   void runStackPtycho()

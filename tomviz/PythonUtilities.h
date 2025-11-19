@@ -122,6 +122,7 @@ public:
     Object operator[](const QString& key);
     Object operator[](const std::string& key);
     Object operator[](const char* key);
+    Object operator[](const Object& obj);
     void set(const QString& key, const Object& value);
     void set(const QString& key, const Variant& value);
     QString toString();

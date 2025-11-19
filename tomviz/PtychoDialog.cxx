@@ -4,19 +4,24 @@
 #include "PtychoDialog.h"
 #include "ui_PtychoDialog.h"
 
+#include "PythonUtilities.h"
+
 #include <pqApplicationCore.h>
 #include <pqSettings.h>
 
 #include <QCheckBox>
 #include <QComboBox>
+#include <QBrush>
 #include <QDebug>
 #include <QDir>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QLabel>
 #include <QMessageBox>
 #include <QPointer>
 #include <QProcess>
 #include <QProcessEnvironment>
+#include <QScrollBar>
 
 namespace tomviz {
 
@@ -24,29 +29,37 @@ class PtychoDialog::Internal : public QObject
 {
   Q_OBJECT
 
-signals:
-  void needTableDataUpdate();
-
 public:
   Ui::PtychoDialog ui;
   QPointer<PtychoDialog> parent;
 
   bool ptychoguiIsRunning = false;
 
-  // We're going to assume these files will be small and just
-  // load the whole thing into memory...
+  // Key is SID
+  QMap<long, QStringList> versionOptions;
+  // First key for these is the SID. Second key is the version.
+  QMap<long, QMap<QString, double>> angleOptions;
+  QMap<long, QMap<QString, QString>> allErrorLists;
+
+  QList<long> sidList;
+  QList<double> angleList;
   QStringList versionList;
-  QStringList loadMethods;
-  QStringList loadSIDs;
+  QList<bool> useList;
+  QStringList errorReasonList;
+
+  QList<long> filteredSidList;
+
   QMap<int, QString> tableColumns;
-  long minSID = 0;
-  long maxSID = 0;
+
+  Python::Module ptychoModule;
 
   Internal(PtychoDialog* p)
     : parent(p)
   {
     ui.setupUi(p);
     setParent(p);
+
+    importModule();
 
     setupTable();
     setupConnections();
@@ -57,12 +70,20 @@ public:
     connect(ui.startPtychoGUI, &QPushButton::clicked, this,
             &Internal::startPtychoGUI);
 
+    connect(ui.ptychoDirectory, &QLineEdit::editingFinished,
+            this, &Internal::loadPtychoDir);
     connect(ui.selectPtychoDirectory, &QPushButton::clicked, this,
             &Internal::selectPtychoDirectory);
+
+    connect(ui.loadFromCSVFile, &QLineEdit::editingFinished,
+            this, &Internal::setUseAndVersionsFromCSV);
+    connect(ui.selectLoadFromCSVFile, &QPushButton::clicked, this,
+            &Internal::selectLoadFromCSV);
+
+    connect(ui.filterSIDsString, &QLineEdit::editingFinished,
+            this, &Internal::updateFilteredSidList);
     connect(ui.selectOutputDirectory, &QPushButton::clicked, this,
             &Internal::selectOutputDirectory);
-    connect(ui.ptychoDirectory, &QLineEdit::editingFinished,
-            this, &Internal::needTableDataUpdate);
 
     connect(ui.buttonBox, &QDialogButtonBox::accepted, this,
             &Internal::accepted);
@@ -70,18 +91,34 @@ public:
 
   void setupTable()
   {
-    auto* table = ui.createSIDsTable;
+    auto* table = ui.table;
     auto& columns = tableColumns;
 
     columns.clear();
-    columns[0] = "Version";
-    columns[1] = "Method";
-    columns[2] = "SIDs";
+    columns[0] = "SID";
+    columns[1] = "Angle";
+    columns[2] = "Version";
+    columns[3] = "Use";
+    columns[4] = "Error Reason";
 
     table->setColumnCount(columns.size());
     for (int i = 0; i < columns.size(); ++i) {
       auto* header = new QTableWidgetItem(columns[i]);
       table->setHorizontalHeaderItem(i, header);
+    }
+  }
+
+  void importModule()
+  {
+    Python python;
+
+    if (ptychoModule.isValid()) {
+      return;
+    }
+
+    ptychoModule = python.import("tomviz.ptycho");
+    if (!ptychoModule.isValid()) {
+      qCritical() << "Failed to import \"tomviz.ptycho\" module";
     }
   }
 
@@ -99,6 +136,53 @@ public:
     parent->accept();
   }
 
+  QList<long> selectedSids()
+  {
+    // Only include the filtered ones
+    QList<long> ret;
+    for (auto& sid : filteredSidList) {
+      auto idx = sidList.indexOf(sid);
+      auto use = useList[idx];
+      if (use) {
+        ret.append(sid);
+      }
+    }
+
+    return ret;
+  }
+
+  QStringList selectedVersions()
+  {
+    QStringList versions;
+    for (auto sid : selectedSids()) {
+      auto idx = sidList.indexOf(sid);
+      versions.append(versionList[idx]);
+    }
+    return versions;
+  }
+
+  QList<double> selectedAngles()
+  {
+    QList<double> angles;
+    for (auto sid : selectedSids()) {
+      auto idx = sidList.indexOf(sid);
+      angles.append(angleList[idx]);
+    }
+    return angles;
+  }
+
+  QList<long> invalidSidsSelected()
+  {
+    QList<long> invalid;
+    for (auto sid : selectedSids()) {
+      auto idx = sidList.indexOf(sid);
+      if (!errorReasonList[idx].isEmpty()) {
+        invalid.append(sid);
+      }
+    }
+    return invalid;
+  }
+
   bool validate(QString& reason)
   {
     // Validate settings
@@ -107,22 +191,26 @@ public:
       return false;
     }
 
-    if (versionList.isEmpty()) {
-      reason = "No versions found in ptycho directory: " + ptychoDirectory();
+    if (sidList.isEmpty()) {
+      reason = "No SIDs found in ptycho directory: " + ptychoDirectory();
       return false;
     }
 
-    bool anyContents = false;
-    for (auto s: loadSIDs) {
-      if (!s.isEmpty()) {
-        anyContents = true;
-        break;
+    auto invalid = invalidSidsSelected();
+    if (!invalid.isEmpty()) {
+      QString title = "Invalid SID and version combinations selected";
+      QString text = "Invalid SIDs were selected. ";
+      text += "Do you wish to automatically deselect them and continue?";
+      if (QMessageBox::question(parent, title, text) == QMessageBox::No) {
+        reason = "Invalid SIDs were selected";
+        return false;
       }
-    }
 
-    if (!anyContents) {
-      reason = "No SIDs were selected for any version";
-      return false;
+      for (auto sid : invalid) {
+        auto idx = sidList.indexOf(sid);
+        useList[idx] = false;
+        updateTable();
+      }
     }
 
     if (!QDir(outputDirectory()).exists()) {
@@ -143,115 +231,107 @@ public:
     return true;
   }
 
-  void populateSIDSettingsIfNeeded()
-  {
-    for (int i = 0; i < versionList.size(); ++i) {
-      if (loadMethods.size() <= i) {
-        loadMethods.append("from_array");
-      }
-
-      if (loadSIDs.size() <= i) {
-        QString value = "";
-        if (i == 0 && minSID != maxSID && loadMethods[i] != "from_file") {
-          value = QString("%1 : %2").arg(minSID).arg(maxSID);
-        }
-        loadSIDs.append(value);
-      }
-    }
-  }
-
   void updateTable()
   {
-    populateSIDSettingsIfNeeded();
+    auto* table = ui.table;
 
-    auto* table = ui.createSIDsTable;
+    int scrollbarPosition = 0;
+    auto scrollbar = table->verticalScrollBar();
+    if (scrollbar) {
+      scrollbarPosition = scrollbar->value();
+    }
+
     table->clearContents();
 
-    table->setRowCount(versionList.size());
-    for (int i = 0; i < versionList.size(); ++i) {
+    table->setRowCount(filteredSidList.size());
+    for (int i = 0; i < filteredSidList.size(); ++i) {
+      auto sid = filteredSidList[i];
+      bool invalid = false;
       for (auto j : tableColumns.keys()) {
         auto column = tableColumns[j];
-        auto value = tableValue(i, column);
-        if (column == "Method") {
-          auto* cb = createMethodComboBox(i, value);
+        auto value = tableValue(sid, column);
+        if (column == "Version") {
+          auto* cb = createVersionComboBox(sid, value);
           table->setCellWidget(i, j, cb);
           continue;
-        } else if (column == "SIDs") {
-          auto* w = createSIDsLineEdit(i, value);
+        } else if (column == "Use") {
+          auto* w = createUseCheckBox(sid, value);
           table->setCellWidget(i, j, w);
           continue;
+        } else if (column == "Error Reason") {
+          invalid = !value.isEmpty();
         }
 
         auto* item = new QTableWidgetItem(value);
         item->setTextAlignment(Qt::AlignCenter);
         table->setItem(i, j, item);
       }
+
+      if (invalid) {
+        // Make every item have a red background
+        for (int j = 0; j < tableColumns.size(); ++j) {
+          auto* item = table->item(i, j);
+          if (item) {
+            item->setBackground(QBrush(Qt::red));
+          } else {
+            auto* cw = table->cellWidget(i, j);
+            if (cw) {
+              cw->setStyleSheet("background-color: red");
+            }
+          }
+        }
+      }
+    }
+
+    if (scrollbar) {
+      scrollbar->setValue(scrollbarPosition);
     }
   }
 
-  QWidget* createMethodComboBox(int row, QString value)
+  QWidget* createVersionComboBox(long sid, QString value)
   {
-    auto cb = new QComboBox(parent);
-    cb->addItem("From Array");
-    cb->addItem("From File");
-    cb->setCurrentIndex(value == "from_array" ? 0 : 1);
-
-    connect(cb, &QComboBox::currentIndexChanged, this, [this, row, cb]() {
-      QString newValue = cb->currentText() == "From Array" ? "from_array" : "from_file";
-      // Do a check just in case...
-      if (row < loadMethods.size() && row < loadSIDs.size()) {
-        loadMethods[row] = newValue;
-        // Clear the row as well
-        loadSIDs[row] = "";
-        updateTable();
+    if (versionOptions[sid].size() < 2) {
+      // If there aren't any options, the item will just be a label
+      QString text = "None";
+      if (versionOptions[sid].size() == 1) {
+        text = versionOptions[sid][0];
       }
+      return createTableWidget(new QLabel(text, parent));
+    }
+
+    auto cb = new QComboBox(parent);
+    for (auto& option: versionOptions[sid]) {
+      cb->addItem(option);
+    }
+    cb->setCurrentText(value);
+
+    connect(cb, &QComboBox::currentIndexChanged, this, [this, sid, cb]() {
+      auto idx = sidList.indexOf(sid);
+      versionList[idx] = cb->currentText();
+      onSelectedVersionsChanged();
+      // Update the table, because the angle and error reason likely changed
+      updateTable();
     });
 
     return createTableWidget(cb);
   }
 
-  QWidget* createSIDsLineEdit(int row, QString value)
+  QWidget* createUseCheckBox(long sid, QString value)
   {
-    auto w = new QLineEdit(value, parent);
-    connect(w, &QLineEdit::editingFinished, this, [this, row, w]() {
-      if (row < loadSIDs.size()) {
-        loadSIDs[row] = w->text();
-      }
+    auto cb = new QCheckBox(parent);
+    cb->setChecked(value == "x" || value == "1");
+    connect(cb, &QCheckBox::toggled, this, [this, sid](bool b) {
+      auto idx = sidList.indexOf(sid);
+      useList[idx] = b;
     });
 
-    auto* tw = new QWidget(ui.createSIDsTable);
-    auto* layout = new QHBoxLayout(tw);
-    layout->addWidget(w);
-
-    if (row < loadMethods.size() && loadMethods[row] == "from_file") {
-      // Also add a button for selecting the directory.
-      auto pb = new QPushButton("Select", parent);
-      connect(pb, &QPushButton::clicked, w, [this, row, w]() {
-        QString caption = "Select SID List File";
-        QString filter = "*txt *.csv";
-        auto file =
-          QFileDialog::getOpenFileName(parent.data(), caption, w->text(), filter);
-        if (file.isEmpty()) {
-          return;
-        }
-
-        if (row < loadSIDs.size()) {
-          loadSIDs[row] = file;
-          w->setText(file);
-        }
-      });
-      layout->addWidget(pb);
-    }
-
-    layout->setAlignment(Qt::AlignCenter);
-    layout->setContentsMargins(0, 0, 0, 0);
-    return tw;
+    return createTableWidget(cb);
   }
 
   QWidget* createTableWidget(QWidget* w)
   {
     // This is required to center the widget
-    auto* tw = new QWidget(ui.createSIDsTable);
+    auto* tw = new QWidget(ui.table);
     auto* layout = new QHBoxLayout(tw);
     layout->addWidget(w);
     layout->setAlignment(Qt::AlignCenter);
@@ -259,14 +339,19 @@ public:
     return tw;
   }
 
-  QString tableValue(int row, QString column)
+  QString tableValue(long sid, QString column)
   {
-    if (column == "Version") {
-      return versionList[row];
-    } else if (column == "Method") {
-      return loadMethods[row];
-    } else if (column == "SIDs") {
-      return loadSIDs[row];
+    auto idx = sidList.indexOf(sid);
+    if (column == "SID") {
+      return QString::number(sidList[idx]);
+    } else if (column == "Version") {
+      return versionList[idx];
+    } else if (column == "Angle") {
+      return QString::number(angleList[idx]);
+    } else if (column == "Use") {
+      return useList[idx] ? "x" : "";
+    } else if (column == "Error Reason") {
+      return errorReasonList[idx];
     }
 
     qCritical() << "Unknown table column: " << column;
@@ -283,22 +368,61 @@ public:
 
     setPtychoGUICommand(
       settings->value("ptychoGUICommand", "run-ptycho").toString());
+
     setPtychoDirectory(settings->value("ptychoDirectory", "").toString());
+    setCsvFile(settings->value("loadFromCSVFile", "").toString());
+    setFilterSIDsString(settings->value("filterSIDsString", "").toString());
+
     setOutputDirectory(
       settings->value("outputDirectory", defaultOutputDirectory()).toString());
     setRotateDatasets(
       settings->value("rotateDatasets", true).toBool());
 
-    if (!ptychoDirectory().isEmpty() && QDir(ptychoDirectory()).exists()) {
-      // Also read the table settings
-      versionList = settings->value("versionList", QStringList()).toStringList();
-      loadMethods = settings->value("loadMethods", QStringList()).toStringList();
-      loadSIDs = settings->value("loadSIDs", QStringList()).toStringList();
-      updateTable();
+    QVariantList sidListV = settings->value("sidListV").toList();
+    QVariantList versionListV = settings->value("versionListV").toList();
+    QVariantList useListV = settings->value("useListV").toList();
+
+    QList<long> savedSidList;
+    for (const auto& var : sidListV) {
+      savedSidList.append(var.value<long>());
+    }
+
+    QStringList savedVersionList;
+    for (const auto& var : versionListV) {
+      savedVersionList.append(var.value<QString>());
+    }
+
+    QList<bool> savedUseList;
+    for (const auto& var : useListV) {
+      savedUseList.append(var.value<bool>());
     }
 
     settings->endGroup();
     settings->endGroup();
+
+    if (!ptychoDirectory().isEmpty()) {
+      // Trigger a load
+      loadPtychoDir();
+
+      if (!csvFile().isEmpty()) {
+        // Trigger applying the CSV file
+        setUseAndVersionsFromCSV();
+      }
+
+      if (!filterSIDsString().isEmpty()) {
+        // Trigger an update via the filters
+        updateFilteredSidList();
+      }
+
+      if (savedSidList == sidList) {
+        // If the saved SID list matches, we can also load the settings
+        // for "use" and "version"
+        versionList = savedVersionList;
+        useList = savedUseList;
+        onSelectedVersionsChanged();
+        updateTable();
+      }
+    }
   }
 
   void writeSettings()
@@ -310,13 +434,32 @@ public:
     // Save general settings
     settings->setValue("ptychoGUICommand", ptychoGUICommand());
     settings->setValue("ptychoDirectory", ptychoDirectory());
+    settings->setValue("loadFromCSVFile", csvFile());
+
+    settings->setValue("filterSIDsString", filterSIDsString());
+
     settings->setValue("outputDirectory", outputDirectory());
     settings->setValue("rotateDatasets", rotateDatasets());
 
-    // Save table content settings
-    settings->setValue("versionList", versionList);
-    settings->setValue("loadMethods", loadMethods);
-    settings->setValue("loadSIDs", loadSIDs);
+    // Save out our lists
+    QVariantList sidListV;
+    for (auto v: sidList) {
+      sidListV.append(QVariant::fromValue(v));
+    }
+
+    QVariantList versionListV;
+    for (auto v: versionList) {
+      versionListV.append(QVariant::fromValue(v));
+    }
+
+    QVariantList useListV;
+    for (auto b: useList) {
+      useListV.append(QVariant::fromValue(b));
+    }
+
+    settings->setValue("sidListV", sidListV);
+    settings->setValue("versionListV", versionListV);
+    settings->setValue("useListV", useListV);
 
     settings->endGroup();
     settings->endGroup();
@@ -353,7 +496,7 @@ public:
             QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this,
             [this]() {
       ptychoguiIsRunning = false;
-      emit needTableDataUpdate();
+      loadPtychoDir();
     });
 
     connect(
@@ -390,7 +533,226 @@ public:
     }
 
     setPtychoDirectory(file);
-    emit needTableDataUpdate();
+    loadPtychoDir();
+  }
+
+  void loadPtychoDir()
+  {
+    Python python;
+
+    auto func = ptychoModule.findFunction("gather_ptycho_info");
+    if (!func.isValid()) {
+      clearTable();
+      QString msg = "Failed to import \"tomviz.ptycho.gather_ptycho_info\"";
+      qCritical() << msg;
+      return;
+    }
+
+    Python::Dict kwargs;
+    kwargs.set("ptycho_dir", ptychoDirectory());
+    auto result = func.call(kwargs);
+
+    if (!result.isValid() || !result.isDict()) {
+      clearTable();
+      QString msg = "Error calling \"tomviz.ptycho.gather_ptycho_info\"";
+      qCritical() << msg;
+      return;
+    }
+
+    auto resultDict = result.toDict();
+
+    auto sidListPy = resultDict["sid_list"].toList();
+    auto versionDictPy = resultDict["version_dict"].toDict();
+    auto angleDictPy = resultDict["angle_dict"].toDict();
+    auto errorDictPy = resultDict["error_dict"].toDict();
+
+    sidList.clear();
+    versionOptions.clear();
+    angleOptions.clear();
+    allErrorLists.clear();
+    for (int i = 0; i < sidListPy.length(); ++i) {
+      auto sid = sidListPy[i].toLong();
+      auto sidPy = Python::Object(Variant(sid));
+      sidList.append(sid);
+
+      auto versionOptionsPy = versionDictPy[sidPy].toList();
+      auto theseAnglesPy = angleDictPy[sidPy].toDict();
+      auto theseErrorsPy = errorDictPy[sidPy].toDict();
+
+      QStringList versions;
+      QMap<QString, double> angles;
+      QMap<QString, QString> errors;
+      for (int j = 0; j < versionOptionsPy.length(); ++j) {
+        auto version = versionOptionsPy[j].toString();
+        versions.append(version);
+        angles[version] = theseAnglesPy[version].toDouble();
+        errors[version] = theseErrorsPy[version].toString();
+      }
+      versionOptions[sid] = versions;
+      angleOptions[sid] = angles;
+      allErrorLists[sid] = errors;
+    }
+
+    resetSelectedVersionsAndUseList();
+    updateFilteredSidList();
+  }
+
+  void resetSelectedVersionsAndUseList()
+  {
+    versionList.clear();
+    useList.clear();
+
+    for (auto sid: sidList) {
+      bool set = false;
+      for (auto& version: versionOptions[sid]) {
+        if (allErrorLists[sid][version].isEmpty()) {
+          // This one is valid.
+          versionList.append(version);
+          useList.append(true);
+          set = true;
+          break;
+        }
+      }
+      if (!set) {
+        // Do the first one and don't set it to be used.
+        versionList.append(versionOptions[sid][0]);
+        useList.append(false);
+      }
+    }
+
+    onSelectedVersionsChanged();
+  }
+
+  void onSelectedVersionsChanged()
+  {
+    angleList.clear();
+    errorReasonList.clear();
+
+    for (int i = 0; i < sidList.size(); ++i) {
+      auto sid = sidList[i];
+      auto version = versionList[i];
+      angleList.append(angleOptions[sid][version]);
+      errorReasonList.append(allErrorLists[sid][version]);
+    }
+  }
+
+  void updateFilteredSidList()
+  {
+    auto filterString = filterSIDsString();
+
+    Python python;
+
+    auto func = ptychoModule.findFunction("filter_sid_list");
+    if (!func.isValid()) {
+      qCritical() << "Failed to find function \"filter_sid_list\"";
+      return;
+    }
+
+    Python::Dict kwargs;
+    kwargs.set("sid_list", sidList);
+    kwargs.set("filter_string", filterString);
+    auto result = func.call(kwargs);
+    if (!result.isValid() || !result.isList()) {
+      qCritical() << "Failed to call function \"filter_sid_list\"";
+      return;
+    }
+
+    filteredSidList.clear();
+    auto resultList = result.toList();
+    for (int i = 0; i < resultList.length(); ++i) {
+      filteredSidList.append(resultList[i].toLong());
+    }
+
+    updateTable();
+  }
+
+  void selectLoadFromCSV()
+  {
+    QString caption = "Select CSV file to load Use and Version settings";
+    auto startPath = !csvFile().isEmpty() ? csvFile() : ptychoDirectory();
+    auto file =
+      QFileDialog::getOpenFileName(parent.data(), caption, startPath);
+    if (file.isEmpty()) {
+      return;
+    }
+    ui.loadFromCSVFile->setText(file);
+
+    setUseAndVersionsFromCSV();
+  }
+
+  void setUseAndVersionsFromCSV()
+  {
+    Python python;
+
+    auto func = ptychoModule.findFunction("get_use_and_versions_from_csv");
+    if (!func.isValid()) {
+      qCritical() << "Failed to find function \"get_use_and_versions_from_csv\"";
+      return;
+    }
+
+    Python::Dict kwargs;
+    kwargs.set("csv_path", csvFile());
+    auto result = func.call(kwargs);
+    if (!result.isValid() || !result.isDict()) {
+      qCritical() << "Failed to call function \"get_use_and_versions_from_csv\"";
+      return;
+    }
+
+    auto resultDict = result.toDict();
+
+    QList<long> sids;
+    QList<bool> use;
+    QStringList versions;
+
+    auto sidsPy = resultDict["sids"].toList();
+    auto usePy = resultDict["use"].toList();
+    auto versionsPy = resultDict["versions"].toList();
+
+    for (auto i = 0; i < sidsPy.length(); ++i) {
+      sids.append(sidsPy[i].toLong());
+      if (i < usePy.length()) {
+        use.append(usePy[i].toBool());
+      }
+      if (i < versionsPy.length()) {
+        versions.append(versionsPy[i].toString());
+      }
+    }
+
+    if (sids.size() == 0) {
+      qCritical() << "No SIDs found in CSV file. Aborting";
+      return;
+    }
+
+    if (use.size() != 0) {
+      // Set the "Use" for every current one to "false";
+      for (int i = 0; i < useList.size(); ++i) {
+        useList[i] = false;
+      }
+    }
+
+    for (int i = 0; i < sids.size(); ++i) {
+      auto sid = sids[i];
+      auto idx = sidList.indexOf(sid);
+      if (i < use.size()) {
+        useList[idx] = use[i];
+      }
+
+      if (i < versions.size()) {
+        // Verify it is a valid version
+        auto newVersion = versions[i];
+        if (!versionOptions[sid].contains(newVersion)) {
+          qCritical() << "SID \"" << sid << "\" from CSV file "
+                      << "indicated a version of " << newVersion << ", "
+                      << "but that did not match the available versions "
+                      << "found within the ptycho directory for that SID. "
+                      << "Skipping...";
+        } else {
+          versionList[idx] = newVersion;
+        }
+      }
+    }
+
+    updateTable();
   }
 
   void selectOutputDirectory()
@@ -407,31 +769,17 @@ public:
 
   void clearTable()
   {
+    versionOptions.clear();
+    angleOptions.clear();
+    allErrorLists.clear();
+
+    sidList.clear();
+    angleList.clear();
     versionList.clear();
-    loadMethods.clear();
-    loadSIDs.clear();
-    minSID = 0;
-    maxSID = 0;
-    updateTable();
-  }
+    useList.clear();
+    errorReasonList.clear();
 
-  void updateTableData(long _minSID, long _maxSID, QStringList _versionList)
-  {
-    versionList = _versionList;
-    loadMethods.clear();
-    loadSIDs.clear();
-    minSID = _minSID;
-    maxSID = _maxSID;
-    updateTable();
-  }
-
-  QMap<QString, QStringList> loadSIDSettings() const
-  {
-    QMap<QString, QStringList> ret;
-    ret["version_list"] = versionList;
-    ret["load_methods"] = loadMethods;
-    ret["load_sids"] = loadSIDs;
-    return ret;
+    filteredSidList.clear();
   }
 
   QString ptychoGUICommand() const { return ui.ptychoGUICommand->text(); }
@@ -441,6 +789,14 @@ public:
   QString ptychoDirectory() const { return ui.ptychoDirectory->text(); }
 
   void setPtychoDirectory(QString s) { ui.ptychoDirectory->setText(s); }
+
+  QString csvFile() const { return ui.loadFromCSVFile->text(); }
+
+  void setCsvFile(QString s) { ui.loadFromCSVFile->setText(s); }
+
+  QString filterSIDsString() const { return ui.filterSIDsString->text().trimmed(); }
+
+  void setFilterSIDsString(QString s) const { ui.filterSIDsString->setText(s); }
 
   QString outputDirectory() const { return ui.outputDirectory->text(); }
 
@@ -454,8 +810,6 @@ public:
 PtychoDialog::PtychoDialog(QWidget* parent)
   : QDialog(parent), m_internal(new Internal(this))
 {
-  connect(m_internal.data(), &Internal::needTableDataUpdate,
-          this, &PtychoDialog::needTableDataUpdate);
 }
 
 PtychoDialog::~PtychoDialog() = default;
@@ -466,25 +820,24 @@ void PtychoDialog::show()
   QDialog::show();
 }
 
-void PtychoDialog::clearTable()
-{
-  m_internal->clearTable();
-}
-
-void PtychoDialog::updateTableData(long minSID, long maxSID,
-                                   QStringList versionList)
-{
-  m_internal->updateTableData(minSID, maxSID, versionList);
-}
-
 QString PtychoDialog::ptychoDirectory() const
 {
   return m_internal->ptychoDirectory();
 }
 
-QMap<QString, QStringList> PtychoDialog::loadSIDSettings() const
+QList<long> PtychoDialog::selectedSids() const
 {
-  return m_internal->loadSIDSettings();
+  return m_internal->selectedSids();
+}
+
+QStringList PtychoDialog::selectedVersions() const
+{
+  return m_internal->selectedVersions();
+}
+
+QList<double> PtychoDialog::selectedAngles() const
+{
+  return m_internal->selectedAngles();
 }
 
 QString PtychoDialog::outputDirectory() const

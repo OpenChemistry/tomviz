@@ -346,6 +346,14 @@ Python::Object Python::Dict::operator[](const char* key)
   return item;
 }
 
+Python::Object Python::Dict::operator[](const Object& key)
+{
+  PyObject* item = PyDict_GetItem(m_smartPyObject->GetPointer(), key);
+  // Increment ref count as our destructor will decrement it.
+  Py_XINCREF(item);
+  return item;
+}
+
 void Python::Dict::set(const QString& key, const Object& value)
 {
   Python::Object pyKey(key);

@@ -19,16 +19,13 @@ public:
 
   virtual void show();
 
-  void clearTable();
-  void updateTableData(long minSID, long maxSID, QStringList versionList);
-
   QString ptychoDirectory() const;
-  QMap<QString, QStringList> loadSIDSettings() const;
   QString outputDirectory() const;
   bool rotateDatasets() const;
 
-signals:
-  void needTableDataUpdate();
+  QList<long> selectedSids() const;
+  QStringList selectedVersions() const;
+  QList<double> selectedAngles() const;
 
 private:
   class Internal;

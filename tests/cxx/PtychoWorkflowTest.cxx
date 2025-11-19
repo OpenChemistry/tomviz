@@ -98,9 +98,8 @@ private slots:
     QVERIFY(ptychoDirEdit);
     ptychoDirEdit->setText(ptychoDir);
 
-    // Trigger the table to update with the values
-    QStringList versionList = { "t1", "t2" };
-    dialog->updateTableData(157391, 157637, versionList);
+    // Trigger the necessary changes
+    emit ptychoDirEdit->editingFinished();
 
     auto* outputDirEdit = dialog->findChild<QLineEdit*>("outputDirectory");
     QVERIFY(outputDirEdit);
