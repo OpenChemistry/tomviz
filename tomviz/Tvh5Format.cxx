@@ -67,6 +67,11 @@ bool Tvh5Format::write(const std::string& fileName)
   writer.createGroup("/tomviz_datasources");
   auto sources = ModuleManager::instance().allDataSources();
   for (auto* ds : sources) {
+    if (!ds) {
+      // Somehow, invalid data sources ended up in here...
+      continue;
+    }
+
     // Name the group after its id
     auto id = ds->id().toStdString();
 
