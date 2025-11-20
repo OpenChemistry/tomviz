@@ -248,7 +248,7 @@ public:
 
     qInfo() << "Running:" << program + " " + args.join(" ");
     process.start(program, args);
-    process.waitForFinished();
+    process.waitForFinished(-1);
 
     if (process.exitStatus() != QProcess::NormalExit) {
       qCritical() << "Error running program:" << program << args;
@@ -306,7 +306,7 @@ public:
 
     qInfo() << "Running:" << program + " " + args.join(" ");
     process.start(program, args);
-    process.waitForFinished();
+    process.waitForFinished(-1);
 
     if (process.exitStatus() != QProcess::NormalExit) {
       qCritical() << "Error running program:" << program << args;
@@ -421,7 +421,7 @@ public:
 
     qInfo() << "Running:" << program + " " + args.join(" ");
     process.start(program, args);
-    process.waitForFinished();
+    process.waitForFinished(-1);
 
     if (process.exitStatus() != QProcess::NormalExit) {
       qCritical() << "Error running program:" << program << args;
