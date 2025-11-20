@@ -28,6 +28,7 @@ public:
     // Hide the tab bar. We will change pages automatically.
     ui.methodWidget->tabBar()->hide();
 
+    updateEnableStates();
     setupConnections();
   }
 
@@ -35,6 +36,8 @@ public:
   {
     connect(ui.method, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &Internal::methodChanged);
+    connect(ui.remakeCsvFile, &QCheckBox::toggled, this,
+            &Internal::updateEnableStates);
     connect(ui.selectWorkingDirectory, &QPushButton::clicked, this,
             &Internal::selectWorkingDirectory);
 
@@ -72,6 +75,10 @@ public:
 
   void setSuccessfulScansOnly(bool b) { ui.successfulScansOnly->setChecked(b); }
 
+  bool remakeCsvFile() const { return ui.remakeCsvFile->isChecked(); }
+
+  void setRemakeCsvFile(bool b) { ui.remakeCsvFile->setChecked(b); }
+
   QString method() const { return ui.method->currentText(); }
 
   void setMethod(QString s) { ui.method->setCurrentText(s); }
@@ -80,6 +87,7 @@ public:
   {
     // The indices match
     ui.methodWidget->setCurrentIndex(i);
+    updateEnableStates();
   }
 
   QString workingDirectory() const { return ui.workingDirectory->text(); }
@@ -160,6 +168,12 @@ public:
     return true;
   }
 
+  void updateEnableStates()
+  {
+    bool enable = method() == "New" || remakeCsvFile();
+    ui.scanNumbersGroup->setEnabled(enable);
+  }
+
   void readSettings()
   {
     auto settings = pqApplicationCore::instance()->settings();
@@ -177,9 +191,11 @@ public:
     setScanStop(settings->value("scanStop", 0).toInt());
     setSuccessfulScansOnly(
       settings->value("successfulScansOnly", true).toBool());
+    setRemakeCsvFile(settings->value("remakeCsvFile", false).toBool());
     settings->endGroup();
 
     settings->endGroup();
+    updateEnableStates();
   }
 
   void writeSettings()
@@ -196,6 +212,7 @@ public:
     settings->setValue("scanStart", scanStart());
     settings->setValue("scanStop", scanStop());
     settings->setValue("successfulScansOnly", successfulScansOnly());
+    settings->setValue("remakeCsvFile", remakeCsvFile());
     settings->endGroup();
 
     settings->endGroup();
@@ -243,6 +260,11 @@ int PyXRFMakeHDF5Dialog::scanStop() const
 bool PyXRFMakeHDF5Dialog::successfulScansOnly() const
 {
   return m_internal->successfulScansOnly();
+}
+
+bool PyXRFMakeHDF5Dialog::remakeCsvFile() const
+{
+  return m_internal->remakeCsvFile();
 }
 
 } // namespace tomviz

@@ -14,6 +14,10 @@ ProgressDialog::ProgressDialog(const QString& title, const QString& msg,
   : QDialog(parent), m_ui(new Ui::ProgressDialog)
 {
   m_ui->setupUi(this);
+
+  // Override the pqOutputWidget message pattern that was just set.
+  qSetMessagePattern("[%{type}] %{message}");
+
   // Force full messages to be shown
   m_ui->outputWidget->showFullMessages(true);
   setWindowTitle(title);

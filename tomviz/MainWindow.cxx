@@ -138,7 +138,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   m_timer->start(5 /*minutes*/ * 60 /*seconds per minute*/ *
                  1000 /*msec per second*/);
 
-  qSetMessagePattern("%{type}: %{message}");
+  qSetMessagePattern("[%{type}] %{message}");
 
   QString version(TOMVIZ_VERSION);
   if (QString(TOMVIZ_VERSION_EXTRA).size() > 0)

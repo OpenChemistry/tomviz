@@ -75,7 +75,7 @@ def create_log_file(log_file_name: str, working_directory: str,
             if sid_selection is not None:
                 sid = int(mdata['scan_id'])
                 if sid not in selected_sids:
-                    print(f'Skipping "{sid}", as it was not selected...')
+                    # Skip over ones that were not selected.
                     continue
 
             mdata_selected = {_: mdata[_] for _ in mdata_keys}

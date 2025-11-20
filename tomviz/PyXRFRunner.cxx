@@ -38,6 +38,7 @@ public:
   QPointer<PyXRFProcessDialog> processDialog;
   QPointer<ProgressDialog> progressDialog;
   QFutureWatcher<bool> makeHDF5FutureWatcher;
+  QFutureWatcher<bool> remakeCsvFileFutureWatcher;
   QFutureWatcher<bool> processFutureWatcher;
 
   // Python modules and functions
@@ -53,6 +54,7 @@ public:
   int scanStart = 0;
   int scanStop = 0;
   bool successfulScansOnly = true;
+  bool remakeCsvFile = false;
   QString defaultLogFileName = "tomo_info.csv";
 
   // Process projection options
@@ -87,6 +89,8 @@ public:
   {
     connect(&makeHDF5FutureWatcher, &QFutureWatcher<bool>::finished, this,
             &Internal::makeHDF5Finished);
+    connect(&remakeCsvFileFutureWatcher, &QFutureWatcher<bool>::finished, this,
+            &Internal::remakeCsvFileFinished);
     connect(&processFutureWatcher, &QFutureWatcher<bool>::finished, this,
             &Internal::processProjectionsFinished);
   }
@@ -197,11 +201,16 @@ public:
     scanStart = makeHDF5Dialog->scanStart();
     scanStop = makeHDF5Dialog->scanStop();
     successfulScansOnly = makeHDF5Dialog->successfulScansOnly();
+    remakeCsvFile = makeHDF5Dialog->remakeCsvFile();
 
     auto useAlreadyExistingData = makeHDF5Dialog->useAlreadyExistingData();
     if (useAlreadyExistingData) {
-      // Proceed to the next step
-      showProcessProjectionsDialog();
+      if (remakeCsvFile) {
+        runRemakeCsvFile();
+      } else {
+        // Proceed to the next step
+        showProcessProjectionsDialog();
+      }
     } else {
       runMakeHDF5();
     }
@@ -231,7 +240,12 @@ public:
     }
 
     QProcess process;
-    process.setProcessChannelMode(QProcess::ForwardedChannels);
+
+    connect(&process, &QProcess::readyReadStandardOutput, this,
+            &Internal::_printProcStdout);
+    connect(&process, &QProcess::readyReadStandardError, this,
+            &Internal::_printProcStderr);
+
     process.start(program, args);
     process.waitForFinished();
 
@@ -251,6 +265,63 @@ public:
     auto success = makeHDF5FutureWatcher.result();
     if (!success) {
       QString msg = "Make HDF5 failed";
+      qCritical() << msg;
+      QMessageBox::critical(parentWidget, "Tomviz", msg);
+      // Show the dialog again
+      showMakeHDF5Dialog();
+      return;
+    }
+
+    showProcessProjectionsDialog();
+  }
+
+  void runRemakeCsvFile()
+  {
+    progressDialog->clearOutputWidget();
+    progressDialog->setText("Remaking CSV file...");
+    progressDialog->show();
+    auto future = QtConcurrent::run(std::bind(&Internal::_runRemakeCsvFile, this));
+    remakeCsvFileFutureWatcher.setFuture(future);
+  }
+
+  bool _runRemakeCsvFile()
+  {
+    QString program = pyxrfUtilsCommand;
+    QStringList args;
+
+    QString rangeString = QString::number(scanStart) +
+                          ":" + QString::number(scanStop + 1);
+    args << "make-csv"
+         << "-w" << workingDirectory
+         << "-s" << rangeString
+         << defaultLogFileName;
+
+    QProcess process;
+
+    connect(&process, &QProcess::readyReadStandardOutput, this,
+            &Internal::_printProcStdout);
+    connect(&process, &QProcess::readyReadStandardError, this,
+            &Internal::_printProcStderr);
+
+    process.start(program, args);
+    process.waitForFinished();
+
+    if (process.exitStatus() != QProcess::NormalExit) {
+      qCritical() << "Error running program:" << program << args;
+      qCritical() << "Exit code: " << process.exitCode();
+      return false;
+    }
+
+    return true;
+  }
+
+  void remakeCsvFileFinished()
+  {
+    progressDialog->accept();
+
+    auto success = remakeCsvFileFutureWatcher.result();
+    if (!success) {
+      QString msg = "Remake CSV file failed";
       qCritical() << msg;
       QMessageBox::critical(parentWidget, "Tomviz", msg);
       // Show the dialog again
@@ -339,7 +410,12 @@ public:
     }
 
     QProcess process;
-    process.setProcessChannelMode(QProcess::ForwardedChannels);
+
+    connect(&process, &QProcess::readyReadStandardOutput, this,
+            &Internal::_printProcStdout);
+    connect(&process, &QProcess::readyReadStandardError, this,
+            &Internal::_printProcStderr);
+
     process.start(program, args);
     process.waitForFinished();
 
@@ -350,6 +426,48 @@ public:
     }
 
     return true;
+  }
+
+  void _printProcStdout()
+  {
+    auto* proc = qobject_cast<QProcess*>(sender());
+    if (!proc) {
+      return;
+    }
+
+    auto output = proc->readAllStandardOutput();
+    if (output.size() == 0) {
+      return;
+    }
+
+    // Remove the ending newline because qInfo() will add one
+    if (output.endsWith("\r\n")) {
+      output.chop(2);
+    } else if (output.endsWith('\n')) {
+      output.chop(1);
+    }
+    qInfo() << output.constData();
+  }
+
+  void _printProcStderr()
+  {
+    auto* proc = qobject_cast<QProcess*>(sender());
+    if (!proc) {
+      return;
+    }
+
+    auto output = proc->readAllStandardError();
+    if (output.size() == 0) {
+      return;
+    }
+
+    // Remove the ending newline because qWarning() will add one
+    if (output.endsWith("\r\n")) {
+      output.chop(2);
+    } else if (output.endsWith('\n')) {
+      output.chop(1);
+    }
+    qWarning() << output.constData();
   }
 
   void processProjectionsFinished()

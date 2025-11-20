@@ -25,6 +25,7 @@ public:
   int scanStart() const;
   int scanStop() const;
   bool successfulScansOnly() const;
+  bool remakeCsvFile() const;
 
 private:
   class Internal;
