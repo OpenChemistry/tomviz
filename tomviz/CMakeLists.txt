@@ -275,8 +275,6 @@ set(SOURCES
   vtkOMETiffReader.h
   vtkTriangleBar.cxx
   vtkTriangleBar.h
-  vtkVolumeScaleRepresentation.h
-  vtkVolumeScaleRepresentation.cxx
   WebExportWidget.cxx
   WebExportWidget.h
 )
