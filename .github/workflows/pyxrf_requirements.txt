@@ -6,5 +6,4 @@ xraylib
 scikit-beam
 tomopy
 # These are required for installing the pyxrf-utils environment
-setuptools
 hatchling
