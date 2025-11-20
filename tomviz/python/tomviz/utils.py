@@ -7,6 +7,7 @@
 import copy
 import functools
 import math
+
 import numpy as np
 from tomviz._internal import in_application
 from tomviz._internal import require_internal_mode
@@ -611,11 +612,18 @@ def get_center(dataobject):
 
 def apply_to_each_array(func):
 
+    is_method = (
+        func.__name__ != func.__qualname__ and
+        '.<locals>.' not in func.__qualname__
+    )
+    dataset_idx = 1 if is_method else 0
+
     @functools.wraps(func)
-    def wrapper(dataset, *args, **kwargs):
+    def wrapper(*args, **kwargs):
+        dataset = args[dataset_idx]
         if dataset.num_scalars == 1:
             # Just run the function like we normally would...
-            return func(dataset, *args, **kwargs)
+            return func(*args, **kwargs)
 
         num_arrays = dataset.num_scalars
         array_names = dataset.scalars_names
@@ -664,8 +672,14 @@ def apply_to_each_array(func):
                 dataset.arrays[name] = all_arrays[i]
                 dataset.active_name = name
 
+            # Put the dataset where it belongs in the argument list
+            new_args = (
+                list(args[:dataset_idx]) +
+                [dataset] +
+                list(args[dataset_idx + 1:])
+            )
             print('Transforming array:', name)
-            result = func(dataset, *args, **kwargs)
+            result = func(*new_args, **kwargs)
             results.append(result)
 
             if is_internal:
