@@ -607,12 +607,11 @@ Pipeline::Future* Pipeline::emptyFuture()
 
 void Pipeline::moveModulesDown(DataSource* newChildDataSource)
 {
-  auto view = ActiveObjects::instance().activeView();
   foreach (Module* module, ModuleManager::instance().findModules<Module*>(
            dataSource(), nullptr)) {
     // TODO: We should really copy the module properties as well.
     auto newModule = ModuleManager::instance().createAndAddModule(
-      module->label(), newChildDataSource, view);
+      module->label(), newChildDataSource, module->view());
     // Copy over properties using the serialization code.
     newModule->deserialize(module->serialize());
     ModuleManager::instance().removeModule(module);
