@@ -137,24 +137,6 @@ def get_use_and_versions_from_csv(csv_path: str) -> dict:
     }
 
 
-def load_sids_from_file(filepath: PathLike) -> list:
-    # FIXME: we need a real example. This might not be right.
-    path = Path(filepath)
-    if path.suffix == '.txt':
-        delimiter = None
-    elif path.suffix == '.csv':
-        delimiter = ','
-    else:
-        raise RuntimeError(f'Unhandled extension: {filepath}')
-
-    sids, angles = np.loadtxt(
-        filepath,
-        usecols=(0, 1),
-        delimiter=delimiter,
-    ).T.tolist()
-    return sids, angles
-
-
 def filter_sid_list(sid_list: list[int], filter_string: str) -> list[int]:
     if not filter_string.strip():
         # All SIDs are valid
