@@ -246,6 +246,7 @@ public:
     connect(&process, &QProcess::readyReadStandardError, this,
             &Internal::_printProcStderr);
 
+    qInfo() << "Running:" << program + " " + args.join(" ");
     process.start(program, args);
     process.waitForFinished();
 
@@ -291,7 +292,7 @@ public:
 
     QString rangeString = QString::number(scanStart) +
                           ":" + QString::number(scanStop + 1);
-    args << "make-csv"
+    args << "make-csv" << "-i"
          << "-w" << workingDirectory
          << "-s" << rangeString
          << defaultLogFileName;
@@ -303,6 +304,7 @@ public:
     connect(&process, &QProcess::readyReadStandardError, this,
             &Internal::_printProcStderr);
 
+    qInfo() << "Running:" << program + " " + args.join(" ");
     process.start(program, args);
     process.waitForFinished();
 
@@ -376,6 +378,7 @@ public:
     outputDirectory = processDialog->outputDirectory();
     pixelSizeX = processDialog->pixelSizeX();
     pixelSizeY = processDialog->pixelSizeY();
+    skipProcessed = processDialog->skipProcessed();
     rotateDatasets = processDialog->rotateDatasets();
 
     // Make sure the output directory exists
@@ -416,6 +419,7 @@ public:
     connect(&process, &QProcess::readyReadStandardError, this,
             &Internal::_printProcStderr);
 
+    qInfo() << "Running:" << program + " " + args.join(" ");
     process.start(program, args);
     process.waitForFinished();
 

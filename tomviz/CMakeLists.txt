@@ -680,6 +680,7 @@ set(tomviz_python_pyxrf_modules
   __init__.py
   ic_names.py
   load_output.py
+  sids.py
 )
 
 file(MAKE_DIRECTORY "${tomviz_python_binary_dir}/tomviz/pyxrf")

@@ -126,7 +126,7 @@ Examples:
         '-i', '--skip-invalid',
         action='store_true',
         required=False,
-        default=True,
+        default=False,
         help='Skip invalid scans whose properties could not be read.',
     )
     parser_csv.set_defaults(func=make_csv_cmd)
@@ -157,7 +157,7 @@ Examples:
         '-b', '--successful-scans-only',
         action='store_true',
         required=False,
-        default=True,
+        default=False,
         help='Process only successful scans'
     )
     parser_hdf5.add_argument(
@@ -195,7 +195,7 @@ Examples:
     parser_proj.add_argument(
         '-s', '--skip-processed',
         required=False,
-        default=True,
+        default=False,
         action='store_true',
         help='Skip already processed data'
     )
