@@ -4,10 +4,12 @@
 #ifndef tomvizVariant_h
 #define tomvizVariant_h
 
+#ifndef TOMVIZCORE_EXPORT
 #ifdef IS_TOMVIZ_CORE_BUILD
 #include "tomvizcore_export.h"
 #else
 #define TOMVIZCORE_EXPORT
+#endif
 #endif
 
 #include <iostream>
