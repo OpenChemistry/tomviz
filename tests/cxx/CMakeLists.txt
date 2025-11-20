@@ -52,6 +52,7 @@ add_cxx_test(Variant)
 
 add_cxx_qtest(DockerUtilities)
 add_cxx_qtest(AcquisitionClient PYTHONPATH "${CMAKE_SOURCE_DIR}/acquisition")
+add_cxx_qtest(PtychoWorkflow)
 add_cxx_qtest(PyXRFWorkflow)
 
 # Generate the executable

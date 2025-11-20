@@ -48,6 +48,7 @@
 #include "PipelineProxy.h"
 #include "PipelineSettingsDialog.h"
 #include "ProgressDialogManager.h"
+#include "PtychoRunner.h"
 #include "PyXRFRunner.h"
 #include "PythonGeneratedDatasetReaction.h"
 #include "PythonUtilities.h"
@@ -257,6 +258,9 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   auto pyXRFRunner = new PyXRFRunner(this);
   connect(m_ui->actionPyXRFWorkflow, &QAction::triggered, pyXRFRunner,
           &PyXRFRunner::start);
+  auto ptychoRunner = new PtychoRunner(this);
+  connect(m_ui->actionPtychoWorkflow, &QAction::triggered, ptychoRunner,
+          &PtychoRunner::start);
 
   // Build Data Transforms menu
   new DataTransformMenu(this, m_ui->menuData, m_ui->menuSegmentation);
@@ -574,7 +578,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   statusBar()->showMessage("Initializing python...");
   auto pythonWatcher = new QFutureWatcher<std::vector<OperatorDescription>>;
   connect(pythonWatcher, &QFutureWatcherBase::finished, this,
-          [this, pyXRFRunner, pythonWatcher, dataBrokerSaveReaction]() {
+          [this, pyXRFRunner, ptychoRunner, pythonWatcher, dataBrokerSaveReaction]() {
             m_ui->actionAcquisition->setEnabled(true);
             m_ui->actionPassiveAcquisition->setEnabled(true);
             registerCustomOperators(pythonWatcher->result());
@@ -597,6 +601,16 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
                                 "Error message was:\n\n" +
                                 pyXRFRunner->importError();
               m_ui->actionPyXRFWorkflow->setToolTip(tooltip);
+            }
+
+            installed = ptychoRunner->isInstalled();
+            m_ui->actionPtychoWorkflow->setEnabled(installed);
+            if (!installed) {
+              // Grab the import error and show it in the tooltip
+              QString tooltip = "Failed to import required modules. "
+                                "Error message was:\n\n" +
+                                ptychoRunner->importError();
+              m_ui->actionPtychoWorkflow->setToolTip(tooltip);
             }
 
             delete pythonWatcher;

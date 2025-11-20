@@ -59,6 +59,33 @@ Python::Object::Object(const QString& str)
   m_smartPyObject = new vtkSmartPyObject(toPyObject(str.toStdString()));
 }
 
+Python::Object::Object(const QStringList& list)
+{
+  std::vector<Variant> l;
+  for (const auto& s: list) {
+    l.push_back(s.toStdString());
+  }
+  m_smartPyObject = new vtkSmartPyObject(toPyObject(l));
+}
+
+Python::Object::Object(const QList<long>& list)
+{
+  std::vector<Variant> l;
+  for (const auto& i: list) {
+    l.push_back(i);
+  }
+  m_smartPyObject = new vtkSmartPyObject(toPyObject(l));
+}
+
+Python::Object::Object(const QList<double>& list)
+{
+  std::vector<Variant> l;
+  for (const auto& f: list) {
+    l.push_back(f);
+  }
+  m_smartPyObject = new vtkSmartPyObject(toPyObject(l));
+}
+
 Python::Object::Object(const Variant& value)
 {
   m_smartPyObject = new vtkSmartPyObject(toPyObject(value));
@@ -316,6 +343,14 @@ Python::Object Python::Dict::operator[](const char* key)
   // Increment ref count as our destructor will decrement it.
   Py_XINCREF(item);
 
+  return item;
+}
+
+Python::Object Python::Dict::operator[](const Object& key)
+{
+  PyObject* item = PyDict_GetItem(m_smartPyObject->GetPointer(), key);
+  // Increment ref count as our destructor will decrement it.
+  Py_XINCREF(item);
   return item;
 }
 

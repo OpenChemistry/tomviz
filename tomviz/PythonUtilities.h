@@ -56,6 +56,9 @@ public:
     Object();
     Object(const Object& other);
     Object(const QString& str);
+    Object(const QStringList& str);
+    Object(const QList<long>& intList);
+    Object(const QList<double>& floatList);
     Object(const Variant& value);
     Object(const DataSourceBase& source);
     Object(PyObject* obj);
@@ -119,6 +122,7 @@ public:
     Object operator[](const QString& key);
     Object operator[](const std::string& key);
     Object operator[](const char* key);
+    Object operator[](const Object& obj);
     void set(const QString& key, const Object& value);
     void set(const QString& key, const Variant& value);
     QString toString();
