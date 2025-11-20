@@ -1,4 +1,5 @@
 # These are PyXRF workflow dependencies
+hatchling
 hxntools
 pyxrf
 xrf-tomo
