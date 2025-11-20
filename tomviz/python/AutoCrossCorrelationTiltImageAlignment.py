@@ -64,7 +64,21 @@ class CrossCorrelationAlignmentOperator(tomviz.operators.CancelableOperator):
             step += 1
             self.progress.value = step
 
+        other_scalar_names = [name for name in dataset.scalars_names
+                              if name != dataset.active_name]
+
         dataset.active_scalars = tiltSeries
+
+        # Now apply the same offsets to all other arrays
+        for name in other_scalar_names:
+            print(f'Applying shifts to {name}...')
+            array = dataset.scalars(name)
+            for i in range(len(offsets)):
+                shifts = offsets[i]
+                array[:, :, i] = np.roll(array[:, :, i], shifts[0], axis=0)
+                array[:, :, i] = np.roll(array[:, :, i], shifts[1], axis=1)
+
+            dataset.set_scalars(name, array)
 
         # Assign Negative Shifts when Shift > N/2.
         indices_X = np.where(offsets[:, 0] > tiltSeries.shape[0] / 2)
