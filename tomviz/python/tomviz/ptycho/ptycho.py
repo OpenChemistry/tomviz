@@ -211,6 +211,15 @@ def load_stack_ptycho(version_list: list[str],
     for i in tqdm(range(len(filespty_obj)), desc="processing ptycho"):
         obj = np.load(filespty_obj[i])
         prb = np.load(filespty_prb[i])
+
+        if obj.ndim == 3:
+            # Get the 0th order result
+            obj = obj[0]
+
+        if prb.ndim == 3:
+            # Get the 0th order result
+            prb = prb[0]
+
         space = 15
         obj = np.fliplr(np.rot90(obj))
         prb = np.fliplr(np.rot90(prb))
