@@ -37,3 +37,6 @@ pytest = "*"
 ruff = "*"
 ipython = "*"
 matplotlib-base = "*"
+
+[feature.dev.tasks]
+lint = "ruff check"
