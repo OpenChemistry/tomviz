@@ -336,6 +336,7 @@ def _progress(progress_method, progress_path):
 
 class OperatorWrapper(object):
     canceled = False
+    completed = False
 
 
 def _load_operator_module(label, script):

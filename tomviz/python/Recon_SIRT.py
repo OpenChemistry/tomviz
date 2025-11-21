@@ -1,11 +1,13 @@
 import numpy as np
 import scipy.sparse as ss
 import tomviz.operators
+from tomviz.utils import apply_to_each_array
 import time
 
 
 class ReconSirtOperator(tomviz.operators.CompletableOperator):
 
+    @apply_to_each_array
     def transform(self, dataset, Niter=10, stepSize=0.0001,
                   updateMethodIndex=0, Nupdates=0):
         """
