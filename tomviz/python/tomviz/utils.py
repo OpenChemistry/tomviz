@@ -13,6 +13,7 @@ from tomviz._internal import in_application
 from tomviz._internal import require_internal_mode
 from tomviz._internal import with_vtk_dataobject
 from tomviz._internal import with_dataset
+from tomviz.external_dataset import Dataset as ExternalDataset
 from tomviz.internal_dataset import Dataset as InternalDataset
 # Only import vtk if we are running within the tomviz application ( not cli )
 if in_application():
@@ -630,6 +631,7 @@ def apply_to_each_array(func):
         active_name = dataset.active_name
 
         is_internal = isinstance(dataset, InternalDataset)
+        Dataset = InternalDataset if is_internal else ExternalDataset
 
         if is_internal:
             # Run the function multiple times. Each time with a single, different
@@ -703,6 +705,24 @@ def apply_to_each_array(func):
                 dataset.arrays[name] = array
 
             dataset.active_name = active_name
+
+        # For any data sources in the result, add all the scalars to it
+        if isinstance(result, dict):
+            for k, v in result.items():
+                if isinstance(v, Dataset):
+                    # Rename the active array
+                    v.rename_active(array_names[-1])
+                    # Go back through the other results and set scalars on this
+                    # one
+                    for i, other_result in enumerate(results[:-1]):
+                        if (
+                            isinstance(other_result, dict) and
+                            isinstance(other_result.get(k), Dataset)
+                        ):
+                            other_dataset = other_result[k]
+                            other_dataset.rename_active(array_names[i])
+                            v.set_scalars(other_dataset.active_name,
+                                          other_dataset.active_scalars)
 
         # Return the final result
         return result
