@@ -130,9 +130,12 @@ private slots:
     // After accepting, a modal dialog will appear. Start posting
     // events to check it and accept it when it appears.
     bool found = false;
-    auto checkFunc = [&found](){
+
+    std::function<void()> checkFunc;
+    checkFunc = [&found, &checkFunc](){
       auto* dialog = findWidget<SelectItemsDialog>();
       if (!dialog) {
+        QTimer::singleShot(1000, checkFunc);
         return;
       }
 
@@ -150,7 +153,6 @@ private slots:
     int maxTime = 30;
     while (!found && timeElapsed < maxTime) {
       QThread::sleep(1);
-      QTimer::singleShot(0, checkFunc);
       QApplication::processEvents();
       timeElapsed += 1;
     }
