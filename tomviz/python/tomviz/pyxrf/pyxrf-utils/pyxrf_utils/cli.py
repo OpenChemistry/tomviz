@@ -75,7 +75,7 @@ def main():
 Examples:
   pyxrf-utils make-hdf5 -s 157391 -e 157637 -b -l log.csv /path/to/output/directory
   pyxrf-utils make-csv -w /path/to/working/directory -s "157391:157637" log.csv
-  pyxrf-utils process-projections -p params.json -l log.txt -i sclr1_ch4 -s -o /output /working
+  pyxrf-utils process-projections -p params.json -l log.csv -i sclr1_ch4 -s -o /output /working
         """  # noqa
     )
 

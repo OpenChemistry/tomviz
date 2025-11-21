@@ -17,5 +17,5 @@ pyxrf-utils make-csv -w /path/to/working/directory -s "157391:157637" log.csv
 Process projections using a PyXRF params.json file:
 
 ```bash
-pyxrf-utils process-projections -p params.json -l log.txt -i sclr1_ch4 -s -o /output /input/dir
+pyxrf-utils process-projections -p params.json -l log.csv -i sclr1_ch4 -s -o /output /input/dir
 ```
