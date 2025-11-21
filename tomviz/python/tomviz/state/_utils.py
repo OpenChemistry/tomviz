@@ -1,11 +1,11 @@
-import collections
+from collections.abc import Mapping
 from types import SimpleNamespace
 
 
 def iter_paths(tree, parent_path=()):
     for path, node in tree.items():
         current_path = parent_path + (path,)
-        if isinstance(node, collections.Mapping):
+        if isinstance(node, Mapping):
             for inner_path in iter_paths(node, current_path):
                 yield inner_path
         else:

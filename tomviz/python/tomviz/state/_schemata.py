@@ -77,6 +77,11 @@ class OperatorField(fields.Field):
 
         return op
 
+    @property
+    def context(self):
+        # Fall back to an empty dictionary if no context exists on the root
+        return getattr(self.root, 'context', {})
+
 
 class OperatorSchema(Schema):
     operator = OperatorField()
@@ -129,6 +134,11 @@ class ModuleField(fields.Field):
             mod = update(mod, removed_cache.pop(mod.id))
 
         return mod
+
+    @property
+    def context(self):
+        # Fall back to an empty dictionary if no context exists on the root
+        return getattr(self.root, 'context', {})
 
 
 class ModuleSchema(Schema):
@@ -232,7 +242,7 @@ class DataSourceSchema(Schema):
         ds = DataSource(**data)
         # Has this data source been removed, if so recurrent it,
         # rather than creating a new one.
-        removed_cache = self.context.get('dataSources', {})
+        removed_cache = getattr(self, 'context', {}).get('dataSources', {})
         if ds.id in removed_cache:
             update(ds, removed_cache.pop(ds.id))
 
