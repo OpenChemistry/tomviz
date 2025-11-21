@@ -312,6 +312,10 @@ QList<ArrayInfo> DataPropertiesPanel::getArraysInfo(DataSource* dataSource)
     // name, type, data range, data type, active
     auto arrayName = dataSource->scalarsName(i);
     auto array = dataSource->getScalarsArray(arrayName);
+    if (!array) {
+      continue;
+    }
+
     QString dataType = vtkImageScalarTypeNameMacro(array->GetDataType());
     int numComponents = array->GetNumberOfComponents();
     QString dataRange;

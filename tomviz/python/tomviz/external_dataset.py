@@ -76,3 +76,6 @@ class Dataset:
             s = self.spacing
             child.spacing = [s[0], s[1], s[0]]
         return child
+
+    def rename_active(self, new_name: str):
+        self.arrays[new_name] = self.arrays.pop(self.active_name)

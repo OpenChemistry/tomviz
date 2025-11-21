@@ -1,0 +1,42 @@
+[workspace]
+name = "pyxrf-utils"
+version = "1.0.0"
+description = "PyXRF Utilities"
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
+
+[dependencies]
+python = ">=3.10,<3.14"
+numpy = "*"
+h5py = "*"
+pandas = "*"
+xraylib = "*"
+tomopy = "*"
+
+[pypi-dependencies]
+bluesky-tiled-plugins = ">=2.0.0rc1"
+pyxrf = "*"
+hxntools = "*"
+xrf-tomo = "*"
+scikit-beam = "*"
+tiled = { version = ">=0.2.0", extras = ["client"] }
+
+[tasks]
+# Install the package in development mode
+install = "pip install -e ."
+
+# Run the CLI tool
+pyxrf-utils = "python -m pyxrf_utils.cli"
+
+[environments]
+default = { solve-group = "default" }
+dev     = { features = ["dev"], solve-group = "default" }
+
+[feature.dev.dependencies]
+pytest = "*"
+ruff = "*"
+ipython = "*"
+matplotlib-base = "*"
+
+[feature.dev.tasks]
+lint = "ruff check"

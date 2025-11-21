@@ -19,11 +19,13 @@ public:
 
   void show();
 
+  QString command() const;
   bool useAlreadyExistingData() const;
   QString workingDirectory() const;
   int scanStart() const;
   int scanStop() const;
   bool successfulScansOnly() const;
+  bool remakeCsvFile() const;
 
 private:
   class Internal;

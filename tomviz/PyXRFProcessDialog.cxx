@@ -37,6 +37,9 @@ public:
   QList<QStringList> logFileData;
   QMap<QString, int> logFileColumnIndices;
   QMap<int, QString> tableColumns;
+  QMap<QString, int> sidToRow;
+
+  QStringList filteredSidList;
 
   double pixelSizeX = -1;
   double pixelSizeY = -1;
@@ -49,11 +52,7 @@ public:
     ui.setupUi(p);
     setParent(p);
 
-    // Our embedded python in conda doesn't seem to have its paths set up
-    // correctly. No idea why. Fix it.
-    fixPythonPaths();
-
-    setupTable();
+    setupTableColumns();
     setupComboBoxes();
     setupConnections();
 
@@ -69,6 +68,8 @@ public:
     connect(ui.startPyXRFGUI, &QPushButton::clicked, this,
             &Internal::startPyXRFGUI);
     connect(ui.logFile, &QLineEdit::textChanged, this, &Internal::updateTable);
+    connect(ui.filterSidsString, &QLineEdit::editingFinished, this,
+            &Internal::onFilterSidsStringChanged);
 
     connect(ui.selectLogFile, &QPushButton::clicked, this,
             &Internal::selectLogFile);
@@ -81,7 +82,7 @@ public:
             &Internal::accepted);
   }
 
-  void setupTable()
+  void setupTableColumns()
   {
     auto* table = ui.logFileTable;
     auto& columns = tableColumns;
@@ -129,6 +130,7 @@ public:
       return;
     }
 
+    setHiddenRowsToUnused();
     readPixelSizes();
     writeLogFile();
     writeSettings();
@@ -171,8 +173,14 @@ public:
       return false;
     }
 
+    if (filteredSidList.isEmpty()) {
+      reason = "No SIDs were selected";
+      return false;
+    }
+
     // Check if there are any duplicate angles selected
     QStringList anglesUsed;
+    QStringList anglesDuplicated;
     for (int i = 0; i < logFileData.size(); ++i) {
       auto use = logFileValue(i, "Use");
       if (use != "x" && use != "1") {
@@ -181,12 +189,21 @@ public:
       }
 
       auto angle = logFileValue(i, "Theta");
-      if (anglesUsed.contains(angle)) {
-        reason = "Angle '" + angle + "' was selected more than once.";
-        return false;
+      if (anglesUsed.contains(angle) && !anglesDuplicated.contains(angle)) {
+        anglesDuplicated.append(angle);
       }
 
       anglesUsed.append(angle);
+    }
+
+    if (anglesDuplicated.size() != 0) {
+      QString title = "Duplicate angles detected";
+      QString text = "The following duplicate angles were detected. Proceed anyways?";
+      text += ("\n\n" + anglesDuplicated.join(", "));
+      if (QMessageBox::question(parent, title, text) == QMessageBox::No) {
+        reason = "Rejected proceeding with duplicate angles.";
+        return false;
+      }
     }
 
     return true;
@@ -195,25 +212,28 @@ public:
   void updateTable()
   {
     auto* table = ui.logFileTable;
-    table->clearContents();
+    table->clear();
 
     readLogFile();
 
-    table->setRowCount(logFileData.size());
-    for (int i = 0; i < logFileData.size(); ++i) {
-      for (auto j : tableColumns.keys()) {
-        auto column = tableColumns[j];
-        auto value = logFileValue(i, column);
-        if (column == "Use") {
+    setupTableColumns();
+    table->setRowCount(filteredSidList.size());
+    for (int row = 0; row < filteredSidList.size(); ++row) {
+      auto sid = filteredSidList[row];
+      int logFileRow = sidToRow[sid];
+      for (auto col : tableColumns.keys()) {
+        auto columnName = tableColumns[col];
+        auto value = logFileValue(logFileRow, columnName);
+        if (columnName == "Use") {
           // Special case
-          auto* cb = createUseCheckbox(i, value);
-          table->setCellWidget(i, j, cb);
+          auto* cb = createUseCheckbox(row, value);
+          table->setCellWidget(row, col, cb);
           continue;
         }
 
         auto* item = new QTableWidgetItem(value);
         item->setTextAlignment(Qt::AlignCenter);
-        table->setItem(i, j, item);
+        table->setItem(row, col, item);
       }
     }
   }
@@ -223,7 +243,7 @@ public:
     auto cb = new QCheckBox(parent);
     cb->setChecked(value == "x" || value == "1");
     connect(cb, &QCheckBox::toggled, this, [this, row](bool b) {
-      QString val = b ? "x" : "0";
+      QString val = b ? "1" : "0";
       setLogFileValue(row, "Use", val);
     });
 
@@ -245,6 +265,7 @@ public:
   {
     logFileData.clear();
     logFileColumnIndices.clear();
+    sidToRow.clear();
 
     QFile file(logFile());
     if (!file.exists()) {
@@ -270,6 +291,39 @@ public:
     while (!reader.atEnd()) {
       auto line = reader.readLine();
       logFileData.append(line.split(','));
+    }
+
+    for (int row = 0; row < logFileData.size(); ++row) {
+      auto sid = logFileValue(row, "Scan ID");
+      sidToRow[sid] = row;
+    }
+
+    updateFilteredSidList();
+  }
+
+  QMap<QString, bool> sidVisibleMap()
+  {
+    QMap<QString, bool> ret;
+    for (auto s : allSids()) {
+      ret[s] = false;
+    }
+
+    for (auto s : filteredSidList) {
+      ret[s] = true;
+    }
+
+    return ret;
+  }
+
+  void setHiddenRowsToUnused()
+  {
+    auto visibleMap = sidVisibleMap();
+    for (int row = 0; row < logFileData.size(); ++row) {
+      auto sid = logFileValue(row, "Scan ID");
+      if (!visibleMap[sid]) {
+        // Make sure "Use" is turned off
+        setLogFileValue(row, "Use", "0");
+      }
     }
   }
 
@@ -422,66 +476,109 @@ public:
     logFileData[row][col] = value;
   }
 
+  QStringList allSids()
+  {
+    return sidToRow.keys();
+  }
+
+  void onFilterSidsStringChanged()
+  {
+    updateTable();
+  }
+
+  void updateFilteredSidList()
+  {
+    auto filterString = filterSidsString().trimmed();
+    if (filterString.isEmpty()) {
+      filteredSidList = allSids();
+      return;
+    }
+
+    // Otherwise, run the Python function to filter out the list
+    importModule();
+
+    Python python;
+
+    auto func = pyxrfModule.findFunction("filter_sids");
+    if (!func.isValid()) {
+      qCritical() << "Failed to import tomviz.pyxrf.filter_sids";
+      return;
+    }
+
+    Python::Dict kwargs;
+    kwargs.set("all_sids", allSids());
+    kwargs.set("filter_string", filterString);
+    auto res = func.call(kwargs);
+
+    if (!res.isValid() || !res.isList()) {
+      qCritical() << "Error calling tomviz.pyxrf.filter_sids";
+      return;
+    }
+
+    filteredSidList.clear();
+    auto resList = res.toList();
+    for (int i = 0; i < resList.length(); ++i) {
+      filteredSidList.append(resList[i].toString());
+    }
+  }
+
   QString defaultOutputDirectory() { return QDir::home().filePath("recon"); }
 
   void readSettings()
   {
     auto settings = pqApplicationCore::instance()->settings();
     settings->beginGroup("pyxrf");
-    settings->beginGroup("process");
 
+    setCommand(settings->value("pyxrfUtilsCommand", "pyxrf-utils").toString());
+
+    settings->beginGroup("process");
     // Only load these settings if we are re-using the same previous
     // working directory. Otherwise, use all new settings
     auto previousWorkingDir = settings->value("previousProcessWorkingDir", "");
+    setPyxrfGUICommand(
+      settings->value("pyxrfGUICommand", "pyxrf").toString());
     if (workingDirectory == previousWorkingDir) {
-      setParametersFile(settings->value("parametersFile", "").toString());
-      setOutputDirectory(
-        settings->value("outputDirectory", defaultOutputDirectory()).toString());
       if (logFile().isEmpty()) {
         setLogFile(settings->value("logFile", "").toString());
       }
+      setFilterSidsString(settings->value("filterSidsString", "").toString());
+      setParametersFile(settings->value("parametersFile", "").toString());
+      setOutputDirectory(
+        settings->value("outputDirectory", defaultOutputDirectory()).toString());
     }
-    setIcName(settings->value("icName", "").toString());
+    setIcName(settings->value("icName", "sclr1_ch4").toString());
+    setSkipProcessed(settings->value("skipProcessed", true).toBool());
     setRotateDatasets(
       settings->value("rotateDatasets", true).toBool());
+    settings->endGroup();
 
     settings->endGroup();
-    settings->endGroup();
+
+    // Table might have been modified from the settings
+    updateTable();
   }
 
   void writeSettings()
   {
     auto settings = pqApplicationCore::instance()->settings();
     settings->beginGroup("pyxrf");
+
+    // Do this in the general pyxrf settings
+    settings->setValue("pyxrfUtilsCommand", command());
+
     settings->beginGroup("process");
-
     settings->setValue("previousProcessWorkingDir", workingDirectory);
-    settings->setValue("parametersFile", parametersFile());
     settings->setValue("logFile", logFile());
-    settings->setValue("icName", icName());
+    settings->setValue("filterSidsString", filterSidsString());
+    settings->setValue("pyxrfGUICommand", pyxrfGUICommand());
+    settings->setValue("parametersFile", parametersFile());
     settings->setValue("outputDirectory", outputDirectory());
+    settings->setValue("icName", icName());
+    settings->setValue("skipProcessed", skipProcessed());
     settings->setValue("rotateDatasets", rotateDatasets());
+    settings->endGroup();
 
     settings->endGroup();
-    settings->endGroup();
-  }
-
-  void fixPythonPaths()
-  {
-    importModule();
-
-    Python python;
-
-    auto func = pyxrfModule.findFunction("fix_python_paths");
-    if (!func.isValid()) {
-      qCritical() << "Failed to import tomviz.pyxrf.fix_python_paths";
-      return;
-    }
-
-    auto res = func.call();
-    if (!res.isValid()) {
-      qCritical() << "Error calling tomviz.pyxrf.fix_python_paths";
-    }
   }
 
   QStringList icNames()
@@ -521,7 +618,7 @@ public:
       return;
     }
 
-    QString program = "pyxrf";
+    QString program = pyxrfGUICommand();
     auto environment = QProcessEnvironment::systemEnvironment();
     if (environment.contains("TOMVIZ_PYXRF_EXECUTABLE")) {
       program = environment.value("TOMVIZ_PYXRF_EXECUTABLE");
@@ -609,6 +706,14 @@ public:
     setOutputDirectory(dir);
   }
 
+  QString command() const { return ui.command->text(); }
+
+  void setCommand(const QString& s) { ui.command->setText(s); }
+
+  QString pyxrfGUICommand() const { return ui.pyxrfGUICommand->text(); }
+
+  void setPyxrfGUICommand(const QString& s) { ui.pyxrfGUICommand->setText(s); }
+
   QString parametersFile() const { return ui.parametersFile->text(); }
 
   void setParametersFile(QString s) { ui.parametersFile->setText(s); }
@@ -617,6 +722,10 @@ public:
 
   void setLogFile(QString s) { ui.logFile->setText(s); }
 
+  QString filterSidsString() const { return ui.filterSidsString->text(); }
+
+  void setFilterSidsString(QString s) const { ui.filterSidsString->setText(s); }
+
   QString icName() const { return ui.icName->currentText(); }
 
   void setIcName(QString s) { ui.icName->setCurrentText(s); }
@@ -624,6 +733,10 @@ public:
   QString outputDirectory() const { return ui.outputDirectory->text(); }
 
   void setOutputDirectory(QString s) { ui.outputDirectory->setText(s); }
+
+  bool skipProcessed() const { return ui.skipProcessed->isChecked(); }
+
+  void setSkipProcessed(bool b) { ui.skipProcessed->setChecked(b); }
 
   bool rotateDatasets() const { return ui.rotateDatasets->isChecked(); }
 
@@ -642,6 +755,11 @@ void PyXRFProcessDialog::show()
 {
   m_internal->readSettings();
   QDialog::show();
+}
+
+QString PyXRFProcessDialog::command() const
+{
+  return m_internal->command();
 }
 
 QString PyXRFProcessDialog::parametersFile() const
@@ -672,6 +790,11 @@ double PyXRFProcessDialog::pixelSizeX() const
 double PyXRFProcessDialog::pixelSizeY() const
 {
   return m_internal->pixelSizeY;
+}
+
+bool PyXRFProcessDialog::skipProcessed() const
+{
+  return m_internal->skipProcessed();
 }
 
 bool PyXRFProcessDialog::rotateDatasets() const

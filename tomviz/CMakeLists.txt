@@ -275,8 +275,6 @@ set(SOURCES
   vtkOMETiffReader.h
   vtkTriangleBar.cxx
   vtkTriangleBar.h
-  vtkVolumeScaleRepresentation.h
-  vtkVolumeScaleRepresentation.cxx
   WebExportWidget.cxx
   WebExportWidget.h
 )
@@ -680,9 +678,9 @@ endforeach()
 
 set(tomviz_python_pyxrf_modules
   __init__.py
+  ic_names.py
   load_output.py
-  make_hdf5.py
-  process_projections.py
+  sids.py
 )
 
 file(MAKE_DIRECTORY "${tomviz_python_binary_dir}/tomviz/pyxrf")

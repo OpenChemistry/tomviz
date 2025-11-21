@@ -1,10 +1,41 @@
 {
-  "externalCompatible": false,
-  "results" : [
+  "name" : "AutoCrossCorrelationTiltImageAlignment",
+  "label" : "Auto Tilt Image Align (XCORR)",
+  "description" : "Automatically align tilt images by cross-correlation",
+  "parameters" : [
     {
-      "name" : "alignments",
-      "label" : "Alignments",
-      "type" : "table"
+      "name" : "transform_source",
+      "label" : "Transformation Source",
+      "description" : "The source of the transformation shifts (i. e., generate them, load them from a file, etc.)",
+      "type" : "enumeration",
+      "default" : 0,
+      "options" : [
+        {"Generate" : "generate"},
+        {"Load From File": "from_file"}
+      ]
+    },
+    {
+      "name" : "transform_file",
+      "label" : "Transformations File",
+      "description": "Transformation file (npz format) to apply",
+      "type" : "file",
+      "filter": "NPZ files (*npz)",
+      "visible_if" : "transform_source == 'from_file'"
+    },
+    {
+      "name" : "transforms_save_file",
+      "label" : "Save Transformations File",
+      "description": "Save transformations file to apply to other datasets later. Leave this blank to not save it.",
+      "type" : "save_file",
+      "filter": "NPZ files (*npz)",
+      "visible_if" : "transform_source == 'generate'"
+    },
+    {
+      "name" : "apply_to_all_arrays",
+      "label": "Apply to All Arrays",
+      "description": "Apply the transformation shifts to all arrays within this data source (not just the currently selected one). The transformation is computed only using the currently selected array.",
+      "type" : "bool",
+      "default": true
     }
   ]
 }

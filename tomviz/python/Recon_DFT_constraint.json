@@ -45,6 +45,15 @@
       "minimum" : 0,
       "maximum" : 100,
       "step" : 5
+    },
+    {
+      "name" : "seed",
+      "label" : "Random Number Generator Seed",
+      "description" : "Seed for the random number generator used to create the initial guess. The seed is kept here so that when the pipeline is re-ran, the results are reproducible",
+      "type" : "int",
+      "default" : 0,
+      "minimum" : 0,
+      "maximum" : 10000000000000
     }
   ]
 }

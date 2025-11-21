@@ -9,16 +9,7 @@ platforms = ["linux-64"]
 python = "==3.12"
 tomviz = ">=2.1.3"
 h5py = "*"
-xraylib = "*"
 tomopy = "*"
-
-[pypi-dependencies]
-bluesky-tiled-plugins = ">=2.0.0rc1"
-pyxrf = "*"
-hxntools = "*"
-xrf-tomo = "*"
-scikit-beam = "*"
-tiled = { version = ">=0.2.0", extras = ["client"] }
 
 [tasks]
 # Launch Tomviz from the pixi environment

@@ -28,6 +28,7 @@ public:
     // Hide the tab bar. We will change pages automatically.
     ui.methodWidget->tabBar()->hide();
 
+    updateEnableStates();
     setupConnections();
   }
 
@@ -35,11 +36,23 @@ public:
   {
     connect(ui.method, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &Internal::methodChanged);
+    connect(ui.remakeCsvFile, &QCheckBox::toggled, this,
+            &Internal::updateEnableStates);
     connect(ui.selectWorkingDirectory, &QPushButton::clicked, this,
             &Internal::selectWorkingDirectory);
 
     connect(ui.buttonBox, &QDialogButtonBox::accepted, this,
             &Internal::accepted);
+  }
+
+  QString command() const
+  {
+    return ui.command->text();
+  }
+
+  void setCommand(const QString& cmd)
+  {
+    ui.command->setText(cmd);
   }
 
   bool useAlreadyExistingData() const
@@ -62,6 +75,10 @@ public:
 
   void setSuccessfulScansOnly(bool b) { ui.successfulScansOnly->setChecked(b); }
 
+  bool remakeCsvFile() const { return ui.remakeCsvFile->isChecked(); }
+
+  void setRemakeCsvFile(bool b) { ui.remakeCsvFile->setChecked(b); }
+
   QString method() const { return ui.method->currentText(); }
 
   void setMethod(QString s) { ui.method->setCurrentText(s); }
@@ -70,6 +87,7 @@ public:
   {
     // The indices match
     ui.methodWidget->setCurrentIndex(i);
+    updateEnableStates();
   }
 
   QString workingDirectory() const { return ui.workingDirectory->text(); }
@@ -150,12 +168,21 @@ public:
     return true;
   }
 
+  void updateEnableStates()
+  {
+    bool enable = method() == "New" || remakeCsvFile();
+    ui.scanNumbersGroup->setEnabled(enable);
+  }
+
   void readSettings()
   {
     auto settings = pqApplicationCore::instance()->settings();
     settings->beginGroup("pyxrf");
-    settings->beginGroup("makeHDF5");
 
+    // Do this in the general pyxrf settings
+    setCommand(settings->value("pyxrfUtilsCommand", "pyxrf-utils").toString());
+
+    settings->beginGroup("makeHDF5");
     setMethod(settings->value("method", "New").toString());
     setWorkingDirectory(
       settings->value("workingDirectory", defaultWorkingDirectory())
@@ -164,24 +191,30 @@ public:
     setScanStop(settings->value("scanStop", 0).toInt());
     setSuccessfulScansOnly(
       settings->value("successfulScansOnly", true).toBool());
+    setRemakeCsvFile(settings->value("remakeCsvFile", false).toBool());
+    settings->endGroup();
 
     settings->endGroup();
-    settings->endGroup();
+    updateEnableStates();
   }
 
   void writeSettings()
   {
     auto settings = pqApplicationCore::instance()->settings();
     settings->beginGroup("pyxrf");
-    settings->beginGroup("makeHDF5");
 
+    // Do this in the general pyxrf settings
+    settings->setValue("pyxrfUtilsCommand", command());
+
+    settings->beginGroup("makeHDF5");
     settings->setValue("method", method());
     settings->setValue("workingDirectory", workingDirectory());
     settings->setValue("scanStart", scanStart());
     settings->setValue("scanStop", scanStop());
     settings->setValue("successfulScansOnly", successfulScansOnly());
-
+    settings->setValue("remakeCsvFile", remakeCsvFile());
     settings->endGroup();
+
     settings->endGroup();
   }
 };
@@ -197,6 +230,11 @@ void PyXRFMakeHDF5Dialog::show()
 {
   m_internal->readSettings();
   QDialog::show();
+}
+
+QString PyXRFMakeHDF5Dialog::command() const
+{
+  return m_internal->command();
 }
 
 bool PyXRFMakeHDF5Dialog::useAlreadyExistingData() const
@@ -222,6 +260,11 @@ int PyXRFMakeHDF5Dialog::scanStop() const
 bool PyXRFMakeHDF5Dialog::successfulScansOnly() const
 {
   return m_internal->successfulScansOnly();
+}
+
+bool PyXRFMakeHDF5Dialog::remakeCsvFile() const
+{
+  return m_internal->remakeCsvFile();
 }
 
 } // namespace tomviz

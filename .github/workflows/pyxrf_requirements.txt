@@ -1,0 +1,9 @@
+# These are PyXRF workflow dependencies
+hxntools
+pyxrf
+xrf-tomo
+xraylib
+scikit-beam
+tomopy
+# These are required for installing the pyxrf-utils environment
+hatchling

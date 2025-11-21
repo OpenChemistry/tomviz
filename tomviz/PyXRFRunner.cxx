@@ -16,9 +16,9 @@
 #include <QDebug>
 #include <QDir>
 #include <QFileInfo>
-#include <QFutureWatcher>
 #include <QMessageBox>
 #include <QPointer>
+#include <QProcess>
 #include <QtConcurrent>
 
 #include <vtkDataArray.h>
@@ -36,23 +36,24 @@ public:
   QPointer<PyXRFMakeHDF5Dialog> makeHDF5Dialog;
   QPointer<PyXRFProcessDialog> processDialog;
   QPointer<ProgressDialog> progressDialog;
-  QFutureWatcher<bool> makeHDF5FutureWatcher;
-  QFutureWatcher<bool> processFutureWatcher;
+  QProcess makeHDF5Process;
+  QProcess remakeCsvFileProcess;
+  QProcess processProjectionsProcess;
 
   // Python modules and functions
   Python::Module pyxrfModule;
-  Python::Function makeHDF5Func;
-  Python::Function processProjectionsFunc;
 
   // Options we will use as arguments to various pieces
 
   // General options
   QString workingDirectory;
+  QString pyxrfUtilsCommand;
 
   // Make HDF5 options
   int scanStart = 0;
   int scanStop = 0;
   bool successfulScansOnly = true;
+  bool remakeCsvFile = false;
   QString defaultLogFileName = "tomo_info.csv";
 
   // Process projection options
@@ -85,10 +86,27 @@ public:
 
   void setupConnections()
   {
-    connect(&makeHDF5FutureWatcher, &QFutureWatcher<bool>::finished, this,
+    connect(&makeHDF5Process, &QProcess::finished, this,
             &Internal::makeHDF5Finished);
-    connect(&processFutureWatcher, &QFutureWatcher<bool>::finished, this,
+    connect(&makeHDF5Process, &QProcess::readyReadStandardOutput, this,
+            &Internal::_printProcStdout);
+    connect(&makeHDF5Process, &QProcess::readyReadStandardError, this,
+            &Internal::_printProcStderr);
+
+    connect(&remakeCsvFileProcess, &QProcess::finished, this,
+            &Internal::remakeCsvFileFinished);
+    connect(&remakeCsvFileProcess, &QProcess::readyReadStandardOutput, this,
+            &Internal::_printProcStdout);
+    connect(&remakeCsvFileProcess, &QProcess::readyReadStandardError, this,
+            &Internal::_printProcStderr);
+
+
+    connect(&processProjectionsProcess, &QProcess::finished, this,
             &Internal::processProjectionsFinished);
+    connect(&processProjectionsProcess, &QProcess::readyReadStandardOutput, this,
+            &Internal::_printProcStdout);
+    connect(&processProjectionsProcess, &QProcess::readyReadStandardError, this,
+            &Internal::_printProcStderr);
   }
 
   void importModule()
@@ -152,22 +170,6 @@ public:
   void importFunctions()
   {
     importModule();
-
-    Python python;
-
-    if (!makeHDF5Func.isValid()) {
-      makeHDF5Func = pyxrfModule.findFunction("make_hdf5");
-      if (!makeHDF5Func.isValid()) {
-        qCritical() << "Failed to find function \"make_hdf5\"";
-      }
-    }
-
-    if (!processProjectionsFunc.isValid()) {
-      processProjectionsFunc = pyxrfModule.findFunction("process_projections");
-      if (!processProjectionsFunc.isValid()) {
-        qCritical() << "Failed to find function \"process_projections\"";
-      }
-    }
   }
 
   template <typename T>
@@ -191,7 +193,7 @@ public:
   void start()
   {
     clear();
-    importFunctions();
+    importModule();
     showMakeHDF5Dialog();
   }
 
@@ -208,15 +210,21 @@ public:
   void makeHDF5DialogAccepted()
   {
     // Gather the settings and decide what to do
+    pyxrfUtilsCommand = makeHDF5Dialog->command();
     workingDirectory = makeHDF5Dialog->workingDirectory();
     scanStart = makeHDF5Dialog->scanStart();
     scanStop = makeHDF5Dialog->scanStop();
     successfulScansOnly = makeHDF5Dialog->successfulScansOnly();
+    remakeCsvFile = makeHDF5Dialog->remakeCsvFile();
 
     auto useAlreadyExistingData = makeHDF5Dialog->useAlreadyExistingData();
     if (useAlreadyExistingData) {
-      // Proceed to the next step
-      showProcessProjectionsDialog();
+      if (remakeCsvFile) {
+        runRemakeCsvFile();
+      } else {
+        // Proceed to the next step
+        showProcessProjectionsDialog();
+      }
     } else {
       runMakeHDF5();
     }
@@ -227,42 +235,67 @@ public:
     progressDialog->clearOutputWidget();
     progressDialog->setText("Generating HDF5 Files...");
     progressDialog->show();
-    auto future = QtConcurrent::run(std::bind(&Internal::_runMakeHDF5, this));
-    makeHDF5FutureWatcher.setFuture(future);
-  }
 
-  bool _runMakeHDF5()
-  {
-    Python python;
+    QString program = pyxrfUtilsCommand;
+    QStringList args;
 
-    if (!makeHDF5Func.isValid()) {
-      qCritical() << "Failed to find function \"make_hdf5\"";
-      return false;
+    args << "make-hdf5" << workingDirectory
+         << "-s" << QString::number(scanStart)
+         << "-e" << QString::number(scanStop)
+         << "-l" << defaultLogFileName;
+
+    if (successfulScansOnly) {
+      args.append("-b");
     }
 
-    Python::Dict kwargs;
-    kwargs.set("start_scan", scanStart);
-    kwargs.set("stop_scan", scanStop);
-    kwargs.set("successful_scans_only", successfulScansOnly);
-    kwargs.set("working_directory", workingDirectory);
-    kwargs.set("log_file_name", defaultLogFileName);
-    auto res = makeHDF5Func.call(kwargs);
-
-    if (!res.isValid()) {
-      qCritical() << "Error calling tomviz.pyxrf.make_hdf5";
-      return false;
-    }
-
-    return true;
+    qInfo() << "Running:" << program + " " + args.join(" ");
+    makeHDF5Process.start(program, args);
   }
 
   void makeHDF5Finished()
   {
     progressDialog->accept();
 
-    auto success = makeHDF5FutureWatcher.result();
+    auto success = makeHDF5Process.exitStatus() == QProcess::NormalExit;
     if (!success) {
       QString msg = "Make HDF5 failed";
+      qCritical() << msg;
+      QMessageBox::critical(parentWidget, "Tomviz", msg);
+      // Show the dialog again
+      showMakeHDF5Dialog();
+      return;
+    }
+
+    showProcessProjectionsDialog();
+  }
+
+  void runRemakeCsvFile()
+  {
+    progressDialog->clearOutputWidget();
+    progressDialog->setText("Remaking CSV file...");
+    progressDialog->show();
+
+    QString program = pyxrfUtilsCommand;
+    QStringList args;
+
+    QString rangeString = QString::number(scanStart) +
+                          ":" + QString::number(scanStop + 1);
+    args << "make-csv" << "-i"
+         << "-w" << workingDirectory
+         << "-s" << rangeString
+         << defaultLogFileName;
+
+    qInfo() << "Running:" << program + " " + args.join(" ");
+    remakeCsvFileProcess.start(program, args);
+  }
+
+  void remakeCsvFileFinished()
+  {
+    progressDialog->accept();
+
+    auto success = remakeCsvFileProcess.exitStatus() == QProcess::NormalExit;
+    if (!success) {
+      QString msg = "Remake CSV file failed";
       qCritical() << msg;
       QMessageBox::critical(parentWidget, "Tomviz", msg);
       // Show the dialog again
@@ -310,12 +343,14 @@ public:
   void processDialogAccepted()
   {
     // Pull out the options that were chosen
+    pyxrfUtilsCommand = processDialog->command();
     parametersFile = processDialog->parametersFile();
     logFile = processDialog->logFile();
     icName = processDialog->icName();
     outputDirectory = processDialog->outputDirectory();
     pixelSizeX = processDialog->pixelSizeX();
     pixelSizeY = processDialog->pixelSizeY();
+    skipProcessed = processDialog->skipProcessed();
     rotateDatasets = processDialog->rotateDatasets();
 
     // Make sure the output directory exists
@@ -330,41 +365,71 @@ public:
     progressDialog->clearOutputWidget();
     progressDialog->setText("Processing projections...");
     progressDialog->show();
-    auto future = QtConcurrent::run(std::bind(&Internal::_runProcessProjections, this));
-    processFutureWatcher.setFuture(future);
+
+    QString program = pyxrfUtilsCommand;
+    QStringList args;
+
+    args << "process-projections" << workingDirectory
+         << "-p" << parametersFile
+         << "-l" << logFile
+         << "-i" << icName
+         << "-o" << outputDirectory;
+
+    if (skipProcessed) {
+      args << "-s";
+    }
+
+    qInfo() << "Running:" << program + " " + args.join(" ");
+    processProjectionsProcess.start(program, args);
   }
 
-  bool _runProcessProjections()
+  void _printProcStdout()
   {
-    Python python;
-
-    if (!processProjectionsFunc.isValid()) {
-      qCritical() << "Failed to find function \"process_projections\"";
-      return false;
+    auto* proc = qobject_cast<QProcess*>(sender());
+    if (!proc) {
+      return;
     }
 
-    Python::Dict kwargs;
-    kwargs.set("working_directory", workingDirectory);
-    kwargs.set("parameters_file_name", parametersFile);
-    kwargs.set("log_file_name", logFile);
-    kwargs.set("ic_name", icName);
-    kwargs.set("skip_processed", skipProcessed);
-    kwargs.set("output_directory", outputDirectory);
-    auto res = processProjectionsFunc.call(kwargs);
-
-    if (!res.isValid()) {
-      qCritical() << "Error calling tomviz.pyxrf.process_projections";
-      return false;
+    auto output = proc->readAllStandardOutput();
+    if (output.size() == 0) {
+      return;
     }
 
-    return true;
+    // Remove the ending newline because qInfo() will add one
+    if (output.endsWith("\r\n")) {
+      output.chop(2);
+    } else if (output.endsWith('\n')) {
+      output.chop(1);
+    }
+    qInfo() << output.constData();
+  }
+
+  void _printProcStderr()
+  {
+    auto* proc = qobject_cast<QProcess*>(sender());
+    if (!proc) {
+      return;
+    }
+
+    auto output = proc->readAllStandardError();
+    if (output.size() == 0) {
+      return;
+    }
+
+    // Remove the ending newline because qWarning() will add one
+    if (output.endsWith("\r\n")) {
+      output.chop(2);
+    } else if (output.endsWith('\n')) {
+      output.chop(1);
+    }
+    qWarning() << output.constData();
   }
 
   void processProjectionsFinished()
   {
     progressDialog->accept();
 
-    auto success = processFutureWatcher.result();
+    auto success = processProjectionsProcess.exitStatus() == QProcess::NormalExit;
     if (!success || !validateOutputDirectory()) {
       QString msg = "Process projections failed";
       qCritical() << msg;

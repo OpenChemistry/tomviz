@@ -1,11 +1,41 @@
 from tomviz import utils
-import numpy as np
 import tomviz.operators
+
+from scipy import ndimage
+import numpy as np
 
 
 class CrossCorrelationAlignmentOperator(tomviz.operators.CancelableOperator):
 
-    def transform(self, dataset):
+    def transform(
+        self,
+        dataset,
+        transform_source='generate',
+        apply_to_all_arrays=True,
+        transforms_save_file='',
+        transform_file=None,
+    ):
+        kwargs = {
+            'dataset': dataset,
+            'apply_to_all_arrays': apply_to_all_arrays,
+        }
+        if transform_source == 'generate':
+            kwargs = {
+                **kwargs,
+                'transforms_save_file': transforms_save_file,
+            }
+            return self.transform_generate(**kwargs)
+        elif transform_source == 'from_file':
+            kwargs = {
+                **kwargs,
+                'transform_file': transform_file,
+            }
+            return self.transform_from_file(**kwargs)
+
+        raise NotImplementedError(transform_source)
+
+    def transform_generate(self, dataset, apply_to_all_arrays,
+                           transforms_save_file):
         """Automatically align tilt images by cross-correlation"""
         self.progress.maximum = 1
 
@@ -65,20 +95,50 @@ class CrossCorrelationAlignmentOperator(tomviz.operators.CancelableOperator):
             self.progress.value = step
 
         dataset.active_scalars = tiltSeries
+        if apply_to_all_arrays:
+            names = [name for name in dataset.scalars_names
+                     if name != dataset.active_name]
+            self.apply_offsets_to_scalar_names(dataset, offsets, names)
 
-        # Assign Negative Shifts when Shift > N/2.
-        indices_X = np.where(offsets[:, 0] > tiltSeries.shape[0] / 2)
-        offsets[indices_X, 0] -= tiltSeries.shape[0]
-        indices_Y = np.where(offsets[:, 1] > tiltSeries.shape[1] / 2)
-        offsets[indices_Y, 1] -= tiltSeries.shape[1]
+        if transforms_save_file:
+            np.savez(
+                transforms_save_file,
+                offsets=offsets,
+                spacing=dataset.spacing,
+            )
+            print('Saved transforms to:', transforms_save_file)
 
-        # Create a spreadsheet data set from table data
-        column_names = ["X Offset", "Y Offset"]
-        offsetsTable = utils.make_spreadsheet(column_names, offsets)
-        # Set up dictionary to return operator results
-        returnValues = {}
-        returnValues["alignments"] = offsetsTable
-        return returnValues
+    def apply_offsets_to_scalar_names(self, dataset, offsets, names):
+        # Now apply the same offsets to all other arrays
+        for name in names:
+            print(f'Applying shifts to {name}...')
+            array = dataset.scalars(name)
+            for i in range(len(offsets)):
+                shifts = offsets[i]
+                array[:, :, i] = ndimage.shift(array[:, :, i],
+                                               shift=shifts,
+                                               order=1,
+                                               mode='wrap')
+
+            dataset.set_scalars(name, array)
+
+    def transform_from_file(self, dataset, apply_to_all_arrays,
+                            transform_file):
+        if not apply_to_all_arrays:
+            names = [dataset.active_name]
+        else:
+            names = dataset.scalars_names
+
+        with np.load(transform_file) as f:
+            transform_offsets = f['offsets']
+            transform_spacing = f['spacing']
+
+        # The true shift will depend on the voxel size ratio, along
+        # the shift direction, which is Y.
+        offsets = transform_offsets.astype(float)
+        offsets[:, 0] *= transform_spacing[0] / dataset.spacing[0]
+        offsets[:, 1] *= transform_spacing[1] / dataset.spacing[1]
+        return self.apply_offsets_to_scalar_names(dataset, offsets, names)
 
 
 def crossCorrelationAlign(image, reference, rFilter, kFilter):

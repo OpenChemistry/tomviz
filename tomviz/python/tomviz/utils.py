@@ -7,16 +7,19 @@
 import copy
 import functools
 import math
+
 import numpy as np
 from tomviz._internal import in_application
 from tomviz._internal import require_internal_mode
 from tomviz._internal import with_vtk_dataobject
 from tomviz._internal import with_dataset
-from tomviz.internal_dataset import Dataset as InternalDataset
 # Only import vtk if we are running within the tomviz application ( not cli )
 if in_application():
     import vtk.numpy_interface.dataset_adapter as dsa
     import vtk.util.numpy_support as np_s
+    from tomviz.internal_dataset import Dataset
+else:
+    from tomviz.external_dataset import Dataset
 
 
 @with_vtk_dataobject
@@ -611,17 +614,24 @@ def get_center(dataobject):
 
 def apply_to_each_array(func):
 
+    is_method = (
+        func.__name__ != func.__qualname__ and
+        '.<locals>.' not in func.__qualname__
+    )
+    dataset_idx = 1 if is_method else 0
+
     @functools.wraps(func)
-    def wrapper(dataset, *args, **kwargs):
+    def wrapper(*args, **kwargs):
+        dataset = args[dataset_idx]
         if dataset.num_scalars == 1:
             # Just run the function like we normally would...
-            return func(dataset, *args, **kwargs)
+            return func(*args, **kwargs)
 
         num_arrays = dataset.num_scalars
         array_names = dataset.scalars_names
         active_name = dataset.active_name
 
-        is_internal = isinstance(dataset, InternalDataset)
+        is_internal = in_application()
 
         if is_internal:
             # Run the function multiple times. Each time with a single, different
@@ -664,8 +674,14 @@ def apply_to_each_array(func):
                 dataset.arrays[name] = all_arrays[i]
                 dataset.active_name = name
 
+            # Put the dataset where it belongs in the argument list
+            new_args = (
+                list(args[:dataset_idx]) +
+                [dataset] +
+                list(args[dataset_idx + 1:])
+            )
             print('Transforming array:', name)
-            result = func(dataset, *args, **kwargs)
+            result = func(*new_args, **kwargs)
             results.append(result)
 
             if is_internal:
@@ -689,6 +705,24 @@ def apply_to_each_array(func):
                 dataset.arrays[name] = array
 
             dataset.active_name = active_name
+
+        # For any data sources in the result, add all the scalars to it
+        if isinstance(result, dict):
+            for k, v in result.items():
+                if isinstance(v, Dataset):
+                    # Rename the active array
+                    v.rename_active(array_names[-1])
+                    # Go back through the other results and set scalars on this
+                    # one
+                    for i, other_result in enumerate(results[:-1]):
+                        if (
+                            isinstance(other_result, dict) and
+                            isinstance(other_result.get(k), Dataset)
+                        ):
+                            other_dataset = other_result[k]
+                            other_dataset.rename_active(array_names[i])
+                            v.set_scalars(other_dataset.active_name,
+                                          other_dataset.active_scalars)
 
         # Return the final result
         return result

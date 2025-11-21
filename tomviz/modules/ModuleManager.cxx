@@ -222,6 +222,36 @@ public:
     auto root = rootDataSourceDependency(dep, dataSources);
     return root.value("id").toString() != dep;
   }
+
+  void removeInvalidDataSources()
+  {
+    int i = 0;
+    while (i < DataSources.size()) {
+      if (DataSources[i]) {
+        // Valid
+        i += 1;
+        continue;
+      } else {
+        // Invalid. Remove.
+        DataSources.removeAt(i);
+      }
+    }
+  }
+
+  void removeInvalidChildDataSources()
+  {
+    int i = 0;
+    while (i < ChildDataSources.size()) {
+      if (ChildDataSources[i]) {
+        // Valid
+        i += 1;
+        continue;
+      } else {
+        // Invalid. Remove.
+        ChildDataSources.removeAt(i);
+      }
+    }
+  }
 };
 
 ModuleManager::ModuleManager(QObject* parentObject)
@@ -249,6 +279,7 @@ void ModuleManager::reset()
 
 bool ModuleManager::hasRunningOperators()
 {
+  d->removeInvalidDataSources();
   for (QPointer<DataSource> dsource : d->DataSources) {
     if (dsource->pipeline()->isRunning()) {
       return true;
@@ -259,6 +290,9 @@ bool ModuleManager::hasRunningOperators()
 
 QList<DataSource*> ModuleManager::dataSources()
 {
+  // Somehow we have invalid data sources around. Make sure
+  // those are removed.
+  d->removeInvalidDataSources();
   QList<DataSource*> ret;
   std::copy(d->DataSources.begin(), d->DataSources.end(),
             std::back_inserter(ret));
@@ -267,6 +301,9 @@ QList<DataSource*> ModuleManager::dataSources()
 
 QList<DataSource*> ModuleManager::childDataSources()
 {
+  // Somehow we have invalid data sources around. Make sure
+  // those are removed.
+  d->removeInvalidChildDataSources();
   QList<DataSource*> ret;
   std::copy(d->ChildDataSources.begin(), d->ChildDataSources.end(),
             std::back_inserter(ret));
@@ -321,6 +358,7 @@ QStringList ModuleManager::createUniqueLabels(const QList<DataSource*>& sources)
 
 void ModuleManager::addDataSource(DataSource* dataSource)
 {
+  d->removeInvalidDataSources();
   if (dataSource && !d->DataSources.contains(dataSource)) {
     d->DataSources.push_back(dataSource);
     emit dataSourceAdded(dataSource);
@@ -329,6 +367,7 @@ void ModuleManager::addDataSource(DataSource* dataSource)
 
 void ModuleManager::addChildDataSource(DataSource* dataSource)
 {
+  d->removeInvalidChildDataSources();
   if (dataSource && !d->ChildDataSources.contains(dataSource)) {
     d->ChildDataSources.push_back(dataSource);
     emit childDataSourceAdded(dataSource);
@@ -337,6 +376,8 @@ void ModuleManager::addChildDataSource(DataSource* dataSource)
 
 void ModuleManager::removeDataSource(DataSource* dataSource)
 {
+  d->removeInvalidDataSources();
+  d->removeInvalidChildDataSources();
   if (d->DataSources.removeOne(dataSource) ||
       d->ChildDataSources.removeOne(dataSource)) {
     emit dataSourceRemoved(dataSource);
@@ -346,6 +387,7 @@ void ModuleManager::removeDataSource(DataSource* dataSource)
 
 void ModuleManager::removeChildDataSource(DataSource* dataSource)
 {
+  d->removeInvalidChildDataSources();
   if (d->ChildDataSources.removeOne(dataSource)) {
     emit childDataSourceRemoved(dataSource);
     dataSource->deleteLater();
@@ -354,6 +396,7 @@ void ModuleManager::removeChildDataSource(DataSource* dataSource)
 
 void ModuleManager::removeAllDataSources()
 {
+  d->removeInvalidDataSources();
   foreach (DataSource* dataSource, d->DataSources) {
     emit dataSourceRemoved(dataSource);
     dataSource->deleteLater();
@@ -394,6 +437,7 @@ void ModuleManager::removeOperator(Operator* op)
 
 bool ModuleManager::isChild(DataSource* source) const
 {
+  d->removeInvalidChildDataSources();
   return (d->ChildDataSources.indexOf(source) >= 0);
 }
 
@@ -577,6 +621,9 @@ QJsonArray jsonArrayFromXmlDouble(pugi::xml_node node)
 bool ModuleManager::serialize(QJsonObject& doc, const QDir& stateDir,
                               bool interactive) const
 {
+  d->removeInvalidDataSources();
+  d->removeInvalidChildDataSources();
+
   QJsonObject tvObj;
   tvObj["version"] = QString(TOMVIZ_VERSION);
   if (QString(TOMVIZ_VERSION_EXTRA).size() > 0) {
@@ -1274,6 +1321,7 @@ vtkSMViewProxy* ModuleManager::lookupView(int id)
 
 bool ModuleManager::hasDataSources()
 {
+  d->removeInvalidDataSources();
   return !d->DataSources.empty();
 }
 

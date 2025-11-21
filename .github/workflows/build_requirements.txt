@@ -6,3 +6,5 @@ vtk
 libxml2-devel=2.14*
 # This is needed for building the tests
 gtest
+# This is needed for installing stuff on Python3.13
+setuptools

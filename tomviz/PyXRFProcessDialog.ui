@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>595</width>
-    <height>377</height>
+    <height>494</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -26,47 +26,14 @@
    <property name="bottomMargin">
     <number>6</number>
    </property>
-   <item row="9" column="0" colspan="3">
-    <widget class="QDialogButtonBox" name="buttonBox">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Close|QDialogButtonBox::Ok</set>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="0" colspan="3">
-    <widget class="QTableWidget" name="logFileTable">
-     <property name="editTriggers">
-      <set>QAbstractItemView::NoEditTriggers</set>
-     </property>
-     <property name="selectionMode">
-      <enum>QAbstractItemView::NoSelection</enum>
-     </property>
-     <attribute name="horizontalHeaderStretchLastSection">
-      <bool>true</bool>
-     </attribute>
-    </widget>
-   </item>
-   <item row="7" column="1" colspan="2">
-    <widget class="QComboBox" name="icName">
+   <item row="9" column="1">
+    <widget class="QLineEdit" name="outputDirectory">
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Name of the scalar for normalization of fluorescence data.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The directory where the output will be written.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
     </widget>
    </item>
-   <item row="5" column="2">
-    <widget class="QPushButton" name="selectParametersFile">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select the parameters file that was generated using the PyXRF GUI on one of the datasets.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <property name="text">
-      <string>Select</string>
-     </property>
-    </widget>
-   </item>
-   <item row="6" column="0">
+   <item row="9" column="0">
     <widget class="QLabel" name="outputDirectoryLabel">
      <property name="toolTip">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The directory where the output will be written.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -79,30 +46,64 @@
      </property>
     </widget>
    </item>
-   <item row="7" column="0">
-    <widget class="QLabel" name="icNameLabel">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Name of the scalar for normalization of fluorescence data.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   <item row="13" column="0" colspan="3">
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
      </property>
-     <property name="text">
-      <string>IC Name:</string>
-     </property>
-     <property name="buddy">
-      <cstring>icName</cstring>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Close|QDialogButtonBox::Ok</set>
      </property>
     </widget>
    </item>
-   <item row="6" column="2">
-    <widget class="QPushButton" name="selectOutputDirectory">
+   <item row="4" column="0">
+    <widget class="QLabel" name="filterSidsLabel">
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The directory where the output will be written.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Filter out SIDs using numpy-like slice syntax. For example: &lt;br/&gt;&lt;/p&gt;&lt;p&gt;157394:157413:3&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This would only allow every third number between 157394 (inclusive) and 157413 (exclusive) to be shown.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The filtered out SIDs are hidden and won't be used in the next step.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This also supports separate sets of comma-delimited slices, for example:&lt;br/&gt;&lt;/p&gt;&lt;p&gt;157394:157413:3, 157420:157500:2&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Filter SIDs:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="11" column="0" colspan="3">
+    <widget class="QCheckBox" name="skipProcessed">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;xrf-tomo will store the output from processed scans within the input HDF5 files. If this is checked, any HDF5 files that have already been processed will be skipped over, and their old output re-used.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This should be unchecked if you change the parameters file or the normalization channel - otherwise, previously processed files will not be processed with the updated values.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Skip already processed scans?</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="2">
+    <widget class="QPushButton" name="selectParametersFile">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select the parameters file that was generated using the PyXRF GUI on one of the datasets.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="text">
       <string>Select</string>
      </property>
     </widget>
    </item>
-   <item row="0" column="0" colspan="3">
+   <item row="1" column="0">
+    <widget class="QLabel" name="commandLabel">
+     <property name="text">
+      <string>PyXRF Utils Command:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1" colspan="2">
+    <widget class="QLineEdit" name="command">
+     <property name="text">
+      <string>pyxrf-utils</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0" colspan="3">
     <layout class="QHBoxLayout" name="logFileLayout">
      <item>
       <widget class="QLabel" name="logFileLabel">
@@ -136,7 +137,27 @@
      </item>
     </layout>
    </item>
-   <item row="4" column="0" colspan="3">
+   <item row="6" column="0">
+    <widget class="QLabel" name="pyxrfGUICommandLabel">
+     <property name="text">
+      <string>PyXRF GUI Command:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="10" column="0">
+    <widget class="QLabel" name="icNameLabel">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Name of the scalar for normalization of fluorescence data.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Normalization Channel:</string>
+     </property>
+     <property name="buddy">
+      <cstring>icName</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="0" colspan="3">
     <widget class="QPushButton" name="startPyXRFGUI">
      <property name="toolTip">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Use the PyXRF GUI to generate a parameters file with one of the datasets. Then, select the parameters file below.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -146,21 +167,31 @@
      </property>
     </widget>
    </item>
-   <item row="5" column="1">
-    <widget class="QLineEdit" name="parametersFile">
+   <item row="10" column="1" colspan="2">
+    <widget class="QComboBox" name="icName">
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select the parameters file that was generated using the PyXRF GUI on one of the datasets.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Name of the scalar for normalization of fluorescence data.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
     </widget>
    </item>
-   <item row="6" column="1">
-    <widget class="QLineEdit" name="outputDirectory">
+   <item row="6" column="1" colspan="2">
+    <widget class="QLineEdit" name="pyxrfGUICommand">
+     <property name="text">
+      <string>pyxrf</string>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="2">
+    <widget class="QPushButton" name="selectOutputDirectory">
      <property name="toolTip">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The directory where the output will be written.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
+     <property name="text">
+      <string>Select</string>
+     </property>
     </widget>
    </item>
-   <item row="5" column="0">
+   <item row="8" column="0">
     <widget class="QLabel" name="parametersFileLabel">
      <property name="toolTip">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select the parameters file that was generated using the PyXRF GUI on one of the datasets.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -173,7 +204,7 @@
      </property>
     </widget>
    </item>
-   <item row="8" column="0" colspan="3">
+   <item row="12" column="0" colspan="3">
     <widget class="QCheckBox" name="rotateDatasets">
      <property name="toolTip">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The orientation of the tilt series from PyXRF does match what Tomviz expects internally. Rotating the data ensures that the later Tomviz operators will be able to run properly.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -186,18 +217,50 @@
      </property>
     </widget>
    </item>
+   <item row="8" column="1">
+    <widget class="QLineEdit" name="parametersFile">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select the parameters file that was generated using the PyXRF GUI on one of the datasets.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="0" colspan="3">
+    <widget class="QTableWidget" name="logFileTable">
+     <property name="editTriggers">
+      <set>QAbstractItemView::NoEditTriggers</set>
+     </property>
+     <property name="selectionMode">
+      <enum>QAbstractItemView::NoSelection</enum>
+     </property>
+     <attribute name="horizontalHeaderStretchLastSection">
+      <bool>true</bool>
+     </attribute>
+    </widget>
+   </item>
+   <item row="4" column="1" colspan="2">
+    <widget class="QLineEdit" name="filterSidsString">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Filter out SIDs using numpy-like slice syntax. For example: &lt;br/&gt;&lt;/p&gt;&lt;p&gt;157394:157413:3&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This would only allow every third number between 157394 (inclusive) and 157413 (exclusive) to be shown.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The filtered out SIDs are hidden and won't be used in the next step.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This also supports separate sets of comma-delimited slices, for example:&lt;br/&gt;&lt;/p&gt;&lt;p&gt;157394:157413:3, 157420:157500:2&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
  <tabstops>
+  <tabstop>command</tabstop>
   <tabstop>logFile</tabstop>
   <tabstop>selectLogFile</tabstop>
+  <tabstop>filterSidsString</tabstop>
   <tabstop>logFileTable</tabstop>
+  <tabstop>pyxrfGUICommand</tabstop>
   <tabstop>startPyXRFGUI</tabstop>
   <tabstop>parametersFile</tabstop>
   <tabstop>selectParametersFile</tabstop>
   <tabstop>outputDirectory</tabstop>
   <tabstop>selectOutputDirectory</tabstop>
   <tabstop>icName</tabstop>
+  <tabstop>skipProcessed</tabstop>
+  <tabstop>rotateDatasets</tabstop>
  </tabstops>
  <resources/>
  <connections>

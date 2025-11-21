@@ -16,6 +16,7 @@
 
 #include "loguru.hpp"
 #include "MainWindow.h"
+#include "PythonUtilities.h"
 #include "tomvizConfig.h"
 #include "tomvizPythonConfig.h"
 
@@ -53,6 +54,10 @@ int main(int argc, char** argv)
   // application vs Python command line. This can be used to selectively load
   // modules.
   qputenv("TOMVIZ_APPLICATION", "1");
+
+  // If we don't initialize Python here, the application freezes when exiting
+  // at the very end, during Py_Finalize().
+  tomviz::Python::initialize();
 
   setlocale(LC_NUMERIC, "C");
   pqPVApplicationCore appCore(argc, argv);

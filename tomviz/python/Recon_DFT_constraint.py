@@ -7,14 +7,15 @@ import time
 class ReconConstrintedDFMOperator(tomviz.operators.CancelableOperator):
 
     def transform(self, dataset, Niter=None, Niter_update_support=None,
-                  supportSigma=None, supportThreshold=None):
+                  supportSigma=None, supportThreshold=None,
+                  seed=0):
         """
         3D Reconstruct from a tilt series using constraint-based Direct Fourier
         Method
         """
         self.progress.maximum = 1
 
-        import numpy as np
+        rng = np.random.default_rng(seed=seed)
 
         supportThreshold = supportThreshold / 100.0
 
@@ -71,7 +72,7 @@ class ReconConstrintedDFMOperator(tomviz.operators.CancelableOperator):
 
             recon_F[kR > kr_cutoffs[-1]] = 0
 
-            x = np.random.rand(Nx, Ny, Ny).astype(np.float32) #initial solution
+            x = rng.random((Nx, Ny, Ny)).astype(np.float32) #initial solution
 
             step = 0
 

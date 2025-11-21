@@ -82,6 +82,10 @@ class Dataset:
         new_data = utils.make_child_dataset(self._data_object)
         return Dataset(new_data, self._data_source)
 
+    def rename_active(self, new_name: str):
+        scalars = self._data_object.GetPointData().GetScalars()
+        scalars.SetName(new_name)
+
 
 def create_dataset(data_object, data_source):
     return Dataset(data_object, data_source)

@@ -65,6 +65,10 @@ jobs:
         conda install -y --override-channels -c conda-forge --file tomviz/tests/python/requirements-dev.txt
         pip install --no-build-isolation --no-deps -U tomviz/tomviz/python
         pip install --no-build-isolation --no-deps -U tomviz/acquisition
+        # These do not have to be in the same environment as Tomviz, but the dependencies
+        # are so far compatible and we'll just let it go for the tests.
+        conda install -y --override-channels -c conda-forge --file tomviz/.github/workflows/pyxrf_requirements.txt
+        pip install --no-build-isolation --no-deps -U tomviz/tomviz/python/tomviz/pyxrf/pyxrf-utils
 
     - name: Run Tests
       env:

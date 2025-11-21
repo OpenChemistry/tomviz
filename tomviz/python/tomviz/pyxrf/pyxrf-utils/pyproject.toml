@@ -1,0 +1,52 @@
+[build-system]
+requires = ["hatchling", "setuptools"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pyxrf-utils"
+version = "1.0.0"
+description = "PyXRF Utilities"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "BSD-3-Clause"}
+keywords = ["xrf", "data-processing", "hdf5", "tomography"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering",
+]
+
+# Dependencies managed by pixi, but listed here for pip compatibility
+dependencies = [
+    "numpy",
+    "h5py",
+    "pandas",
+    "h5py",
+    "xraylib",
+    "tomopy",
+    "bluesky-tiled-plugins",
+    "pyxrf",
+    "hxntools",
+    "xrf-tomo",
+    "scikit-beam",
+    "tiled",
+]
+
+[project.scripts]
+pyxrf-utils = "pyxrf_utils.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["pyxrf_utils"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py38"
+select = ["E", "F", "W", "I"]
+ignore = []

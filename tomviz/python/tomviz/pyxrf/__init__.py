@@ -2,8 +2,8 @@ import os
 
 try:
     from .load_output import list_elements, extract_elements  # noqa
-    from .make_hdf5 import make_hdf5  # noqa
-    from .process_projections import fix_python_paths, ic_names, process_projections  # noqa
+    from .ic_names import ic_names  # noqa
+    from .sids import filter_sids
     requirements_installed = True
 except ImportError:
     requirements_installed = False
