@@ -13,12 +13,13 @@ from tomviz._internal import in_application
 from tomviz._internal import require_internal_mode
 from tomviz._internal import with_vtk_dataobject
 from tomviz._internal import with_dataset
-from tomviz.external_dataset import Dataset as ExternalDataset
-from tomviz.internal_dataset import Dataset as InternalDataset
 # Only import vtk if we are running within the tomviz application ( not cli )
 if in_application():
     import vtk.numpy_interface.dataset_adapter as dsa
     import vtk.util.numpy_support as np_s
+    from tomviz.internal_dataset import Dataset
+else:
+    from tomviz.external_dataset import Dataset
 
 
 @with_vtk_dataobject
@@ -630,8 +631,7 @@ def apply_to_each_array(func):
         array_names = dataset.scalars_names
         active_name = dataset.active_name
 
-        is_internal = isinstance(dataset, InternalDataset)
-        Dataset = InternalDataset if is_internal else ExternalDataset
+        is_internal = in_application()
 
         if is_internal:
             # Run the function multiple times. Each time with a single, different
