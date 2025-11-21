@@ -28,6 +28,10 @@ install = "pip install -e ."
 # Run the CLI tool
 pyxrf-utils = "python -m pyxrf_utils.cli"
 
+[environments]
+default = { solve-group = "default" }
+dev     = { features = ["dev"], solve-group = "default" }
+
 [feature.dev.dependencies]
 pytest = "*"
 ruff = "*"
