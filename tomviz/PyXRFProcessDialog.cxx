@@ -180,6 +180,7 @@ public:
 
     // Check if there are any duplicate angles selected
     QStringList anglesUsed;
+    QStringList anglesDuplicated;
     for (int i = 0; i < logFileData.size(); ++i) {
       auto use = logFileValue(i, "Use");
       if (use != "x" && use != "1") {
@@ -188,12 +189,21 @@ public:
       }
 
       auto angle = logFileValue(i, "Theta");
-      if (anglesUsed.contains(angle)) {
-        reason = "Angle '" + angle + "' was selected more than once.";
-        return false;
+      if (anglesUsed.contains(angle) && !anglesDuplicated.contains(angle)) {
+        anglesDuplicated.append(angle);
       }
 
       anglesUsed.append(angle);
+    }
+
+    if (anglesDuplicated.size() != 0) {
+      QString title = "Duplicate angles detected";
+      QString text = "The following duplicate angles were detected. Proceed anyways?";
+      text += ("\n\n" + anglesDuplicated.join(", "));
+      if (QMessageBox::question(parent, title, text) == QMessageBox::No) {
+        reason = "Rejected proceeding with duplicate angles.";
+        return false;
+      }
     }
 
     return true;
