@@ -9,6 +9,9 @@ import shutil
 
 import numpy as np
 
+from tomviz.executor import load_dataset
+from tomviz.external_dataset import Dataset
+
 from utils import download_file, download_and_unzip_file
 
 DATA_URL = 'https://data.kitware.com/api/v1/file'
@@ -30,12 +33,64 @@ def hxn_xrf_example_output_dir(data_dir: Path) -> Path:
     return output_dir
 
 
+@pytest.fixture(scope='function')
+def hxn_xrf_example_dataset(hxn_xrf_example_output_dir: Path) -> Dataset:
+    example_files = [
+        'Pt_L.h5',
+        'Zn_K.h5',
+    ]
+    example_files = [
+        hxn_xrf_example_output_dir / 'extracted_elements' / name
+        for name in example_files
+    ]
+    dataset = load_dataset(example_files[0])
+    for new_file in example_files[1:]:
+        new_dataset = load_dataset(new_file)
+        new_name = new_dataset.active_name
+        dataset.arrays[new_name] = new_dataset.active_scalars
+
+    return dataset
+
+
 @pytest.fixture
 def pystackreg_reference_output(data_dir: Path) -> dict[str, np.ndarray]:
     filepath = data_dir / 'test_pystackreg_reference_output.npz'
     if not filepath.exists():
         # Download it
         url = DATA_URL + '/690e69aa83abdcd84d150c7e/download'
+        download_file(url, filepath)
+
+    return np.load(filepath)
+
+
+@pytest.fixture
+def xcorr_reference_output(data_dir: Path) -> dict[str, np.ndarray]:
+    filepath = data_dir / 'test_xcorr_reference_output.npz'
+    if not filepath.exists():
+        # Download it
+        url = DATA_URL + '/6920b212cdb169d7a021d769/download'
+        download_file(url, filepath)
+
+    return np.load(filepath)
+
+
+@pytest.fixture
+def tilt_axis_shift_reference_output(data_dir: Path) -> dict[str, np.ndarray]:
+    filepath = data_dir / 'test_tilt_axis_shift_reference_output.npz'
+    if not filepath.exists():
+        # Download it
+        url = DATA_URL + '/6920b333cdb169d7a021d76c/download'
+        download_file(url, filepath)
+
+    return np.load(filepath)
+
+
+@pytest.fixture
+def constraint_dft_reference_output(data_dir: Path) -> dict[str, np.ndarray]:
+    filepath = data_dir / 'test_constraint_dft_reference_output.npz'
+    if not filepath.exists():
+        # Download it
+        url = DATA_URL + '/6920b750cdb169d7a021d773/download'
         download_file(url, filepath)
 
     return np.load(filepath)

@@ -1,9 +1,13 @@
 import importlib.util
+import inspect
 from pathlib import Path
 import shutil
 from types import ModuleType
 import urllib.request
 import zipfile
+
+from tomviz.executor import OperatorWrapper
+from tomviz.operators import Operator
 
 OPERATOR_PATH = Path(__file__).parent.parent.parent / 'tomviz/python'
 
@@ -14,6 +18,16 @@ def load_operator_module(operator_name: str) -> ModuleType:
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def load_operator_class(operator_module: ModuleType) -> Operator | None:
+    # Locate the operator class
+    for v in operator_module.__dict__.values():
+        if inspect.isclass(v) and issubclass(v, Operator):
+            # Instantiate and set up wrapper
+            operator = v()
+            operator._operator_wrapper = OperatorWrapper()
+            return operator
 
 
 def download_file(url: str, destination: str):
