@@ -16,7 +16,6 @@
 #include <QDebug>
 #include <QDir>
 #include <QFileInfo>
-#include <QFutureWatcher>
 #include <QMessageBox>
 #include <QPointer>
 #include <QProcess>
@@ -37,9 +36,9 @@ public:
   QPointer<PyXRFMakeHDF5Dialog> makeHDF5Dialog;
   QPointer<PyXRFProcessDialog> processDialog;
   QPointer<ProgressDialog> progressDialog;
-  QFutureWatcher<bool> makeHDF5FutureWatcher;
-  QFutureWatcher<bool> remakeCsvFileFutureWatcher;
-  QFutureWatcher<bool> processFutureWatcher;
+  QProcess makeHDF5Process;
+  QProcess remakeCsvFileProcess;
+  QProcess processProjectionsProcess;
 
   // Python modules and functions
   Python::Module pyxrfModule;
@@ -87,12 +86,27 @@ public:
 
   void setupConnections()
   {
-    connect(&makeHDF5FutureWatcher, &QFutureWatcher<bool>::finished, this,
+    connect(&makeHDF5Process, &QProcess::finished, this,
             &Internal::makeHDF5Finished);
-    connect(&remakeCsvFileFutureWatcher, &QFutureWatcher<bool>::finished, this,
+    connect(&makeHDF5Process, &QProcess::readyReadStandardOutput, this,
+            &Internal::_printProcStdout);
+    connect(&makeHDF5Process, &QProcess::readyReadStandardError, this,
+            &Internal::_printProcStderr);
+
+    connect(&remakeCsvFileProcess, &QProcess::finished, this,
             &Internal::remakeCsvFileFinished);
-    connect(&processFutureWatcher, &QFutureWatcher<bool>::finished, this,
+    connect(&remakeCsvFileProcess, &QProcess::readyReadStandardOutput, this,
+            &Internal::_printProcStdout);
+    connect(&remakeCsvFileProcess, &QProcess::readyReadStandardError, this,
+            &Internal::_printProcStderr);
+
+
+    connect(&processProjectionsProcess, &QProcess::finished, this,
             &Internal::processProjectionsFinished);
+    connect(&processProjectionsProcess, &QProcess::readyReadStandardOutput, this,
+            &Internal::_printProcStdout);
+    connect(&processProjectionsProcess, &QProcess::readyReadStandardError, this,
+            &Internal::_printProcStderr);
   }
 
   void importModule()
@@ -221,12 +235,7 @@ public:
     progressDialog->clearOutputWidget();
     progressDialog->setText("Generating HDF5 Files...");
     progressDialog->show();
-    auto future = QtConcurrent::run(std::bind(&Internal::_runMakeHDF5, this));
-    makeHDF5FutureWatcher.setFuture(future);
-  }
 
-  bool _runMakeHDF5()
-  {
     QString program = pyxrfUtilsCommand;
     QStringList args;
 
@@ -239,31 +248,15 @@ public:
       args.append("-b");
     }
 
-    QProcess process;
-
-    connect(&process, &QProcess::readyReadStandardOutput, this,
-            &Internal::_printProcStdout);
-    connect(&process, &QProcess::readyReadStandardError, this,
-            &Internal::_printProcStderr);
-
     qInfo() << "Running:" << program + " " + args.join(" ");
-    process.start(program, args);
-    process.waitForFinished(-1);
-
-    if (process.exitStatus() != QProcess::NormalExit) {
-      qCritical() << "Error running program:" << program << args;
-      qCritical() << "Exit code: " << process.exitCode();
-      return false;
-    }
-
-    return true;
+    makeHDF5Process.start(program, args);
   }
 
   void makeHDF5Finished()
   {
     progressDialog->accept();
 
-    auto success = makeHDF5FutureWatcher.result();
+    auto success = makeHDF5Process.exitStatus() == QProcess::NormalExit;
     if (!success) {
       QString msg = "Make HDF5 failed";
       qCritical() << msg;
@@ -281,12 +274,7 @@ public:
     progressDialog->clearOutputWidget();
     progressDialog->setText("Remaking CSV file...");
     progressDialog->show();
-    auto future = QtConcurrent::run(std::bind(&Internal::_runRemakeCsvFile, this));
-    remakeCsvFileFutureWatcher.setFuture(future);
-  }
 
-  bool _runRemakeCsvFile()
-  {
     QString program = pyxrfUtilsCommand;
     QStringList args;
 
@@ -297,31 +285,15 @@ public:
          << "-s" << rangeString
          << defaultLogFileName;
 
-    QProcess process;
-
-    connect(&process, &QProcess::readyReadStandardOutput, this,
-            &Internal::_printProcStdout);
-    connect(&process, &QProcess::readyReadStandardError, this,
-            &Internal::_printProcStderr);
-
     qInfo() << "Running:" << program + " " + args.join(" ");
-    process.start(program, args);
-    process.waitForFinished(-1);
-
-    if (process.exitStatus() != QProcess::NormalExit) {
-      qCritical() << "Error running program:" << program << args;
-      qCritical() << "Exit code: " << process.exitCode();
-      return false;
-    }
-
-    return true;
+    remakeCsvFileProcess.start(program, args);
   }
 
   void remakeCsvFileFinished()
   {
     progressDialog->accept();
 
-    auto success = remakeCsvFileFutureWatcher.result();
+    auto success = remakeCsvFileProcess.exitStatus() == QProcess::NormalExit;
     if (!success) {
       QString msg = "Remake CSV file failed";
       qCritical() << msg;
@@ -393,12 +365,7 @@ public:
     progressDialog->clearOutputWidget();
     progressDialog->setText("Processing projections...");
     progressDialog->show();
-    auto future = QtConcurrent::run(std::bind(&Internal::_runProcessProjections, this));
-    processFutureWatcher.setFuture(future);
-  }
 
-  bool _runProcessProjections()
-  {
     QString program = pyxrfUtilsCommand;
     QStringList args;
 
@@ -412,24 +379,8 @@ public:
       args << "-s";
     }
 
-    QProcess process;
-
-    connect(&process, &QProcess::readyReadStandardOutput, this,
-            &Internal::_printProcStdout);
-    connect(&process, &QProcess::readyReadStandardError, this,
-            &Internal::_printProcStderr);
-
     qInfo() << "Running:" << program + " " + args.join(" ");
-    process.start(program, args);
-    process.waitForFinished(-1);
-
-    if (process.exitStatus() != QProcess::NormalExit) {
-      qCritical() << "Error running program:" << program << args;
-      qCritical() << "Exit code: " << process.exitCode();
-      return false;
-    }
-
-    return true;
+    processProjectionsProcess.start(program, args);
   }
 
   void _printProcStdout()
@@ -478,7 +429,7 @@ public:
   {
     progressDialog->accept();
 
-    auto success = processFutureWatcher.result();
+    auto success = processProjectionsProcess.exitStatus() == QProcess::NormalExit;
     if (!success || !validateOutputDirectory()) {
       QString msg = "Process projections failed";
       qCritical() << msg;
