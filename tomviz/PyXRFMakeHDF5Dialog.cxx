@@ -4,6 +4,8 @@
 #include "PyXRFMakeHDF5Dialog.h"
 #include "ui_PyXRFMakeHDF5Dialog.h"
 
+#include "Utilities.h"
+
 #include <pqApplicationCore.h>
 #include <pqSettings.h>
 
@@ -43,6 +45,8 @@ public:
 
     connect(ui.buttonBox, &QDialogButtonBox::accepted, this,
             &Internal::accepted);
+    connect(ui.buttonBox, &QDialogButtonBox::helpRequested, this,
+            [](){ openHelpUrl("https://tomviz.readthedocs.io/en/latest/workflows_pyxrf.html"); });
   }
 
   QString command() const

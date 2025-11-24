@@ -5,6 +5,7 @@
 #include "ui_PtychoDialog.h"
 
 #include "PythonUtilities.h"
+#include "Utilities.h"
 
 #include <pqApplicationCore.h>
 #include <pqSettings.h>
@@ -87,6 +88,8 @@ public:
 
     connect(ui.buttonBox, &QDialogButtonBox::accepted, this,
             &Internal::accepted);
+    connect(ui.buttonBox, &QDialogButtonBox::helpRequested, this,
+            [](){ openHelpUrl("https://tomviz.readthedocs.io/en/latest/workflows_ptycho.html"); });
   }
 
   void setupTable()

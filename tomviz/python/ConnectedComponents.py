@@ -14,7 +14,7 @@ class ConnectedComponents(tomviz.operators.CancelableOperator):
         values.
         """
 
-        from tomviz import utils
+        from tomviz import itkutils
 
         self.progress.maximum = 100
         self.progress.value = 0
@@ -23,4 +23,4 @@ class ConnectedComponents(tomviz.operators.CancelableOperator):
             self.progress.value = int(fraction * 100)
             return self.canceled
 
-        utils.connected_components(dataset, background_value, progress_func)
+        itkutils.connected_components(dataset, background_value, progress_func)

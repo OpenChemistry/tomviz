@@ -9,7 +9,7 @@ import scipy.io
 
 from tomviz.io import FileType, IOBase, Reader
 
-import tomviz.utils
+import tomviz.internal_utils
 
 from vtk import vtkImageData
 
@@ -50,6 +50,6 @@ class MatlabReader(Reader, MatlabBase):
         image_data.SetOrigin(0, 0, 0)
         image_data.SetSpacing(1, 1, 1)
         image_data.SetExtent(0, x - 1, 0, y - 1, 0, z - 1)
-        tomviz.utils.set_array(image_data, data)
+        tomviz.internal_utils.set_array(image_data, data)
 
         return image_data

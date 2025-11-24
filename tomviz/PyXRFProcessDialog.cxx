@@ -5,6 +5,7 @@
 #include "ui_PyXRFProcessDialog.h"
 
 #include "PythonUtilities.h"
+#include "Utilities.h"
 
 #include <pqApplicationCore.h>
 #include <pqSettings.h>
@@ -80,6 +81,8 @@ public:
 
     connect(ui.buttonBox, &QDialogButtonBox::accepted, this,
             &Internal::accepted);
+    connect(ui.buttonBox, &QDialogButtonBox::helpRequested, this,
+            [](){ openHelpUrl("https://tomviz.readthedocs.io/en/latest/workflows_pyxrf.html#process-projections"); });
   }
 
   void setupTableColumns()

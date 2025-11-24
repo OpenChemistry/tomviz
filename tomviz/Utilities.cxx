@@ -1214,10 +1214,17 @@ void openUrl(const QUrl& url)
 
 void openHelpUrl(const QString& path)
 {
-  QString webPath = "https://tomviz.readthedocs.io/en/latest/";
+  QString basePath = "https://tomviz.readthedocs.io/en/latest/";
+
+  QString fullUrl;
+  if (!path.startsWith("http")) {
+    // Assume this is a relative path that needs toe base added.
+    fullUrl = basePath;
+  }
+  fullUrl += path;
 
   // For now, no local paths have been added. Just use the web path.
-  openUrl(webPath + path);
+  openUrl(fullUrl);
 }
 
 double offWhite[3] = { 204.0 / 255, 204.0 / 255, 204.0 / 255 };

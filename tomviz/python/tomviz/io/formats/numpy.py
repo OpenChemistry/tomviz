@@ -8,7 +8,7 @@ import numpy as np
 
 from tomviz.io import FileType, IOBase, Reader, Writer
 
-import tomviz.utils
+import tomviz.internal_utils
 
 from vtk import vtkImageData
 
@@ -23,7 +23,7 @@ class NumpyBase(IOBase):
 class NumpyWriter(Writer, NumpyBase):
 
     def write(self, path, data_object):
-        data = tomviz.utils.get_array(data_object)
+        data = tomviz.internal_utils.get_array(data_object)
 
         # Convert to C ordering
         data = np.ascontiguousarray(data)
@@ -50,6 +50,6 @@ class NumpyReader(Reader, NumpyBase):
         image_data.SetOrigin(0, 0, 0)
         image_data.SetSpacing(1, 1, 1)
         image_data.SetExtent(0, x - 1, 0, y - 1, 0, z - 1)
-        tomviz.utils.set_array(image_data, data)
+        tomviz.internal_utils.set_array(image_data, data)
 
         return image_data
