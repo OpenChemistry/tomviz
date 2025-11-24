@@ -64,14 +64,12 @@ def validate_sid(sid: int, version: str, ptycho_dir: PathLike) -> str:
     # If it is valid, the returned string will be empty. Otherwise, the
     # returned string will contain the error message as to what is not
     # valid.
-    ptycho_dir = Path(ptycho_dir)
-    dir_path = ptycho_dir / f'S{sid}/{version}/recon_data'
-    f_path = dir_path / f'recon_{sid}_{version}_object_ave.npy'
-    g_path = dir_path / f'recon_{sid}_{version}_probe_ave.npy'
-    if not f_path.exists():
+    f_path = find_ptycho_file(sid, version, 'object', ptycho_dir)
+    if f_path is None:
         return 'Ptycho data missing'
 
-    if not g_path.exists():
+    g_path = find_ptycho_file(sid, version, 'probe', ptycho_dir)
+    if g_path is None:
         return 'Probe data missing'
 
     angle = load_angle_from_sid(sid, version, ptycho_dir)
@@ -79,6 +77,32 @@ def validate_sid(sid: int, version: str, ptycho_dir: PathLike) -> str:
         return 'Angle not found'
 
     return ''
+
+
+def find_ptycho_file(sid: int, version: str, type_str: str,
+                     ptycho_dir: PathLike) -> Path | None:
+    # type_str is `ptycho` or `probe`
+    ptycho_dir = Path(ptycho_dir)
+    dir_path = ptycho_dir / f'S{sid}/{version}/recon_data'
+    base_str = f'recon_{sid}_{version}_{type_str}'
+    # Prefer `_ave.npy` if available, then `.npy`
+    suffix_to_try = [
+        '_ave.npy',
+        '.npy',
+    ]
+    for suffix in suffix_to_try:
+        path = dir_path / f'{base_str}{suffix}'
+        if path.exists():
+            return path
+
+    # If those didn't exist, just try to grab anything that
+    # matches `{base_str}*.npy`
+    paths = list(dir_path.glob(f'{base_str}*.npy'))
+    if paths:
+        return paths[0].resolve()
+
+    # Didn't find any matches
+    return None
 
 
 def load_angle_from_sid(sid: int, version: str,
@@ -186,10 +210,9 @@ def load_stack_ptycho(version_list: list[str],
                        desc="Loading Ptycho"):
         sid = int(sid)
         version = version_list[i]
-        dir_path = ptycho_dir / f'S{sid}/{version}/recon_data'
-        f_path = dir_path / f'recon_{sid}_{version}_object_ave.npy'
-        g_path = dir_path / f'recon_{sid}_{version}_probe_ave.npy'
-        if f_path.exists():
+        f_path = find_ptycho_file(sid, version, 'object', ptycho_dir)
+        g_path = find_ptycho_file(sid, version, 'probe', ptycho_dir)
+        if f_path is not None:
             filespty_obj.append(f_path)
             currentsidlist.append((i, sid, angle_list[i], version))
             filespty_prb.append(g_path)
