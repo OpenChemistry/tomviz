@@ -630,6 +630,7 @@ set(tomviz_python_modules
   fix_pdb.py
   operators.py
   internal_dataset.py
+  internal_utils.py
   itkutils.py
   utils.py
   web.py
