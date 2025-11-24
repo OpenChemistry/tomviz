@@ -8,9 +8,7 @@ from tomviz.dataset import Dataset as AbstractDataset
 ARRAY_TYPES = (collections.abc.Sequence, np.ndarray)
 
 
-# FIXME: do this
-# class Dataset(AbstractDataset):
-class Dataset:
+class Dataset(AbstractDataset):
     def __init__(self, arrays, active=None):
         # Holds the map of scalars name => array
         self.arrays = arrays

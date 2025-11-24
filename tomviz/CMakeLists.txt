@@ -625,6 +625,8 @@ endforeach()
 set(tomviz_python_modules
   __init__.py
   _internal.py
+  dataset.py
+  external_dataset.py
   fix_pdb.py
   operators.py
   internal_dataset.py
