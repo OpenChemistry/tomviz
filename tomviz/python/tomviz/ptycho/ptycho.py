@@ -195,6 +195,13 @@ def load_stack_ptycho(version_list: list[str],
                       output_dir: PathLike,
                       rotate_datasets: bool = True) -> PathLike:
 
+    # Everything is currently sorted by SID. Usually, that means
+    # everything is also sorted by angle, but that is not always
+    # the case. Ensure everything is re-sorted by angle.
+    angle_list, sid_list, version_list = (
+        zip(*sorted(zip(angle_list, sid_list, version_list)))
+    )
+
     filespty_obj = []
     filespty_prb = []
     currentsidlist = []
