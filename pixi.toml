@@ -17,7 +17,7 @@ tiled = { version = ">=0.2.0", extras = ["client"] }
 
 [tasks]
 # Launch Tomviz from the pixi environment
-tomviz = "tomviz"
+tomviz = {cmd = ["bash", "-c", "unset SESSION_MANAGER && tomviz"]}
 
 # -------------------------
 # Environments
