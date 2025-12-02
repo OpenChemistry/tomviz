@@ -184,14 +184,15 @@ public:
     // Check if there are any duplicate angles selected
     QStringList anglesUsed;
     QStringList anglesDuplicated;
-    for (int i = 0; i < logFileData.size(); ++i) {
-      auto use = logFileValue(i, "Use");
+    for (auto sid : filteredSidList) {
+      auto row = sidToRow[sid];
+      auto use = logFileValue(row, "Use");
       if (use != "x" && use != "1") {
         // This angle wasn't used.
         continue;
       }
 
-      auto angle = logFileValue(i, "Theta");
+      auto angle = logFileValue(row, "Theta");
       if (anglesUsed.contains(angle) && !anglesDuplicated.contains(angle)) {
         anglesDuplicated.append(angle);
       }
