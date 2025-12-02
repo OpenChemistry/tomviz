@@ -28,6 +28,25 @@
 
 namespace tomviz {
 
+QString processErrorToString(QProcess::ProcessError error)
+{
+  if (error == QProcess::FailedToStart) {
+    return "FailedToStart";
+  } else if (error == QProcess::Crashed) {
+    return "Crashed";
+  } else if (error == QProcess::Timedout) {
+    return "Timedout";
+  } else if (error == QProcess::WriteError) {
+    return "WriteError";
+  } else if (error == QProcess::ReadError) {
+    return "ReadError";
+  } else if (error == QProcess::UnknownError) {
+    return "UnknownError";
+  }
+
+  return "UnhandledError";
+}
+
 class PyXRFRunner::Internal : public QObject
 {
 public:
@@ -88,6 +107,8 @@ public:
   {
     connect(&makeHDF5Process, &QProcess::finished, this,
             &Internal::makeHDF5Finished);
+    connect(&makeHDF5Process, &QProcess::errorOccurred, this,
+            &Internal::makeHDF5ErrorOccurred);
     connect(&makeHDF5Process, &QProcess::readyReadStandardOutput, this,
             &Internal::_printProcStdout);
     connect(&makeHDF5Process, &QProcess::readyReadStandardError, this,
@@ -95,14 +116,17 @@ public:
 
     connect(&remakeCsvFileProcess, &QProcess::finished, this,
             &Internal::remakeCsvFileFinished);
+    connect(&remakeCsvFileProcess, &QProcess::errorOccurred, this,
+            &Internal::remakeCsvFileErrorOccurred);
     connect(&remakeCsvFileProcess, &QProcess::readyReadStandardOutput, this,
             &Internal::_printProcStdout);
     connect(&remakeCsvFileProcess, &QProcess::readyReadStandardError, this,
             &Internal::_printProcStderr);
 
-
     connect(&processProjectionsProcess, &QProcess::finished, this,
             &Internal::processProjectionsFinished);
+    connect(&processProjectionsProcess, &QProcess::errorOccurred, this,
+            &Internal::processProjectionsErrorOccurred);
     connect(&processProjectionsProcess, &QProcess::readyReadStandardOutput, this,
             &Internal::_printProcStdout);
     connect(&processProjectionsProcess, &QProcess::readyReadStandardError, this,
@@ -269,6 +293,21 @@ public:
     showProcessProjectionsDialog();
   }
 
+  void makeHDF5ErrorOccurred(QProcess::ProcessError error)
+  {
+    progressDialog->accept();
+
+    auto errorMessage = makeHDF5Process.errorString();
+    auto errorType = processErrorToString(error);
+
+    QString msg = "Error running makeHDF5 (" + errorType + "): " + errorMessage;
+    qCritical() << msg;
+    QMessageBox::critical(parentWidget, "Tomviz", msg);
+
+    // Show the dialog again
+    showMakeHDF5Dialog();
+  }
+
   void runRemakeCsvFile()
   {
     progressDialog->clearOutputWidget();
@@ -304,6 +343,23 @@ public:
     }
 
     showProcessProjectionsDialog();
+  }
+
+  void remakeCsvFileErrorOccurred(QProcess::ProcessError error)
+  {
+    progressDialog->accept();
+
+    auto errorMessage = remakeCsvFileProcess.errorString();
+    auto errorType = processErrorToString(error);
+
+    QString msg = "Error running remake CSV (" + errorType + "): " +
+                  errorMessage;
+
+    qCritical() << msg;
+    QMessageBox::critical(parentWidget, "Tomviz", msg);
+
+    // Show the dialog again
+    showMakeHDF5Dialog();
   }
 
   void showProcessProjectionsDialog()
@@ -440,6 +496,22 @@ public:
     }
 
     selectElements();
+  }
+
+  void processProjectionsErrorOccurred(QProcess::ProcessError error)
+  {
+    progressDialog->accept();
+
+    auto errorMessage = processProjectionsProcess.errorString();
+    auto errorType = processErrorToString(error);
+
+    QString msg = "Error running process projections (" + errorType + "): " +
+                  errorMessage;
+    qCritical() << msg;
+    QMessageBox::critical(parentWidget, "Tomviz", msg);
+
+    // Show the dialog again
+    showProcessProjectionsDialog();
   }
 
   bool validateOutputDirectory()
