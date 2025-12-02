@@ -1,0 +1,8 @@
+#!/usr/bin/bash
+
+set -euo pipefail
+
+# FIXME: this path must be modified to a real path to use this
+PIXI_MANIFEST=/path/to/pyxrf-utils/pixi.toml
+
+pixi run -v --manifest-path "$PIXI_MANIFEST" pyxrf-utils "$@"
