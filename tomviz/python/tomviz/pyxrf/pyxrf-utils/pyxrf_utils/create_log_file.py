@@ -111,11 +111,14 @@ def create_log_file(log_file_name: str, working_directory: str,
         "Y Start",
         "Y Stop",
         "Num Y",
-        "Dwell",
+        # This had "Dwell" here before, but sometimes it is missing from
+        # the "param_input". We don't need it for what we are doing, so just
+        # skip over it.
         "UID",
         "Status",
         "Version",
     ]
+
     hdf5_mdata_sorted = []
     for hdf5_fn in hdf5_names_sorted:
         md = hdf5_mdata[hdf5_fn]
@@ -129,7 +132,7 @@ def create_log_file(log_file_name: str, working_directory: str,
                 np.round(md["param_theta"], 3),
                 "1",
                 hdf5_fn,
-                *[np.round(_, 3) for _ in md["param_input"][0:7]],
+                *[np.round(_, 3) for _ in md["param_input"][0:6]],
                 md["scan_uid"],
                 md["scan_exit_status"],
                 "t1",
