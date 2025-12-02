@@ -7,12 +7,17 @@ platforms = ["linux-64"]
 
 [dependencies]
 python = "==3.12"
-tomviz = ">=2.2.1"
+tomviz = ">=2.2.2"
 tomopy = "*"
+pystackreg = "*"
+
+[pypi-dependencies]
+bluesky-tiled-plugins = ">=2.0.0rc1"
+tiled = { version = ">=0.2.0", extras = ["client"] }
 
 [tasks]
 # Launch Tomviz from the pixi environment
-tomviz = "tomviz"
+tomviz = {cmd = ["bash", "-c", "unset SESSION_MANAGER && tomviz"]}
 
 # -------------------------
 # Environments
