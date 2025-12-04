@@ -1,3 +1,7 @@
+from tomviz.utils import apply_to_each_array
+
+
+@apply_to_each_array
 def transform(dataset):
     """
     Normalize tilt series so that each tilt image has the same total intensity.
