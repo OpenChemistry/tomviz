@@ -5,7 +5,10 @@
 #
 # WARNING: Be patient! Large datasets may take a while.
 
+from tomviz.utils import apply_to_each_array
 
+
+@apply_to_each_array
 def transform(dataset):
 
     import numpy as np

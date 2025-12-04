@@ -12,16 +12,19 @@ class RandomTiltSeriesShiftOperator(tomviz.operators.CancelableOperator):
             raise RuntimeError("No scalars found!")
 
         self.progress.maximum = tiltSeries.shape[2]
+        arrays = {k: dataset.scalars(k) for k in dataset.scalars_names}
         step = 0
         for i in range(tiltSeries.shape[2]):
             if self.canceled:
                 return
             shifts = (np.random.rand(2) * 2 - 1) * maxShift
-            tiltSeries[:, :, i] = np.roll(
-                tiltSeries[:, :, i], int(shifts[0]), axis=0)
-            tiltSeries[:, :, i] = np.roll(
-                tiltSeries[:, :, i], int(shifts[1]), axis=1)
+            for array in arrays.values():
+                array[:, :, i] = np.roll(
+                    array[:, :, i], int(shifts[0]), axis=0)
+                array[:, :, i] = np.roll(
+                    array[:, :, i], int(shifts[1]), axis=1)
             step += 1
             self.progress.value = step
 
-        dataset.active_scalars = tiltSeries
+        for name, array in arrays.items():
+            dataset.set_scalars(name, array)

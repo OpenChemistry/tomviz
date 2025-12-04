@@ -1,3 +1,7 @@
+from tomviz.utils import apply_to_each_array
+
+
+@apply_to_each_array
 def transform(dataset, sigma=2.0):
     """Apply a Gaussian filter to tilt images."""
     """Gaussian Filter blurs the image and reduces the noise and details."""

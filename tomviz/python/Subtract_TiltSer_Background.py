@@ -1,3 +1,7 @@
+from tomviz.utils import apply_to_each_array
+
+
+@apply_to_each_array
 def transform(dataset, XRANGE=None, YRANGE=None, ZRANGE=None):
     '''For each tilt image, the method uses average pixel value of selected
     region as the background level and subtracts it from the image.'''

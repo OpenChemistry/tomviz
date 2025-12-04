@@ -1,10 +1,13 @@
 import numpy as np
 import scipy.ndimage
+
+from tomviz.utils import apply_to_each_array
 import tomviz.operators
 
 
 class GenerateTiltSeriesOperator(tomviz.operators.CancelableOperator):
 
+    @apply_to_each_array
     def transform(self, dataset, start_angle=-90.0, angle_increment=3.0,
                   num_tilts=60):
         """Generate Tilt Series from Volume"""

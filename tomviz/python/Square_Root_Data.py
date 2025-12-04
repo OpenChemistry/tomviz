@@ -1,3 +1,4 @@
+from tomviz.utils import apply_to_each_array
 import tomviz.operators
 
 NUMBER_OF_CHUNKS = 10
@@ -5,6 +6,7 @@ NUMBER_OF_CHUNKS = 10
 
 class SquareRootOperator(tomviz.operators.CancelableOperator):
 
+    @apply_to_each_array
     def transform(self, dataset):
         """Define this method for Python operators that
         transform input scalars"""
@@ -17,7 +19,7 @@ class SquareRootOperator(tomviz.operators.CancelableOperator):
             raise RuntimeError("No scalars found!")
 
         if scalars.min() < 0:
-            print("WARNING: Square root of negative values results in NaN!")
+            raise RuntimeError("Square root of negative values results in NaN!")
         else:
             # transform the dataset
             # Process dataset in chunks so the user gets an opportunity to

@@ -1,3 +1,7 @@
+from tomviz.utils import apply_to_each_array
+
+
+@apply_to_each_array
 def transform(dataset, SX=0.5, SY=0.5, SZ=0.5, noise=15.0):
     """Deblur Images with a Weiner Filter."""
 

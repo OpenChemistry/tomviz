@@ -361,6 +361,11 @@ void Pipeline::branchFinished()
   // doesn't already have an explicit child data source i.e.
   // hasChildDataSource is true.
   auto lastOp = start->operators().last();
+  if (!lastOp->isCompleted()) {
+    // Cannot continue
+    return;
+  }
+
   if (!lastOp->hasChildDataSource()) {
     DataSource* newChildDataSource = nullptr;
     if (lastOp->childDataSource() == nullptr) {

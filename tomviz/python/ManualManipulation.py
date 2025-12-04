@@ -1,8 +1,14 @@
+import numpy as np
+from scipy.ndimage.interpolation import zoom
+
+from tomviz import utils
+from tomviz.utils import apply_to_each_array
+
+
+
 def apply_shift(array, shift):
     if shift is None:
         return
-
-    import numpy as np
 
     array[:] = np.roll(array, shift[0], axis=0)
     array[:] = np.roll(array, shift[1], axis=1)
@@ -10,8 +16,6 @@ def apply_shift(array, shift):
 
 
 def apply_rotation(array, rotation, spacing):
-    import numpy as np
-
     if rotation is None or all(np.isclose(x, 0) for x in rotation):
         # No rotation. Nothing to do.
         return
@@ -75,15 +79,9 @@ def apply_resampling(array, spacing, reference_spacing):
 
     resampling_factor = [x / y for x, y in zip(spacing, reference_spacing)]
 
-    import numpy as np
-
     if np.allclose(resampling_factor, 1):
         # Nothing to do
         return array
-
-    from tomviz import utils
-
-    from scipy.ndimage.interpolation import zoom
 
     # Transform the dataset.
     result_shape = utils.zoom_shape(array, resampling_factor)
@@ -100,8 +98,6 @@ def apply_resize(array, reference_shape):
     if array.shape == reference_shape:
         # Nothing to do...
         return array
-
-    import numpy as np
 
     padding = []
     cropping = []
@@ -136,12 +132,11 @@ def apply_alignment(array, spacing, reference_spacing, reference_shape):
     return apply_resize(array, reference_shape)
 
 
+@apply_to_each_array
 def transform(dataset, scaling=None, rotation=None, shift=None,
               align_with_reference=False, reference_spacing=None,
               reference_shape=None):
     array = dataset.active_scalars
-
-    import numpy as np
 
     convert_to_float = (
         not all(np.isclose(x, 0) for x in rotation) and

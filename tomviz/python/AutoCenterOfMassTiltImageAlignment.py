@@ -1,6 +1,8 @@
 from tomviz import utils
-import numpy as np
 import tomviz.operators
+
+import numpy as np
+from scipy import ndimage
 
 
 class CenterOfMassAlignmentOperator(tomviz.operators.CancelableOperator):
@@ -10,6 +12,8 @@ class CenterOfMassAlignmentOperator(tomviz.operators.CancelableOperator):
         self.progress.maximum = 1
 
         tiltSeries = dataset.active_scalars.astype(float)
+
+        apply_to_all_arrays = True
 
         self.progress.maximum = tiltSeries.shape[2]
         step = 1
@@ -30,6 +34,10 @@ class CenterOfMassAlignmentOperator(tomviz.operators.CancelableOperator):
             self.progress.value = step
 
         dataset.active_scalars = tiltSeries
+        if apply_to_all_arrays:
+            names = [name for name in dataset.scalars_names
+                     if name != dataset.active_name]
+            self.apply_offsets_to_scalar_names(dataset, offsets, names)
 
         # Create a spreadsheet data set from table data
         column_names = ["X Offset", "Y Offset"]
@@ -38,6 +46,20 @@ class CenterOfMassAlignmentOperator(tomviz.operators.CancelableOperator):
         returnValues = {}
         returnValues["alignments"] = offsetsTable
         return returnValues
+
+    def apply_offsets_to_scalar_names(self, dataset, offsets, names):
+        # Now apply the same offsets to all other arrays
+        for name in names:
+            print(f'Applying shifts to {name}...')
+            array = dataset.scalars(name)
+            for i in range(len(offsets)):
+                shifts = offsets[i]
+                array[:, :, i] = ndimage.shift(array[:, :, i],
+                                               shift=shifts,
+                                               order=1,
+                                               mode='wrap')
+
+            dataset.set_scalars(name, array)
 
 
 def centerOfMassAlign(image):

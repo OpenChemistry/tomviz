@@ -1,8 +1,10 @@
+from tomviz.utils import apply_to_each_array
 import tomviz.operators
 
 
 class UnsharpMask(tomviz.operators.CancelableOperator):
 
+    @apply_to_each_array
     def transform(self, dataset, amount=0.5, threshold=0.0, sigma=1.0):
         """This filter performs anisotropic diffusion on an image using
         the classic Perona-Malik, gradient magnitude-based equation.

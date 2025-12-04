@@ -89,14 +89,17 @@ class AutoTiltAxisRotationAlignOperator(tomviz.operators.CancelableOperator):
         self.progress.message = 'Rotating tilt series'
         axes = ((0, 1))
         shape = utils.rotate_shape(tiltSeries, -rot_ang, axes=axes)
-        result = np.empty(shape, tiltSeries.dtype, order='F')
-        ndimage.interpolation.rotate(
-            tiltSeries, -rot_ang, axes=axes, output=result)
 
         print("rotate tilt series by %f degrees" % -rot_ang)
 
-        # Set the result as the new scalars.
-        dataset.active_scalars = result
+        for name in dataset.scalars_names:
+            array = dataset.scalars(name)
+            result = np.empty(shape, array.dtype, order='F')
+            ndimage.interpolation.rotate(
+                array, -rot_ang, axes=axes, output=result)
+
+            # Set the result as the new scalars.
+            dataset.set_scalars(name, result)
 
 
 def calculateLineIntensity(Intensity_var, angle_d, N):

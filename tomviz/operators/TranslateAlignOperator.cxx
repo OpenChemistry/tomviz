@@ -10,6 +10,7 @@
 #include "vtkImageData.h"
 #include "vtkIntArray.h"
 #include "vtkNew.h"
+#include "vtkPointData.h"
 #include "vtkTable.h"
 
 #include <QJsonArray>
@@ -100,12 +101,22 @@ bool TranslateAlignOperator::applyTransform(vtkDataObject* data)
   vtkImageData* inImage = vtkImageData::SafeDownCast(data);
   assert(inImage);
   outImage->DeepCopy(data);
-  switch (inImage->GetScalarType()) {
-    vtkTemplateMacro(
-      applyImageOffsets(reinterpret_cast<VTK_TT*>(inImage->GetScalarPointer()),
-                        reinterpret_cast<VTK_TT*>(outImage->GetScalarPointer()),
-                        inImage, offsets));
+
+  auto numArrays = inImage->GetPointData()->GetNumberOfArrays();
+
+  for (int i = 0; i < numArrays; ++i) {
+    std::string arrayName = inImage->GetPointData()->GetArrayName(i);
+    switch (inImage->GetScalarType()) {
+      vtkTemplateMacro(
+        applyImageOffsets(
+          reinterpret_cast<VTK_TT*>(
+            inImage->GetPointData()->GetScalars(arrayName.c_str())->GetVoidPointer(0)),
+          reinterpret_cast<VTK_TT*>(
+            outImage->GetPointData()->GetScalars(arrayName.c_str())->GetVoidPointer(0)),
+          inImage, offsets));
+    }
   }
+
   offsetsToResult();
   data->ShallowCopy(outImage);
   return true;

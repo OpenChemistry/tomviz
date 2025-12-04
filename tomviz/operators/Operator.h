@@ -259,6 +259,7 @@ public slots:
   /// Distinction between this and isFinished is necessary to prevent cascading
   /// errors
   bool isCompleted() { return m_state == OperatorState::Complete; }
+  bool failed() { return m_state == OperatorState::Error; }
   bool isFinished()
   {
     return m_state == OperatorState::Complete ||
