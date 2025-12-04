@@ -53,7 +53,7 @@
       "type" : "int",
       "default" : 0,
       "minimum" : 0,
-      "maximum" : 10000000000000
+      "maximum" : 1000000000
     }
   ]
 }
