@@ -1,5 +1,5 @@
 pytest
-mock
+# dm3_lib = {git = "https://github.com/piraynal/pyDM3reader", tag = "v1.5"}
 diskcache
 h5py
 requests
