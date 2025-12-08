@@ -3,7 +3,7 @@ import os
 import pytest
 
 import unittest
-import mock
+from unittest import mock
 
 # Add fixtures to sys.path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'fixtures')) # noqa
