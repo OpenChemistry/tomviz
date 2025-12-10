@@ -812,6 +812,17 @@ void OperatorPython::updateChildDataSource(vtkSmartPointer<vtkDataObject> data)
   auto dataSource = childDataSource();
   Q_ASSERT(dataSource);
 
+  if (!dataSource->volumeModuleAutoAdded()) {
+    // Automatically add a volume so that users can see live updates
+    // This also fixes some strange issue where the application will
+    // crash after this function if no visualization module was ever
+    // created for this child data source, before the new data was
+    // copied over.
+    ModuleManager::instance().createAndAddModule("Volume", dataSource,
+      ActiveObjects::instance().activeView());
+    dataSource->setVolumeModuleAutoAdded(true);
+  }
+
   // Now deep copy the new data to the child source data if needed
   dataSource->copyData(data);
   emit dataSource->dataChanged();
