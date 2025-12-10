@@ -635,7 +635,6 @@ set(tomviz_python_modules
   utils.py
   web.py
   modules.py
-  views.py
 )
 
 file(MAKE_DIRECTORY "${tomviz_python_binary_dir}/tomviz")
