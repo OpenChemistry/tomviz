@@ -84,7 +84,7 @@ Pipeline::Future* ExternalPythonExecutor::execute(vtkDataObject* data,
       } else if (exitCode != 0) {
         displayError(
           "External Python Error",
-          QString("The external python return a non-zero exist code: %1\n\n "
+          QString("The external python returned a non-zero exit code: %1\n\n "
                   "command: %2 \n\n stderr:\n%3 \n\n stdout:\n%4 \n")
             .arg(exitCode)
             .arg(commandLine(this->m_process.data()))
