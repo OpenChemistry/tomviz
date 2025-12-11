@@ -83,6 +83,9 @@ public:
 
     connect(ui.filterSIDsString, &QLineEdit::editingFinished,
             this, &Internal::updateFilteredSidList);
+    connect(ui.loadSidsFromTxt, &QPushButton::clicked, this,
+            &Internal::onLoadSidsFromTxtClicked);
+
     connect(ui.selectOutputDirectory, &QPushButton::clicked, this,
             &Internal::selectOutputDirectory);
 
@@ -675,6 +678,50 @@ public:
     }
 
     updateTable();
+  }
+
+  void onLoadSidsFromTxtClicked()
+  {
+    QString caption = "Select txt file";
+    QString filter = "*.txt";
+    auto startPath = ptychoDirectory();
+    auto filePath =
+      QFileDialog::getOpenFileName(parent.data(), caption, startPath, filter);
+
+    if (filePath.isEmpty()) {
+      return;
+    }
+
+    QFile file(filePath);
+    if (!file.exists()) {
+      qCritical() << QString("Txt file does not exist: %1").arg(filePath);
+      return;
+    }
+
+    if (!file.open(QIODevice::ReadOnly)) {
+      qCritical()
+        << QString("Failed to open file \"%1\" with error: ").arg(filePath)
+        << file.errorString();
+      return;
+    }
+
+    QTextStream reader(&file);
+
+    // Now load the SIDs
+    QStringList sids;
+    while (!reader.atEnd()) {
+      auto line = reader.readLine().trimmed();
+      if (line.isEmpty() || line.startsWith('#')) {
+        // Skip over it
+        continue;
+      }
+
+      sids.append(line.split(' ')[0]);
+    }
+
+    ui.filterSIDsString->setText(sids.join(", "));
+
+    updateFilteredSidList();
   }
 
   void selectLoadFromCSV()

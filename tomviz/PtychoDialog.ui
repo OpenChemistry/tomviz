@@ -26,47 +26,26 @@
    <property name="bottomMargin">
     <number>6</number>
    </property>
-   <item row="10" column="1">
-    <widget class="QLineEdit" name="outputDirectory">
+   <item row="8" column="0" colspan="3">
+    <widget class="QTableWidget" name="table">
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The directory where the output files will be written. If one is not specified, the Ptycho directory will be used.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select which SIDs to use for each version.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The list of SIDs to use can be specified via numpy slice syntax (for example, '157391:157637'), a comma-delimited list (for example, '157391, 157394'), or loaded from a txt/csv file.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Any SIDs which are missing data or angles will be automatically ignored. A list of the ones ignored may be seen from the console and messages output.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
-    </widget>
-   </item>
-   <item row="11" column="0" colspan="3">
-    <widget class="QCheckBox" name="rotateDatasets">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The orientation of the tilt series does match what Tomviz expects internally. Rotating the data ensures that the later Tomviz operators will be able to run properly.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     <property name="editTriggers">
+      <set>QAbstractItemView::NoEditTriggers</set>
      </property>
-     <property name="text">
-      <string>Rotate datasets to Tomviz convention?</string>
+     <property name="selectionMode">
+      <enum>QAbstractItemView::NoSelection</enum>
      </property>
-     <property name="checked">
+     <attribute name="horizontalHeaderStretchLastSection">
       <bool>true</bool>
-     </property>
+     </attribute>
     </widget>
    </item>
-   <item row="5" column="0">
-    <widget class="QLabel" name="filterSIDsLabel">
+   <item row="4" column="1">
+    <widget class="QLineEdit" name="loadFromCSVFile">
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Filter out SIDs using numpy-like slice syntax. For example: &lt;br/&gt;&lt;/p&gt;&lt;p&gt;157394:157413:3&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This would only allow every third number between 157394 (inclusive) and 157413 (exclusive) to be shown.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The filtered out SIDs are hidden and won't be used in the next step.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This also supports separate sets of comma-delimited slices, for example:&lt;br/&gt;&lt;/p&gt;&lt;p&gt;157394:157413:3, 157420:157500:2&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <property name="text">
-      <string>Filter SIDs:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="5" column="1" colspan="2">
-    <widget class="QLineEdit" name="filterSIDsString">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Filter out SIDs using numpy-like slice syntax. For example: &lt;br/&gt;&lt;/p&gt;&lt;p&gt;157394:157413:3&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This would only allow every third number between 157394 (inclusive) and 157413 (exclusive) to be shown.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The filtered out SIDs are hidden and won't be used in the next step.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This also supports separate sets of comma-delimited slices, for example:&lt;br/&gt;&lt;/p&gt;&lt;p&gt;157394:157413:3, 157420:157500:2&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="1">
-    <widget class="QLineEdit" name="ptychoDirectory">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The Ptycho directory should contain data organized as created from the Ptycho GUI output. It will be used to determine the contents of the table below.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The Ptycho directory is expected to have, at its top level, a list of scan directories all starting with 'S'. For example, 'S157391' is the directory for scan number 157391.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Within the scan directory are version directories. For example, 't1'.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Within the version directories are 'recon_data' and 'recon_pic'. The 'recon_data' should contain all the necessary datasets from the ptychography reconstruction.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select a pyxrf-style CSV file from which the &amp;quot;Use&amp;quot; and &amp;quot;Version&amp;quot; settings will be loaded.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This expects columns of &amp;quot;Scan ID&amp;quot;, &amp;quot;Use&amp;quot;, and &amp;quot;Version&amp;quot; to be within the file. If it indeed has these columns (except for &amp;quot;Version&amp;quot;, which is optional), all current SID &amp;quot;Use&amp;quot; settings will be checked off, and only SIDs marked for &amp;quot;Use&amp;quot; within the CSV file will be checked back on.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Additionally, if &amp;quot;Version&amp;quot; is present as well, the version will be automatically selected for each SID, assuming that the version is indeed a viable option within the ptycho directory for that SID.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The user may still modify settings afterwards.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
     </widget>
    </item>
@@ -94,7 +73,44 @@
      </item>
     </layout>
    </item>
-   <item row="12" column="0" colspan="3">
+   <item row="3" column="1">
+    <widget class="QLineEdit" name="ptychoDirectory">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The Ptycho directory should contain data organized as created from the Ptycho GUI output. It will be used to determine the contents of the table below.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The Ptycho directory is expected to have, at its top level, a list of scan directories all starting with 'S'. For example, 'S157391' is the directory for scan number 157391.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Within the scan directory are version directories. For example, 't1'.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Within the version directories are 'recon_data' and 'recon_pic'. The 'recon_data' should contain all the necessary datasets from the ptychography reconstruction.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0">
+    <widget class="QLabel" name="loadFromCSVFileLabel">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select a pyxrf-style CSV file from which the &amp;quot;Use&amp;quot; and &amp;quot;Version&amp;quot; settings will be loaded.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This expects columns of &amp;quot;Scan ID&amp;quot;, &amp;quot;Use&amp;quot;, and &amp;quot;Version&amp;quot; to be within the file. If it indeed has these columns (except for &amp;quot;Version&amp;quot;, which is optional), all current SID &amp;quot;Use&amp;quot; settings will be checked off, and only SIDs marked for &amp;quot;Use&amp;quot; within the CSV file will be checked back on.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Additionally, if &amp;quot;Version&amp;quot; is present as well, the version will be automatically selected for each SID, assuming that the version is indeed a viable option within the ptycho directory for that SID.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The user may still modify settings afterwards.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Load settings from CSV:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="QLabel" name="ptychoDirectoryLabel">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The Ptycho directory should contain data organized as created from the Ptycho GUI output. It will be used to determine the contents of the table below.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The Ptycho directory is expected to have, at its top level, a list of scan directories all starting with 'S'. For example, 'S157391' is the directory for scan number 157391.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Within the scan directory are version directories. For example, 't1'.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Within the version directories are 'recon_data' and 'recon_pic'. The 'recon_data' should contain all the necessary datasets from the ptychography reconstruction.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Ptycho Directory:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="11" column="2">
+    <widget class="QPushButton" name="selectOutputDirectory">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The directory where the output files will be written. If one is not specified, the Ptycho directory will be used.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Select</string>
+     </property>
+    </widget>
+   </item>
+   <item row="13" column="0" colspan="3">
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
@@ -114,7 +130,7 @@
      </property>
     </widget>
    </item>
-   <item row="10" column="0">
+   <item row="11" column="0">
     <widget class="QLabel" name="outputDirectoryLabel">
      <property name="toolTip">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The directory where the output files will be written. If one is not specified, the Ptycho directory will be used.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -137,56 +153,16 @@
      </property>
     </widget>
    </item>
-   <item row="3" column="0">
-    <widget class="QLabel" name="ptychoDirectoryLabel">
+   <item row="12" column="0" colspan="3">
+    <widget class="QCheckBox" name="rotateDatasets">
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The Ptycho directory should contain data organized as created from the Ptycho GUI output. It will be used to determine the contents of the table below.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The Ptycho directory is expected to have, at its top level, a list of scan directories all starting with 'S'. For example, 'S157391' is the directory for scan number 157391.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Within the scan directory are version directories. For example, 't1'.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Within the version directories are 'recon_data' and 'recon_pic'. The 'recon_data' should contain all the necessary datasets from the ptychography reconstruction.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The orientation of the tilt series does match what Tomviz expects internally. Rotating the data ensures that the later Tomviz operators will be able to run properly.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="text">
-      <string>Ptycho Directory:</string>
+      <string>Rotate datasets to Tomviz convention?</string>
      </property>
-    </widget>
-   </item>
-   <item row="7" column="0" colspan="3">
-    <widget class="QTableWidget" name="table">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select which SIDs to use for each version.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The list of SIDs to use can be specified via numpy slice syntax (for example, '157391:157637'), a comma-delimited list (for example, '157391, 157394'), or loaded from a txt/csv file.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Any SIDs which are missing data or angles will be automatically ignored. A list of the ones ignored may be seen from the console and messages output.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <property name="editTriggers">
-      <set>QAbstractItemView::NoEditTriggers</set>
-     </property>
-     <property name="selectionMode">
-      <enum>QAbstractItemView::NoSelection</enum>
-     </property>
-     <attribute name="horizontalHeaderStretchLastSection">
+     <property name="checked">
       <bool>true</bool>
-     </attribute>
-    </widget>
-   </item>
-   <item row="10" column="2">
-    <widget class="QPushButton" name="selectOutputDirectory">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The directory where the output files will be written. If one is not specified, the Ptycho directory will be used.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <property name="text">
-      <string>Select</string>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="0">
-    <widget class="QLabel" name="loadFromCSVFileLabel">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select a pyxrf-style CSV file from which the &amp;quot;Use&amp;quot; and &amp;quot;Version&amp;quot; settings will be loaded.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This expects columns of &amp;quot;Scan ID&amp;quot;, &amp;quot;Use&amp;quot;, and &amp;quot;Version&amp;quot; to be within the file. If it indeed has these columns (except for &amp;quot;Version&amp;quot;, which is optional), all current SID &amp;quot;Use&amp;quot; settings will be checked off, and only SIDs marked for &amp;quot;Use&amp;quot; within the CSV file will be checked back on.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Additionally, if &amp;quot;Version&amp;quot; is present as well, the version will be automatically selected for each SID, assuming that the version is indeed a viable option within the ptycho directory for that SID.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The user may still modify settings afterwards.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <property name="text">
-      <string>Load settings from CSV:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="1">
-    <widget class="QLineEdit" name="loadFromCSVFile">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select a pyxrf-style CSV file from which the &amp;quot;Use&amp;quot; and &amp;quot;Version&amp;quot; settings will be loaded.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This expects columns of &amp;quot;Scan ID&amp;quot;, &amp;quot;Use&amp;quot;, and &amp;quot;Version&amp;quot; to be within the file. If it indeed has these columns (except for &amp;quot;Version&amp;quot;, which is optional), all current SID &amp;quot;Use&amp;quot; settings will be checked off, and only SIDs marked for &amp;quot;Use&amp;quot; within the CSV file will be checked back on.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Additionally, if &amp;quot;Version&amp;quot; is present as well, the version will be automatically selected for each SID, assuming that the version is indeed a viable option within the ptycho directory for that SID.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The user may still modify settings afterwards.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
     </widget>
    </item>
@@ -200,6 +176,44 @@
      </property>
     </widget>
    </item>
+   <item row="11" column="1">
+    <widget class="QLineEdit" name="outputDirectory">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The directory where the output files will be written. If one is not specified, the Ptycho directory will be used.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="0" colspan="3">
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QLabel" name="filterSIDsLabel">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Filter out SIDs using numpy-like slice syntax. For example: &lt;br/&gt;&lt;/p&gt;&lt;p&gt;157394:157413:3&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This would only allow every third number between 157394 (inclusive) and 157413 (exclusive) to be shown.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The filtered out SIDs are hidden and won't be used in the next step.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This also supports separate sets of comma-delimited slices, for example:&lt;br/&gt;&lt;/p&gt;&lt;p&gt;157394:157413:3, 157420:157500:2&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>Filter SIDs:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="filterSIDsString">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Filter out SIDs using numpy-like slice syntax. For example: &lt;br/&gt;&lt;/p&gt;&lt;p&gt;157394:157413:3&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This would only allow every third number between 157394 (inclusive) and 157413 (exclusive) to be shown.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The filtered out SIDs are hidden and won't be used in the next step.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This also supports separate sets of comma-delimited slices, for example:&lt;br/&gt;&lt;/p&gt;&lt;p&gt;157394:157413:3, 157420:157500:2&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="loadSidsFromTxt">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Load a list of SIDs from a txt file. The txt file should be formatted so that on each row, the first number that occurs is the SID, like so:&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Courier New','Courier','monospace','arial','sans-serif'; font-size:14px; color:#000000; background-color:#ffffff;&quot;&gt;383563 -90.000&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Courier New','Courier','monospace','arial','sans-serif'; font-size:14px; color:#000000; background-color:#ffffff;&quot;&gt;383565 -88.000&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Courier New','Courier','monospace','arial','sans-serif'; font-size:14px; color:#000000; background-color:#ffffff;&quot;&gt;383567 -86.000&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Courier New','Courier','monospace','arial','sans-serif'; font-size:14px; color:#000000; background-color:#ffffff;&quot;&gt;383569 -84.000&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Courier New','Courier','monospace','arial','sans-serif'; font-size:14px; color:#000000; background-color:#ffffff;&quot;&gt;383571 -82.000&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Courier New','Courier','monospace','arial','sans-serif'; font-size:14px; color:#000000; background-color:#ffffff;&quot;&gt;383573 -80.000&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Courier New','Courier','monospace','arial','sans-serif'; font-size:14px; color:#000000; background-color:#ffffff;&quot;&gt;383575 -78.000&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Courier New','Courier','monospace','arial','sans-serif'; font-size:14px; color:#000000; background-color:#ffffff;&quot;&gt;383577 -76.000&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Courier New','Courier','monospace','arial','sans-serif'; font-size:14px; color:#000000; background-color:#ffffff;&quot;&gt;383579 -74.000&lt;/span&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The second column of angles is optional (the angles, if present, will be ignored). It is only necessary that the first column be the SID numbers.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>Load from txt</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
   </layout>
  </widget>
  <tabstops>
@@ -210,6 +224,7 @@
   <tabstop>loadFromCSVFile</tabstop>
   <tabstop>selectLoadFromCSVFile</tabstop>
   <tabstop>filterSIDsString</tabstop>
+  <tabstop>loadSidsFromTxt</tabstop>
   <tabstop>table</tabstop>
   <tabstop>outputDirectory</tabstop>
   <tabstop>selectOutputDirectory</tabstop>
