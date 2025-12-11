@@ -178,6 +178,10 @@ def filter_sid_list(sid_list: list[int], filter_string: str) -> list[int]:
             if this_slice.stop is None:
                 this_slice = slice(this_slice.start, max(sid_list) + 1,
                                    this_slice.step)
+            else:
+                # Unlike numpy, we want to be inclusive of the last number
+                this_slice = slice(this_slice.start, this_slice.stop + 1,
+                                   this_slice.step)
 
             valid_sids += np.r_[this_slice].tolist()
         else:
