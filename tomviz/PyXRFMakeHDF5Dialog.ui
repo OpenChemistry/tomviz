@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>595</width>
-    <height>341</height>
+    <height>369</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -26,22 +26,28 @@
    <property name="bottomMargin">
     <number>6</number>
    </property>
-   <item row="7" column="0" colspan="3">
-    <widget class="QDialogButtonBox" name="buttonBox">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
+   <item row="0" column="1" colspan="2">
+    <widget class="QLineEdit" name="command">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Command for running pyxrf-utils, which will be used to run the make-hdf5 command.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Close|QDialogButtonBox::Help|QDialogButtonBox::Ok</set>
+     <property name="text">
+      <string>pyxrf-utils</string>
      </property>
     </widget>
    </item>
-   <item row="5" column="2">
-    <widget class="QPushButton" name="selectWorkingDirectory">
-     <property name="text">
-      <string>Select</string>
+   <item row="10" column="0" colspan="2">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
      </property>
-    </widget>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
    </item>
    <item row="1" column="1" colspan="2">
     <widget class="QComboBox" name="method">
@@ -92,59 +98,23 @@
      </widget>
     </widget>
    </item>
-   <item row="5" column="1">
-    <widget class="QLineEdit" name="workingDirectory"/>
-   </item>
-   <item row="1" column="0">
-    <widget class="QLabel" name="methodLabel">
-     <property name="text">
-      <string>Method:</string>
-     </property>
-     <property name="buddy">
-      <cstring>method</cstring>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="1" colspan="2">
-    <widget class="QLineEdit" name="command">
+   <item row="6" column="1">
+    <widget class="QLineEdit" name="workingDirectory">
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Command for running pyxrf-utils, which will be used to run the make-hdf5 command.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <property name="text">
-      <string>pyxrf-utils</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The directory where the data files will be written if the &amp;quot;New&amp;quot; method is selected, or the directory already containing the data files if the &amp;quot;Already Existing&amp;quot; method is selected.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
     </widget>
    </item>
-   <item row="8" column="0" colspan="2">
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="5" column="0">
+   <item row="6" column="0">
     <widget class="QLabel" name="workingDirectoryLabel">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The directory where the data files will be written if the &amp;quot;New&amp;quot; method is selected, or the directory already containing the data files if the &amp;quot;Already Existing&amp;quot; method is selected.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
      <property name="text">
-      <string>Working directory:</string>
+      <string>Data directory:</string>
      </property>
      <property name="buddy">
       <cstring>workingDirectory</cstring>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="0">
-    <widget class="QLabel" name="commandLabel">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Command for running pyxrf-utils, which will be used to run the make-hdf5 command.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <property name="text">
-      <string>PyXRF Utils Command:</string>
      </property>
     </widget>
    </item>
@@ -191,15 +161,83 @@
      </layout>
     </widget>
    </item>
+   <item row="6" column="2">
+    <widget class="QPushButton" name="selectWorkingDirectory">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The directory where the data files will be written if the &amp;quot;New&amp;quot; method is selected, or the directory already containing the data files if the &amp;quot;Already Existing&amp;quot; method is selected.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Select</string>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="0" colspan="3">
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Close|QDialogButtonBox::Help|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="methodLabel">
+     <property name="text">
+      <string>Method:</string>
+     </property>
+     <property name="buddy">
+      <cstring>method</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="commandLabel">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Command for running pyxrf-utils, which will be used to run the make-hdf5 command.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>PyXRF Utils Command:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="0">
+    <widget class="QLabel" name="logFileLabel">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Specify the filepath for the new CSV log file. If not specified, `tomo_info.csv` will be written to the data directory.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Output CSV File:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="1">
+    <widget class="QLineEdit" name="logFile">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Specify the filepath for the new CSV log file. If not specified, `tomo_info.csv` will be written to the data directory.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="2">
+    <widget class="QPushButton" name="selectLogFile">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Specify the filepath for the new CSV log file. If not specified, `tomo_info.csv` will be written to the data directory.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Select</string>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
  <tabstops>
   <tabstop>command</tabstop>
   <tabstop>method</tabstop>
   <tabstop>methodWidget</tabstop>
+  <tabstop>successfulScansOnly</tabstop>
+  <tabstop>remakeCsvFile</tabstop>
   <tabstop>scanStart</tabstop>
   <tabstop>scanStop</tabstop>
-  <tabstop>successfulScansOnly</tabstop>
   <tabstop>workingDirectory</tabstop>
   <tabstop>selectWorkingDirectory</tabstop>
  </tabstops>

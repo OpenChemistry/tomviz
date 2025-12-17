@@ -26,6 +26,7 @@ public:
   int scanStop() const;
   bool successfulScansOnly() const;
   bool remakeCsvFile() const;
+  QString logFile() const;
 
 private:
   class Internal;

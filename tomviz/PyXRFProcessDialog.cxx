@@ -47,21 +47,17 @@ public:
 
   Python::Module pyxrfModule;
 
-  Internal(QString workingDir, PyXRFProcessDialog* p)
+  Internal(QString workingDir, QString logFile, PyXRFProcessDialog* p)
     : parent(p), workingDirectory(workingDir)
   {
     ui.setupUi(p);
     setParent(p);
 
+    setLogFile(logFile);
+
     setupTableColumns();
     setupComboBoxes();
     setupConnections();
-
-    if (QDir(workingDirectory).exists("tomo_info.csv")) {
-      // Set the csv file automatically
-      auto path = QDir(workingDirectory).filePath("tomo_info.csv");
-      setLogFile(path);
-    }
   }
 
   void setupConnections()
@@ -794,8 +790,9 @@ public:
 };
 
 PyXRFProcessDialog::PyXRFProcessDialog(QString workingDirectory,
+                                       QString logFile,
                                        QWidget* parent)
-  : QDialog(parent), m_internal(new Internal(workingDirectory, this))
+  : QDialog(parent), m_internal(new Internal(workingDirectory, logFile, this))
 {
 }
 

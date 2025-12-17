@@ -42,6 +42,8 @@ public:
             &Internal::updateEnableStates);
     connect(ui.selectWorkingDirectory, &QPushButton::clicked, this,
             &Internal::selectWorkingDirectory);
+    connect(ui.selectLogFile, &QPushButton::clicked, this,
+            &Internal::selectLogFile);
 
     connect(ui.buttonBox, &QDialogButtonBox::accepted, this,
             &Internal::accepted);
@@ -115,6 +117,47 @@ public:
     setWorkingDirectory(directory);
   }
 
+  QString logFile() const
+  {
+    return ui.logFile->text().trimmed();
+  }
+
+  QString logFileOrDefault() const
+  {
+    if (!writingNewLogFile()) {
+      // Return an empty log file
+      return "";
+    }
+
+    auto name = logFile();
+    return name.isEmpty() ? defaultLogFile() : name;
+  }
+
+  void setLogFile(QString s) { ui.logFile->setText(s); }
+
+  QString defaultLogFile() const
+  {
+    return QDir(workingDirectory()).filePath("tomo_info.csv");
+  }
+
+  void selectLogFile()
+  {
+    QString caption = "Select Output CSV File";
+    auto fileName = QFileDialog::getSaveFileName(parent.data(), caption,
+                                                 logFileOrDefault(),
+                                                 "CSV Files (*.csv)");
+    if (fileName.isEmpty()) {
+      return;
+    }
+
+    setLogFile(fileName);
+  }
+
+  bool writingNewLogFile() const
+  {
+    return method() == "New" || remakeCsvFile();
+  }
+
   void accepted()
   {
     QString reason;
@@ -162,6 +205,19 @@ public:
       return false;
     }
 
+    auto logFile = logFileOrDefault();
+    if (writingNewLogFile() && QFile(logFile).exists()) {
+      QString title = "CSV Log File Exists";
+      auto text = QString("CSV log file \"%1\" already exists. It "
+                          "will be overwritten. Proceed?")
+                    .arg(logFile);
+
+      if (QMessageBox::question(parent, title, text) == QMessageBox::No) {
+        reason = "Not overwriting log file: " + logFile;
+        return false;
+      }
+    }
+
     if (scanStart() > scanStop()) {
       reason = QString("Scan start, %1, cannot be greater than scan stop, %2")
                  .arg(scanStart())
@@ -174,8 +230,11 @@ public:
 
   void updateEnableStates()
   {
-    bool enable = method() == "New" || remakeCsvFile();
-    ui.scanNumbersGroup->setEnabled(enable);
+    auto b = writingNewLogFile();
+    ui.scanNumbersGroup->setEnabled(b);
+    ui.logFileLabel->setEnabled(b);
+    ui.logFile->setEnabled(b);
+    ui.selectLogFile->setEnabled(b);
   }
 
   void readSettings()
@@ -196,6 +255,7 @@ public:
     setSuccessfulScansOnly(
       settings->value("successfulScansOnly", true).toBool());
     setRemakeCsvFile(settings->value("remakeCsvFile", false).toBool());
+    setLogFile(settings->value("logFile", "").toString());
     settings->endGroup();
 
     settings->endGroup();
@@ -217,6 +277,7 @@ public:
     settings->setValue("scanStop", scanStop());
     settings->setValue("successfulScansOnly", successfulScansOnly());
     settings->setValue("remakeCsvFile", remakeCsvFile());
+    settings->setValue("logFile", logFile());
     settings->endGroup();
 
     settings->endGroup();
@@ -269,6 +330,11 @@ bool PyXRFMakeHDF5Dialog::successfulScansOnly() const
 bool PyXRFMakeHDF5Dialog::remakeCsvFile() const
 {
   return m_internal->remakeCsvFile();
+}
+
+QString PyXRFMakeHDF5Dialog::logFile() const
+{
+  return m_internal->logFileOrDefault();
 }
 
 } // namespace tomviz
