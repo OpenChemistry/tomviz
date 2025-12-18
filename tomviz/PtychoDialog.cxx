@@ -15,8 +15,8 @@
 #include <QBrush>
 #include <QDebug>
 #include <QDir>
+#include <QFile>
 #include <QFileDialog>
-#include <QFileInfo>
 #include <QLabel>
 #include <QMessageBox>
 #include <QPointer>
@@ -536,6 +536,14 @@ public:
                                         ptychoDirectory());
     if (file.isEmpty()) {
       return;
+    }
+
+    // If "recon_result" exists underneath the selected directory,
+    // it means the parent directory was selected.
+    // We should automatically select the child one.
+    auto possibleChildPath = QDir(file).filePath("recon_result");
+    if (QFile::exists(possibleChildPath)) {
+      file = possibleChildPath;
     }
 
     setPtychoDirectory(file);
