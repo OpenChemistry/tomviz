@@ -279,9 +279,19 @@ def load_stack_ptycho(version_list: list[str],
 
     # imt = tf.imread(filelist[0][0])
     # load fluor1 and get shape of first array
-    probes = np.asarray(tempPtyprb)
-    probes_phase = np.angle(probes)
-    probes_amp = np.abs(probes)
+    has_probes = True
+    try:
+        probes = np.asarray(tempPtyprb)
+        probes_phase = np.angle(probes)
+        probes_amp = np.abs(probes)
+    except Exception as e:
+        has_probes = False
+        msg = (
+            f'Failed to stack probes with error message: {e}\n'
+            'Skipping over probe data...'
+        )
+        print(msg, file=sys.stderr)
+
     # imt = ptfluor[0]
     # l, w = imt.shape
     # factor= 2
@@ -305,9 +315,13 @@ def load_stack_ptycho(version_list: list[str],
     arrays = {
         'Phase': ptychodatanew,
         'Amplitude': ampdatanew,
-        'Probes Phase': probes_phase,
-        'Probes Amplitude': probes_amp,
     }
+    if has_probes:
+        arrays = {
+            **arrays,
+            'Probes Phase': probes_phase,
+            'Probes Amplitude': probes_amp,
+        }
 
     # Do all necessary processing of the output arrays.
     for key, array in arrays.items():
@@ -325,9 +339,11 @@ def load_stack_ptycho(version_list: list[str],
     datasets = {
         # Ptycho and Amp have the same shape, so we write them together
         'ptycho_object.emd': ['Phase', 'Amplitude'],
-        # Probe has a different shape
-        'ptycho_probe.emd': ['Probes Phase', 'Probes Amplitude'],
     }
+    if has_probes:
+        # Probe has a different shape
+        datasets['ptycho_probe.emd'] = ['Probes Phase', 'Probes Amplitude']
+
     for filename, array_names in datasets.items():
         dataset = Dataset({key: arrays[key] for key in array_names})
         dataset.tilt_angles = np.array([x[2] for x in currentsidlist])
