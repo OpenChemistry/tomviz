@@ -3,6 +3,7 @@
 
 #include "PyXRFRunner.h"
 
+#include "CameraReaction.h"
 #include "DataSource.h"
 #include "EmdFormat.h"
 #include "LoadDataReaction.h"
@@ -688,6 +689,10 @@ public:
     QString saveFile = QFileInfo(sortedList[0]).dir().absoluteFilePath("extracted_elements.emd");
     EmdFormat::write(saveFile.toStdString(), dataSource);
     dataSource->setFileName(saveFile);
+
+    // Automatically update camera to BNL convention
+    CameraReaction::resetPositiveZ();
+    CameraReaction::rotateCamera(-90);
   }
 };
 
