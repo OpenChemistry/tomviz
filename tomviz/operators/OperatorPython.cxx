@@ -217,6 +217,7 @@ public:
   Python::Function IsCancelableFunction;
   Python::Function IsCompletableFunction;
   Python::Function DeleteModuleFunction;
+  Python::Function TransformMethodWrapper;
 };
 
 OperatorPython::OperatorPython(DataSource* parentObject)
@@ -245,7 +246,6 @@ OperatorPython::OperatorPython(DataSource* parentObject)
     d->IsCompletableFunction = d->InternalModule.findFunction("is_completable");
     if (!d->IsCompletableFunction.isValid()) {
       qCritical() << "Unable to locate is_completable.";
-      return;
     }
 
     d->FindTransformFunction =
@@ -257,6 +257,11 @@ OperatorPython::OperatorPython(DataSource* parentObject)
     d->DeleteModuleFunction = d->InternalModule.findFunction("delete_module");
     if (!d->DeleteModuleFunction.isValid()) {
       qCritical() << "Unable to locate delete_module.";
+    }
+
+    d->TransformMethodWrapper = d->InternalModule.findFunction("transform_method_wrapper");
+    if (!d->TransformMethodWrapper.isValid()) {
+      qCritical() << "Unable to locate transform_method_wrapper.";
     }
   }
 
@@ -520,7 +525,8 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
   if (m_script.isEmpty()) {
     return false;
   }
-  if (!d->OperatorModule.isValid() || !d->TransformMethod.isValid()) {
+  if (!d->OperatorModule.isValid() || !d->TransformMethod.isValid() ||
+      !d->TransformMethodWrapper.isValid()) {
     return false;
   }
 
@@ -532,18 +538,25 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
   {
     Python python;
 
-    Python::Tuple args(1);
+    Python::Tuple args(3);
+
+    // Serialize the operator, so that the transform wrapper can
+    // decide whether to execute this one internally or externally
+    auto operatorSerialized = Python::Object(QString::fromUtf8(QJsonDocument(serialize()).toJson()));
+
+    args.set(0, d->TransformMethod);
+    args.set(1, operatorSerialized);
 
     // Get the name of the function
     auto transformMethod = d->TransformMethod.getAttr("__name__").toString();
     if (transformMethod == "transform_scalars") {
       // Use the arguments for transform_scalars()
       Python::Object pydata = Python::VTK::GetObjectFromPointer(data);
-      args.set(0, pydata);
+      args.set(2, pydata);
     } else if (transformMethod == "transform") {
       // Use the arguments for transform()
       Python::Object pydata = Python::createDataset(data, *dataSource());
-      args.set(0, pydata);
+      args.set(2, pydata);
     } else {
       qDebug() << "Unknown TransformMethod name: " << transformMethod;
       return false;
@@ -572,7 +585,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
       kwargs.set(key, v);
     }
 
-    result = d->TransformMethod.call(args, kwargs);
+    result = d->TransformMethodWrapper.call(args, kwargs);
     if (!result.isValid()) {
       qCritical("Failed to execute the script.");
       return false;
