@@ -18,11 +18,10 @@ ModuleMenu::ModuleMenu(QToolBar* toolBar, QMenu* menu, QObject* parentObject)
   Q_ASSERT(menu);
   Q_ASSERT(toolBar);
   connect(menu, SIGNAL(triggered(QAction*)), SLOT(triggered(QAction*)));
-  connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
-          SLOT(updateActions()));
-  connect(&ActiveObjects::instance(),
-          SIGNAL(moleculeSourceChanged(MoleculeSource*)),
-          SLOT(updateActions()));
+  connect(&ActiveObjects::instance(), QOverload<DataSource*>::of(&ActiveObjects::dataSourceChanged), this, &ModuleMenu::updateActions);
+  connect(&ActiveObjects::instance(), &ActiveObjects::moleculeSourceChanged, this, &ModuleMenu::updateActions);
+  connect(&ActiveObjects::instance(), &ActiveObjects::resultChanged, this, &ModuleMenu::updateActions);
+  connect(&ActiveObjects::instance(), QOverload<vtkSMViewProxy*>::of(&ActiveObjects::viewChanged), this, &ModuleMenu::updateActions);
   updateActions();
 }
 
@@ -40,6 +39,7 @@ void ModuleMenu::updateActions()
 
   auto activeDataSource = ActiveObjects::instance().activeDataSource();
   auto activeMoleculeSource = ActiveObjects::instance().activeMoleculeSource();
+  auto activeOperatorResult = ActiveObjects::instance().activeOperatorResult();
   auto activeView = ActiveObjects::instance().activeView();
   QList<QString> modules = ModuleFactory::moduleTypes();
 
@@ -48,7 +48,8 @@ void ModuleMenu::updateActions()
       auto actn = menu->addAction(ModuleFactory::moduleIcon(txt), txt);
       actn->setEnabled(
         ModuleFactory::moduleApplicable(txt, activeDataSource, activeView) ||
-        ModuleFactory::moduleApplicable(txt, activeMoleculeSource, activeView));
+        ModuleFactory::moduleApplicable(txt, activeMoleculeSource, activeView) ||
+        ModuleFactory::moduleApplicable(txt, activeOperatorResult, activeView));
       toolBar->addAction(actn);
       actn->setData(txt);
     }
@@ -64,12 +65,21 @@ void ModuleMenu::triggered(QAction* maction)
   auto type = maction->data().toString();
   auto dataSource = ActiveObjects::instance().activeDataSource();
   auto moleculeSource = ActiveObjects::instance().activeMoleculeSource();
+  auto operatorResult = ActiveObjects::instance().activeOperatorResult();
   auto view = ActiveObjects::instance().activeView();
 
   Module* module;
   if (type == "Molecule") {
+    if (operatorResult) {
+      module =
+        ModuleManager::instance().createAndAddModule(type, operatorResult, view);
+    } else {
+      module =
+        ModuleManager::instance().createAndAddModule(type, moleculeSource, view);
+    }
+  } else if (type == "Plot") {
     module =
-      ModuleManager::instance().createAndAddModule(type, moleculeSource, view);
+        ModuleManager::instance().createAndAddModule(type, operatorResult, view);
   } else {
     module =
       ModuleManager::instance().createAndAddModule(type, dataSource, view);

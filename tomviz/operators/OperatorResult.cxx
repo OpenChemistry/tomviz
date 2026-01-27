@@ -98,11 +98,6 @@ void OperatorResult::setDataObject(vtkDataObject* object)
   vtkTrivialProducer* producer =
     vtkTrivialProducer::SafeDownCast(clientSideObject);
   producer->SetOutput(object);
-  // If the result is a vtkMolecule, create a ModuleMolecule to display it
-  if (vtkMolecule::SafeDownCast(object)) {
-    auto view = ActiveObjects::instance().activeView();
-    ModuleManager::instance().createAndAddModule("Molecule", this, view);
-  }
 }
 
 vtkSMSourceProxy* OperatorResult::producerProxy()

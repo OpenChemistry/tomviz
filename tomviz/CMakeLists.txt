@@ -308,6 +308,8 @@ list(APPEND SOURCES
   modules/ModuleMolecule.h
   modules/ModuleOutline.cxx
   modules/ModuleOutline.h
+  modules/ModulePlot.cxx
+  modules/ModulePlot.h
   modules/ModulePropertiesPanel.cxx
   modules/ModulePropertiesPanel.h
   modules/ModuleRuler.cxx

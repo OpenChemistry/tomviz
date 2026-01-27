@@ -124,9 +124,11 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   // Update back light azimuth default on view.
   connect(pqApplicationCore::instance()->getServerManagerModel(),
           &pqServerManagerModel::viewAdded, [](pqView* view) {
-            vtkSMPropertyHelper helper(view->getProxy(), "BackLightAzimuth");
-            // See https://github.com/OpenChemistry/tomviz/issues/1525
-            helper.Set(60);
+            if (view && view->getProxy()->IsA("vtkSMRenderViewProxy")) {
+              vtkSMPropertyHelper helper(view->getProxy(), "BackLightAzimuth");
+              // See https://github.com/OpenChemistry/tomviz/issues/1525
+              helper.Set(60);
+            }
           });
 
   // checkOpenGL();
