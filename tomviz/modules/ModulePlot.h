@@ -13,6 +13,8 @@ class vtkPVContextView;
 class vtkTable;
 class vtkTrivialProducer;
 
+class QCheckBox;
+
 
 namespace tomviz {
 
@@ -46,6 +48,10 @@ public:
   void dataSourceMoved(double newX, double newY, double newZ) override;
   void dataSourceRotated(double newX, double newY, double newZ) override;
 
+private slots:
+  void onXLogScaleChanged(bool);
+  void onYLogScaleChanged(bool);
+
 private:
   static void onResultModified(vtkObject* caller, long unsigned int eventId, void* clientData, void*callData);
   void addAllPlots();
@@ -53,12 +59,16 @@ private:
 
   Q_DISABLE_COPY(ModulePlot)
   bool m_visible;
+  bool m_xLogScale;
+  bool m_yLogScale;
   vtkWeakPointer<vtkPVContextView> m_view;
   vtkNew<vtkCallbackCommand> m_result_modified_cb;
   vtkWeakPointer<vtkTable> m_table;
   vtkWeakPointer<vtkChartXY> m_chart;
   vtkWeakPointer<vtkTrivialProducer> m_producer;
   QList<vtkSmartPointer<vtkPlot>> m_plots;
+  QPointer<QCheckBox> m_xLogCheckBox;
+  QPointer<QCheckBox> m_yLogCheckBox;
 
 };
 } // namespace tomviz

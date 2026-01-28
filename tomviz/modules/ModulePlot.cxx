@@ -6,6 +6,7 @@
 #include "OperatorResult.h"
 #include "Utilities.h"
 
+#include <vtkAxis.h>
 #include <vtkCallbackCommand.h>
 #include <vtkChartXY.h>
 #include <vtkContextView.h>
@@ -16,6 +17,7 @@
 #include <vtkTable.h>
 #include <vtkTrivialProducer.h>
 
+#include <QCheckBox>
 #include <QFormLayout>
 #include <QJsonObject>
 #include <QWidget>
@@ -80,6 +82,11 @@ bool ModulePlot::initialize(OperatorResult* result, vtkSMViewProxy* view)
   if (m_chart == nullptr) {
     return false;
   }
+
+  auto x_axis = m_chart->GetAxis(vtkAxis::BOTTOM);
+  auto y_axis = m_chart->GetAxis(vtkAxis::LEFT);
+  m_xLogScale = x_axis->GetLogScale();
+  m_yLogScale = y_axis->GetLogScale();
 
   // Detect when the result dataobject changes, i.e. when the pipeline re-runs
   m_producer->AddObserver(vtkCommand::ModifiedEvent, m_result_modified_cb);
@@ -165,6 +172,18 @@ void ModulePlot::addToPanel(QWidget* panel)
 
   QFormLayout* layout = new QFormLayout;
 
+  m_xLogCheckBox = new QCheckBox("X Log Scale");
+  m_yLogCheckBox = new QCheckBox("Y Log Scale");
+  m_xLogCheckBox->setChecked(m_xLogScale);
+  m_yLogCheckBox->setChecked(m_yLogScale);
+  layout->addRow(m_xLogCheckBox);
+  layout->addRow(m_yLogCheckBox);
+
+  connect(m_xLogCheckBox, &QCheckBox::toggled, this,
+          &ModulePlot::onXLogScaleChanged);
+  connect(m_yLogCheckBox, &QCheckBox::toggled, this,
+          &ModulePlot::onYLogScaleChanged);
+
   panel->setLayout(layout);
 }
 
@@ -218,6 +237,32 @@ void ModulePlot::onResultModified(vtkObject* caller, long unsigned int eventId, 
   if (self->visibility()) {
     self->addAllPlots();
   }
+}
+
+void ModulePlot::onXLogScaleChanged(bool logScale)
+{
+  if (m_chart == nullptr) {
+    return;
+  }
+
+  m_xLogScale = logScale;
+  auto x_axis = m_chart->GetAxis(vtkAxis::BOTTOM);
+  x_axis->SetLogScale(logScale);
+
+  m_view->Update();
+}
+
+void ModulePlot::onYLogScaleChanged(bool logScale)
+{
+  if (m_chart == nullptr) {
+    return;
+  }
+
+  m_yLogScale = logScale;
+  auto y_axis = m_chart->GetAxis(vtkAxis::LEFT);
+  y_axis->SetLogScale(logScale);
+
+  m_view->Update();
 }
 
 } // namespace tomviz
