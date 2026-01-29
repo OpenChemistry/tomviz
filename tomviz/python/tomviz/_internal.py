@@ -212,6 +212,7 @@ def transform_single_external_operator(transform_method: Callable,
             '-u',
             progress_path,
         ]
+        cmd = [str(x) for x in cmd]
 
         # Slightly customize the environment
         custom_env = os.environ.copy()
@@ -219,6 +220,8 @@ def transform_single_external_operator(transform_method: Callable,
         custom_env.pop('PYTHONHOME', None)
         custom_env.pop('PYTHONPATH', None)
         custom_env['PYTHONUNBUFFERED'] = 'ON'
+
+        print('Executing operator with command:', ' '.join(cmd))
 
         # Run the operator
         subprocess.run(cmd, check=True, env=custom_env)
