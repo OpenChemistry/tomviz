@@ -1,8 +1,10 @@
 # Perform alignment to the estimated rotation axis
 #
 # Developed as part of the tomviz project (www.tomviz.com).
+from tomviz.utils import apply_to_each_array
 
 
+@apply_to_each_array
 def transform(dataset, SHIFT=None, rotation_angle=90.0, tilt_axis=0):
     from tomviz import utils
     from scipy import ndimage

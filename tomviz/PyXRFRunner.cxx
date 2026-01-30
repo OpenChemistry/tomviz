@@ -3,6 +3,7 @@
 
 #include "PyXRFRunner.h"
 
+#include "CameraReaction.h"
 #include "DataSource.h"
 #include "EmdFormat.h"
 #include "LoadDataReaction.h"
@@ -73,11 +74,10 @@ public:
   int scanStop = 0;
   bool successfulScansOnly = true;
   bool remakeCsvFile = false;
-  QString defaultLogFileName = "tomo_info.csv";
+  QString logFile;
 
   // Process projection options
   QString parametersFile;
-  QString logFile;
   QString icName;
   QString outputDirectory;
   bool skipProcessed = true;
@@ -240,6 +240,7 @@ public:
     scanStop = makeHDF5Dialog->scanStop();
     successfulScansOnly = makeHDF5Dialog->successfulScansOnly();
     remakeCsvFile = makeHDF5Dialog->remakeCsvFile();
+    logFile = makeHDF5Dialog->logFile();
 
     auto useAlreadyExistingData = makeHDF5Dialog->useAlreadyExistingData();
     if (useAlreadyExistingData) {
@@ -266,7 +267,7 @@ public:
     args << "make-hdf5" << workingDirectory
          << "-s" << QString::number(scanStart)
          << "-e" << QString::number(scanStop)
-         << "-l" << defaultLogFileName;
+         << "-l" << logFile;
 
     if (successfulScansOnly) {
       args.append("-b");
@@ -322,7 +323,7 @@ public:
     args << "make-csv" << "-i"
          << "-w" << workingDirectory
          << "-s" << rangeString
-         << defaultLogFileName;
+         << logFile;
 
     qInfo() << "Running:" << program + " " + args.join(" ");
     remakeCsvFileProcess.start(program, args);
@@ -372,7 +373,8 @@ public:
 
     clearWidget(processDialog);
 
-    processDialog = new PyXRFProcessDialog(workingDirectory, parentWidget);
+    processDialog = new PyXRFProcessDialog(workingDirectory, logFile,
+                                           parentWidget);
     connect(processDialog.data(), &QDialog::accepted, this,
             &Internal::processDialogAccepted);
     // If the user rejects the process dialog, go back to
@@ -687,6 +689,10 @@ public:
     QString saveFile = QFileInfo(sortedList[0]).dir().absoluteFilePath("extracted_elements.emd");
     EmdFormat::write(saveFile.toStdString(), dataSource);
     dataSource->setFileName(saveFile);
+
+    // Automatically update camera to BNL convention
+    CameraReaction::resetPositiveZ();
+    CameraReaction::rotateCamera(-90);
   }
 };
 

@@ -1,8 +1,10 @@
+from tomviz.utils import apply_to_each_array
 import tomviz.operators
 
 
 class PeronaMalikAnisotropicDiffusion(tomviz.operators.CancelableOperator):
 
+    @apply_to_each_array
     def transform(self, dataset, conductance=1.0, iterations=100,
                   timestep=0.0625):
         """This filter performs anisotropic diffusion on an image using

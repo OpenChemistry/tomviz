@@ -7,3 +7,7 @@ scikit-beam
 tomopy
 # These are required for installing the pyxrf-utils environment
 hatchling
+# Pandas needs to be pinned to prevent a bug in xrf-tomo, until
+# it gets fixed and a new release comes out.
+# See: https://github.com/NSLS-II-SRX/xrf-tomo/pull/10
+pandas<3.0

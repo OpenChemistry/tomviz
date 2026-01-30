@@ -171,6 +171,10 @@ public:
   /// Set/get the dark/white data, used in Data Exchange currently
   vtkImageData* whiteData() const;
 
+  // Used to track if a volume visualization module was added
+  bool volumeModuleAutoAdded() const;
+  void setVolumeModuleAutoAdded(bool b);
+
   /// Check to see if the data was subsampled while reading
   bool wasSubsampled() const;
 
@@ -458,6 +462,7 @@ private:
   MetadataType m_metadata;
 
   bool m_changingTimeStep = false;
+  bool m_volumeModuleAutoAdded = false;
 };
 
 inline void DataSource::clearTiltAngles()
@@ -493,6 +498,16 @@ inline void DataSource::subsampleVolumeBounds(int bs[6]) const
 inline void DataSource::setSubsampleVolumeBounds(int bs[6])
 {
   setSubsampleVolumeBounds(dataObject(), bs);
+}
+
+inline bool DataSource::volumeModuleAutoAdded() const
+{
+  return m_volumeModuleAutoAdded;
+}
+
+inline void DataSource::setVolumeModuleAutoAdded(bool b)
+{
+  m_volumeModuleAutoAdded = b;
 }
 
 } // namespace tomviz

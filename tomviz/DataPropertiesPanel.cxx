@@ -499,7 +499,7 @@ void DataPropertiesPanel::updateComponentsCombo()
   auto blocked = QSignalBlocker(combo);
 
   // Only make this editor visible if there is more than one component
-  bool visible = dsource->scalars()->GetNumberOfComponents() > 1;
+  bool visible = dsource->scalars() && dsource->scalars()->GetNumberOfComponents() > 1;
   label->setVisible(visible);
   combo->setVisible(visible);
 

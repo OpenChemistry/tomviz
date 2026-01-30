@@ -1,11 +1,13 @@
 import numpy as np
 from scipy.interpolate import interp1d
 import tomviz.operators
+from tomviz.utils import apply_to_each_array
 import time
 
 
 class ReconWBPOperator(tomviz.operators.CancelableOperator):
 
+    @apply_to_each_array
     def transform(self, dataset, Nrecon=None, filter=None, interp=None,
                   Nupdates=None):
         """

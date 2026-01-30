@@ -1,8 +1,11 @@
 import numpy as np
 
+from tomviz.utils import apply_to_each_array
+
 
 # Given an dataset containing one or more 2D images,
 # apply CTF operations on them.
+@apply_to_each_array
 def transform(dataset, apix=None, df1=None, df2=None, ast=None, ampcon=None,
               cs=None, kev=None, ctf_method=None, snr=None):
 

@@ -6,7 +6,7 @@ import tomviz.utils
 
 class DummyMoleculeOperator(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset):
+    def transform(self, dataset):
         """Reconstruct atomic positions"""
 
         atomic_numbers = [6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1]

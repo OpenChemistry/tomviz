@@ -1,9 +1,11 @@
 import numpy as np
 import tomviz.operators
+from tomviz.utils import apply_to_each_array
 
 
 class AddPoissonNoiseOperator(tomviz.operators.CancelableOperator):
 
+    @apply_to_each_array
     def transform(self, dataset, N=25):
         """Add Poisson noise to tilt images"""
         self.progress.maximum = 1

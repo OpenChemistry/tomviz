@@ -14,9 +14,13 @@ def filter_sids(all_sids: list[str], filter_string: str) -> list[str]:
             this_slice = slice(
                 *(int(s) if s else None for s in this_str.split(':'))
             )
-            # If there was no stop specified, go to the end of the sid_list
             if this_slice.stop is None:
+                # If there was no stop specified, go to the end of the sid_list
                 this_slice = slice(this_slice.start, max_sid + 1,
+                                   this_slice.step)
+            else:
+                # Unlike numpy, we want to be inclusive of the last number
+                this_slice = slice(this_slice.start, this_slice.stop + 1,
                                    this_slice.step)
 
             valid_sids += np.r_[this_slice].tolist()

@@ -44,13 +44,11 @@ class CrossCorrelationAlignmentOperator(tomviz.operators.CancelableOperator):
 
         # determine reference image index
         zeroDegreeTiltImage = None
+        referenceIndex = tiltSeries.shape[2] // 2
         if tiltAngles is not None:
             zeroDegreeTiltImage = np.where(tiltAngles == 0)[0]
-
-        if zeroDegreeTiltImage:
-            referenceIndex = zeroDegreeTiltImage[0]
-        else:
-            referenceIndex = tiltSeries.shape[2] // 2
+            if zeroDegreeTiltImage.size > 0:
+                referenceIndex = zeroDegreeTiltImage[0]
 
         # create Fourier space filter
         filterCutoff = 4

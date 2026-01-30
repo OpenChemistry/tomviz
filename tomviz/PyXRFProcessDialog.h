@@ -14,7 +14,8 @@ class PyXRFProcessDialog : public QDialog
   Q_OBJECT
 
 public:
-  explicit PyXRFProcessDialog(QString workingDirectory, QWidget* parent);
+  explicit PyXRFProcessDialog(QString workingDirectory, QString logFile,
+                              QWidget* parent);
   ~PyXRFProcessDialog() override;
 
   virtual void show();

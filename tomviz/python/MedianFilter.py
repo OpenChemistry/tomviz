@@ -1,3 +1,7 @@
+from tomviz.utils import apply_to_each_array
+
+
+@apply_to_each_array
 def transform(dataset, size=2):
     """Apply a Median filter to dataset."""
     """ Median filter is a nonlinear filter used to reduce noise."""

@@ -151,7 +151,12 @@ def apply_to_each_array(func):
                     image_data = orig_do
                 else:
                     image_data = vtkImageData()
-                    image_data.ShallowCopy(orig_do)
+                    # This must be a deep copy for any operators that
+                    # include progress to work properly. Otherwise, there
+                    # is a crash.
+                    # But this deep copy is probably not very expensive
+                    # since the data object is empty...
+                    image_data.DeepCopy(orig_do)
 
                 this_pd = image_data.GetPointData()
                 this_pd.AddArray(all_arrays[i])

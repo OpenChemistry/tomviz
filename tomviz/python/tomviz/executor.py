@@ -393,6 +393,13 @@ def _swap_dims(dims, i, j):
 
 
 def _read_emd(path, options=None):
+    def bytes_to_str(x):
+        if isinstance(x, np.bytes_):
+            return x.decode('utf-8')
+
+        return x
+
+
     with h5py.File(path, 'r') as f:
         tomography = f['data/tomography']
 
@@ -400,8 +407,8 @@ def _read_emd(path, options=None):
         for dim in DIMS:
             dims.append(Dim(dim,
                             tomography[dim][:],
-                            tomography[dim].attrs['name'][0],
-                            tomography[dim].attrs['units'][0]))
+                            bytes_to_str(tomography[dim].attrs['name']),
+                            bytes_to_str(tomography[dim].attrs['units'])))
 
         data = tomography['data']
         # We default the name to ImageScalars
@@ -466,9 +473,12 @@ def _get_arrays_for_writing(dataset):
     active_array = dataset.active_scalars
 
     # Separate out the extra channels/arrays as we store them separately
-    extra_arrays = {name: array for name, array
-                    in dataset.arrays.items()
-                    if id(array) != id(active_array)}
+    extra_arrays = {}
+    for name in dataset.scalars_names:
+        if name == dataset.active_name:
+            continue
+
+        extra_arrays[name] = dataset.scalars(name)
 
     # If this is a tilt series, swap the X and Z axes
     if tilt_angles is not None and tilt_axis == 2:
@@ -544,15 +554,15 @@ def _write_emd(path, dataset, dims=None):
         tomography_group = data_group.create_group('tomography')
         tomography_group.attrs.create('emd_group_type', 1, dtype='uint32')
         data = tomography_group.create_dataset('data', data=active_array)
-        data.attrs['name'] = np.bytes_(dataset.active_name)
+        data.attrs['name'] = dataset.active_name
 
         dims = _get_dims_for_writing(dataset, data, dims)
 
         # add dimension vectors
         for dim in dims:
             d = tomography_group.create_dataset(dim.path, dim.values.shape)
-            d.attrs['name'] = np.bytes_(dim.name)
-            d.attrs['units'] = np.bytes_(dim.units)
+            d.attrs['name'] = dim.name
+            d.attrs['units'] = dim.units
             d[:] = dim.values
 
         # If we have extra scalars add them under tomviz_scalars

@@ -626,6 +626,7 @@ set(tomviz_python_modules
   __init__.py
   _internal.py
   dataset.py
+  executor.py
   external_dataset.py
   fix_pdb.py
   operators.py
@@ -635,7 +636,6 @@ set(tomviz_python_modules
   utils.py
   web.py
   modules.py
-  views.py
 )
 
 file(MAKE_DIRECTORY "${tomviz_python_binary_dir}/tomviz")
