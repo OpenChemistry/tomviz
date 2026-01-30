@@ -9,7 +9,10 @@ platforms = ["linux-64"]
 python = ">=3.10,<3.14"
 numpy = "*"
 h5py = "*"
-pandas = "*"
+# Pandas needs to be pinned to prevent a bug in xrf-tomo, until
+# it gets fixed and a new release comes out.
+# See: https://github.com/NSLS-II-SRX/xrf-tomo/pull/10
+pandas = "<3.0"
 xraylib = "*"
 tomopy = "*"
 scikit-beam = "*"
