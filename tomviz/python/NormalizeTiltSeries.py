@@ -21,6 +21,11 @@ def transform(dataset):
 
     for i in range(0, data.shape[2]):
         # Normalize each tilt image.
-        data[:, :, i] = data[:, :, i] / np.sum(data[:, :, i]) * intensity
+        img_sum = np.sum(data[:, :, i])
+        if abs(img_sum) < 1e-8:
+            # Skip or we get a divide-by-zero error
+            continue
+
+        data[:, :, i] = data[:, :, i] / img_sum * intensity
 
     dataset.active_scalars = data
