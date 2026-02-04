@@ -53,7 +53,7 @@ public:
 
     {
       tomviz::Python python;
-      m_operatorModule = python.import("tomviz.utils");
+      m_operatorModule = python.import("tomviz.internal_utils");
       if (!m_operatorModule.isValid()) {
         qCritical() << "Failed to import tomviz.utils module.";
       }

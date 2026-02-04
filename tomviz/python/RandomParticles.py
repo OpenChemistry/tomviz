@@ -29,7 +29,7 @@ def generate_dataset(array, p_in=30.0, p_s=60.0, sparsity=0.20):
     f_shape = np.argsort(f_shape, axis=None) # Sort the shape image
     f_shape = f_shape.flatten()
     # Number of zero voxels
-    N_zero = np.int(np.round((array.size * (1 - sparsity))))
+    N_zero = np.int64(np.round((array.size * (1 - sparsity))))
     f_shape[N_zero:] = f_shape[N_zero]
     f_in[f_shape] = 0
 
