@@ -1,7 +1,3 @@
-from tomviz.utils import apply_to_each_array
-
-
-@apply_to_each_array
 def transform(dataset, rot_center=0, tune_rot_center=True):
     """Reconstruct sinograms using the tomopy gridrec algorithm
 

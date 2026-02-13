@@ -2,8 +2,6 @@ import numpy as np
 from scipy.ndimage.interpolation import zoom
 
 from tomviz import utils
-from tomviz.utils import apply_to_each_array
-
 
 
 def apply_shift(array, shift):
@@ -132,7 +130,6 @@ def apply_alignment(array, spacing, reference_spacing, reference_shape):
     return apply_resize(array, reference_shape)
 
 
-@apply_to_each_array
 def transform(dataset, scaling=None, rotation=None, shift=None,
               align_with_reference=False, reference_spacing=None,
               reference_shape=None):

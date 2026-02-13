@@ -1,4 +1,3 @@
-from tomviz.utils import apply_to_each_array
 import tomviz.operators
 
 import numpy as np
@@ -8,7 +7,6 @@ from numpy.fft import fftn, fftshift, ifftn, ifftshift
 
 class ArtifactsTVOperator(tomviz.operators.CancelableOperator):
 
-    @apply_to_each_array
     def transform(self, dataset, Niter=100, a=0.1, wedgeSize=5, kmin=5,
                   theta=0):
         """

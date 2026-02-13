@@ -1,4 +1,3 @@
-from tomviz.utils import apply_to_each_array
 import tomviz.operators
 
 NUMBER_OF_CHUNKS = 10
@@ -6,7 +5,6 @@ NUMBER_OF_CHUNKS = 10
 
 class SquareRootOperator(tomviz.operators.CancelableOperator):
 
-    @apply_to_each_array
     def transform(self, dataset):
         """Define this method for Python operators that
         transform input scalars"""
