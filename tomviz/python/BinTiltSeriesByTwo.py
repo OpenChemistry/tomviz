@@ -1,3 +1,6 @@
+from tomviz import utils
+
+
 def transform(dataset):
     """Downsample tilt images by a factor of 2"""
 

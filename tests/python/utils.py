@@ -1,15 +1,30 @@
+from pathlib import Path
+from types import ModuleType
+from typing import Callable
 import importlib.util
 import inspect
-from pathlib import Path
 import shutil
-from types import ModuleType
 import urllib.request
 import zipfile
 
 from tomviz.executor import OperatorWrapper
 from tomviz.operators import Operator
+from tomviz._internal import add_transform_decorators
 
 OPERATOR_PATH = Path(__file__).parent.parent.parent / 'tomviz/python'
+
+
+def add_decorators(func: Callable, operator_name: str) -> Callable:
+    # Automatically add the decorators which would normally be
+    # automatically added by Tomviz.
+    json_path = OPERATOR_PATH / f'{operator_name}.json'
+    op_dict = {}
+    if json_path.exists():
+        with open(json_path, 'rb') as rf:
+            op_dict['description'] = rf.read()
+
+    func = add_transform_decorators(func, op_dict)
+    return func
 
 
 def load_operator_module(operator_name: str) -> ModuleType:
@@ -17,6 +32,11 @@ def load_operator_module(operator_name: str) -> ModuleType:
     spec = importlib.util.spec_from_file_location(operator_name, module_path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
+
+    if hasattr(module, 'transform'):
+        # Add the decorators
+        module.transform = add_decorators(module.transform, operator_name)
+
     return module
 
 
@@ -24,9 +44,15 @@ def load_operator_class(operator_module: ModuleType) -> Operator | None:
     # Locate the operator class
     for v in operator_module.__dict__.values():
         if inspect.isclass(v) and issubclass(v, Operator):
+            if hasattr(v, 'transform'):
+                # Decorate at the class level
+                name = operator_module.__name__
+                v.transform = add_decorators(v.transform, name)
+
             # Instantiate and set up wrapper
             operator = v()
             operator._operator_wrapper = OperatorWrapper()
+
             return operator
 
 

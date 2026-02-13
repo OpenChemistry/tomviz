@@ -4,7 +4,9 @@
 # This source file is part of the Tomviz project, https://tomviz.org/.
 # It is released under the 3-Clause BSD License, see "LICENSE".
 ###############################################################################
-from typing import Any
+from pathlib import Path
+from types import MethodType
+from typing import Any, Callable
 import fnmatch
 import importlib.machinery
 import importlib.util
@@ -15,9 +17,6 @@ import subprocess
 import sys
 import tempfile
 import traceback
-
-from pathlib import Path
-from typing import Callable
 
 import tomviz
 import tomviz.operators
@@ -147,6 +146,18 @@ def has_decorator(func: Callable, decorator_marker: str = '_is_my_decorator') ->
     return False
 
 
+def apply_decorator(func: Callable, decorator: Callable) -> Callable:
+    # Apply the decorator, taking into account different behavior for MethodType
+    # callables
+    if isinstance(func, MethodType):
+        # It's a bound method
+        tmp_func = decorator(func.__func__)
+        return MethodType(tmp_func, func.__self__)
+
+    # Unbound function
+    return decorator(func)
+
+
 def add_transform_decorators(transform_method: Callable,
                              operator_dict: dict[str, Any]) -> Callable:
     """Optionally add any transform wrappers that we need to add
@@ -173,7 +184,7 @@ def add_transform_decorators(transform_method: Callable,
         if not has_decorator(transform_method, 'apply_to_each_array'):
             # Decorate it!
             from tomviz.utils import apply_to_each_array
-            transform_method = apply_to_each_array(transform_method)
+            transform_method = apply_decorator(transform_method, apply_to_each_array)
 
     return transform_method
 
