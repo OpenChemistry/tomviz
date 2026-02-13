@@ -2,6 +2,7 @@
   "name" : "AutoCrossCorrelationTiltImageAlignment",
   "label" : "Auto Tilt Image Align (XCORR)",
   "description" : "Automatically align tilt images by cross-correlation",
+  "apply_to_each_array": false,
   "parameters" : [
     {
       "name" : "transform_source",

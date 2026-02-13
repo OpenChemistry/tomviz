@@ -15,7 +15,7 @@ import h5py
 import numpy as np
 from tqdm import tqdm
 
-from tomviz._internal import find_transform_function
+from tomviz._internal import add_transform_decorators, find_transform_function
 
 from tomviz.external_dataset import Dataset
 
@@ -698,6 +698,9 @@ def _load_transform_functions(operators):
 
         operator_module = _load_operator_module(operator_label, operator_script)
         transform = find_transform_function(operator_module)
+
+        # Add any transform decorators (like `@apply_to_each_array`)
+        transform = add_transform_decorators(transform, operator)
 
         # partial apply the arguments
         arguments = {}

@@ -4,6 +4,7 @@
 # This source file is part of the Tomviz project, https://tomviz.org/.
 # It is released under the 3-Clause BSD License, see "LICENSE".
 ###############################################################################
+from typing import Any
 import fnmatch
 import importlib.machinery
 import importlib.util
@@ -130,6 +131,53 @@ def find_transform_function(transform_module, op=None):
     return transform_function
 
 
+def has_decorator(func: Callable, decorator_marker: str = '_is_my_decorator') -> bool:
+    """Check if a function was already decorated with a decorator name"""
+    # Check the function itself
+    if getattr(func, decorator_marker, False):
+        return True
+
+    # Traverse the __wrapped__ chain
+    current = func
+    while hasattr(current, '__wrapped__'):
+        current = current.__wrapped__
+        if getattr(current, decorator_marker, False):
+            return True
+
+    return False
+
+
+def add_transform_decorators(transform_method: Callable,
+                             operator_dict: dict[str, Any]) -> Callable:
+    """Optionally add any transform wrappers that we need to add
+
+    Currently, this adds `@apply_to_each_array` automatically if
+    `"apply_to_each_array": false` is not set within the json
+    description, and if the decorator was not already applied.
+    """
+    add_apply_to_each_array = True
+    operator_description = operator_dict.get('description')
+    if operator_description:
+        description_json = json.loads(operator_description)
+        if not description_json.get('apply_to_each_array', True):
+            # It was intentionally disabled in the json
+            add_apply_to_each_array = False
+
+    if transform_method.__name__ == 'transform_scalars':
+        # This is an old transform function. We don't want to do any
+        # kind of automatic modifications to the old ones.
+        add_apply_to_each_array = False
+
+    if add_apply_to_each_array:
+        # First, make sure it wasn't already decorated
+        if not has_decorator(transform_method, 'apply_to_each_array'):
+            # Decorate it!
+            from tomviz.utils import apply_to_each_array
+            transform_method = apply_to_each_array(transform_method)
+
+    return transform_method
+
+
 def transform_method_wrapper(transform_method: Callable,
                              operator_serialized: str, *args, **kwargs):
     # We take the serialized operator as input because we may need it
@@ -138,6 +186,9 @@ def transform_method_wrapper(transform_method: Callable,
     # serialization right now.
     operator_dict = json.loads(operator_serialized)
     tomviz_pipeline_env = None
+
+    # Add any transform decorators that we need
+    transform_method = add_transform_decorators(transform_method, operator_dict)
 
     operator_description = operator_dict.get('description')
     if operator_description:

@@ -411,10 +411,10 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     rotateAlignAction, "Tilt Axis Alignment (manual)",
     readInPythonScript("RotationAlign"), true, false, false,
     readInJSONDescription("RotationAlign"));
-  // new AddRotateAlignReaction(rotateAlignAction);
   new AddPythonTransformReaction(
     autoRotateAlignAction, "Auto Tilt Axis Align",
-    readInPythonScript("AutoTiltAxisRotationAlignment"), true);
+    readInPythonScript("AutoTiltAxisRotationAlignment"), true, false, false,
+    readInJSONDescription("AutoTiltAxisRotationAlignment"));
   new AddPythonTransformReaction(
     autoRotateAlignShiftAction, "Auto Tilt Axis Shift Align",
     readInPythonScript("AutoTiltAxisShiftAlignment"), true, false, false,

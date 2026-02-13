@@ -515,6 +515,7 @@ set(json_files
   AddPoissonNoise.json
   AutoCenterOfMassTiltImageAlignment.json
   AutoCrossCorrelationTiltImageAlignment.json
+  AutoTiltAxisRotationAlignment.json
   AutoTiltAxisShiftAlignment.json
   PyStackRegImageAlignment.json
   BinaryThreshold.json

@@ -1,5 +1,6 @@
 {
   "externalCompatible": false,
+  "apply_to_each_array": false,
   "results" : [
     {
       "name" : "alignments",
