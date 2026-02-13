@@ -38,6 +38,7 @@
 #include <QClipboard>
 #include <QDebug>
 #include <QDoubleValidator>
+#include <QFileDialog>
 #include <QKeyEvent>
 #include <QMainWindow>
 #include <QMessageBox>
@@ -98,6 +99,7 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
   connect(&ActiveObjects::instance(), SIGNAL(viewChanged(vtkSMViewProxy*)),
           SLOT(updateAxesGridLabels()));
   connect(m_ui->SetTiltAnglesButton, SIGNAL(clicked()), SLOT(setTiltAngles()));
+  connect(m_ui->saveTiltAngles, SIGNAL(clicked()), SLOT(saveTiltAngles()));
   connect(m_ui->unitBox, SIGNAL(editingFinished()), SLOT(updateUnits()));
   connect(m_ui->xLengthBox, &QLineEdit::editingFinished,
           [this]() { this->updateLength(m_ui->xLengthBox, 0); });
@@ -402,6 +404,7 @@ void DataPropertiesPanel::updateData()
     m_tiltAnglesSeparator->show();
     m_ui->SetTiltAnglesButton->show();
     m_ui->TiltAnglesTable->show();
+    m_ui->saveTiltAngles->show();
     QVector<double> tiltAngles = dsource->getTiltAngles();
     m_ui->TiltAnglesTable->setRowCount(tiltAngles.size());
     m_ui->TiltAnglesTable->setColumnCount(1);
@@ -414,6 +417,7 @@ void DataPropertiesPanel::updateData()
     m_tiltAnglesSeparator->hide();
     m_ui->SetTiltAnglesButton->hide();
     m_ui->TiltAnglesTable->hide();
+    m_ui->saveTiltAngles->show();
   }
   connect(m_ui->TiltAnglesTable, SIGNAL(cellChanged(int, int)),
           SLOT(onTiltAnglesModified(int, int)));
@@ -627,6 +631,45 @@ void DataPropertiesPanel::setTiltAngles()
   SetTiltAnglesReaction::showSetTiltAnglesUI(mainWindow, dsource);
 }
 
+void DataPropertiesPanel::saveTiltAngles()
+{
+  DataSource* dsource = m_currentDataSource;
+  if (!dsource) {
+    return;
+  }
+
+  // Prompt user to select a file for saving
+  QString fileName = QFileDialog::getSaveFileName(
+    nullptr,
+    "Save Tilt Angles",
+    QString(),  // Default directory (or you can specify a path)
+    "TXT Files (*.txt);;All Files (*)"
+  );
+
+  // Check if user cancelled
+  if (fileName.isEmpty()) {
+      return;
+  }
+
+  auto tiltAngles = dsource->getTiltAngles();
+
+  // Open file for writing
+  QFile file(fileName);
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+    QMessageBox::warning(nullptr, "Error",
+      "Could not open file for writing: " + file.errorString());
+    return;
+  }
+
+  // Write tilt angles, one per line
+  QTextStream out(&file);
+  for (const double& angle : tiltAngles) {
+    out << angle << "\n";
+  }
+
+  file.close();
+}
+
 void DataPropertiesPanel::scheduleUpdate()
 {
   m_updateNeeded = true;
@@ -811,6 +854,7 @@ void DataPropertiesPanel::clear()
   m_ui->TiltAnglesTable->clear();
   m_ui->TiltAnglesTable->setRowCount(0);
   m_ui->TiltAnglesTable->hide();
+  m_ui->saveTiltAngles->hide();
 }
 
 void DataPropertiesPanel::updateSpacing(int axis, double newLength)

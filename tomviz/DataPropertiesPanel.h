@@ -55,6 +55,7 @@ private slots:
   void setDataSource(DataSource*);
   void onTiltAnglesModified(int row, int column);
   void setTiltAngles();
+  void saveTiltAngles();
   void scheduleUpdate();
   void onDataPropertiesChanged();
   void onDataPositionChanged(double, double, double);
