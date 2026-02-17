@@ -849,4 +849,22 @@ bool PyXRFProcessDialog::rotateDatasets() const
   return m_internal->rotateDatasets();
 }
 
+QVector<int> PyXRFProcessDialog::selectedScanIDs() const
+{
+  QVector<int> result;
+  for (const auto& sid : m_internal->filteredSidList) {
+    auto row = m_internal->sidToRow[sid];
+    auto use = m_internal->logFileValue(row, "Use");
+    if (use == "x" || use == "1") {
+      bool ok;
+      int id = sid.toInt(&ok);
+      if (!ok) {
+        id = -1;
+      }
+      result.append(id);
+    }
+  }
+  return result;
+}
+
 } // namespace tomviz

@@ -60,6 +60,14 @@ class Dataset(AbstractDataset):
         self._tilt_axis = v
 
     @property
+    def scan_ids(self):
+        return internal_utils.get_scan_ids(self._data_object)
+
+    @scan_ids.setter
+    def scan_ids(self, v):
+        internal_utils.set_scan_ids(self._data_object, v)
+
+    @property
     def dark(self):
         if not self._data_source.dark_data:
             return None

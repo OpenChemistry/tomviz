@@ -88,6 +88,9 @@ public:
   // Recon options
   QStringList selectedElements;
 
+  // Scan IDs from the process dialog
+  QVector<int> scanIDs;
+
   bool autoLoadFinalData = true;
 
   Internal(PyXRFRunner* p) : parent(p)
@@ -411,6 +414,9 @@ public:
     skipProcessed = processDialog->skipProcessed();
     rotateDatasets = processDialog->rotateDatasets();
 
+    // Store the selected scan IDs
+    scanIDs = processDialog->selectedScanIDs();
+
     // Make sure the output directory exists
     QDir().mkpath(outputDirectory);
 
@@ -683,6 +689,11 @@ public:
 
     dataSource->setActiveScalars(firstName.toStdString().c_str());
     dataSource->setLabel("Extracted Elements");
+
+    if (!scanIDs.isEmpty()) {
+      dataSource->setScanIDs(scanIDs);
+    }
+
     dataSource->dataModified();
 
     // Write this to an EMD format

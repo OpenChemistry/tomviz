@@ -178,6 +178,34 @@ def set_tilt_angles(dataobject, newarray):
 
 
 @with_vtk_dataobject
+def get_scan_ids(dataobject):
+    # Get the scan IDs array
+    do = dsa.WrapDataObject(dataobject)
+    rawarray = do.FieldData.GetArray('scan_ids')
+    if isinstance(rawarray, dsa.VTKNoneArray):
+        return None
+    vtkarray = dsa.vtkDataArrayToVTKArray(rawarray, do)
+    vtkarray.Association = dsa.ArrayAssociation.FIELD
+    return vtkarray
+
+
+@with_vtk_dataobject
+def set_scan_ids(dataobject, newarray):
+    # replace the scan IDs with the new array
+    from vtkmodules.util.vtkConstants import VTK_INT
+    if newarray is None:
+        do = dsa.WrapDataObject(dataobject)
+        do.FieldData.RemoveArray('scan_ids')
+        return
+    vtkarray = np_s.numpy_to_vtk(newarray, deep=1, array_type=VTK_INT)
+    vtkarray.Association = dsa.ArrayAssociation.FIELD
+    vtkarray.SetName('scan_ids')
+    do = dsa.WrapDataObject(dataobject)
+    do.FieldData.RemoveArray('scan_ids')
+    do.FieldData.AddArray(vtkarray)
+
+
+@with_vtk_dataobject
 def get_coordinate_arrays(dataobject):
     """Returns a triple of Numpy arrays containing x, y, and z coordinates for
     each point in the dataset. This can be used to evaluate a function at each

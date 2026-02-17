@@ -406,13 +406,31 @@ void DataPropertiesPanel::updateData()
     m_ui->TiltAnglesTable->show();
     m_ui->saveTiltAngles->show();
     QVector<double> tiltAngles = dsource->getTiltAngles();
+    QVector<int> scanIDs = dsource->getScanIDs();
+    m_hasScanIDs = scanIDs.size() == tiltAngles.size() && !scanIDs.isEmpty();
     m_ui->TiltAnglesTable->setRowCount(tiltAngles.size());
-    m_ui->TiltAnglesTable->setColumnCount(1);
+    int numCols = m_hasScanIDs ? 2 : 1;
+    m_ui->TiltAnglesTable->setColumnCount(numCols);
+    int tiltCol = m_hasScanIDs ? 1 : 0;
     for (int i = 0; i < tiltAngles.size(); ++i) {
+      if (m_hasScanIDs) {
+        QTableWidgetItem* scanItem = new QTableWidgetItem();
+        scanItem->setData(Qt::DisplayRole, QString::number(scanIDs[i]));
+        scanItem->setFlags(scanItem->flags() & ~Qt::ItemIsEditable);
+        m_ui->TiltAnglesTable->setItem(i, 0, scanItem);
+      }
       QTableWidgetItem* item = new QTableWidgetItem();
       item->setData(Qt::DisplayRole, QString::number(tiltAngles[i]));
-      m_ui->TiltAnglesTable->setItem(i, 0, item);
+      m_ui->TiltAnglesTable->setItem(i, tiltCol, item);
     }
+    // Set column headers
+    QStringList headers;
+    if (m_hasScanIDs) {
+      headers << "Scan ID";
+    }
+    headers << "Tilt Angle";
+    m_ui->TiltAnglesTable->setHorizontalHeaderLabels(headers);
+    m_ui->TiltAnglesTable->horizontalHeader()->setStretchLastSection(true);
   } else {
     m_tiltAnglesSeparator->hide();
     m_ui->SetTiltAnglesButton->hide();
@@ -519,6 +537,11 @@ void DataPropertiesPanel::onTiltAnglesModified(int row, int column)
   // The table shouldn't be shown if this is not true, so this slot shouldn't be
   // called
   Q_ASSERT(dsource->type() == DataSource::TiltSeries);
+  // Tilt angles are in column 1 when scan IDs are present, column 0 otherwise
+  int tiltCol = m_hasScanIDs ? 1 : 0;
+  if (column != tiltCol) {
+    return;
+  }
   QTableWidgetItem* item = m_ui->TiltAnglesTable->item(row, column);
   auto ok = false;
   auto value = item->data(Qt::DisplayRole).toDouble(&ok);
@@ -652,6 +675,7 @@ void DataPropertiesPanel::saveTiltAngles()
   }
 
   auto tiltAngles = dsource->getTiltAngles();
+  auto scanIDs = dsource->getScanIDs();
 
   // Open file for writing
   QFile file(fileName);
@@ -661,10 +685,13 @@ void DataPropertiesPanel::saveTiltAngles()
     return;
   }
 
-  // Write tilt angles, one per line
+  // Write scan IDs (if available) and tilt angles, one per line
   QTextStream out(&file);
-  for (const double& angle : tiltAngles) {
-    out << angle << "\n";
+  for (int i = 0; i < tiltAngles.size(); ++i) {
+    if (m_hasScanIDs) {
+      out << scanIDs[i] << " ";
+    }
+    out << tiltAngles[i] << "\n";
   }
 
   file.close();

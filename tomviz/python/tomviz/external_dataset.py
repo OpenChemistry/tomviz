@@ -14,6 +14,7 @@ class Dataset(AbstractDataset):
         self.arrays = arrays
         self.tilt_angles = None
         self.tilt_axis = None
+        self.scan_ids = None
         # The currently active scalar
         self.active_name = active
         # If we weren't given the active array, set the first as the active
@@ -123,6 +124,14 @@ class Dataset(AbstractDataset):
     @white.setter
     def white(self, v: np.ndarray | None):
         self._white = v
+
+    @property
+    def scan_ids(self) -> np.ndarray | None:
+        return self._scan_ids
+
+    @scan_ids.setter
+    def scan_ids(self, v: np.ndarray | None):
+        self._scan_ids = v
 
     def create_child_dataset(self):
         child = copy.deepcopy(self)

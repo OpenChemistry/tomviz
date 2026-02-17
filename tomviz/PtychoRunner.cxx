@@ -278,11 +278,21 @@ public:
 
   void loadOutputFiles()
   {
+    // Convert sidList to QVector<int> for scan IDs
+    QVector<int> scanIDs;
+    scanIDs.reserve(sidList.size());
+    for (auto& sid : sidList) {
+      scanIDs.push_back(static_cast<int>(sid));
+    }
+
     for (auto& filePath: outputFiles) {
       auto* dataSource = LoadDataReaction::loadData(filePath);
       if (!dataSource || !dataSource->imageData()) {
         qCritical() << "Failed to load file:" << filePath;
         return;
+      }
+      if (!scanIDs.isEmpty()) {
+        dataSource->setScanIDs(scanIDs);
       }
     }
 

@@ -688,6 +688,10 @@ DataSource* DataSource::clone() const
     newClone->setTiltAngles(getTiltAngles());
   }
 
+  if (hasScanIDs(this->dataObject())) {
+    newClone->setScanIDs(getScanIDs());
+  }
+
   QList<TimeSeriesStep> newTimeSteps;
   for (auto& timeStep : this->Internals->timeSeriesSteps) {
     newTimeSteps.append(timeStep.clone());
@@ -1725,6 +1729,77 @@ void DataSource::clearTiltAngles(vtkDataObject* image)
   if (fd->HasArray(arrayName)) {
     fd->RemoveArray(arrayName);
   }
+}
+
+bool DataSource::hasScanIDs(vtkDataObject* image)
+{
+  if (!image)
+    return false;
+
+  return image->GetFieldData()->HasArray("scan_ids");
+}
+
+QVector<int> DataSource::getScanIDs(vtkDataObject* image)
+{
+  QVector<int> result;
+  if (!image)
+    return result;
+
+  auto fd = image->GetFieldData();
+  if (fd->HasArray("scan_ids")) {
+    auto scanIds = fd->GetArray("scan_ids");
+    result.resize(scanIds->GetNumberOfTuples());
+    for (int i = 0; i < result.size(); ++i) {
+      result[i] = static_cast<int>(scanIds->GetTuple1(i));
+    }
+  }
+  return result;
+}
+
+void DataSource::setScanIDs(vtkDataObject* image,
+                            const QVector<int>& scanIDs)
+{
+  if (!image)
+    return;
+
+  auto fd = image->GetFieldData();
+  int numTuples = scanIDs.size();
+  std::vector<int> data(numTuples);
+  for (int i = 0; i < numTuples; ++i) {
+    data[i] = scanIDs[i];
+  }
+  setFieldDataArray<vtkTypeInt32Array>(fd, "scan_ids", numTuples, data.data());
+}
+
+void DataSource::clearScanIDs(vtkDataObject* image)
+{
+  if (!image)
+    return;
+
+  auto fd = image->GetFieldData();
+  if (fd->HasArray("scan_ids")) {
+    fd->RemoveArray("scan_ids");
+  }
+}
+
+bool DataSource::hasScanIDs()
+{
+  return hasScanIDs(dataObject());
+}
+
+QVector<int> DataSource::getScanIDs() const
+{
+  return getScanIDs(dataObject());
+}
+
+void DataSource::setScanIDs(const QVector<int>& scanIDs)
+{
+  setScanIDs(dataObject(), scanIDs);
+}
+
+void DataSource::clearScanIDs()
+{
+  clearScanIDs(dataObject());
 }
 
 bool DataSource::wasSubsampled(vtkDataObject* image)

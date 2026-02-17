@@ -271,6 +271,18 @@ public:
   /// Remove the tilt angles from the data source
   void clearTiltAngles();
 
+  /// Returns true if the dataset has scan IDs
+  bool hasScanIDs();
+
+  /// Get scan IDs (if available - otherwise an empty vector is returned)
+  QVector<int> getScanIDs() const;
+
+  /// Set the scan IDs
+  void setScanIDs(const QVector<int>& scanIDs);
+
+  /// Remove scan IDs
+  void clearScanIDs();
+
   /// Moves the displayPosition of the DataSource by deltaPosition
   void translate(const double deltaPosition[3]);
 
@@ -371,6 +383,11 @@ public:
   static void setTiltAngles(vtkDataObject* image,
                             const QVector<double>& angles);
   static void clearTiltAngles(vtkDataObject* image);
+
+  static bool hasScanIDs(vtkDataObject* image);
+  static QVector<int> getScanIDs(vtkDataObject* image);
+  static void setScanIDs(vtkDataObject* image, const QVector<int>& scanIDs);
+  static void clearScanIDs(vtkDataObject* image);
 
   /// Check to see if the data was subsampled while reading
   static bool wasSubsampled(vtkDataObject* image);

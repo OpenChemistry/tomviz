@@ -159,6 +159,20 @@ bool EmdFormat::readNode(h5::H5ReadWrite& reader, const std::string& emdNode,
     DataSource::setType(image, DataSource::TiltSeries);
   }
 
+  // Read scan IDs if present
+  std::string scanIdsPath = emdNode + "/scan_ids";
+  if (reader.isDataSet(scanIdsPath)) {
+    auto scanIdsData = reader.readData<int>(scanIdsPath);
+    if (!scanIdsData.empty()) {
+      QVector<int> scanIDs;
+      scanIDs.reserve(scanIdsData.size());
+      for (auto& id : scanIdsData) {
+        scanIDs.push_back(id);
+      }
+      DataSource::setScanIDs(image, scanIDs);
+    }
+  }
+
   return true;
 }
 
@@ -269,6 +283,14 @@ bool EmdFormat::writeNode(h5::H5ReadWrite& writer, const std::string& path,
 
   // Write any extra scalars we might have
   writeExtraScalars(writer, path, permutedImage);
+
+  // Write scan IDs if present
+  if (DataSource::hasScanIDs(image)) {
+    auto scanIDs = DataSource::getScanIDs(image);
+    std::vector<int> scanIdsVec(scanIDs.begin(), scanIDs.end());
+    std::vector<int> dims(1, static_cast<int>(scanIdsVec.size()));
+    writer.writeData(path, "scan_ids", dims, scanIdsVec);
+  }
 
   return true;
 }

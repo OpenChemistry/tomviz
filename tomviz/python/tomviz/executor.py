@@ -464,6 +464,10 @@ def _read_emd(path, options=None):
         if dims is not None and dims[-1].name in ('angles', b'angles'):
             output['tilt_angles'] = dims[-1].values[:].astype(np.float64)
 
+        # Read scan IDs if present
+        if 'scan_ids' in tomography:
+            output['scan_ids'] = tomography['scan_ids'][:].astype(np.int32)
+
         return output
 
 
@@ -574,6 +578,12 @@ def _write_emd(path, dataset, dims=None):
         # Create a soft link to the active array
         active_name = dataset.active_name
         tomviz_scalars[active_name] = h5py.SoftLink('/data/tomography/data')
+
+        # Write scan IDs if present
+        if dataset.scan_ids is not None:
+            tomography_group.create_dataset(
+                'scan_ids', data=np.asarray(dataset.scan_ids, dtype=np.int32)
+            )
 
 
 def _read_data_exchange(path: Path, options: dict | None = None):
@@ -767,6 +777,8 @@ def load_dataset(data_file_path, read_options=None):
         data.tilt_angles = output['tilt_angles']
     if 'tilt_axis' in output:
         data.tilt_axis = output['tilt_axis']
+    if 'scan_ids' in output:
+        data.scan_ids = output['scan_ids']
     if dims is not None:
         # Convert to native type, as is required by itk
         data.spacing = [float(d.values[1] - d.values[0]) for d in dims]

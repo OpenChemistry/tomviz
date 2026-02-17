@@ -87,6 +87,7 @@ private:
   // Hold the order (the indexes into the field data), so we can preserve
   // the order during a rename.
   QList<int> m_scalarIndexes;
+  bool m_hasScanIDs = false;
 
   void clear();
   void updateSpacing(int axis, double newLength);

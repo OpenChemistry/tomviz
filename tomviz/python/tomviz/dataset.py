@@ -136,6 +136,24 @@ class Dataset(ABC):
 
     @property
     @abstractmethod
+    def scan_ids(self) -> np.ndarray | None:
+        """Array of scan IDs associated with each projection in a tilt series.
+
+        Returns None if scan IDs have not been set.
+        """
+        pass
+
+    @scan_ids.setter
+    @abstractmethod
+    def scan_ids(self, v: np.ndarray | None):
+        """Set the scan IDs for projections in a tilt series.
+
+        Provide None to clear scan IDs.
+        """
+        pass
+
+    @property
+    @abstractmethod
     def dark(self) -> np.ndarray | None:
         """Dark field calibration data.
 
