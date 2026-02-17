@@ -334,6 +334,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     m_ui->menuTomography->addAction("Tilt Axis Shift Alignment (Auto)");
   QAction* rotateAlignAction =
     m_ui->menuTomography->addAction("Tilt Axis Alignment (Manual)");
+  QAction* shiftRotationCenterAction =
+    m_ui->menuTomography->addAction("Shift Rotation Center (Manual)");
   m_ui->menuTomography->addSeparator();
 
   QAction* reconLabel = m_ui->menuTomography->addAction("Reconstruction:");
@@ -354,7 +356,6 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     m_ui->menuTomography->addAction("TV Minimization Method");
   QAction* reconTomoPyGridRecAction =
     m_ui->menuTomography->addAction("TomoPy Gridrec Method");
-  QAction* fxiWorkflowAction = m_ui->menuTomography->addAction("FXI Workflow");
   m_ui->menuTomography->addSeparator();
 
   QAction* simulationLabel =
@@ -434,6 +435,10 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     autoAlignPyStackRegAction, "Auto Tilt Image Align (PyStackReg)",
     readInPythonScript("PyStackRegImageAlignment"), false, false,
     false, readInJSONDescription("PyStackRegImageAlignment"));
+  new AddPythonTransformReaction(
+    shiftRotationCenterAction, "Shift Rotation Center",
+    readInPythonScript("ShiftRotationCenter_tomopy"), true, false, false,
+    readInJSONDescription("ShiftRotationCenter_tomopy"));
 
   new AddPythonTransformReaction(reconDFMAction, "Reconstruct (Direct Fourier)",
                                  readInPythonScript("Recon_DFT"), true, false,
@@ -460,10 +465,6 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     reconTomoPyGridRecAction, "Reconstruct (TomoPy Gridrec)",
     readInPythonScript("Recon_tomopy_gridrec"), true, false, false,
     readInJSONDescription("Recon_tomopy_gridrec"));
-  new AddPythonTransformReaction(
-    fxiWorkflowAction, "Reconstruct (FXI Workflow)",
-    readInPythonScript("Recon_tomopy_fxi"), true, false, false,
-    readInJSONDescription("Recon_tomopy_fxi"));
 
   new ReconstructionReaction(reconWBP_CAction);
 

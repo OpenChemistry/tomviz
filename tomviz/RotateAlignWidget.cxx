@@ -109,7 +109,8 @@ public:
   void setupCameras()
   {
     tomviz::setupRenderer(this->mainRenderer, this->mainSliceMapper,
-                          this->axesActor);
+                          nullptr);
+    this->mainRenderer->ResetCameraClippingRange();
     tomviz::setupRenderer(this->reconRenderer[0],
                           this->reconSliceMapper[0]);
     tomviz::setupRenderer(this->reconRenderer[1],
@@ -473,7 +474,6 @@ RotateAlignWidget::RotateAlignWidget(Operator* op,
     interatorStyle2);
   this->Internals->Ui.sliceView_3->interactor()->SetInteractorStyle(
     interatorStyle3);
-  this->Internals->setupCameras();
 
   this->Internals->rotationAxis->SetPoint1(0, 0, 0);
   this->Internals->rotationAxis->SetPoint1(1, 1, 1);

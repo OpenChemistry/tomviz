@@ -1,0 +1,17 @@
+{
+  "name" : "Shift Rotation Center",
+  "label" : "Shift Rotation Center",
+  "description" : "Shift projections so the rotation center is at the image midpoint",
+  "widget": "ShiftRotationCenterWidget",
+  "externalCompatible": false,
+  "parameters" : [
+    {
+      "name" : "rotation_center",
+      "label" : "Center Offset",
+      "description" : "Offset of the rotation center from the image midpoint (0 = centered)",
+      "type" : "double",
+      "default" : 0.0,
+      "precision" : 3
+    }
+  ]
+}
