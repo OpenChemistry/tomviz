@@ -488,9 +488,11 @@ void Pipeline::addDataSource(DataSource* dataSource)
               &Operator::newChildDataSource),
             [this](DataSource* ds) { addDataSource(ds); });
 
-    // We need to ensure we move add datasource to the end of the branch
+    // We need to ensure we move add datasource to the end of the branch,
+    // but only if the new operator is the last one (appended). For mid-chain
+    // insertions, the child DataSource should stay where it is.
     auto operators = op->dataSource()->operators();
-    if (operators.size() > 1) {
+    if (operators.size() > 1 && op == operators.last()) {
       auto transformedDataSourceOp =
         findTransformedDataSourceOperator(op->dataSource());
       if (transformedDataSourceOp != nullptr) {

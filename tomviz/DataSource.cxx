@@ -1006,8 +1006,17 @@ void DataSource::setUnits(const QString& units, bool markModified)
 int DataSource::addOperator(Operator* op)
 {
   op->setParent(this);
-  int index = this->Internals->Operators.count();
-  this->Internals->Operators.push_back(op);
+  int index = -1;
+  auto activeOp = ActiveObjects::instance().activeOperator();
+  if (activeOp && activeOp->dataSource() == this) {
+    index = this->Internals->Operators.indexOf(activeOp);
+  }
+  if (index >= 0) {
+    this->Internals->Operators.insert(index, op);
+  } else {
+    index = this->Internals->Operators.count();
+    this->Internals->Operators.push_back(op);
+  }
   emit operatorAdded(op);
 
   return index;

@@ -548,9 +548,9 @@ void PipelineView::currentChanged(const QModelIndex& current,
   auto pipelineModel = qobject_cast<PipelineModel*>(model());
   Q_ASSERT(pipelineModel);
 
-  // First set the selected data source to nullptr, in case the new selection
-  // is not a data source.
+  // Clear stale active state before setting new selection.
   ActiveObjects::instance().setSelectedDataSource(nullptr);
+  ActiveObjects::instance().setActiveOperator(nullptr);
   if (auto dataSource = pipelineModel->dataSource(current)) {
     ActiveObjects::instance().setSelectedDataSource(dataSource);
   } else if (auto module = pipelineModel->module(current)) {

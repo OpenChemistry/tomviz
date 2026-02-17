@@ -864,8 +864,22 @@ void PipelineModel::operatorAdded(Operator* op,
 
   auto index = dataSourceIndex(dataSource);
   auto dataSourceItem = treeItem(index);
-  // Operators are just append as last child.
+  // Find the correct insertion row based on the operator's position in the
+  // DataSource's operator list.
   int insertionRow = dataSourceItem->childCount();
+  auto operators = dataSource->operators();
+  int opIndex = operators.indexOf(op);
+  if (opIndex >= 0 && opIndex < operators.size() - 1) {
+    // Mid-chain insertion: find the tree item of the next operator and insert
+    // before it.
+    auto nextOp = operators[opIndex + 1];
+    for (int i = 0; i < dataSourceItem->childCount(); ++i) {
+      if (dataSourceItem->child(i)->op() == nextOp) {
+        insertionRow = i;
+        break;
+      }
+    }
+  }
   beginInsertRows(index, insertionRow, insertionRow);
   dataSourceItem->insertChild(insertionRow, PipelineModel::Item(op));
   endInsertRows();

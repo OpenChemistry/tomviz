@@ -37,7 +37,7 @@ OperatorPropertiesPanel::~OperatorPropertiesPanel() = default;
 void OperatorPropertiesPanel::setOperator(Operator* op)
 {
   if (m_activeOperator) {
-    disconnect(op, SIGNAL(labelModified()));
+    disconnect(m_activeOperator, SIGNAL(labelModified()));
   }
   deleteLayoutContents(m_layout);
   m_operatorWidget = nullptr;
