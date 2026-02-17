@@ -10,15 +10,19 @@
 #include <vtkCallbackCommand.h>
 #include <vtkChartXY.h>
 #include <vtkContextView.h>
+#include <vtkFieldData.h>
 #include <vtkPlot.h>
 #include <vtkPlotLine.h>
 #include <vtkPVContextView.h>
 #include <vtkSMViewProxy.h>
+#include <vtkStringArray.h>
+#include <vtkUnsignedCharArray.h>
 #include <vtkTable.h>
 #include <vtkTrivialProducer.h>
 
 #include <QCheckBox>
 #include <QFormLayout>
+#include <QLineEdit>
 #include <QJsonObject>
 #include <QWidget>
 
@@ -83,11 +87,6 @@ bool ModulePlot::initialize(OperatorResult* result, vtkSMViewProxy* view)
     return false;
   }
 
-  auto x_axis = m_chart->GetAxis(vtkAxis::BOTTOM);
-  auto y_axis = m_chart->GetAxis(vtkAxis::LEFT);
-  m_xLogScale = x_axis->GetLogScale();
-  m_yLogScale = y_axis->GetLogScale();
-
   // Detect when the result dataobject changes, i.e. when the pipeline re-runs
   m_producer->AddObserver(vtkCommand::ModifiedEvent, m_result_modified_cb);
 
@@ -118,6 +117,25 @@ void ModulePlot::addAllPlots()
   }
 
   vtkIdType num_cols = m_table->GetNumberOfColumns();
+
+  auto fieldData = m_table->GetFieldData();
+  auto labelsArray = vtkStringArray::SafeDownCast(
+    fieldData->GetAbstractArray("axes_labels"));
+  if (labelsArray && labelsArray->GetNumberOfTuples() >= 2) {
+    auto x_axis = m_chart->GetAxis(vtkAxis::BOTTOM);
+    auto y_axis = m_chart->GetAxis(vtkAxis::LEFT);
+    x_axis->SetTitle(labelsArray->GetValue(0));
+    y_axis->SetTitle(labelsArray->GetValue(1));
+  }
+
+  auto logScaleArray = vtkUnsignedCharArray::SafeDownCast(
+    fieldData->GetAbstractArray("axes_log_scale"));
+  if (logScaleArray && logScaleArray->GetNumberOfTuples() >= 2) {
+    auto x_axis = m_chart->GetAxis(vtkAxis::BOTTOM);
+    auto y_axis = m_chart->GetAxis(vtkAxis::LEFT);
+    x_axis->SetLogScale(logScaleArray->GetValue(0) != 0);
+    y_axis->SetLogScale(logScaleArray->GetValue(1) != 0);
+  }
 
   for (vtkIdType col = 1; col < num_cols; col++) {
     auto line = vtkSmartPointer<vtkPlotLine>::New();
@@ -172,13 +190,33 @@ void ModulePlot::addToPanel(QWidget* panel)
 
   QFormLayout* layout = new QFormLayout;
 
+  QString xLabel, yLabel;
+  bool xLogScale = false;
+  bool yLogScale = false;
+
+  if (m_chart) {
+    xLabel = m_chart->GetAxis(vtkAxis::BOTTOM)->GetTitle().c_str();
+    yLabel = m_chart->GetAxis(vtkAxis::LEFT)->GetTitle().c_str();
+    xLogScale = m_chart->GetAxis(vtkAxis::BOTTOM)->GetLogScale();
+    yLogScale = m_chart->GetAxis(vtkAxis::LEFT)->GetLogScale();
+  }
+
+  m_xLabelEdit = new QLineEdit(xLabel);
+  m_yLabelEdit = new QLineEdit(yLabel);
+  layout->addRow("X Label", m_xLabelEdit);
+  layout->addRow("Y Label", m_yLabelEdit);
+
   m_xLogCheckBox = new QCheckBox("X Log Scale");
   m_yLogCheckBox = new QCheckBox("Y Log Scale");
-  m_xLogCheckBox->setChecked(m_xLogScale);
-  m_yLogCheckBox->setChecked(m_yLogScale);
+  m_xLogCheckBox->setChecked(xLogScale);
+  m_yLogCheckBox->setChecked(yLogScale);
   layout->addRow(m_xLogCheckBox);
   layout->addRow(m_yLogCheckBox);
 
+  connect(m_xLabelEdit, &QLineEdit::textChanged, this,
+          &ModulePlot::onXLabelChanged);
+  connect(m_yLabelEdit, &QLineEdit::textChanged, this,
+          &ModulePlot::onYLabelChanged);
   connect(m_xLogCheckBox, &QCheckBox::toggled, this,
           &ModulePlot::onXLogScaleChanged);
   connect(m_yLogCheckBox, &QCheckBox::toggled, this,
@@ -245,7 +283,6 @@ void ModulePlot::onXLogScaleChanged(bool logScale)
     return;
   }
 
-  m_xLogScale = logScale;
   auto x_axis = m_chart->GetAxis(vtkAxis::BOTTOM);
   x_axis->SetLogScale(logScale);
 
@@ -258,9 +295,32 @@ void ModulePlot::onYLogScaleChanged(bool logScale)
     return;
   }
 
-  m_yLogScale = logScale;
   auto y_axis = m_chart->GetAxis(vtkAxis::LEFT);
   y_axis->SetLogScale(logScale);
+
+  m_view->Update();
+}
+
+void ModulePlot::onXLabelChanged(const QString& label)
+{
+  if (m_chart == nullptr) {
+    return;
+  }
+
+  auto x_axis = m_chart->GetAxis(vtkAxis::BOTTOM);
+  x_axis->SetTitle(label.toStdString());
+
+  m_view->Update();
+}
+
+void ModulePlot::onYLabelChanged(const QString& label)
+{
+  if (m_chart == nullptr) {
+    return;
+  }
+
+  auto y_axis = m_chart->GetAxis(vtkAxis::LEFT);
+  y_axis->SetTitle(label.toStdString());
 
   m_view->Update();
 }

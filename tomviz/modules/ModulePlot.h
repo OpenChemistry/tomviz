@@ -14,6 +14,7 @@ class vtkTable;
 class vtkTrivialProducer;
 
 class QCheckBox;
+class QLineEdit;
 
 
 namespace tomviz {
@@ -51,6 +52,8 @@ public:
 private slots:
   void onXLogScaleChanged(bool);
   void onYLogScaleChanged(bool);
+  void onXLabelChanged(const QString& label);
+  void onYLabelChanged(const QString& label);
 
 private:
   static void onResultModified(vtkObject* caller, long unsigned int eventId, void* clientData, void*callData);
@@ -59,8 +62,6 @@ private:
 
   Q_DISABLE_COPY(ModulePlot)
   bool m_visible;
-  bool m_xLogScale;
-  bool m_yLogScale;
   vtkWeakPointer<vtkPVContextView> m_view;
   vtkNew<vtkCallbackCommand> m_result_modified_cb;
   vtkWeakPointer<vtkTable> m_table;
@@ -69,6 +70,8 @@ private:
   QList<vtkSmartPointer<vtkPlot>> m_plots;
   QPointer<QCheckBox> m_xLogCheckBox;
   QPointer<QCheckBox> m_yLogCheckBox;
+  QPointer<QLineEdit> m_xLabelEdit;
+  QPointer<QLineEdit> m_yLabelEdit;
 
 };
 } // namespace tomviz
