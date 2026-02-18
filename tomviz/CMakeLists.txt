@@ -464,7 +464,7 @@ set(python_files
   Recon_ART.py
   Recon_SIRT.py
   Recon_TV_minimization.py
-  Recon_tomopy_gridrec.py
+  Recon_tomopy.py
   ShiftRotationCenter_tomopy.py
   FFT_AbsLog.py
   ManualManipulation.py
@@ -550,7 +550,7 @@ set(json_files
   Recon_DFT.json
   Recon_DFT_constraint.json
   Recon_TV_minimization.json
-  Recon_tomopy_gridrec.json
+  Recon_tomopy.json
   ShiftRotationCenter_tomopy.json
   Recon_SIRT.json
   Recon_WBP.json

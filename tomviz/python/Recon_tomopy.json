@@ -1,0 +1,38 @@
+{
+  "name" : "TomoPy",
+  "label" : "TomoPy Reconstruction",
+  "description" : "Run TomoPy reconstruction on a dataset",
+  "parameters" : [
+    {
+      "name" : "algorithm",
+      "label" : "Algorithm",
+      "description" : "Reconstruction algorithm to use",
+      "type" : "enumeration",
+      "default" : 0,
+      "options" : [
+        {"Gridrec" : "gridrec"},
+        {"MLEM" : "mlem"}
+      ]
+    },
+    {
+      "name" : "num_iter",
+      "label" : "Number of Iterations",
+      "description" : "Number of iterations (MLEM only)",
+      "type" : "int",
+      "default" : 5,
+      "minimum" : 1,
+      "maximum" : 1000,
+      "visible_if" : "algorithm == 'mlem'"
+    }
+  ],
+  "children": [
+    {
+      "name": "reconstruction",
+      "label": "Reconstruction",
+      "type": "reconstruction"
+    }
+  ],
+  "help" : {
+    "url": "reconstruction/#tomopy"
+  }
+}

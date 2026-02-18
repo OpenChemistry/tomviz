@@ -355,7 +355,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   QAction* reconTVMinimizationAction =
     m_ui->menuTomography->addAction("TV Minimization Method");
   QAction* reconTomoPyGridRecAction =
-    m_ui->menuTomography->addAction("TomoPy Gridrec Method");
+    m_ui->menuTomography->addAction("TomoPy Reconstruction");
   m_ui->menuTomography->addSeparator();
 
   QAction* simulationLabel =
@@ -462,9 +462,9 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     readInPythonScript("Recon_TV_minimization"), true, false, false,
     readInJSONDescription("Recon_TV_minimization"));
   new AddPythonTransformReaction(
-    reconTomoPyGridRecAction, "Reconstruct (TomoPy Gridrec)",
-    readInPythonScript("Recon_tomopy_gridrec"), true, false, false,
-    readInJSONDescription("Recon_tomopy_gridrec"));
+    reconTomoPyGridRecAction, "Reconstruct (TomoPy)",
+    readInPythonScript("Recon_tomopy"), true, false, false,
+    readInJSONDescription("Recon_tomopy"));
 
   new ReconstructionReaction(reconWBP_CAction);
 
