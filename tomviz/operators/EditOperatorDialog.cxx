@@ -20,6 +20,7 @@
 #include <QMessageBox>
 #include <QPointer>
 #include <QPushButton>
+#include <QShowEvent>
 #include <QVBoxLayout>
 #include <QVariant>
 
@@ -122,6 +123,23 @@ EditOperatorDialog::EditOperatorDialog(Operator* op, DataSource* dataSource,
 }
 
 EditOperatorDialog::~EditOperatorDialog() {}
+
+void EditOperatorDialog::showEvent(QShowEvent* event)
+{
+  Superclass::showEvent(event);
+
+  // Always center on the main window, overriding any restored geometry or
+  // window manager placement.
+  auto* mainWin = tomviz::mainWidget();
+  if (!mainWin) {
+    return;
+  }
+
+  auto mainCenter = mainWin->frameGeometry().center();
+  auto dlgSize = frameGeometry().size();
+  move(mainCenter.x() - dlgSize.width() / 2,
+       mainCenter.y() - dlgSize.height() / 2);
+}
 
 void EditOperatorDialog::setViewMode(const QString& mode)
 {
