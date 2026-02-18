@@ -11,3 +11,6 @@ hatchling
 # it gets fixed and a new release comes out.
 # See: https://github.com/NSLS-II-SRX/xrf-tomo/pull/10
 pandas<3.0
+# This is required for running pyxrf-utils on Python3.11
+# Setuptools was removed in versions 80+
+setuptools<80
