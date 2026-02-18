@@ -759,8 +759,10 @@ bool ModuleManager::serialize(QJsonObject& doc, const QDir& stateDir,
         jView["active"] = true;
       }
 
-      jView["useColorPaletteForBackground"] =
-        vtkSMPropertyHelper(view, "UseColorPaletteForBackground").GetAsInt();
+      if (view->GetProperty("UseColorPaletteForBackground")) {
+        jView["useColorPaletteForBackground"] =
+          vtkSMPropertyHelper(view, "UseColorPaletteForBackground").GetAsInt();
+      }
 
       // Now to get some more specific information about the view!
       pugi::xml_document document;

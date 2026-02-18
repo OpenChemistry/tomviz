@@ -78,7 +78,9 @@ void AddRenderViewContextMenuBehavior::onSetBackgroundColor()
 
   // Must set this to zero so that the render view will use its own
   // background color rather than the global palette.
-  vtkSMPropertyHelper(proxy, "UseColorPaletteForBackground").Set(0);
+  if (proxy->GetProperty("UseColorPaletteForBackground")) {
+    vtkSMPropertyHelper(proxy, "UseColorPaletteForBackground").Set(0);
+  }
 
   proxy->UpdateVTKObjects();
   view->render();
