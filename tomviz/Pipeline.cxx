@@ -188,11 +188,63 @@ Pipeline::Future* Pipeline::execute(DataSource* dataSource)
     return emptyFuture();
   }
 
+  // Find the first breakpoint operator at or after the start
+  int startIdx = operators.indexOf(firstModifiedOperator);
+  Operator* breakpointOp = nullptr;
+  for (int i = startIdx; i < operators.size(); ++i) {
+    if (operators[i]->hasBreakpoint()) {
+      breakpointOp = operators[i];
+      break;
+    }
+  }
+
+  if (breakpointOp) {
+    auto future = execute(dataSource, firstModifiedOperator, breakpointOp);
+    connect(future, &Pipeline::Future::finished, this,
+            [this, breakpointOp, dataSource]() {
+              // Reset operators from the breakpoint onwards to Queued so they
+              // reflect the fact that they haven't run with the current data.
+              auto ops = dataSource->operators();
+              int bpIdx = ops.indexOf(breakpointOp);
+              for (int i = bpIdx; i < ops.size(); ++i) {
+                ops[i]->resetState();
+              }
+              emit breakpointReached(breakpointOp);
+            });
+    return future;
+  }
+
   return execute(dataSource, firstModifiedOperator);
 }
 
 Pipeline::Future* Pipeline::execute(DataSource* ds, Operator* start)
 {
+  // Check for breakpoints between start and end of pipeline
+  auto operators = ds->operators();
+  int startIdx = operators.indexOf(start);
+  Operator* breakpointOp = nullptr;
+  for (int i = startIdx; i < operators.size(); ++i) {
+    if (operators[i]->hasBreakpoint()) {
+      breakpointOp = operators[i];
+      break;
+    }
+  }
+
+  if (breakpointOp) {
+    auto future = execute(ds, start, breakpointOp);
+    connect(future, &Pipeline::Future::finished, this,
+            [this, breakpointOp, ds]() {
+              // Reset operators from the breakpoint onwards to Queued.
+              auto ops = ds->operators();
+              int bpIdx = ops.indexOf(breakpointOp);
+              for (int i = bpIdx; i < ops.size(); ++i) {
+                ops[i]->resetState();
+              }
+              emit breakpointReached(breakpointOp);
+            });
+    return future;
+  }
+
   return execute(ds, start, nullptr);
 }
 
@@ -220,7 +272,6 @@ Pipeline::Future* Pipeline::execute(DataSource* ds, Operator* start,
     return future;
   }
   int startIndex = 0;
-  // We currently only support running the last operator or the entire pipeline.
   if (start == nullptr) {
     start = operators.first();
   }
@@ -240,6 +291,15 @@ Pipeline::Future* Pipeline::execute(DataSource* ds, Operator* start,
     if (!haveCanceled) {
       startIndex = operators.indexOf(start);
       // Use transformed data source
+      ds = transformedDataSource(ds);
+    }
+  }
+  // If start is not the first operator and we haven't already adjusted
+  // startIndex (e.g. when resuming from a breakpoint), start from the
+  // correct position using the already-transformed intermediate data.
+  else if (start != operators.first() && startIndex == 0) {
+    startIndex = operators.indexOf(start);
+    if (startIndex > 0) {
       ds = transformedDataSource(ds);
     }
   }
@@ -362,8 +422,13 @@ void Pipeline::branchFinished()
   // hasChildDataSource is true.
   auto lastOp = start->operators().last();
   if (!lastOp->isCompleted()) {
-    // Cannot continue
-    return;
+    // The DataSource's last operator hasn't completed. This can happen when
+    // execution stopped early (e.g. at a breakpoint). If the last actually
+    // executed operator completed, update the visualization with the
+    // intermediate result; otherwise bail out.
+    if (operators.isEmpty() || !operators.last()->isCompleted()) {
+      return;
+    }
   }
 
   if (!lastOp->hasChildDataSource()) {

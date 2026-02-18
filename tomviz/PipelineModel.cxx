@@ -787,6 +787,22 @@ void PipelineModel::dataSourceAdded(DataSource* dataSource)
     emit dataSourceModified(transformed);
   });
 
+  // Refresh all operator rows when a breakpoint is reached: the breakpoint
+  // operator's label column shows the play icon, and operators from the
+  // breakpoint onwards have their state column updated (Complete → Queued).
+  connect(pipeline, &Pipeline::breakpointReached, [this](Operator* op) {
+    auto ds = op->dataSource();
+    if (!ds)
+      return;
+    auto ops = ds->operators();
+    int bpIdx = ops.indexOf(op);
+    for (int i = bpIdx; i < ops.size(); ++i) {
+      auto idx = operatorIndex(ops[i]);
+      auto stateIdx = index(idx.row(), Column::state, idx.parent());
+      emit dataChanged(idx, stateIdx);
+    }
+  });
+
   // When restoring a data source from a state file it will have its operators
   // before we can listen to the signal above. Display those operators.
   foreach (auto op, dataSource->operators()) {
@@ -856,8 +872,13 @@ void PipelineModel::operatorAdded(Operator* op,
   // Make sure dataChange signal is emitted when operator is complete
   connect(op, &Operator::transformingDone, [this, op]() {
     auto opIndex = operatorIndex(op);
-    auto statusIndex = index(opIndex.row(), 1, opIndex.parent());
+    auto statusIndex = index(opIndex.row(), Column::state, opIndex.parent());
     emit dataChanged(statusIndex, statusIndex);
+  });
+  // Refresh label column when breakpoint state changes (delegate paints it)
+  connect(op, &Operator::breakpointChanged, [this, op]() {
+    auto opIndex = operatorIndex(op);
+    emit dataChanged(opIndex, opIndex);
   });
   connect(op, &Operator::dataSourceMoved, this,
           &PipelineModel::dataSourceMoved);

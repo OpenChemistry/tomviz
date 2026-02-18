@@ -162,13 +162,18 @@ QJsonObject Operator::serialize() const
   }
   json["type"] = OperatorFactory::instance().operatorType(this);
   json["id"] = QString::asprintf("%p", static_cast<const void*>(this));
+  if (m_breakpoint) {
+    json["breakpoint"] = true;
+  }
 
   return json;
 }
 
 bool Operator::deserialize(const QJsonObject& json)
 {
-  Q_UNUSED(json);
+  if (json.contains("breakpoint")) {
+    m_breakpoint = json["breakpoint"].toBool();
+  }
 
   return true;
 }
@@ -209,6 +214,14 @@ void Operator::createNewChildDataSource(
     childDataSource()->setForkable(true);
     childDataSource()->dataModified();
     setHasChildDataSource(true);
+  }
+}
+
+void Operator::setBreakpoint(bool enabled)
+{
+  if (m_breakpoint != enabled) {
+    m_breakpoint = enabled;
+    emit breakpointChanged();
   }
 }
 

@@ -189,6 +189,10 @@ public:
   /// Set the operator state, this is needed for external execution.
   void setState(OperatorState state) { m_state = state; }
 
+  /// Get/set whether a breakpoint is set on this operator.
+  bool hasBreakpoint() const { return m_breakpoint; }
+  void setBreakpoint(bool enabled);
+
   /// Get the operator's help url
   QString helpUrl() const { return m_helpUrl; }
   void setHelpUrl(const QString& s) { m_helpUrl = s; }
@@ -246,6 +250,9 @@ signals:
   // a request to cancel the operator as well as encourage the next
   // operator to run.
   void transformCompleted();
+
+  // Emitted when the breakpoint state changes.
+  void breakpointChanged();
 
 public slots:
   /// Called when the 'Cancel' button is pressed on the progress dialog.
@@ -314,6 +321,7 @@ private:
   int m_progressStep = 0;
   QString m_progressMessage;
   QString m_helpUrl;
+  bool m_breakpoint = false;
   std::atomic<OperatorState> m_state{ OperatorState::Queued };
   QPointer<EditOperatorDialog> m_customDialog;
 };
