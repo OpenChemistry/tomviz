@@ -8,7 +8,7 @@ def transform(dataset, algorithm='gridrec', num_iter=5):
 
     # TomoPy wants the tilt axis to be zero, so ensure that is true
     if tilt_axis == 2:
-        data = np.transpose(data, (2, 1, 0))
+        data = np.transpose(data, (2, 0, 1))
 
     # Normalize to [0, 1]
     data = data.astype(np.float32)
@@ -19,7 +19,7 @@ def transform(dataset, algorithm='gridrec', num_iter=5):
 
     # Reconstruct
     recon_kwargs = {}
-    if algorithm == 'mlem':
+    if algorithm in ('mlem', 'ospml_hybrid'):
         recon_kwargs['num_iter'] = num_iter
 
     rec = tomopy.recon(data, angles_rad, center=center, algorithm=algorithm,
@@ -29,7 +29,7 @@ def transform(dataset, algorithm='gridrec', num_iter=5):
     rec = tomopy.circ_mask(rec, axis=0, ratio=0.95, val=0.0)
 
     # Transpose back to expected Tomviz format
-    rec = np.transpose(rec, (2, 0, 1))
+    rec = np.transpose(rec, (2, 1, 0))
 
     child = dataset.create_child_dataset()
     child.active_scalars = rec

@@ -11,18 +11,20 @@
       "default" : 0,
       "options" : [
         {"Gridrec" : "gridrec"},
-        {"MLEM" : "mlem"}
+        {"FBP" : "fbp"},
+        {"MLEM" : "mlem"},
+        {"OSPML Hybrid" : "ospml_hybrid"}
       ]
     },
     {
       "name" : "num_iter",
       "label" : "Number of Iterations",
-      "description" : "Number of iterations (MLEM only)",
+      "description" : "Number of iterations (iterative methods only)",
       "type" : "int",
       "default" : 5,
       "minimum" : 1,
       "maximum" : 1000,
-      "visible_if" : "algorithm == 'mlem'"
+      "visible_if" : "algorithm == 'mlem' or algorithm == 'ospml_hybrid'"
     }
   ],
   "children": [
