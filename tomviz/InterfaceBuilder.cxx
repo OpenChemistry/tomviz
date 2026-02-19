@@ -22,8 +22,11 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QSet>
 #include <QSpinBox>
 #include <QWidget>
+
+#include <functional>
 
 using tomviz::DataSource;
 
@@ -589,11 +592,6 @@ static const QStringList PATH_TYPES = { "file", "save_file", "directory" };
 
 namespace tomviz {
 
-bool setupEnableTriggerAbstract(QWidget* refWidget, QWidget* widget,
-                                const QString& comparator,
-                                const QVariant& compareValue,
-                                bool visibility);
-
 InterfaceBuilder::InterfaceBuilder(QObject* parentObject, DataSource* ds)
   : QObject(parentObject), m_dataSource(ds)
 {}
@@ -685,64 +683,6 @@ void InterfaceBuilder::setupEnableAndVisibleStates(
 {
   setupEnableStates(parent, parameters, true);
   setupEnableStates(parent, parameters, false);
-}
-
-void InterfaceBuilder::setupEnableStates(const QObject* parent,
-                                         QJsonArray& parameters,
-                                         bool visible) const
-{
-  static const QStringList validComparators = {
-    "==", "!=", ">", ">=", "<", "<="
-  };
-
-  QJsonObject::size_type numParameters = parameters.size();
-  for (QJsonObject::size_type i = 0; i < numParameters; ++i) {
-    QJsonValueRef parameterNode = parameters[i];
-    QJsonObject parameterObject = parameterNode.toObject();
-
-    QString text = visible ? "visible_if" : "enable_if";
-    QString enableIfValue = parameterObject[text].toString("");
-    if (enableIfValue.isEmpty()) {
-      continue;
-    }
-
-    QString widgetName = parameterObject["name"].toString("");
-    if (widgetName.isEmpty()) {
-      qCritical() << text << "parameters must have a name. Ignoring...";
-      continue;
-    }
-    auto* widget = parent->findChild<QWidget*>(widgetName);
-    if (!widget) {
-      qCritical() << "Failed to find widget with name:" << widgetName;
-      continue;
-    }
-
-    auto split = enableIfValue.simplified().split(" ");
-    if (split.size() != 3) {
-      qCritical() << "Invalid" << text << "string:" << enableIfValue;
-      continue;
-    }
-
-    auto refWidgetName = split[0];
-    auto comparator = split[1];
-    auto compareValue = split[2];
-    auto* refWidget = parent->findChild<QWidget*>(refWidgetName);
-
-    if (!refWidget) {
-      qCritical() << "Invalid widget name in" << text << "string:" << enableIfValue;
-      continue;
-    }
-
-    if (!validComparators.contains(comparator)) {
-      qCritical() << "Invalid comparator in" << text << "string:" << enableIfValue;
-      continue;
-    }
-
-    if (!setupEnableTriggerAbstract(refWidget, widget, comparator,
-                                    compareValue, visible)) {
-      qCritical() << "Failed to set up" << text << "trigger for" << widgetName;
-    }
-  }
 }
 
 QLayout* InterfaceBuilder::buildInterface() const
@@ -1047,51 +987,189 @@ bool compare(const T* widget, const QVariant& compareValue,
   return false;
 }
 
-template <typename T>
-bool setupEnableTrigger(T* refWidget, QWidget* widget,
-                        const QString& comparator, const QVariant& compareValue,
-                        const char* property)
+// Represents a single condition clause like "algorithm == 'mlem'"
+struct EnableCondition
 {
-  // Set up the callback function
-  auto func = [=](){
-    auto result = compare(refWidget, compareValue, comparator);
-    setWidgetProperty(widget, property, result);
-  };
-  // Make the connection
-  widget->connect(refWidget, changedSignal<T>(), widget, func);
+  QWidget* refWidget = nullptr;
+  QString comparator;
+  QVariant compareValue;
+};
 
-  // Trigger the update one time, since defaults are already set.
-  func();
-
-  return true;
+// Evaluate a single condition by delegating to the typed compare() function
+static bool evaluateCondition(const EnableCondition& cond)
+{
+  auto* w = cond.refWidget;
+  if (isWidgetType<QSpinBox>(w)) {
+    return compare(qobject_cast<QSpinBox*>(w), cond.compareValue, cond.comparator);
+  } else if (isWidgetType<QDoubleSpinBox>(w)) {
+    return compare(qobject_cast<QDoubleSpinBox*>(w), cond.compareValue, cond.comparator);
+  } else if (isWidgetType<QCheckBox>(w)) {
+    return compare(qobject_cast<QCheckBox*>(w), cond.compareValue, cond.comparator);
+  } else if (isWidgetType<QComboBox>(w)) {
+    return compare(qobject_cast<QComboBox*>(w), cond.compareValue, cond.comparator);
+  } else if (isWidgetType<QLineEdit>(w)) {
+    return compare(qobject_cast<QLineEdit*>(w), cond.compareValue, cond.comparator);
+  }
+  return false;
 }
 
-bool setupEnableTriggerAbstract(QWidget* refWidget, QWidget* widget,
-                                const QString& comparator,
-                                const QVariant& compareValue,
-                                bool visibility)
+// Evaluate a compound expression: list of condition groups joined by "or",
+// where each group is a list of conditions joined by "and".
+// Result = (g0[0] && g0[1] && ...) || (g1[0] && g1[1] && ...) || ...
+static bool evaluateCompound(
+  const QList<QList<EnableCondition>>& orGroups)
 {
-  const char* property = visibility ? "visible" : "enabled";
-  if (isWidgetType<QSpinBox>(refWidget)) {
-    return setupEnableTrigger(qobject_cast<QSpinBox*>(refWidget), widget,
-                              comparator, compareValue, property);
-  } else if (isWidgetType<QDoubleSpinBox>(refWidget)) {
-    return setupEnableTrigger(qobject_cast<QDoubleSpinBox*>(refWidget), widget,
-                              comparator, compareValue, property);
-  } else if (isWidgetType<QCheckBox>(refWidget)) {
-    return setupEnableTrigger(qobject_cast<QCheckBox*>(refWidget), widget,
-                              comparator, compareValue, property);
-  } else if (isWidgetType<QComboBox>(refWidget)) {
-    return setupEnableTrigger(qobject_cast<QComboBox*>(refWidget), widget,
-                              comparator, compareValue, property);
-  } else if (isWidgetType<QLineEdit>(refWidget)) {
-    return setupEnableTrigger(qobject_cast<QLineEdit*>(refWidget), widget,
-                              comparator, compareValue, property);
+  for (auto& andGroup : orGroups) {
+    bool groupResult = true;
+    for (auto& cond : andGroup) {
+      if (!evaluateCondition(cond)) {
+        groupResult = false;
+        break;
+      }
+    }
+    if (groupResult) {
+      return true;
+    }
   }
-
-  qCritical() << "Unhandled widget type for object: "
-              << refWidget->objectName();
   return false;
+}
+
+static void connectWidgetChanged(QWidget* refWidget, QWidget* target,
+                                 std::function<void()> func)
+{
+  if (isWidgetType<QSpinBox>(refWidget)) {
+    target->connect(qobject_cast<QSpinBox*>(refWidget),
+                    changedSignal<QSpinBox>(), target, func);
+  } else if (isWidgetType<QDoubleSpinBox>(refWidget)) {
+    target->connect(qobject_cast<QDoubleSpinBox*>(refWidget),
+                    changedSignal<QDoubleSpinBox>(), target, func);
+  } else if (isWidgetType<QCheckBox>(refWidget)) {
+    target->connect(qobject_cast<QCheckBox*>(refWidget),
+                    changedSignal<QCheckBox>(), target, func);
+  } else if (isWidgetType<QComboBox>(refWidget)) {
+    target->connect(qobject_cast<QComboBox*>(refWidget),
+                    changedSignal<QComboBox>(), target, func);
+  } else if (isWidgetType<QLineEdit>(refWidget)) {
+    target->connect(qobject_cast<QLineEdit*>(refWidget),
+                    changedSignal<QLineEdit>(), target, func);
+  } else {
+    qCritical() << "Unhandled widget type for enable/visible trigger:"
+                << refWidget->objectName();
+  }
+}
+
+void InterfaceBuilder::setupEnableStates(const QObject* parent,
+                                         QJsonArray& parameters,
+                                         bool visible) const
+{
+  static const QStringList validComparators = {
+    "==", "!=", ">", ">=", "<", "<="
+  };
+
+  QJsonObject::size_type numParameters = parameters.size();
+  for (QJsonObject::size_type i = 0; i < numParameters; ++i) {
+    QJsonValueRef parameterNode = parameters[i];
+    QJsonObject parameterObject = parameterNode.toObject();
+
+    QString text = visible ? "visible_if" : "enable_if";
+    QString enableIfValue = parameterObject[text].toString("");
+    if (enableIfValue.isEmpty()) {
+      continue;
+    }
+
+    QString widgetName = parameterObject["name"].toString("");
+    if (widgetName.isEmpty()) {
+      qCritical() << text << "parameters must have a name. Ignoring...";
+      continue;
+    }
+    auto* widget = parent->findChild<QWidget*>(widgetName);
+    if (!widget) {
+      qCritical() << "Failed to find widget with name:" << widgetName;
+      continue;
+    }
+
+    // Split on " or " first, then each piece on " and ".
+    // Precedence: "and" binds tighter than "or".
+    auto orParts = enableIfValue.simplified().split(" or ",
+                                                     Qt::KeepEmptyParts,
+                                                     Qt::CaseInsensitive);
+
+    QList<QList<EnableCondition>> orGroups;
+    bool parseError = false;
+
+    for (auto& orPart : orParts) {
+      auto andParts = orPart.simplified().split(" and ",
+                                                 Qt::KeepEmptyParts,
+                                                 Qt::CaseInsensitive);
+      QList<EnableCondition> andGroup;
+      for (auto& clause : andParts) {
+        auto tokens = clause.simplified().split(" ");
+        if (tokens.size() != 3) {
+          qCritical() << "Invalid" << text << "clause:" << clause
+                      << "in expression:" << enableIfValue;
+          parseError = true;
+          break;
+        }
+
+        auto refWidgetName = tokens[0];
+        auto comparator = tokens[1];
+        auto compareValue = tokens[2];
+
+        auto* refWidget = parent->findChild<QWidget*>(refWidgetName);
+        if (!refWidget) {
+          qCritical() << "Invalid widget name" << refWidgetName << "in"
+                      << text << "string:" << enableIfValue;
+          parseError = true;
+          break;
+        }
+
+        if (!validComparators.contains(comparator)) {
+          qCritical() << "Invalid comparator" << comparator << "in"
+                      << text << "string:" << enableIfValue;
+          parseError = true;
+          break;
+        }
+
+        EnableCondition cond;
+        cond.refWidget = refWidget;
+        cond.comparator = comparator;
+        cond.compareValue = compareValue;
+        andGroup.append(cond);
+      }
+
+      if (parseError) {
+        break;
+      }
+      orGroups.append(andGroup);
+    }
+
+    if (parseError) {
+      continue;
+    }
+
+    const char* property = visible ? "visible" : "enabled";
+
+    // Build the evaluation callback
+    auto evalFunc = [orGroups, widget, property]() {
+      bool result = evaluateCompound(orGroups);
+      setWidgetProperty(widget, property, result);
+    };
+
+    // Connect every referenced widget's changed signal to re-evaluate
+    QSet<QWidget*> connectedWidgets;
+    for (auto& andGroup : orGroups) {
+      for (auto& cond : andGroup) {
+        if (connectedWidgets.contains(cond.refWidget)) {
+          continue;
+        }
+        connectedWidgets.insert(cond.refWidget);
+        connectWidgetChanged(cond.refWidget, widget, evalFunc);
+      }
+    }
+
+    // Evaluate once for the initial state
+    evalFunc();
+  }
 }
 
 } // namespace tomviz
