@@ -20,6 +20,7 @@
 #include <QMessageBox>
 #include <QPointer>
 #include <QPushButton>
+#include <QScreen>
 #include <QShowEvent>
 #include <QVBoxLayout>
 #include <QVariant>
@@ -128,17 +129,34 @@ void EditOperatorDialog::showEvent(QShowEvent* event)
 {
   Superclass::showEvent(event);
 
-  // Always center on the main window, overriding any restored geometry or
-  // window manager placement.
+  // Always center on the main window's screen, overriding any restored
+  // geometry or window manager placement that may put the dialog on a
+  // different monitor.
   auto* mainWin = tomviz::mainWidget();
   if (!mainWin) {
     return;
   }
 
+  auto* screen = mainWin->screen();
+  auto screenGeom = screen ? screen->availableGeometry()
+                           : QRect(0, 0, 1920, 1080);
+
   auto mainCenter = mainWin->frameGeometry().center();
   auto dlgSize = frameGeometry().size();
-  move(mainCenter.x() - dlgSize.width() / 2,
-       mainCenter.y() - dlgSize.height() / 2);
+
+  // Center on the main window
+  int x = mainCenter.x() - dlgSize.width() / 2;
+  int y = mainCenter.y() - dlgSize.height() / 2;
+
+  // Clamp to the main window's screen so we never spill onto another monitor
+  x = qBound(screenGeom.left(), x,
+              screenGeom.right() - dlgSize.width());
+  y = qBound(screenGeom.top(), y,
+              screenGeom.bottom() - dlgSize.height());
+
+  move(x, y);
+  raise();
+  activateWindow();
 }
 
 void EditOperatorDialog::setViewMode(const QString& mode)
