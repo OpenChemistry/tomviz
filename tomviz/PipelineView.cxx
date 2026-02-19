@@ -296,6 +296,7 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   QAction* snapshotAction = nullptr;
   QAction* showInterfaceAction = nullptr;
   QAction* exportTableResultAction = nullptr;
+  QAction* exportTableCsvAction = nullptr;
   QAction* reloadAndResampleAction = nullptr;
   bool allowReExecute = false;
   CloneDataReaction* cloneReaction;
@@ -303,6 +304,7 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   if (result && qobject_cast<Operator*>(result->parent())) {
     if (vtkTable::SafeDownCast(result->dataObject())) {
       exportTableResultAction = contextMenu.addAction("Save as JSON");
+      exportTableCsvAction = contextMenu.addAction("Save as CSV");
     } else {
       return;
     }
@@ -479,6 +481,8 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
     }
   } else if (selectedItem == exportTableResultAction) {
     exportTableAsJson(vtkTable::SafeDownCast(result->dataObject()));
+  } else if (selectedItem == exportTableCsvAction) {
+    exportTableAsCsv(vtkTable::SafeDownCast(result->dataObject()));
   } else if (selectedItem == reloadAndResampleAction) {
     dataSource->reloadAndResample();
   }
@@ -488,6 +492,12 @@ void PipelineView::exportTableAsJson(vtkTable* table)
 {
   auto json = tableToJson(table);
   jsonToFile(json);
+}
+
+void PipelineView::exportTableAsCsv(vtkTable* table)
+{
+  auto csv = tableToCsv(table);
+  csvToFile(csv);
 }
 
 void PipelineView::deleteItems(const QModelIndexList& idxs)
