@@ -222,13 +222,24 @@ void ModuleRuler::endPointsUpdated()
   vtkSMPropertyHelper(m_rulerSource, "Point1").Get(point1, 3);
   vtkSMPropertyHelper(m_rulerSource, "Point2").Get(point2, 3);
   DataSource* source = dataSource();
-  vtkImageData* img = vtkImageData::SafeDownCast(
-    vtkAlgorithm::SafeDownCast(source->proxy()->GetClientSideObject())
-      ->GetOutputDataObject(0));
+  auto* algo =
+    vtkAlgorithm::SafeDownCast(source->proxy()->GetClientSideObject());
+  if (!algo) {
+    return;
+  }
+  vtkImageData* img =
+    vtkImageData::SafeDownCast(algo->GetOutputDataObject(0));
+  if (!img) {
+    return;
+  }
+  vtkDataArray* scalars = img->GetPointData()->GetScalars();
+  if (!scalars) {
+    return;
+  }
   vtkIdType p1 = img->FindPoint(point1);
   vtkIdType p2 = img->FindPoint(point2);
-  double v1 = img->GetPointData()->GetScalars()->GetTuple1(p1);
-  double v2 = img->GetPointData()->GetScalars()->GetTuple1(p2);
+  double v1 = scalars->GetTuple1(p1);
+  double v2 = scalars->GetTuple1(p2);
   emit newEndpointData(v1, v2);
   renderNeeded();
 }

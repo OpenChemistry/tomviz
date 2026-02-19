@@ -136,6 +136,9 @@ bool IntSliderWidget::strictRange() const
   }
   const QIntValidator* dv =
     qobject_cast<const QIntValidator*>(this->LineEdit->validator());
+  if (!dv) {
+    return false;
+  }
   return dv->bottom() == this->minimum() && dv->top() == this->maximum();
 }
 

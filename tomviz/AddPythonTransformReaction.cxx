@@ -36,7 +36,6 @@
 #include <QVBoxLayout>
 #include <QtDebug>
 
-#include <cassert>
 
 namespace tomviz {
 
@@ -153,6 +152,9 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
   } else if (scriptLabel == "Shift Volume") {
     auto t = source->producer();
     auto data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    if (!data) {
+      return nullptr;
+    }
     int* extent = data->GetExtent();
 
     QDialog dialog(tomviz::mainWidget());
@@ -230,6 +232,9 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
   } else if (scriptLabel == "Crop") {
     auto t = source->producer();
     auto data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    if (!data) {
+      return nullptr;
+    }
     int* extent = data->GetExtent();
 
     QDialog dialog(tomviz::mainWidget());
@@ -301,6 +306,9 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     int extent[6];
     auto t = source->producer();
     vtkImageData* image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    if (!image) {
+      return nullptr;
+    }
     image->GetOrigin(origin);
     image->GetSpacing(spacing);
     image->GetExtent(extent);
@@ -335,6 +343,9 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
 
     auto t = source->producer();
     auto image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    if (!image) {
+      return nullptr;
+    }
     image->GetOrigin(origin);
     image->GetSpacing(spacing);
     image->GetExtent(extent);
@@ -429,13 +440,18 @@ void AddPythonTransformReaction::addExpressionFromNonModalDialog()
       }
     }
 
-    assert(volumeWidget);
+    if (!volumeWidget) {
+      return;
+    }
     int selection_extent[6];
     volumeWidget->getExtentOfSelection(selection_extent);
 
     int image_extent[6];
     auto t = source->producer();
     auto image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    if (!image) {
+      return;
+    }
     image->GetExtent(image_extent);
 
     // The image extent is not necessarily zero-based.  The numpy array is.
@@ -466,13 +482,18 @@ void AddPythonTransformReaction::addExpressionFromNonModalDialog()
       }
     }
 
-    assert(volumeWidget);
+    if (!volumeWidget) {
+      return;
+    }
     int selection_extent[6];
     volumeWidget->getExtentOfSelection(selection_extent);
 
     int image_extent[6];
     auto t = source->producer();
     auto image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    if (!image) {
+      return;
+    }
     image->GetExtent(image_extent);
     int indices[6];
     indices[0] = selection_extent[0] - image_extent[0];

@@ -235,7 +235,7 @@ void CentralWidget::setColorMapDataSource(DataSource* source)
   // Get the actual data source, build a histogram out of it.
   auto image = vtkImageData::SafeDownCast(source->dataObject());
 
-  if (image->GetPointData()->GetScalars() == nullptr) {
+  if (!image || image->GetPointData()->GetScalars() == nullptr) {
     return;
   }
 

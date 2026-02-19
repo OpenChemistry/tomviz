@@ -57,7 +57,11 @@ namespace {
 void createOrResizeTiltAnglesArray(vtkDataObject* data)
 {
   auto fd = data->GetFieldData();
-  int* extent = vtkImageData::SafeDownCast(data)->GetExtent();
+  auto* imageData = vtkImageData::SafeDownCast(data);
+  if (!imageData) {
+    return;
+  }
+  int* extent = imageData->GetExtent();
   int numTiltAngles = extent[5] - extent[4] + 1;
   if (!fd->HasArray("tilt_angles")) {
     vtkNew<vtkDoubleArray> array;

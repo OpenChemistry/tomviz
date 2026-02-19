@@ -169,6 +169,9 @@ bool DoubleSliderWidget::strictRange() const
   }
   const QDoubleValidator* dv =
     qobject_cast<const QDoubleValidator*>(this->LineEdit->validator());
+  if (!dv) {
+    return false;
+  }
   return dv->bottom() == this->minimum() && dv->top() == this->maximum();
 }
 

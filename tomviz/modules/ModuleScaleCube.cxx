@@ -280,15 +280,22 @@ void ModuleScaleCube::setAnnotation(const bool val)
 
 void ModuleScaleCube::setLengthUnit()
 {
-  QString s = qobject_cast<DataSource*>(sender())->getUnits();
+  DataSource* data = qobject_cast<DataSource*>(sender());
+  if (!data) {
+    return;
+  }
+  QString s = data->getUnits();
   m_cubeRep->SetLengthUnit(s.toStdString().c_str());
   emit onLengthUnitChanged(s);
 }
 
 void ModuleScaleCube::setPositionUnit()
 {
-  QString s = qobject_cast<DataSource*>(sender())->getUnits();
-  emit onLengthUnitChanged(s);
+  DataSource* data = qobject_cast<DataSource*>(sender());
+  if (!data) {
+    return;
+  }
+  emit onLengthUnitChanged(data->getUnits());
 }
 
 void ModuleScaleCube::dataPropertiesChanged()
