@@ -199,16 +199,17 @@ Pipeline::Future* Pipeline::execute(DataSource* dataSource)
   }
 
   if (breakpointOp) {
+    // Reset operators from the breakpoint onwards to Queued so they
+    // reflect the fact that they haven't run with the current data.
+    auto ops = dataSource->operators();
+    int bpIdx = ops.indexOf(breakpointOp);
+    for (int i = bpIdx; i < ops.size(); ++i) {
+      ops[i]->resetState();
+    }
+
     auto future = execute(dataSource, firstModifiedOperator, breakpointOp);
     connect(future, &Pipeline::Future::finished, this,
-            [this, breakpointOp, dataSource]() {
-              // Reset operators from the breakpoint onwards to Queued so they
-              // reflect the fact that they haven't run with the current data.
-              auto ops = dataSource->operators();
-              int bpIdx = ops.indexOf(breakpointOp);
-              for (int i = bpIdx; i < ops.size(); ++i) {
-                ops[i]->resetState();
-              }
+            [this, breakpointOp]() {
               emit breakpointReached(breakpointOp);
             });
     return future;
@@ -231,15 +232,16 @@ Pipeline::Future* Pipeline::execute(DataSource* ds, Operator* start)
   }
 
   if (breakpointOp) {
+    // Reset operators from the breakpoint onwards to Queued.
+    auto ops = ds->operators();
+    int bpIdx = ops.indexOf(breakpointOp);
+    for (int i = bpIdx; i < ops.size(); ++i) {
+      ops[i]->resetState();
+    }
+
     auto future = execute(ds, start, breakpointOp);
     connect(future, &Pipeline::Future::finished, this,
-            [this, breakpointOp, ds]() {
-              // Reset operators from the breakpoint onwards to Queued.
-              auto ops = ds->operators();
-              int bpIdx = ops.indexOf(breakpointOp);
-              for (int i = bpIdx; i < ops.size(); ++i) {
-                ops[i]->resetState();
-              }
+            [this, breakpointOp]() {
               emit breakpointReached(breakpointOp);
             });
     return future;
@@ -297,10 +299,18 @@ Pipeline::Future* Pipeline::execute(DataSource* ds, Operator* start,
   // If start is not the first operator and we haven't already adjusted
   // startIndex (e.g. when resuming from a breakpoint), start from the
   // correct position using the already-transformed intermediate data.
+  // but can only use the already transformed intermediate data if the 
+  // previous operator is the one that created it, otherwise operators
+  // could be applied multiple times to already transformed data.
   else if (start != operators.first() && startIndex == 0) {
     startIndex = operators.indexOf(start);
     if (startIndex > 0) {
-      ds = transformedDataSource(ds);
+      auto prevOp = operators[startIndex - 1];
+      if (prevOp->isCompleted() && start->isQueued()) {
+        ds = transformedDataSource(ds);
+      } else {
+        startIndex = 0;
+      }
     }
   }
 
