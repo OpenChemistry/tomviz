@@ -60,6 +60,7 @@ private slots:
   void deleteItemsConfirm(const QModelIndexList& idxs);
   void setModuleVisibility(const QModelIndexList& idxs, bool visible);
   void exportTableAsJson(vtkTable*);
+  void exportTableAsCsv(vtkTable*);
 };
 } // namespace tomviz
 
