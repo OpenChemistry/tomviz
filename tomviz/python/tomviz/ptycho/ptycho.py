@@ -15,6 +15,14 @@ PathLike = Path | str
 
 def gather_ptycho_info(ptycho_dir: PathLike) -> dict:
     ptycho_dir = Path(ptycho_dir)
+    if not ptycho_dir.is_dir():
+        # It either doesn't exist or it's not a directory
+        return {
+            'sid_list': [],
+            'version_list': [],
+            'angle_list': [],
+            'error_list': [],
+        }
 
     sid_list = sorted([int(x.name[1:]) for x in ptycho_dir.iterdir()
                       if x.is_dir() and x.name.startswith('S')])

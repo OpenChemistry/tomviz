@@ -375,7 +375,11 @@ public:
     setPtychoGUICommand(
       settings->value("ptychoGUICommand", "run-ptycho").toString());
 
-    setPtychoDirectory(settings->value("ptychoDirectory", "").toString());
+    auto savedPtychoDir = settings->value("ptychoDirectory", "").toString();
+    if (!savedPtychoDir.isEmpty() && !QDir(savedPtychoDir).exists()) {
+      savedPtychoDir = "";
+    }
+    setPtychoDirectory(savedPtychoDir);
     setCsvFile(settings->value("loadFromCSVFile", "").toString());
     setFilterSIDsString(settings->value("filterSIDsString", "").toString());
 
@@ -552,6 +556,16 @@ public:
 
   void ptychoDirEdited()
   {
+    auto dir = ptychoDirectory();
+    if (!dir.isEmpty() && !QDir(dir).exists()) {
+      QMessageBox::critical(parent.data(), "Directory Not Found",
+                            "Ptycho directory does not exist: " + dir);
+      setPtychoDirectory("");
+      setCsvFile("");
+      setFilterSIDsString("");
+      return;
+    }
+
     // Whenever this is called, make sure we clear the CSV file and SID filters
     setCsvFile("");
     setFilterSIDsString("");
