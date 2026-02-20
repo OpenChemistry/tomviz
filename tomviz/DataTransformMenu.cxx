@@ -79,6 +79,9 @@ void DataTransformMenu::buildTransforms()
   auto tortuosityAction = menu->addAction("Tortuosity");
   auto poreSizeAction = menu->addAction("Pore Size Distribution");
   menu->addSeparator();
+  auto psdAction = menu->addAction("Power Spectrum Density");
+  auto fscAction = menu->addAction("Fourier Shell Correlation");
+  menu->addSeparator();
   auto cloneAction = menu->addAction("Clone");
   auto deleteDataAction = menu->addAction(
     QIcon(":/QtWidgets/Icons/pqDelete.svg"), "Delete Data and Modules");
@@ -182,6 +185,15 @@ void DataTransformMenu::buildTransforms()
     poreSizeAction, "Pore Size Distribution",
     readInPythonScript("PoreSizeDistribution"), false, false, false,
     readInJSONDescription("PoreSizeDistribution"));
+
+  new AddPythonTransformReaction(
+    psdAction, "Power Spectrum Density",
+    readInPythonScript("PowerSpectrumDensity"), false, false, false,
+    readInJSONDescription("PowerSpectrumDensity"));
+  new AddPythonTransformReaction(
+    fscAction, "Fourier Shell Correlation",
+    readInPythonScript("FourierShellCorrelation"), false, false, false,
+    readInJSONDescription("FourierShellCorrelation"));
 
   new CloneDataReaction(cloneAction);
   new DeleteDataReaction(deleteDataAction);

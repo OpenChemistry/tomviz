@@ -1,0 +1,15 @@
+{
+  "name": "PowerSpectrumDensity",
+  "label": "Power Spectrum Density",
+  "description": "",
+  "externalCompatible": false,
+  "apply_to_each_array": false,
+  "parameters": [],
+  "results": [
+    {
+      "name": "plot",
+      "label": "PSD",
+      "type": "table"
+    }
+  ]
+}
