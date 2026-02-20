@@ -20,7 +20,7 @@ def pad_to_cubic(arr):
     return np.pad(arr, pad_widths, mode='constant', constant_values=0)
 
 def psd3D(image, pixel_size):
-    #again likes square images, you might need to pad the image to make it work. 
+    #again likes square images, you might need to pad the image to make it work.
     fourier_image = np.fft.fftn(image)
     fourier_amplitudes = np.abs(fourier_image)**2
     npix = image.shape[0]
@@ -47,7 +47,9 @@ class PoreSizeDistribution(tomviz.operators.CancelableOperator):
 
         if scalars is None:
             raise RuntimeError("No scalars found!")
-        
+
+        scalars = pad_to_cubic(scalars)
+
         return_values = {}
 
         column_names = ["x", "PSD"]
