@@ -182,6 +182,26 @@
              </widget>
             </item>
             <item>
+             <widget class="QLabel" name="projectionNoLabel">
+              <property name="text">
+               <string>Projection No.:</string>
+              </property>
+              <property name="buddy">
+               <cstring>projectionNo</cstring>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSpinBox" name="projectionNo">
+              <property name="keyboardTracking">
+               <bool>false</bool>
+              </property>
+              <property name="maximum">
+               <number>100000</number>
+              </property>
+             </widget>
+            </item>
+            <item>
              <widget class="QLabel" name="sliceLabel">
               <property name="text">
                <string>Slice:</string>
@@ -486,6 +506,7 @@
   <tabstop>start</tabstop>
   <tabstop>stop</tabstop>
   <tabstop>steps</tabstop>
+  <tabstop>projectionNo</tabstop>
   <tabstop>slice</tabstop>
   <tabstop>algorithm</tabstop>
   <tabstop>numIterations</tabstop>

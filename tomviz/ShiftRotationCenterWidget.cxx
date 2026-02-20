@@ -128,12 +128,14 @@ public:
   vtkNew<vtkRenderer> renderer;
   vtkNew<vtkCubeAxesActor> axesActor;
 
-  // Projection view (top-left) with center line overlay
+  // Projection view (top-left) with center line and slice line overlay
   vtkNew<vtkImageSlice> projSlice;
   vtkNew<vtkImageSliceMapper> projMapper;
   vtkNew<vtkRenderer> projRenderer;
   vtkNew<vtkLineSource> centerLine;
   vtkNew<vtkActor> centerLineActor;
+  vtkNew<vtkLineSource> sliceLine;
+  vtkNew<vtkActor> sliceLineActor;
   QString script;
   InternalPythonHelper pythonHelper;
   QPointer<ShiftRotationCenterWidget> parent;
@@ -189,7 +191,7 @@ public:
 
     projRenderer->AddViewProp(projSlice);
 
-    // Set up the red center line overlay
+    // Set up the yellow center line overlay (vertical)
     vtkNew<vtkPolyDataMapper> lineMapper;
     lineMapper->SetInputConnection(centerLine->GetOutputPort());
     centerLineActor->SetMapper(lineMapper);
@@ -197,14 +199,30 @@ public:
     centerLineActor->GetProperty()->SetLineWidth(2.0);
     projRenderer->AddActor(centerLineActor);
 
+    // Set up the red slice line overlay (horizontal)
+    vtkNew<vtkPolyDataMapper> sliceLineMapper;
+    sliceLineMapper->SetInputConnection(sliceLine->GetOutputPort());
+    sliceLineActor->SetMapper(sliceLineMapper);
+    sliceLineActor->GetProperty()->SetColor(1, 0, 0);
+    sliceLineActor->GetProperty()->SetLineWidth(2.0);
+    projRenderer->AddActor(sliceLineActor);
+
     ui.projectionView->renderWindow()->AddRenderer(projRenderer);
     vtkNew<InteractorStyle> projInteractorStyle;
     ui.projectionView->interactor()->SetInteractorStyle(projInteractorStyle);
 
     tomviz::setupRenderer(projRenderer, projMapper, nullptr);
     projRenderer->GetActiveCamera()->SetViewUp(1, 0, 0);
+
+    // Mirror the image left-to-right by placing the camera on the -Z side.
+    auto* cam = projRenderer->GetActiveCamera();
+    double* pos = cam->GetPosition();
+    double* fp = cam->GetFocalPoint();
+    cam->SetPosition(pos[0], pos[1], fp[2] - (pos[2] - fp[2]));
+
     projRenderer->ResetCameraClippingRange();
     updateCenterLine();
+    updateSliceLine();
 
     static unsigned int colorMapCounter = 0;
     ++colorMapCounter;
@@ -249,9 +267,13 @@ public:
     ui.start->setValue(-delta);
     ui.stop->setValue(delta);
 
-    // Default slice to the middle slice
-    ui.slice->setMaximum(dims[1] - 1);
-    ui.slice->setValue(dims[1] / 2);
+    // Default projection number to the middle projection
+    ui.projectionNo->setMaximum(dims[2] - 1);
+    ui.projectionNo->setValue(dims[2] / 2);
+
+    // Default slice to the middle slice (bounded by image height)
+    ui.slice->setMaximum(dims[0] - 1);
+    ui.slice->setValue(dims[0] / 2);
 
     // Load saved settings for steps, algorithm, numIterations only
     readSettings();
@@ -263,6 +285,10 @@ public:
 
     updateControls();
     setupConnections();
+
+    // Update line positions now that all values are set
+    updateCenterLine();
+    updateSliceLine();
   }
 
   void setupConnections()
@@ -283,6 +309,8 @@ public:
             &Internal::onPreviewRangeEdited);
     connect(ui.algorithm, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &Internal::updateAlgorithmUI);
+    connect(ui.projectionNo, QOverload<int>::of(&QSpinBox::valueChanged), this,
+            &Internal::onProjectionChanged);
     connect(ui.slice, QOverload<int>::of(&QSpinBox::valueChanged), this,
             &Internal::onSliceChanged);
     connect(ui.rotationCenter,
@@ -290,12 +318,20 @@ public:
             &Internal::updateCenterLine);
   }
 
-  void onSliceChanged(int val)
+  void onProjectionChanged(int val)
   {
-    // Update the projection view to show the selected slice
+    // Update the projection view to show the selected projection
     projMapper->SetSliceNumber(val);
     projMapper->Update();
     updateCenterLine();
+    updateSliceLine();
+
+    ui.projectionView->renderWindow()->Render();
+  }
+
+  void onSliceChanged(int)
+  {
+    updateSliceLine();
 
     // The existing test rotation results are no longer valid for this slice
     setRotationData(vtkImageData::New());
@@ -312,17 +348,42 @@ public:
 
     double bounds[6];
     image->GetBounds(bounds);
-    double centerX = (bounds[0] + bounds[1]) / 2.0;
-    double lineX = centerX + rotationCenter() * image->GetSpacing()[0];
+    double centerY = (bounds[2] + bounds[3]) / 2.0;
+    double lineY = centerY + rotationCenter() * image->GetSpacing()[0];
 
-    // Vertical line spanning the full Y (detector row) range, placed just in
-    // front of the current Z slice (toward the camera, which looks from +Z).
-    double p1[3] = { lineX, bounds[2], bounds[5] + 1 };
-    double p2[3] = { lineX, bounds[3], bounds[5] + 1 };
+    // Vertical line in the view (constant Y, spanning X), placed just in
+    // front of the current Z slice (toward the camera, which looks from -Z).
+    double z = bounds[4] - 1;
+    double p1[3] = { bounds[0], lineY, z };
+    double p2[3] = { bounds[1], lineY, z };
     centerLine->SetPoint1(p1);
     centerLine->SetPoint2(p2);
     centerLine->Update();
     centerLineActor->GetMapper()->Update();
+
+    projRenderer->ResetCameraClippingRange();
+    ui.projectionView->renderWindow()->Render();
+  }
+
+  void updateSliceLine()
+  {
+    if (!image) {
+      return;
+    }
+
+    double bounds[6];
+    image->GetBounds(bounds);
+    double lineX = bounds[0] + ui.slice->value() * image->GetSpacing()[0];
+
+    // Horizontal red line in the view (constant X, spanning Y), placed just in
+    // front of the current Z slice (toward the camera, which looks from -Z).
+    double z = bounds[4] - 1;
+    double p1[3] = { lineX, bounds[2], z };
+    double p2[3] = { lineX, bounds[3], z };
+    sliceLine->SetPoint1(p1);
+    sliceLine->SetPoint2(p2);
+    sliceLine->Update();
+    sliceLineActor->GetMapper()->Update();
 
     projRenderer->ResetCameraClippingRange();
     ui.projectionView->renderWindow()->Render();
@@ -360,7 +421,8 @@ public:
 
   QList<QWidget*> inputWidgets()
   {
-    return { ui.start, ui.stop, ui.steps, ui.slice, ui.rotationCenter };
+    return { ui.start, ui.stop, ui.steps, ui.projectionNo, ui.slice,
+             ui.rotationCenter };
   }
 
   void startGeneratingTestImages()
@@ -416,13 +478,10 @@ public:
 
       Python::Object data = Python::createDataset(image, *dataSource);
 
-      // Convert offsets to absolute values for Python
-      auto imgCenter = image->GetDimensions()[0] / 2.0;
-
       Python::Dict kwargs;
       kwargs.set("dataset", data);
-      kwargs.set("start", imgCenter + ui.start->value());
-      kwargs.set("stop", imgCenter + ui.stop->value());
+      kwargs.set("start", ui.start->value());
+      kwargs.set("stop", ui.stop->value());
       kwargs.set("steps", ui.steps->value());
       kwargs.set("sli", ui.slice->value());
       kwargs.set("algorithm", algorithm());
@@ -459,8 +518,7 @@ public:
       }
 
       for (int i = 0; i < pyRotations.length(); ++i) {
-        // Convert absolute centers to offsets from the image midpoint
-        rotations.append(pyRotations[i].toDouble() - imgCenter);
+        rotations.append(pyRotations[i].toDouble());
       }
       setRotationData(imageData);
     }

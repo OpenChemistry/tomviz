@@ -12,17 +12,9 @@ def transform(dataset, rotation_center=0):
     # so we shift left (negative) to bring it to center.
     pixel_shift = -rotation_center
 
-    # The detector horizontal axis depends on the tilt axis convention.
-    # tilt_axis == 0: array is (proj, Y, X) -> detector horizontal is axis 2
-    # tilt_axis == 2: array is (X, Y, proj) -> detector horizontal is axis 0
-    if tilt_axis == 2:
-        det_axis = 0
-    else:
-        det_axis = 2
-
     # Shift the entire volume along the detector horizontal axis
     shift_vec = [0.0, 0.0, 0.0]
-    shift_vec[det_axis] = pixel_shift
+    shift_vec[1] = pixel_shift
     array = ndshift(array, shift_vec, mode='constant')
 
     dataset.active_scalars = array
@@ -93,11 +85,10 @@ def rotcen_test(f, start=None, stop=None, steps=None, sli=0,
         img_tomo = img_tomo.reshape(s[0], 1, s[1])
         s = img_tomo.shape
 
-    if start is None or stop is None or steps is None:
-        start = int(s[2] / 2 - 50)
-        stop = int(s[2] / 2 + 50)
-        steps = 26
-    cen = np.linspace(start, stop, steps)
+    # Convert to absolute
+    start_abs = int(round(s[2] / 2 + start))
+    stop_abs = int(round(s[2] / 2 + stop))
+    cen = np.linspace(start_abs, stop_abs, steps)
     img = np.zeros([len(cen), s[2], s[2]])
 
     recon_kwargs = {}
@@ -109,4 +100,7 @@ def rotcen_test(f, start=None, stop=None, steps=None, sli=0,
         img[i] = tomopy.recon(img_tomo, theta, center=cen[i],
                               algorithm=algorithm, **recon_kwargs)
     img = tomopy.circ_mask(img, axis=0, ratio=0.8)
+
+    # Convert back to relative to the center
+    cen -= s[2] / 2
     return img, cen
