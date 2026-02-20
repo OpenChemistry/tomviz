@@ -510,6 +510,8 @@ set(python_files
   TV_Filter.py
   PoreSizeDistribution.py
   Tortuosity.py
+  PowerSpectrumDensity.py
+  FourierShellCorrelation.py
   Recon_real_time_tomography.py
   )
 
@@ -567,6 +569,8 @@ set(json_files
   TV_Filter.json
   PoreSizeDistribution.json
   Tortuosity.json
+  PowerSpectrumDensity.json
+  FourierShellCorrelation.json
   Recon_real_time_tomography.json
   )
 
