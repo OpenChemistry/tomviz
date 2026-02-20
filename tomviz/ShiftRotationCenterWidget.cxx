@@ -18,10 +18,16 @@
 #include <vtkSMTransferFunctionManager.h>
 
 #include <vtkActor.h>
+#include <vtkAxis.h>
 #include <vtkCallbackCommand.h>
 #include <vtkCamera.h>
+#include <vtkChartXY.h>
 #include <vtkColorTransferFunction.h>
+#include <vtkContextScene.h>
+#include <vtkContextView.h>
 #include <vtkCubeAxesActor.h>
+#include <vtkFloatArray.h>
+#include <vtkPlot.h>
 #include <vtkImageData.h>
 #include <vtkImageProperty.h>
 #include <vtkImageSlice.h>
@@ -36,6 +42,7 @@
 #include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
 #include <vtkScalarsToColors.h>
+#include <vtkTable.h>
 
 #include <QDebug>
 #include <QFutureWatcher>
@@ -136,6 +143,17 @@ public:
   vtkNew<vtkActor> centerLineActor;
   vtkNew<vtkLineSource> sliceLine;
   vtkNew<vtkActor> sliceLineActor;
+
+  // Quality metric line plots (bottom-right, side by side)
+  vtkNew<vtkContextView> chartViewQia;
+  vtkNew<vtkChartXY> chartQia;
+  vtkNew<vtkContextView> chartViewQn;
+  vtkNew<vtkChartXY> chartQn;
+  vtkNew<vtkTable> indicatorTableQia;
+  vtkNew<vtkTable> indicatorTableQn;
+  QList<double> qiaValues;
+  QList<double> qnValues;
+
   QString script;
   InternalPythonHelper pythonHelper;
   QPointer<ShiftRotationCenterWidget> parent;
@@ -210,6 +228,22 @@ public:
     ui.projectionView->renderWindow()->AddRenderer(projRenderer);
     vtkNew<InteractorStyle> projInteractorStyle;
     ui.projectionView->interactor()->SetInteractorStyle(projInteractorStyle);
+
+    // Set up the Qia quality metric line plot
+    chartViewQia->SetRenderWindow(ui.plotViewQia->renderWindow());
+    chartViewQia->SetInteractor(ui.plotViewQia->interactor());
+    chartViewQia->GetScene()->AddItem(chartQia);
+    chartQia->SetTitle("Qia");
+    chartQia->GetAxis(vtkAxis::BOTTOM)->SetTitle("Center");
+    chartQia->GetAxis(vtkAxis::LEFT)->SetTitle("");
+
+    // Set up the Qn quality metric line plot
+    chartViewQn->SetRenderWindow(ui.plotViewQn->renderWindow());
+    chartViewQn->SetInteractor(ui.plotViewQn->interactor());
+    chartViewQn->GetScene()->AddItem(chartQn);
+    chartQn->SetTitle("Qn");
+    chartQn->GetAxis(vtkAxis::BOTTOM)->SetTitle("Center");
+    chartQn->GetAxis(vtkAxis::LEFT)->SetTitle("");
 
     tomviz::setupRenderer(projRenderer, projMapper, nullptr);
     projRenderer->GetActiveCamera()->SetViewUp(1, 0, 0);
@@ -309,6 +343,16 @@ public:
             &Internal::onPreviewRangeEdited);
     connect(ui.algorithm, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &Internal::updateAlgorithmUI);
+    connect(ui.algorithm, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &Internal::clearTestResults);
+    connect(ui.start, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+            this, &Internal::clearTestResults);
+    connect(ui.stop, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+            this, &Internal::clearTestResults);
+    connect(ui.steps, QOverload<int>::of(&QSpinBox::valueChanged), this,
+            &Internal::clearTestResults);
+    connect(ui.numIterations, QOverload<int>::of(&QSpinBox::valueChanged), this,
+            &Internal::clearTestResults);
     connect(ui.projectionNo, QOverload<int>::of(&QSpinBox::valueChanged), this,
             &Internal::onProjectionChanged);
     connect(ui.slice, QOverload<int>::of(&QSpinBox::valueChanged), this,
@@ -316,6 +360,9 @@ public:
     connect(ui.rotationCenter,
             QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
             &Internal::updateCenterLine);
+    connect(ui.rotationCenter,
+            QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+            &Internal::updateChartIndicator);
   }
 
   void onProjectionChanged(int val)
@@ -332,11 +379,17 @@ public:
   void onSliceChanged(int)
   {
     updateSliceLine();
+    clearTestResults();
+  }
 
-    // The existing test rotation results are no longer valid for this slice
+  void clearTestResults()
+  {
     setRotationData(vtkImageData::New());
     rotations.clear();
+    qiaValues.clear();
+    qnValues.clear();
     updateImageViewSlider();
+    updateChart();
     render();
   }
 
@@ -454,6 +507,8 @@ public:
       resetColorRange();
       render();
     }
+
+    updateChart();
   }
 
   void generateTestImages()
@@ -520,6 +575,26 @@ public:
       for (int i = 0; i < pyRotations.length(); ++i) {
         rotations.append(pyRotations[i].toDouble());
       }
+
+      qiaValues.clear();
+      qnValues.clear();
+
+      auto pyQia = result["qia"];
+      auto qiaList = pyQia.toList();
+      if (qiaList.isValid()) {
+        for (int i = 0; i < qiaList.length(); ++i) {
+          qiaValues.append(qiaList[i].toDouble());
+        }
+      }
+
+      auto pyQn = result["qn"];
+      auto qnList = pyQn.toList();
+      if (qnList.isValid()) {
+        for (int i = 0; i < qnList.length(); ++i) {
+          qnValues.append(qnList[i].toDouble());
+        }
+      }
+
       setRotationData(imageData);
     }
 
@@ -736,9 +811,113 @@ public:
 
   void updateAlgorithmUI()
   {
-    bool iterative = (ui.algorithm->currentText() != "gridrec");
+    auto alg = ui.algorithm->currentText();
+    bool iterative = (alg == "mlem" || alg == "ospml_hybrid");
     ui.numIterationsLabel->setVisible(iterative);
     ui.numIterations->setVisible(iterative);
+
+    // Qn is only meaningful for non-iterative algorithms (gridrec, fbp)
+    // that can produce negative values in the reconstruction.
+    ui.plotViewQn->setVisible(!iterative);
+  }
+
+  void populateChart(vtkChartXY* targetChart,
+                     QVTKGLWidget* view, const QList<double>& values,
+                     unsigned char r, unsigned char g, unsigned char b)
+  {
+    targetChart->ClearPlots();
+
+    if (rotations.isEmpty() || values.isEmpty()) {
+      view->renderWindow()->Render();
+      return;
+    }
+
+    int n = std::min(rotations.size(), values.size());
+
+    vtkNew<vtkFloatArray> xArr;
+    xArr->SetName("Center");
+    xArr->SetNumberOfValues(n);
+
+    vtkNew<vtkFloatArray> yArr;
+    yArr->SetName("Value");
+    yArr->SetNumberOfValues(n);
+
+    for (int i = 0; i < n; ++i) {
+      xArr->SetValue(i, rotations[i]);
+      yArr->SetValue(i, values[i]);
+    }
+
+    vtkNew<vtkTable> table;
+    table->AddColumn(xArr);
+    table->AddColumn(yArr);
+    table->SetNumberOfRows(n);
+
+    auto* line = targetChart->AddPlot(vtkChart::LINE);
+    line->SetInputData(table, 0, 1);
+    line->SetColor(r, g, b, 255);
+    line->SetWidth(2.0);
+  }
+
+  void addIndicator(vtkChartXY* targetChart, vtkTable* indTable,
+                    QVTKGLWidget* view, const QList<double>& values)
+  {
+    if (rotations.isEmpty() || values.isEmpty()) {
+      return;
+    }
+
+    // Remove old indicator (keep only the data plot at index 0)
+    while (targetChart->GetNumberOfPlots() > 1) {
+      targetChart->RemovePlot(targetChart->GetNumberOfPlots() - 1);
+    }
+
+    double center = rotationCenter();
+
+    double yMin = values[0];
+    double yMax = values[0];
+    for (auto v : values) {
+      if (v < yMin)
+        yMin = v;
+      if (v > yMax)
+        yMax = v;
+    }
+    double yPadding = (yMax - yMin) * 0.05;
+
+    vtkNew<vtkFloatArray> indX;
+    indX->SetName("X");
+    indX->SetNumberOfValues(2);
+    indX->SetValue(0, center);
+    indX->SetValue(1, center);
+
+    vtkNew<vtkFloatArray> indY;
+    indY->SetName("Y");
+    indY->SetNumberOfValues(2);
+    indY->SetValue(0, yMin - yPadding);
+    indY->SetValue(1, yMax + yPadding);
+
+    indTable->Initialize();
+    indTable->AddColumn(indX);
+    indTable->AddColumn(indY);
+    indTable->SetNumberOfRows(2);
+
+    auto* indLine = targetChart->AddPlot(vtkChart::LINE);
+    indLine->SetInputData(indTable, 0, 1);
+    indLine->SetColor(255, 255, 0, 255);
+    indLine->SetWidth(2.0);
+
+    view->renderWindow()->Render();
+  }
+
+  void updateChart()
+  {
+    populateChart(chartQia, ui.plotViewQia, qiaValues, 0, 114, 189);
+    populateChart(chartQn, ui.plotViewQn, qnValues, 217, 83, 25);
+    updateChartIndicator();
+  }
+
+  void updateChartIndicator()
+  {
+    addIndicator(chartQia, indicatorTableQia, ui.plotViewQia, qiaValues);
+    addIndicator(chartQn, indicatorTableQn, ui.plotViewQn, qnValues);
   }
 };
 

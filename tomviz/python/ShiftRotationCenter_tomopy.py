@@ -20,6 +20,43 @@ def transform(dataset, rotation_center=0):
     dataset.active_scalars = array
 
 
+def Qia(rec, opt='max'):
+    """Integral of absolute value quality metric."""
+    qlist = []
+    mavg = []
+    for i in range(rec.shape[0]):
+        m = rec[i].sum()
+        mavg.append(m)
+    mavg = np.mean(mavg)
+
+    for i in range(rec.shape[0]):
+        t = np.abs(rec[i]).sum()
+        qlist.append(t / mavg)
+    if opt == 'max':
+        num = qlist.index(max(qlist))
+    else:
+        num = qlist.index(min(qlist))
+    return qlist, num
+
+
+def Qn(rec):
+    """Integral of negativity quality metric."""
+    qlist = []
+    mavg = []
+    for i in range(rec.shape[0]):
+        m = rec[i].sum()
+        mavg.append(m)
+    mavg = np.mean(mavg)
+
+    for i in range(rec.shape[0]):
+        table = -1 * rec[i] > 0
+        testtable = rec[i] * table
+        t = testtable.sum()
+        qlist.append(-1 * t / mavg)
+    num = qlist.index(max(qlist))
+    return qlist, num
+
+
 def test_rotations(dataset, start=None, stop=None, steps=None, sli=0,
                    algorithm='gridrec', num_iter=15):
     # Get the current volume as a numpy array.
@@ -53,12 +90,18 @@ def test_rotations(dataset, start=None, stop=None, steps=None, sli=0,
     # Perform the test rotations
     images, centers = rotcen_test(**kwargs)
 
+    # Compute quality metrics
+    qia_values, qia_best = Qia(images)
+    qn_values, qn_best = Qn(images)
+
     child = dataset.create_child_dataset()
     child.active_scalars = images
 
     return_values = {}
     return_values['images'] = child
     return_values['centers'] = centers.astype(float).tolist()
+    return_values['qia'] = qia_values
+    return_values['qn'] = qn_values
     return return_values
 
 
@@ -92,7 +135,7 @@ def rotcen_test(f, start=None, stop=None, steps=None, sli=0,
     img = np.zeros([len(cen), s[2], s[2]])
 
     recon_kwargs = {}
-    if algorithm != 'gridrec':
+    if algorithm not in ('gridrec', 'fbp'):
         recon_kwargs['num_iter'] = num_iter
 
     for i in range(len(cen)):

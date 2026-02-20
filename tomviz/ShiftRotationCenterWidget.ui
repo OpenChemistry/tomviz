@@ -34,7 +34,7 @@
      <item>
       <layout class="QVBoxLayout" name="leftLayout">
        <item>
-        <widget class="tomviz::QVTKGLWidget" name="projectionView" native="true">
+        <widget class="tomviz::QVTKGLWidget" name="sliceView" native="true">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
            <horstretch>1</horstretch>
@@ -50,20 +50,40 @@
         </widget>
        </item>
        <item>
-        <widget class="tomviz::QVTKGLWidget" name="sliceView" native="true">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-           <horstretch>1</horstretch>
-           <verstretch>1</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>300</width>
-           <height>300</height>
-          </size>
-         </property>
-        </widget>
+        <layout class="QHBoxLayout" name="plotLayout">
+         <item>
+          <widget class="tomviz::QVTKGLWidget" name="plotViewQia" native="true">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+             <horstretch>1</horstretch>
+             <verstretch>1</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>100</width>
+             <height>150</height>
+            </size>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="tomviz::QVTKGLWidget" name="plotViewQn" native="true">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+             <horstretch>1</horstretch>
+             <verstretch>1</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>100</width>
+             <height>150</height>
+            </size>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
       </layout>
      </item>
@@ -244,7 +264,17 @@
               </item>
               <item>
                <property name="text">
+                <string>fbp</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
                 <string>mlem</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>ospml_hybrid</string>
                </property>
               </item>
              </widget>
@@ -459,17 +489,20 @@
         </widget>
        </item>
        <item>
-        <spacer name="verticalSpacer_2">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
+        <widget class="tomviz::QVTKGLWidget" name="projectionView" native="true">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>1</horstretch>
+           <verstretch>1</verstretch>
+          </sizepolicy>
          </property>
-         <property name="sizeHint" stdset="0">
+         <property name="minimumSize">
           <size>
-           <width>20</width>
-           <height>40</height>
+           <width>200</width>
+           <height>200</height>
           </size>
          </property>
-        </spacer>
+        </widget>
        </item>
       </layout>
      </item>
