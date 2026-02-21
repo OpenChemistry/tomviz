@@ -234,7 +234,11 @@ public:
     chartViewQia->SetInteractor(ui.plotViewQia->interactor());
     chartViewQia->GetScene()->AddItem(chartQia);
     chartQia->SetTitle("Qia");
-    chartQia->GetAxis(vtkAxis::BOTTOM)->SetTitle("Center");
+    auto units = dataSource->getUnits();
+    auto unitSuffix = QString(" %1").arg(units);
+    auto centerAxisTitle =
+      QString("Center (%1)").arg(units).toStdString();
+    chartQia->GetAxis(vtkAxis::BOTTOM)->SetTitle(centerAxisTitle);
     chartQia->GetAxis(vtkAxis::LEFT)->SetTitle("");
 
     // Set up the Qn quality metric line plot
@@ -242,8 +246,14 @@ public:
     chartViewQn->SetInteractor(ui.plotViewQn->interactor());
     chartViewQn->GetScene()->AddItem(chartQn);
     chartQn->SetTitle("Qn");
-    chartQn->GetAxis(vtkAxis::BOTTOM)->SetTitle("Center");
+    chartQn->GetAxis(vtkAxis::BOTTOM)->SetTitle(centerAxisTitle);
     chartQn->GetAxis(vtkAxis::LEFT)->SetTitle("");
+
+    // Add unit suffixes to spin boxes that display physical values
+    ui.start->setSuffix(unitSuffix);
+    ui.stop->setSuffix(unitSuffix);
+    ui.currentRotation->setSuffix(unitSuffix);
+    ui.rotationCenter->setSuffix(unitSuffix);
 
     tomviz::setupRenderer(projRenderer, projMapper, nullptr);
     projRenderer->GetActiveCamera()->SetViewUp(1, 0, 0);
@@ -291,13 +301,14 @@ public:
     ui.colorPresetButton->setIcon(QIcon(":/pqWidgets/Icons/pqFavorites.svg"));
 
     auto* dims = image->GetDimensions();
+    auto* spacing = image->GetSpacing();
 
     // All center-related values are offsets from the image midpoint.
     // 0 means the rotation center is exactly at the midpoint.
     setRotationCenter(0);
 
-    // Default start/stop to +/- 10% of the detector width
-    auto delta = dims[0] * 0.1;
+    // Default start/stop to +/- 10% of the detector width (in physical units)
+    auto delta = dims[1] * 0.1 * spacing[1];
     ui.start->setValue(-delta);
     ui.stop->setValue(delta);
 
@@ -353,6 +364,9 @@ public:
             &Internal::clearTestResults);
     connect(ui.numIterations, QOverload<int>::of(&QSpinBox::valueChanged), this,
             &Internal::clearTestResults);
+    connect(ui.circMaskRatio,
+            QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+            &Internal::clearTestResults);
     connect(ui.projectionNo, QOverload<int>::of(&QSpinBox::valueChanged), this,
             &Internal::onProjectionChanged);
     connect(ui.slice, QOverload<int>::of(&QSpinBox::valueChanged), this,
@@ -402,7 +416,7 @@ public:
     double bounds[6];
     image->GetBounds(bounds);
     double centerY = (bounds[2] + bounds[3]) / 2.0;
-    double lineY = centerY + rotationCenter() * image->GetSpacing()[0];
+    double lineY = centerY + rotationCenter();
 
     // Vertical line in the view (constant Y, spanning X), placed just in
     // front of the current Z slice (toward the camera, which looks from -Z).
@@ -459,6 +473,7 @@ public:
     ui.steps->setValue(settings->value("steps", 26).toInt());
     setAlgorithm(settings->value("algorithm", "mlem").toString());
     ui.numIterations->setValue(settings->value("numIterations", 15).toInt());
+    ui.circMaskRatio->setValue(settings->value("circMaskRatio", 0.8).toDouble());
     settings->endGroup();
   }
 
@@ -469,6 +484,7 @@ public:
     settings->setValue("steps", ui.steps->value());
     settings->setValue("algorithm", algorithm());
     settings->setValue("numIterations", ui.numIterations->value());
+    settings->setValue("circMaskRatio", ui.circMaskRatio->value());
     settings->endGroup();
   }
 
@@ -541,6 +557,7 @@ public:
       kwargs.set("sli", ui.slice->value());
       kwargs.set("algorithm", algorithm());
       kwargs.set("num_iter", ui.numIterations->value());
+      kwargs.set("circ_mask_ratio", ui.circMaskRatio->value());
 
       auto ret = func.call(kwargs);
       auto result = ret.toDict();

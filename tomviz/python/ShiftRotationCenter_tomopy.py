@@ -7,10 +7,10 @@ def transform(dataset, rotation_center=0):
     array = dataset.active_scalars
     tilt_axis = dataset.tilt_axis
 
-    # rotation_center is an offset from the image midpoint.
+    # rotation_center is an offset from the image midpoint in physical units.
     # A positive offset means the rotation center is right of center,
     # so we shift left (negative) to bring it to center.
-    pixel_shift = -rotation_center
+    pixel_shift = -rotation_center / dataset.spacing[1]
 
     # Shift the entire volume along the detector horizontal axis
     shift_vec = [0.0, 0.0, 0.0]
@@ -18,6 +18,107 @@ def transform(dataset, rotation_center=0):
     array = ndshift(array, shift_vec, mode='constant')
 
     dataset.active_scalars = array
+
+
+def test_rotations(dataset, start=None, stop=None, steps=None, sli=0,
+                   algorithm='gridrec', num_iter=15, circ_mask_ratio=0.8):
+    # Get the current volume as a numpy array.
+    array = dataset.active_scalars
+
+    angles = dataset.tilt_angles
+    tilt_axis = dataset.tilt_axis
+
+    # TomoPy wants the tilt axis to be zero, so ensure that is true
+    if tilt_axis == 2:
+        array = np.transpose(array, [2, 0, 1])
+
+    if angles is None:
+        raise Exception('No angles found')
+
+    # start/stop are in physical units; convert to pixel offsets for tomopy
+    spacing_y = dataset.spacing[1]
+    start_px = start / spacing_y
+    stop_px = stop / spacing_y
+
+    recon_input = {
+        'img_tomo': array,
+        'angle': angles,
+    }
+
+    kwargs = {
+        'f': recon_input,
+        'start': start_px,
+        'stop': stop_px,
+        'steps': steps,
+        'sli': sli,
+        'algorithm': algorithm,
+        'num_iter': num_iter,
+        'circ_mask_ratio': circ_mask_ratio,
+    }
+
+    # Perform the test rotations
+    images, centers = rotcen_test(**kwargs)
+
+    # Convert centers from pixel offsets to physical units
+    centers = centers * spacing_y
+
+    # Compute quality metrics
+    qia_values, qia_best = Qia(images)
+    qn_values, qn_best = Qn(images)
+
+    child = dataset.create_child_dataset()
+    child.active_scalars = images
+
+    return_values = {}
+    return_values['images'] = child
+    return_values['centers'] = centers.astype(float).tolist()
+    return_values['qia'] = qia_values
+    return_values['qn'] = qn_values
+    return return_values
+
+
+def rotcen_test(f, start=None, stop=None, steps=None, sli=0,
+                algorithm='gridrec', num_iter=15, circ_mask_ratio=0.8):
+
+    import tomopy
+
+    tmp = np.array(f['img_tomo'][0])
+    s = [1, tmp.shape[0], tmp.shape[1]]
+
+    if sli == 0:
+        sli = int(s[1] / 2)
+
+    theta = np.array(f['angle']) / 180.0 * np.pi
+
+    img_tomo = np.array(f['img_tomo'][:, sli:sli + 1, :])
+
+    img_tomo[np.isnan(img_tomo)] = 0
+    img_tomo[np.isinf(img_tomo)] = 0
+
+    s = img_tomo.shape
+    if len(s) == 2:
+        img_tomo = img_tomo.reshape(s[0], 1, s[1])
+        s = img_tomo.shape
+
+    # Convert to absolute
+    start_abs = int(round(s[2] / 2 + start))
+    stop_abs = int(round(s[2] / 2 + stop))
+    cen = np.linspace(start_abs, stop_abs, steps)
+    img = np.zeros([len(cen), s[2], s[2]])
+
+    recon_kwargs = {}
+    if algorithm not in ('gridrec', 'fbp'):
+        recon_kwargs['num_iter'] = num_iter
+
+    for i in range(len(cen)):
+        print(f'{i + 1}: rotcen {cen[i]}')
+        img[i] = tomopy.recon(img_tomo, theta, center=cen[i],
+                              algorithm=algorithm, **recon_kwargs)
+    img = tomopy.circ_mask(img, axis=0, ratio=circ_mask_ratio)
+
+    # Convert back to relative to the center
+    cen -= s[2] / 2
+    return img, cen
 
 
 def Qia(rec, opt='max'):
@@ -55,95 +156,3 @@ def Qn(rec):
         qlist.append(-1 * t / mavg)
     num = qlist.index(max(qlist))
     return qlist, num
-
-
-def test_rotations(dataset, start=None, stop=None, steps=None, sli=0,
-                   algorithm='gridrec', num_iter=15):
-    # Get the current volume as a numpy array.
-    array = dataset.active_scalars
-
-    angles = dataset.tilt_angles
-    tilt_axis = dataset.tilt_axis
-
-    # TomoPy wants the tilt axis to be zero, so ensure that is true
-    if tilt_axis == 2:
-        array = np.transpose(array, [2, 0, 1])
-
-    if angles is None:
-        raise Exception('No angles found')
-
-    recon_input = {
-        'img_tomo': array,
-        'angle': angles,
-    }
-
-    kwargs = {
-        'f': recon_input,
-        'start': start,
-        'stop': stop,
-        'steps': steps,
-        'sli': sli,
-        'algorithm': algorithm,
-        'num_iter': num_iter,
-    }
-
-    # Perform the test rotations
-    images, centers = rotcen_test(**kwargs)
-
-    # Compute quality metrics
-    qia_values, qia_best = Qia(images)
-    qn_values, qn_best = Qn(images)
-
-    child = dataset.create_child_dataset()
-    child.active_scalars = images
-
-    return_values = {}
-    return_values['images'] = child
-    return_values['centers'] = centers.astype(float).tolist()
-    return_values['qia'] = qia_values
-    return_values['qn'] = qn_values
-    return return_values
-
-
-def rotcen_test(f, start=None, stop=None, steps=None, sli=0,
-                algorithm='gridrec', num_iter=15):
-
-    import tomopy
-
-    tmp = np.array(f['img_tomo'][0])
-    s = [1, tmp.shape[0], tmp.shape[1]]
-
-    if sli == 0:
-        sli = int(s[1] / 2)
-
-    theta = np.array(f['angle']) / 180.0 * np.pi
-
-    img_tomo = np.array(f['img_tomo'][:, sli:sli + 1, :])
-
-    img_tomo[np.isnan(img_tomo)] = 0
-    img_tomo[np.isinf(img_tomo)] = 0
-
-    s = img_tomo.shape
-    if len(s) == 2:
-        img_tomo = img_tomo.reshape(s[0], 1, s[1])
-        s = img_tomo.shape
-
-    # Convert to absolute
-    start_abs = int(round(s[2] / 2 + start))
-    stop_abs = int(round(s[2] / 2 + stop))
-    cen = np.linspace(start_abs, stop_abs, steps)
-    img = np.zeros([len(cen), s[2], s[2]])
-
-    recon_kwargs = {}
-    if algorithm not in ('gridrec', 'fbp'):
-        recon_kwargs['num_iter'] = num_iter
-
-    for i in range(len(cen)):
-        print(f'{i + 1}: rotcen {cen[i]}')
-        img[i] = tomopy.recon(img_tomo, theta, center=cen[i],
-                              algorithm=algorithm, **recon_kwargs)
-    img = tomopy.circ_mask(img, axis=0, ratio=0.8)
-
-    # Convert back to relative to the center
-    cen -= s[2] / 2
-    return img, cen
