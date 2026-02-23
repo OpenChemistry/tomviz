@@ -42,8 +42,8 @@ def cal_fsc(image1,image2,pixel_size_nm,phase_flag=False, save=False, title=None
         fsc = np.zeros(r_max)
         noise_onebit = np.zeros(r_max)
         noise_halfbit = np.zeros(r_max)
-        x = np.arange(nx/2)/(nx*pixel_size_nm)
-        #x = np.arange(r_max)/(nx*pixel_size_nm)
+        max_dim = np.max((nx,ny))
+        x = np.arange(r_max)/(max_dim*pixel_size_nm)
         dist_map = cal_dist((nx,ny))
         #np.save('dist_map.np',dist_map)
         for i in range(r_max):
@@ -67,7 +67,8 @@ def cal_fsc(image1,image2,pixel_size_nm,phase_flag=False, save=False, title=None
         fsc = np.zeros(r_max)
         noise_onebit = np.zeros(r_max)
         noise_halfbit = np.zeros(r_max)
-        x = np.arange(nx/2)/(nx*pixel_size_nm)
+        max_dim = np.max((nx,ny,nz))
+        x = np.arange(r_max)/(max_dim*pixel_size_nm)
         dist_map = cal_dist((nx,ny,nz))
         for i in range(r_max):
             index = np.where((i <= dist_map) & (dist_map < (i+1)))
@@ -97,31 +98,52 @@ def checkerboard_split(image):
 
 
 class FourierShellCorrelation(tomviz.operators.CancelableOperator):
-    def transform(self, dataset):
-        scalars = dataset.active_scalars
+    def transform(self, dataset, selected_scalars=None):
+        if selected_scalars is None:
+            selected_scalars = (dataset.active_name,)
+
         pixel_spacing = dataset.spacing[0]
 
-        if scalars is None:
+        column_names = ["x"]
+        all_x = None
+        fsc_columns = []
+        noise_onebit = None
+        noise_halfbit = None
+
+        for name in selected_scalars:
+            scalars = dataset.scalars(name)
+            if scalars is None:
+                continue
+
+            image1, image2 = checkerboard_split(scalars)
+            x, fsc, onebit, halfbit = cal_fsc(image1, image2, pixel_spacing)
+
+            if all_x is None:
+                all_x = x
+                noise_onebit = onebit
+                noise_halfbit = halfbit
+
+            column_names.append(name)
+            fsc_columns.append(fsc)
+
+        if all_x is None:
             raise RuntimeError("No scalars found!")
 
-        image1, image2 = checkerboard_split(scalars)
-        x, fsc, noise_onebit, noise_halfbit = cal_fsc(image1, image2, pixel_spacing)
+        # Add shared noise curve columns after all FSC columns
+        column_names.append("One bit noise")
+        column_names.append("Half bit noise")
 
-        column_names = ["x", "FSC", "One bit noise", "Half bit noise"]
+        n = len(all_x)
+        num_cols = 1 + len(fsc_columns) + 2
+        table_data = np.empty(shape=(n, num_cols))
+        table_data[:, 0] = all_x
+        for i, col in enumerate(fsc_columns):
+            table_data[:, i + 1] = col
+        table_data[:, -2] = noise_onebit
+        table_data[:, -1] = noise_halfbit
 
-        n = len(x)
+        axis_labels = ("Spatial Frequency", "Fourier Shell Correlation")
+        log_flags = (False, False)
+        table = tomviz.utils.make_spreadsheet(column_names, table_data, axis_labels, log_flags)
 
-        table_data = np.empty(shape=(n, 4))
-
-        table_data[:, 0] = x
-        table_data[:, 1] = fsc
-        table_data[:, 2] = noise_onebit
-        table_data[:, 3] = noise_halfbit
-
-        table = tomviz.utils.make_spreadsheet(column_names, table_data, ("Spatial Frequency", "Fourier Shell Correlation"), (False, False))
-
-        return_values = {
-            "plot": table
-        }
-
-        return return_values
+        return {"plot": table}
