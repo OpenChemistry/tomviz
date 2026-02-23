@@ -1,23 +1,42 @@
 import numpy as np
 
 
-def transform(dataset, rotation_center=0):
+def transform(dataset, rotation_center=0, transform_source='manual',
+              transform_file='', transforms_save_file=''):
     from scipy.ndimage import shift as ndshift
 
-    array = dataset.active_scalars
-    tilt_axis = dataset.tilt_axis
+    if transform_source == 'from_file':
+        with np.load(transform_file) as f:
+            saved_center = f['rotation_center']
+            saved_spacing = f['spacing']
 
-    # rotation_center is an offset from the image midpoint in physical units.
+        # Scale pixel offset by spacing ratio so it applies correctly
+        # to datasets with different voxel sizes.
+        rotation_center = float(
+            saved_center * saved_spacing[1] / dataset.spacing[1]
+        )
+
+    # rotation_center is an offset from the image midpoint in pixels.
     # A positive offset means the rotation center is right of center,
     # so we shift left (negative) to bring it to center.
-    pixel_shift = -rotation_center / dataset.spacing[1]
+    pixel_shift = -rotation_center
 
     # Shift the entire volume along the detector horizontal axis
     shift_vec = [0.0, 0.0, 0.0]
     shift_vec[1] = pixel_shift
-    array = ndshift(array, shift_vec, mode='constant')
 
-    dataset.active_scalars = array
+    for name in dataset.scalars_names:
+        array = dataset.scalars(name)
+        result = ndshift(array, shift_vec, mode='constant')
+        dataset.set_scalars(name, result)
+
+    if transform_source == 'manual' and transforms_save_file:
+        np.savez(
+            transforms_save_file,
+            rotation_center=rotation_center,
+            spacing=dataset.spacing,
+        )
+        print('Saved transforms file to:', transforms_save_file)
 
 
 def test_rotations(dataset, start=None, stop=None, steps=None, sli=0,
@@ -35,11 +54,7 @@ def test_rotations(dataset, start=None, stop=None, steps=None, sli=0,
     if angles is None:
         raise Exception('No angles found')
 
-    # start/stop are in physical units; convert to pixel offsets for tomopy
-    spacing_y = dataset.spacing[1]
-    start_px = start / spacing_y
-    stop_px = stop / spacing_y
-
+    # start/stop are already in pixel offsets
     recon_input = {
         'img_tomo': array,
         'angle': angles,
@@ -47,8 +62,8 @@ def test_rotations(dataset, start=None, stop=None, steps=None, sli=0,
 
     kwargs = {
         'f': recon_input,
-        'start': start_px,
-        'stop': stop_px,
+        'start': start,
+        'stop': stop,
         'steps': steps,
         'sli': sli,
         'algorithm': algorithm,
@@ -58,9 +73,6 @@ def test_rotations(dataset, start=None, stop=None, steps=None, sli=0,
 
     # Perform the test rotations
     images, centers = rotcen_test(**kwargs)
-
-    # Convert centers from pixel offsets to physical units
-    centers = centers * spacing_y
 
     # Compute quality metrics
     qia_values, qia_best = Qia(images)

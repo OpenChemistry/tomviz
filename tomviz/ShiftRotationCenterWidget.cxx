@@ -45,11 +45,16 @@
 #include <vtkTable.h>
 
 #include <QDebug>
+#include <QFileDialog>
 #include <QFutureWatcher>
 #include <QKeyEvent>
 #include <QMessageBox>
 #include <QProgressDialog>
+#include <QToolButton>
+#include <QVBoxLayout>
 #include <QtConcurrent>
+
+#include "pqLineEdit.h"
 
 #include <algorithm>
 
@@ -234,11 +239,7 @@ public:
     chartViewQia->SetInteractor(ui.plotViewQia->interactor());
     chartViewQia->GetScene()->AddItem(chartQia);
     chartQia->SetTitle("Qia");
-    auto units = dataSource->getUnits();
-    auto unitSuffix = QString(" %1").arg(units);
-    auto centerAxisTitle =
-      QString("Center (%1)").arg(units).toStdString();
-    chartQia->GetAxis(vtkAxis::BOTTOM)->SetTitle(centerAxisTitle);
+    chartQia->GetAxis(vtkAxis::BOTTOM)->SetTitle("Center (px)");
     chartQia->GetAxis(vtkAxis::LEFT)->SetTitle("");
 
     // Set up the Qn quality metric line plot
@@ -246,14 +247,8 @@ public:
     chartViewQn->SetInteractor(ui.plotViewQn->interactor());
     chartViewQn->GetScene()->AddItem(chartQn);
     chartQn->SetTitle("Qn");
-    chartQn->GetAxis(vtkAxis::BOTTOM)->SetTitle(centerAxisTitle);
+    chartQn->GetAxis(vtkAxis::BOTTOM)->SetTitle("Center (px)");
     chartQn->GetAxis(vtkAxis::LEFT)->SetTitle("");
-
-    // Add unit suffixes to spin boxes that display physical values
-    ui.start->setSuffix(unitSuffix);
-    ui.stop->setSuffix(unitSuffix);
-    ui.currentRotation->setSuffix(unitSuffix);
-    ui.rotationCenter->setSuffix(unitSuffix);
 
     tomviz::setupRenderer(projRenderer, projMapper, nullptr);
     projRenderer->GetActiveCamera()->SetViewUp(1, 0, 0);
@@ -301,16 +296,19 @@ public:
     ui.colorPresetButton->setIcon(QIcon(":/pqWidgets/Icons/pqFavorites.svg"));
 
     auto* dims = image->GetDimensions();
-    auto* spacing = image->GetSpacing();
 
-    // All center-related values are offsets from the image midpoint.
+    // All center-related values are offsets from the image midpoint in pixels.
     // 0 means the rotation center is exactly at the midpoint.
     setRotationCenter(0);
 
-    // Default start/stop to +/- 10% of the detector width (in physical units)
-    auto delta = dims[1] * 0.1 * spacing[1];
-    ui.start->setValue(-delta);
-    ui.stop->setValue(delta);
+    // Default start/stop to +/- 50 pixels
+    ui.start->setValue(-50);
+    ui.stop->setValue(50);
+
+    // Display image dimensions
+    ui.imageDimensionsLabel->setText(
+      QString("Image: %1 x %2 x %3 (shift axis: Y = %2 px)")
+        .arg(dims[0]).arg(dims[1]).arg(dims[2]));
 
     // Default projection number to the middle projection
     ui.projectionNo->setMaximum(dims[2] - 1);
@@ -330,6 +328,45 @@ public:
 
     updateControls();
     setupConnections();
+
+    // Replace the IntSliderWidget's built-in line edit with compact
+    // up/down arrow buttons that move the slider by one tick.
+    auto* sliderLineEdit = ui.imageViewSlider->findChild<pqLineEdit*>();
+    if (sliderLineEdit) {
+      sliderLineEdit->hide();
+    }
+    auto* arrowContainer = new QWidget(ui.imageViewSlider);
+    auto* arrowLayout = new QVBoxLayout(arrowContainer);
+    arrowLayout->setContentsMargins(0, 0, 0, 0);
+    arrowLayout->setSpacing(0);
+    auto* upButton = new QToolButton(arrowContainer);
+    upButton->setArrowType(Qt::UpArrow);
+    upButton->setAutoRepeat(true);
+    upButton->setFixedSize(20, 14);
+    auto* downButton = new QToolButton(arrowContainer);
+    downButton->setArrowType(Qt::DownArrow);
+    downButton->setAutoRepeat(true);
+    downButton->setFixedSize(20, 14);
+    arrowLayout->addWidget(upButton);
+    arrowLayout->addWidget(downButton);
+    ui.imageViewSlider->layout()->addWidget(arrowContainer);
+    connect(upButton, &QToolButton::clicked, this, [this]() {
+      int current = ui.imageViewSlider->value();
+      if (current < ui.imageViewSlider->maximum()) {
+        ui.imageViewSlider->setValue(current + 1);
+        sliderEdited();
+      }
+    });
+    connect(downButton, &QToolButton::clicked, this, [this]() {
+      int current = ui.imageViewSlider->value();
+      if (current > ui.imageViewSlider->minimum()) {
+        ui.imageViewSlider->setValue(current - 1);
+        sliderEdited();
+      }
+    });
+
+    // Set up transform source UI visibility
+    updateTransformSourceUI();
 
     // Update line positions now that all values are set
     updateCenterLine();
@@ -377,6 +414,25 @@ public:
     connect(ui.rotationCenter,
             QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
             &Internal::updateChartIndicator);
+
+    // Transform source UI
+    connect(ui.transformSource,
+            QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            &Internal::updateTransformSourceUI);
+    connect(ui.transformFileBrowse, &QPushButton::clicked, this, [this]() {
+      auto path = QFileDialog::getOpenFileName(
+        parent, "Open Transform File", QString(), "NPZ files (*.npz)");
+      if (!path.isEmpty()) {
+        ui.transformFile->setText(path);
+      }
+    });
+    connect(ui.saveFileBrowse, &QPushButton::clicked, this, [this]() {
+      auto path = QFileDialog::getSaveFileName(
+        parent, "Save Transform File", QString(), "NPZ files (*.npz)");
+      if (!path.isEmpty()) {
+        ui.saveFile->setText(path);
+      }
+    });
   }
 
   void onProjectionChanged(int val)
@@ -416,7 +472,7 @@ public:
     double bounds[6];
     image->GetBounds(bounds);
     double centerY = (bounds[2] + bounds[3]) / 2.0;
-    double lineY = centerY + rotationCenter();
+    double lineY = centerY + rotationCenter() * image->GetSpacing()[1];
 
     // Vertical line in the view (constant Y, spanning X), placed just in
     // front of the current Z slice (toward the camera, which looks from -Z).
@@ -470,10 +526,26 @@ public:
   {
     auto settings = pqApplicationCore::instance()->settings();
     settings->beginGroup("ShiftRotationCenterWidget");
-    ui.steps->setValue(settings->value("steps", 26).toInt());
+    ui.steps->setValue(settings->value("steps", 200).toInt());
     setAlgorithm(settings->value("algorithm", "mlem").toString());
     ui.numIterations->setValue(settings->value("numIterations", 15).toInt());
     ui.circMaskRatio->setValue(settings->value("circMaskRatio", 0.8).toDouble());
+
+    // Restore start/stop only if the saved values fit within the current image
+    auto halfDim = image->GetDimensions()[1] / 2.0;
+    if (settings->contains("start")) {
+      auto savedStart = settings->value("start").toDouble();
+      if (std::abs(savedStart) <= halfDim) {
+        ui.start->setValue(savedStart);
+      }
+    }
+    if (settings->contains("stop")) {
+      auto savedStop = settings->value("stop").toDouble();
+      if (std::abs(savedStop) <= halfDim) {
+        ui.stop->setValue(savedStop);
+      }
+    }
+
     settings->endGroup();
   }
 
@@ -485,6 +557,8 @@ public:
     settings->setValue("algorithm", algorithm());
     settings->setValue("numIterations", ui.numIterations->value());
     settings->setValue("circMaskRatio", ui.circMaskRatio->value());
+    settings->setValue("start", ui.start->value());
+    settings->setValue("stop", ui.stop->value());
     settings->endGroup();
   }
 
@@ -838,6 +912,28 @@ public:
     ui.plotViewQn->setVisible(!iterative);
   }
 
+  void updateTransformSourceUI()
+  {
+    bool manual = (ui.transformSource->currentIndex() == 0);
+
+    // Manual mode: show rotation center, save file, test rotation controls
+    ui.rotationCenterLabel->setVisible(manual);
+    ui.rotationCenter->setVisible(manual);
+    ui.saveFileLabel->setVisible(manual);
+    ui.saveFile->setVisible(manual);
+    ui.saveFileBrowse->setVisible(manual);
+    ui.testRotationCentersGroup->setVisible(manual);
+    ui.testRotationsSettingsGroup->setVisible(manual && rotationDataValid());
+    ui.plotViewQia->setVisible(manual);
+    ui.plotViewQn->setVisible(manual);
+    ui.sliceView->setVisible(manual);
+
+    // Load-from-file mode: show transform file controls
+    ui.transformFileLabel->setVisible(!manual);
+    ui.transformFile->setVisible(!manual);
+    ui.transformFileBrowse->setVisible(!manual);
+  }
+
   void populateChart(vtkChartXY* targetChart,
                      QVTKGLWidget* view, const QList<double>& values,
                      unsigned char r, unsigned char g, unsigned char b)
@@ -952,6 +1048,11 @@ ShiftRotationCenterWidget::~ShiftRotationCenterWidget() = default;
 void ShiftRotationCenterWidget::getValues(QVariantMap& map)
 {
   map.insert("rotation_center", m_internal->rotationCenter());
+
+  auto sourceIndex = m_internal->ui.transformSource->currentIndex();
+  map.insert("transform_source", sourceIndex == 0 ? "manual" : "from_file");
+  map.insert("transform_file", m_internal->ui.transformFile->text());
+  map.insert("transforms_save_file", m_internal->ui.saveFile->text());
 }
 
 void ShiftRotationCenterWidget::setValues(const QVariantMap& map)
@@ -964,6 +1065,17 @@ void ShiftRotationCenterWidget::setValues(const QVariantMap& map)
   }
   if (map.contains("num_iter")) {
     m_internal->ui.numIterations->setValue(map["num_iter"].toInt());
+  }
+  if (map.contains("transform_source")) {
+    auto source = map["transform_source"].toString();
+    m_internal->ui.transformSource->setCurrentIndex(
+      source == "from_file" ? 1 : 0);
+  }
+  if (map.contains("transform_file")) {
+    m_internal->ui.transformFile->setText(map["transform_file"].toString());
+  }
+  if (map.contains("transforms_save_file")) {
+    m_internal->ui.saveFile->setText(map["transforms_save_file"].toString());
   }
 }
 

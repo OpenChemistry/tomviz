@@ -68,7 +68,7 @@
           <string/>
          </property>
          <layout class="QGridLayout" name="gridLayout_3">
-          <item row="7" column="0">
+          <item row="8" column="0">
            <widget class="QPushButton" name="testRotations">
             <property name="text">
              <string>Test Rotations</string>
@@ -92,6 +92,13 @@
            </widget>
           </item>
           <item row="2" column="0">
+           <widget class="QLabel" name="imageDimensionsLabel">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
            <layout class="QHBoxLayout" name="horizontalLayout">
             <item>
              <widget class="QLabel" name="startLabel">
@@ -165,49 +172,9 @@
               </property>
              </widget>
             </item>
-            <item>
-             <widget class="QLabel" name="projectionNoLabel">
-              <property name="text">
-               <string>Projection No.:</string>
-              </property>
-              <property name="buddy">
-               <cstring>projectionNo</cstring>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QSpinBox" name="projectionNo">
-              <property name="keyboardTracking">
-               <bool>false</bool>
-              </property>
-              <property name="maximum">
-               <number>100000</number>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QLabel" name="sliceLabel">
-              <property name="text">
-               <string>Slice:</string>
-              </property>
-              <property name="buddy">
-               <cstring>slice</cstring>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QSpinBox" name="slice">
-              <property name="keyboardTracking">
-               <bool>false</bool>
-              </property>
-              <property name="maximum">
-               <number>100000</number>
-              </property>
-             </widget>
-            </item>
            </layout>
           </item>
-          <item row="3" column="0">
+          <item row="4" column="0">
            <layout class="QHBoxLayout" name="algorithmLayout">
             <item>
              <widget class="QLabel" name="algorithmLabel">
@@ -274,8 +241,48 @@
             </item>
            </layout>
           </item>
-          <item row="4" column="0">
-           <layout class="QHBoxLayout" name="circMaskLayout">
+          <item row="5" column="0">
+           <layout class="QHBoxLayout" name="projSliceMaskLayout">
+            <item>
+             <widget class="QLabel" name="projectionNoLabel">
+              <property name="text">
+               <string>Projection No.:</string>
+              </property>
+              <property name="buddy">
+               <cstring>projectionNo</cstring>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSpinBox" name="projectionNo">
+              <property name="keyboardTracking">
+               <bool>false</bool>
+              </property>
+              <property name="maximum">
+               <number>100000</number>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="sliceLabel">
+              <property name="text">
+               <string>Slice:</string>
+              </property>
+              <property name="buddy">
+               <cstring>slice</cstring>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSpinBox" name="slice">
+              <property name="keyboardTracking">
+               <bool>false</bool>
+              </property>
+              <property name="maximum">
+               <number>100000</number>
+              </property>
+             </widget>
+            </item>
             <item>
              <widget class="QLabel" name="circMaskRatioLabel">
               <property name="text">
@@ -308,22 +315,9 @@
               </property>
              </widget>
             </item>
-            <item>
-             <spacer name="circMaskSpacer">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
            </layout>
           </item>
-          <item row="5" column="0">
+          <item row="6" column="0">
            <widget class="tomviz::QVTKGLWidget" name="projectionView" native="true">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -486,6 +480,30 @@
            </widget>
           </item>
           <item row="1" column="0">
+           <widget class="QLabel" name="transformSourceLabel">
+            <property name="text">
+             <string>Source:</string>
+            </property>
+            <property name="buddy">
+             <cstring>transformSource</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QComboBox" name="transformSource">
+            <item>
+             <property name="text">
+              <string>Manual</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Load From File</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="2" column="0">
            <widget class="QLabel" name="rotationCenterLabel">
             <property name="text">
              <string>Center Offset:</string>
@@ -495,7 +513,7 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="1">
+          <item row="2" column="1">
            <widget class="tomviz::DoubleSpinBox" name="rotationCenter">
             <property name="keyboardTracking">
              <bool>false</bool>
@@ -514,8 +532,63 @@
             </property>
            </widget>
           </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="transformFileLabel">
+            <property name="text">
+             <string>Transform File:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <layout class="QHBoxLayout" name="transformFileLayout">
+            <item>
+             <widget class="QLineEdit" name="transformFile"/>
+            </item>
+            <item>
+             <widget class="QPushButton" name="transformFileBrowse">
+              <property name="text">
+               <string>Browse...</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="saveFileLabel">
+            <property name="text">
+             <string>Save File:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <layout class="QHBoxLayout" name="saveFileLayout">
+            <item>
+             <widget class="QLineEdit" name="saveFile"/>
+            </item>
+            <item>
+             <widget class="QPushButton" name="saveFileBrowse">
+              <property name="text">
+               <string>Browse...</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
          </layout>
         </widget>
+       </item>
+       <item>
+        <spacer name="rightColumnSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+        </spacer>
        </item>
        <item>
         <layout class="QHBoxLayout" name="plotLayout">
@@ -595,7 +668,10 @@
   <tabstop>circMaskRatio</tabstop>
   <tabstop>testRotations</tabstop>
   <tabstop>currentRotation</tabstop>
+  <tabstop>transformSource</tabstop>
   <tabstop>rotationCenter</tabstop>
+  <tabstop>transformFile</tabstop>
+  <tabstop>saveFile</tabstop>
   <tabstop>colorPresetButton</tabstop>
  </tabstops>
  <resources/>
