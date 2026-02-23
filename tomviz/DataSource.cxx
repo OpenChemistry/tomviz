@@ -44,9 +44,14 @@
 #include <vtkSMTransferFunctionManager.h>
 #include <vtkSMViewProxy.h>
 
+#include <pqApplicationCore.h>
+#include <pqSettings.h>
+
+#include <QCheckBox>
 #include <QDebug>
 #include <QJsonArray>
 #include <QMap>
+#include <QMessageBox>
 #include <QTimer>
 
 #include <cmath>
@@ -1032,6 +1037,35 @@ int DataSource::addOperator(Operator* op, bool append)
     }
   }
   if (index >= 0) {
+    // About to insert (not append). Ask the user for confirmation unless
+    // they previously checked "Don't ask again".
+    auto settings = pqApplicationCore::instance()->settings();
+    bool skipConfirm =
+      settings->value("OperatorInsertConfirm/DontAsk", false).toBool();
+    if (!skipConfirm) {
+      QMessageBox msgBox;
+      msgBox.setWindowTitle("Tomviz");
+      msgBox.setText(
+        "Recent changes to Tomviz allow insertion of operators. If another "
+        "operator is selected in the pipeline, creating a new operator will "
+        "insert the new operator at the position of the selected operator in "
+        "the pipeline.\n\nDo you wish to continue inserting the operator?");
+      msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+      msgBox.setDefaultButton(QMessageBox::Yes);
+      QCheckBox dontAskAgain("Don't ask again");
+      msgBox.setCheckBox(&dontAskAgain);
+
+      auto result = msgBox.exec();
+
+      if (dontAskAgain.isChecked()) {
+        settings->setValue("OperatorInsertConfirm/DontAsk", true);
+      }
+
+      if (result != QMessageBox::Yes) {
+        op->deleteLater();
+        return -1;
+      }
+    }
     this->Internals->Operators.insert(index, op);
   } else {
     index = this->Internals->Operators.count();
