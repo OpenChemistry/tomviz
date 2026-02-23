@@ -631,6 +631,10 @@ bool DataSource::deserialize(const QJsonObject& state)
       auto type = moduleObj["type"].toString();
       auto m =
         ModuleManager::instance().createAndAddModule(type, this, viewProxy);
+      if (!m) {
+        qWarning() << "Failed to create module of type:" << type;
+        continue;
+      }
       m->deserialize(moduleObj);
     }
   }
