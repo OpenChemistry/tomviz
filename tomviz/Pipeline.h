@@ -141,6 +141,8 @@ private:
   void addDataSource(DataSource* dataSource);
   bool beingEdited(DataSource* dataSource) const;
   bool isModified(DataSource* dataSource, Operator** firstModified) const;
+  Future* executeRange(DataSource* ds, Operator* start, Operator* end,
+                       bool checkBreakpoints);
 
   DataSource* m_data;
   bool m_paused = false;
