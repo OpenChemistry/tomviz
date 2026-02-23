@@ -629,6 +629,16 @@ bool DataSource::deserialize(const QJsonObject& state)
         viewProxy = ActiveObjects::instance().activeView();
       }
       auto type = moduleObj["type"].toString();
+
+      // Plot modules require an OperatorResult, not a DataSource. They
+      // will be recreated when the operator pipeline is re-run and the
+      // user adds the Plot module again.
+      if (type == "Plot") {
+        qWarning() << "Skipping Plot module during state restore. Re-run"
+                    << "the pipeline and add the Plot module to restore it.";
+        continue;
+      }
+
       auto m =
         ModuleManager::instance().createAndAddModule(type, this, viewProxy);
       if (!m) {

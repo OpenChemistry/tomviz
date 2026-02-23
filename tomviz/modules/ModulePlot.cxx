@@ -230,6 +230,12 @@ QJsonObject ModulePlot::serialize() const
   auto json = Module::serialize();
   auto props = json["properties"].toObject();
 
+  // Save the operator result name so the module can be recreated on
+  // deserialization by finding the matching OperatorResult.
+  if (operatorResult()) {
+    json["operatorResultName"] = operatorResult()->name();
+  }
+
   json["properties"] = props;
   return json;
 }

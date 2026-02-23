@@ -971,7 +971,9 @@ bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir,
     auto viewId = view["id"].toInt();
     auto proxyNode = pvState.append_child("Proxy");
     proxyNode.append_attribute("group").set_value("views");
-    proxyNode.append_attribute("type").set_value("RenderView");
+    auto xmlName = view["xmlName"].toString("RenderView");
+    proxyNode.append_attribute("type").set_value(
+      xmlName.toStdString().c_str());
     proxyNode.append_attribute("id").set_value(viewId);
     proxyNode.append_attribute("servers").set_value(view["servers"].toInt());
 

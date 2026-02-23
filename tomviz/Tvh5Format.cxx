@@ -185,7 +185,9 @@ bool Tvh5Format::loadDataSource(h5::H5ReadWrite& reader,
   if (parent) {
     // This is a child data source. Hook it up to the operator parent.
     parent->setChildDataSource(dataSource);
-    parent->setHasChildDataSource(true);
+    // Don't call setHasChildDataSource(true) here. The operator's own
+    // initialization (JSON "children" section or constructor) is the authority
+    // on whether the executor should expect child data in the return dict.
     parent->newChildDataSource(dataSource);
     // If it has a parent, it will be deserialized later.
   } else {
