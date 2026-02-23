@@ -112,7 +112,7 @@ public:
   const QList<Operator*>& operators() const;
 
   /// Add/remove operators.
-  int addOperator(Operator* op);
+  int addOperator(Operator* op, bool append = false);
   bool removeOperator(Operator* op);
   bool removeAllOperators();
 

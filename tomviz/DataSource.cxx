@@ -659,7 +659,7 @@ bool DataSource::deserialize(const QJsonObject& state)
       op = OperatorFactory::instance().createOperator(
         operatorObj["type"].toString(), this);
       if (op && op->deserialize(operatorObj)) {
-        addOperator(op);
+        addOperator(op, /*append=*/true);
       }
     }
 
@@ -1021,13 +1021,15 @@ void DataSource::setUnits(const QString& units, bool markModified)
   emit dataPropertiesChanged();
 }
 
-int DataSource::addOperator(Operator* op)
+int DataSource::addOperator(Operator* op, bool append)
 {
   op->setParent(this);
   int index = -1;
-  auto activeOp = ActiveObjects::instance().activeOperator();
-  if (activeOp && activeOp->dataSource() == this) {
-    index = this->Internals->Operators.indexOf(activeOp);
+  if (!append) {
+    auto activeOp = ActiveObjects::instance().activeOperator();
+    if (activeOp && activeOp->dataSource() == this) {
+      index = this->Internals->Operators.indexOf(activeOp);
+    }
   }
   if (index >= 0) {
     this->Internals->Operators.insert(index, op);
