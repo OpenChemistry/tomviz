@@ -220,12 +220,16 @@ bool Tvh5Format::loadDataSource(h5::H5ReadWrite& reader,
   for (auto* op : dataSource->operators())
     op->setComplete();
 
-  if (pipeline) {
-    // Make sure the pipeline is not paused in case the user wishes to
-    // re-run some operators.
-    pipeline->resume();
-    // This will deserialize all children.
-    pipeline->finished();
+  // Ensure the pipeline is not paused. DataSource::deserialize() pauses it
+  // but only resumes when executePipelinesOnLoad is true, which is false
+  // during tvh5 loading.
+  auto* p = dataSource->pipeline();
+  if (p) {
+    p->resume();
+    if (parent) {
+      // This will deserialize all children.
+      p->finished();
+    }
   }
 
   return true;
