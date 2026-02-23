@@ -188,70 +188,23 @@ Pipeline::Future* Pipeline::execute(DataSource* dataSource)
     return emptyFuture();
   }
 
-  // Find the first breakpoint operator at or after the start
-  int startIdx = operators.indexOf(firstModifiedOperator);
-  Operator* breakpointOp = nullptr;
-  for (int i = startIdx; i < operators.size(); ++i) {
-    if (operators[i]->hasBreakpoint()) {
-      breakpointOp = operators[i];
-      break;
-    }
-  }
-
-  if (breakpointOp) {
-    // Reset operators from the breakpoint onwards to Queued so they
-    // reflect the fact that they haven't run with the current data.
-    auto ops = dataSource->operators();
-    int bpIdx = ops.indexOf(breakpointOp);
-    for (int i = bpIdx; i < ops.size(); ++i) {
-      ops[i]->resetState();
-    }
-
-    auto future = execute(dataSource, firstModifiedOperator, breakpointOp);
-    connect(future, &Pipeline::Future::finished, this,
-            [this, breakpointOp]() {
-              emit breakpointReached(breakpointOp);
-            });
-    return future;
-  }
-
-  return execute(dataSource, firstModifiedOperator);
+  return executeRange(dataSource, firstModifiedOperator, nullptr, true);
 }
 
 Pipeline::Future* Pipeline::execute(DataSource* ds, Operator* start)
 {
-  // Check for breakpoints between start and end of pipeline
-  auto operators = ds->operators();
-  int startIdx = operators.indexOf(start);
-  Operator* breakpointOp = nullptr;
-  for (int i = startIdx; i < operators.size(); ++i) {
-    if (operators[i]->hasBreakpoint()) {
-      breakpointOp = operators[i];
-      break;
-    }
-  }
-
-  if (breakpointOp) {
-    // Reset operators from the breakpoint onwards to Queued.
-    auto ops = ds->operators();
-    int bpIdx = ops.indexOf(breakpointOp);
-    for (int i = bpIdx; i < ops.size(); ++i) {
-      ops[i]->resetState();
-    }
-
-    auto future = execute(ds, start, breakpointOp);
-    connect(future, &Pipeline::Future::finished, this,
-            [this, breakpointOp]() {
-              emit breakpointReached(breakpointOp);
-            });
-    return future;
-  }
-
-  return execute(ds, start, nullptr);
+  return executeRange(ds, start, nullptr, true);
 }
 
 Pipeline::Future* Pipeline::execute(DataSource* ds, Operator* start,
                                     Operator* end)
+{
+  return executeRange(ds, start, end, false);
+}
+
+Pipeline::Future* Pipeline::executeRange(DataSource* ds, Operator* start,
+                                         Operator* end,
+                                         bool checkBreakpoints)
 {
   if (paused()) {
     return emptyFuture();
@@ -299,7 +252,7 @@ Pipeline::Future* Pipeline::execute(DataSource* ds, Operator* start,
   // If start is not the first operator and we haven't already adjusted
   // startIndex (e.g. when resuming from a breakpoint), start from the
   // correct position using the already-transformed intermediate data.
-  // but can only use the already transformed intermediate data if the 
+  // but can only use the already transformed intermediate data if the
   // previous operator is the one that created it, otherwise operators
   // could be applied multiple times to already transformed data.
   else if (start != operators.first() && startIndex == 0) {
@@ -347,6 +300,27 @@ Pipeline::Future* Pipeline::execute(DataSource* ds, Operator* start,
     endIndex = operators.indexOf(end);
   }
 
+  // Search for breakpoints within the actual execution range.  This happens
+  // AFTER startIndex determination so that the search covers the real range
+  // (which may start earlier than the modified operator).
+  Operator* breakpointOp = nullptr;
+  if (checkBreakpoints) {
+    int searchEnd = (endIndex == -1) ? operators.size() : endIndex;
+    for (int i = startIndex; i < searchEnd; ++i) {
+      if (operators[i]->hasBreakpoint()) {
+        breakpointOp = operators[i];
+        break;
+      }
+    }
+    if (breakpointOp) {
+      int bpIdx = operators.indexOf(breakpointOp);
+      for (int i = bpIdx; i < operators.size(); ++i) {
+        operators[i]->resetState();
+      }
+      endIndex = bpIdx;
+    }
+  }
+
   auto branchFuture =
     m_executor->execute(ds->dataObject(), operators, startIndex, endIndex);
   connect(branchFuture, &Pipeline::Future::finished, this,
@@ -356,6 +330,11 @@ Pipeline::Future* Pipeline::execute(DataSource* ds, Operator* start,
     this, branchFuture->operators(), branchFuture, operators.last() == end);
   connect(pipelineFuture, &Pipeline::Future::finished, this,
           &Pipeline::finished);
+
+  if (breakpointOp) {
+    connect(pipelineFuture, &Pipeline::Future::finished, this,
+            [this, breakpointOp]() { emit breakpointReached(breakpointOp); });
+  }
 
   return pipelineFuture;
 }
