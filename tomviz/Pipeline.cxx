@@ -306,7 +306,22 @@ Pipeline::Future* Pipeline::execute(DataSource* ds, Operator* start,
     startIndex = operators.indexOf(start);
     if (startIndex > 0) {
       auto prevOp = operators[startIndex - 1];
-      if (prevOp->isCompleted() && start->isQueued()) {
+      // We can only use intermediate data if:
+      // 1. The previous op completed (so its output is valid)
+      // 2. The current op hasn't run yet (Queued)
+      // 3. No operators after start have already finished (would mean
+      //    mid-chain insertion/edit, not a breakpoint resume)
+      bool canUseIntermediateData =
+        prevOp->isCompleted() && start->isQueued();
+      if (canUseIntermediateData) {
+        for (int i = startIndex + 1; i < operators.size(); ++i) {
+          if (operators[i]->isFinished()) {
+            canUseIntermediateData = false;
+            break;
+          }
+        }
+      }
+      if (canUseIntermediateData) {
         ds = transformedDataSource(ds);
       } else {
         startIndex = 0;
