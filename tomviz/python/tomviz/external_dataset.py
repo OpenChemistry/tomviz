@@ -144,5 +144,12 @@ class Dataset(AbstractDataset):
             child.spacing = [s[0], s[1], s[0]]
         return child
 
+    def remove_scalars(self, name):
+        if name not in self.arrays:
+            raise KeyError(f"No scalar array named '{name}'")
+        del self.arrays[name]
+        if self.active_name == name and self.arrays:
+            self.active_name = next(iter(self.arrays.keys()))
+
     def rename_active(self, new_name: str):
         self.arrays[new_name] = self.arrays.pop(self.active_name)

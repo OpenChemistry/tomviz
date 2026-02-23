@@ -35,6 +35,9 @@ class Dataset(AbstractDataset):
     def set_scalars(self, name, array):
         internal_utils.set_array(self._data_object, array, name=name)
 
+    def remove_scalars(self, name):
+        internal_utils.remove_array(self._data_object, name)
+
     @property
     def spacing(self):
         return internal_utils.get_spacing(self._data_object)

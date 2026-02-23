@@ -42,6 +42,7 @@ void DataTransformMenu::buildTransforms()
   auto convertDataAction = menu->addAction("Convert to Float");
   auto arrayWranglerAction = menu->addAction("Convert Type");
   auto transposeDataAction = menu->addAction("Transpose Data");
+  auto removeArraysAction = menu->addAction("Remove Arrays");
   auto reinterpretSignedToUnignedAction =
     menu->addAction("Reinterpret Signed to Unsigned");
   menu->addSeparator();
@@ -93,6 +94,10 @@ void DataTransformMenu::buildTransforms()
   new ConvertToFloatReaction(convertDataAction);
   new ArrayWranglerReaction(arrayWranglerAction, mainWindow);
   new TransposeDataReaction(transposeDataAction, mainWindow);
+  new AddPythonTransformReaction(
+    removeArraysAction, "Remove Arrays",
+    readInPythonScript("RemoveArrays"), false, false, false,
+    readInJSONDescription("RemoveArrays"));
   new AddPythonTransformReaction(
     reinterpretSignedToUnignedAction, "Reinterpret Signed to Unsigned",
     readInPythonScript("ReinterpretSignedToUnsigned"));

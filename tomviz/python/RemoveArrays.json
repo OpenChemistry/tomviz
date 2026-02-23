@@ -1,0 +1,14 @@
+{
+  "name": "RemoveArrays",
+  "label": "Remove Arrays",
+  "description": "Select which scalar arrays to keep. All unselected arrays will be removed from the dataset.",
+  "apply_to_each_array": false,
+  "parameters": [
+    {
+      "name": "selected_scalars",
+      "label": "Arrays to Keep",
+      "type": "select_scalars",
+      "show_apply_all": false
+    }
+  ]
+}

@@ -94,6 +94,17 @@ def arrays(dataobject):
 
 
 @with_vtk_dataobject
+def remove_array(dataobject, name):
+    pd = dataobject.GetPointData()
+    if pd.GetAbstractArray(name) is None:
+        raise KeyError(f"No scalar array named '{name}'")
+    pd.RemoveArray(name)
+    # If the active scalars were removed, set the first remaining array active
+    if pd.GetScalars() is None and pd.GetNumberOfArrays() > 0:
+        pd.SetActiveScalars(pd.GetArrayName(0))
+
+
+@with_vtk_dataobject
 def set_array(dataobject, newarray, minextent=None, isFortran=True, name=None):
     # Set the extent if needed, i.e. if the minextent is not the same as
     # the data object starting index, or if the newarray shape is not the same

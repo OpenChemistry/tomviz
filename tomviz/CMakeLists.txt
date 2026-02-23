@@ -512,6 +512,7 @@ set(python_files
   Tortuosity.py
   PowerSpectrumDensity.py
   FourierShellCorrelation.py
+  RemoveArrays.py
   Recon_real_time_tomography.py
   )
 
@@ -571,6 +572,7 @@ set(json_files
   Tortuosity.json
   PowerSpectrumDensity.json
   FourierShellCorrelation.json
+  RemoveArrays.json
   Recon_real_time_tomography.json
   )
 

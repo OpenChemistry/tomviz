@@ -625,9 +625,11 @@ void addSelectScalarsWidget(QGridLayout* layout, int row,
   container->setLayout(vLayout);
 
   // "Apply to all scalars" checkbox
+  bool showApplyAll = parameterNode.value("show_apply_all").toBool(true);
   QCheckBox* applyAllCheckBox = new QCheckBox("Apply to all scalars");
   applyAllCheckBox->setObjectName(name + "_apply_all");
-  applyAllCheckBox->setChecked(true);
+  applyAllCheckBox->setChecked(showApplyAll);
+  applyAllCheckBox->setVisible(showApplyAll);
   vLayout->addWidget(applyAllCheckBox);
 
   // Checkable combo box for individual scalar selection
@@ -635,7 +637,7 @@ void addSelectScalarsWidget(QGridLayout* layout, int row,
   comboBox->setObjectName(name + "_combo");
   QStandardItemModel* model = new QStandardItemModel(comboBox);
   comboBox->setModel(model);
-  comboBox->setEnabled(false);
+  comboBox->setEnabled(!showApplyAll);
 
   if (dataSource) {
     QStringList scalars = dataSource->listScalars();
@@ -664,8 +666,8 @@ void addSelectScalarsWidget(QGridLayout* layout, int row,
           allSelected = false;
         }
       }
-      applyAllCheckBox->setChecked(allSelected);
-      comboBox->setEnabled(!allSelected);
+      applyAllCheckBox->setChecked(showApplyAll && allSelected);
+      comboBox->setEnabled(!applyAllCheckBox->isChecked());
     }
 
     // Auto-hide when only one scalar

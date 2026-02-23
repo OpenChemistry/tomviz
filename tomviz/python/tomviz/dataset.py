@@ -86,6 +86,15 @@ class Dataset(ABC):
         """
         pass
 
+    @abstractmethod
+    def remove_scalars(self, name: str):
+        """Remove a scalar array from the dataset.
+
+        :param name: The name of the scalar array to remove.
+        :raises KeyError: If the specified name does not exist in the dataset.
+        """
+        pass
+
     @property
     @abstractmethod
     def spacing(self) -> tuple[int, int, int]:
