@@ -21,6 +21,7 @@
 #include <vtkTrivialProducer.h>
 
 #include <QCheckBox>
+#include <QColor>
 #include <QFormLayout>
 #include <QLineEdit>
 #include <QJsonObject>
@@ -137,12 +138,18 @@ void ModulePlot::addAllPlots()
     y_axis->SetLogScale(logScaleArray->GetValue(1) != 0);
   }
 
+  // Start color index from the number of plots already in the chart
+  // so that multiple modules sharing a view get distinct colors.
+  int colorOffset = m_chart->GetNumberOfPlots();
+
   for (vtkIdType col = 1; col < num_cols; col++) {
     auto line = vtkSmartPointer<vtkPlotLine>::New();
-    u_int8_t color[3] = {0, 0, 0};
-    color[(col - 1) % 3] = 255;
+    int idx = colorOffset + col - 1;
+    // Golden angle spacing in hue for maximum color separation
+    int hue = (idx * 137) % 360;
+    QColor color = QColor::fromHsv(hue, 200, 200);
     line->SetInputData(m_table, 0, col);
-    line->SetColor(color[0], color[1], color[2], 255);
+    line->SetColor(color.red(), color.green(), color.blue(), 255);
     line->SetWidth(3.0);
     m_chart->AddPlot(line);
     m_plots.append(line);
