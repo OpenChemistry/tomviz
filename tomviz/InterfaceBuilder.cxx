@@ -10,11 +10,14 @@
 #include "SpinBox.h"
 #include "Utilities.h"
 
+#include <QAbstractItemView>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDebug>
 #include <QDir>
+#include <QEvent>
 #include <QFileDialog>
+#include <QMouseEvent>
 #include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -24,6 +27,9 @@
 #include <QPushButton>
 #include <QSet>
 #include <QSpinBox>
+#include <QStandardItem>
+#include <QStandardItemModel>
+#include <QVBoxLayout>
 #include <QWidget>
 
 #include <functional>
@@ -586,6 +592,148 @@ void addDatasetWidget(QGridLayout* layout, int row, QJsonObject& parameterNode)
   layout->addWidget(comboBox, row, 1, 1, 1);
 }
 
+void addSelectScalarsWidget(QGridLayout* layout, int row,
+                            QJsonObject& parameterNode,
+                            DataSource* dataSource)
+{
+  QJsonValueRef nameValue = parameterNode["name"];
+  QJsonValueRef labelValue = parameterNode["label"];
+
+  if (nameValue.isUndefined()) {
+    QJsonDocument document(parameterNode);
+    qWarning() << QString("Parameter %1 has no name. Skipping.")
+                    .arg(document.toJson().data());
+    return;
+  }
+
+  QString name = nameValue.toString();
+
+  QLabel* label = new QLabel(name);
+  if (!labelValue.isUndefined()) {
+    label->setText(labelValue.toString());
+  }
+  layout->addWidget(label, row, 0, 1, 1);
+
+  // Container widget
+  QWidget* container = new QWidget();
+  container->setObjectName(name);
+  container->setProperty("type", "select_scalars");
+  label->setBuddy(container);
+
+  QVBoxLayout* vLayout = new QVBoxLayout();
+  vLayout->setContentsMargins(0, 0, 0, 0);
+  container->setLayout(vLayout);
+
+  // "Apply to all scalars" checkbox
+  QCheckBox* applyAllCheckBox = new QCheckBox("Apply to all scalars");
+  applyAllCheckBox->setObjectName(name + "_apply_all");
+  applyAllCheckBox->setChecked(true);
+  vLayout->addWidget(applyAllCheckBox);
+
+  // Checkable combo box for individual scalar selection
+  QComboBox* comboBox = new QComboBox();
+  comboBox->setObjectName(name + "_combo");
+  QStandardItemModel* model = new QStandardItemModel(comboBox);
+  comboBox->setModel(model);
+  comboBox->setEnabled(false);
+
+  if (dataSource) {
+    QStringList scalars = dataSource->listScalars();
+    for (const QString& scalar : scalars) {
+      QStandardItem* item = new QStandardItem(scalar);
+      item->setFlags(Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
+      item->setData(Qt::Checked, Qt::CheckStateRole);
+      model->appendRow(item);
+    }
+
+    // Restore previous selection from "default" if present
+    QJsonValueRef defaultNode = parameterNode["default"];
+    if (!defaultNode.isUndefined() && defaultNode.isArray()) {
+      QJsonArray defaultArray = defaultNode.toArray();
+      QSet<QString> selected;
+      for (const auto& v : defaultArray) {
+        selected.insert(v.toString());
+      }
+
+      bool allSelected = true;
+      for (int i = 0; i < model->rowCount(); ++i) {
+        bool isSelected = selected.contains(model->item(i)->text());
+        model->item(i)->setData(isSelected ? Qt::Checked : Qt::Unchecked,
+                                Qt::CheckStateRole);
+        if (!isSelected) {
+          allSelected = false;
+        }
+      }
+      applyAllCheckBox->setChecked(allSelected);
+      comboBox->setEnabled(!allSelected);
+    }
+
+    // Auto-hide when only one scalar
+    if (scalars.size() <= 1) {
+      label->setVisible(false);
+      container->setVisible(false);
+    }
+  }
+
+  vLayout->addWidget(comboBox);
+
+  // Toggle combo box enabled state based on checkbox
+  QObject::connect(applyAllCheckBox, &QCheckBox::toggled,
+                   [comboBox](bool checked) {
+    comboBox->setEnabled(!checked);
+  });
+
+  // Install event filter on combo box viewport to prevent popup from closing
+  // on item click, while still toggling the checkbox. Only toggle on release
+  // if a matching press was seen on the viewport — this ignores the orphaned
+  // release from the click that originally opened the popup.
+  class ComboEventFilter : public QObject
+  {
+  public:
+    ComboEventFilter(QComboBox* combo, QObject* parent)
+      : QObject(parent), m_combo(combo) {}
+    bool eventFilter(QObject* obj, QEvent* event) override
+    {
+      if (event->type() == QEvent::MouseButtonPress) {
+        m_pressedOnViewport = true;
+        return true; // Consume press to keep popup open
+      }
+      if (event->type() == QEvent::MouseButtonRelease) {
+        if (!m_pressedOnViewport) {
+          return true; // No matching press — consume without toggling
+        }
+        m_pressedOnViewport = false;
+        // Manually toggle the check state of the item under the cursor
+        auto* view = m_combo->view();
+        auto index = view->indexAt(
+          static_cast<QMouseEvent*>(event)->pos());
+        if (index.isValid()) {
+          auto* model =
+            qobject_cast<QStandardItemModel*>(m_combo->model());
+          if (model) {
+            auto* item = model->itemFromIndex(index);
+            if (item && (item->flags() & Qt::ItemIsUserCheckable)) {
+              auto state = item->checkState() == Qt::Checked
+                             ? Qt::Unchecked : Qt::Checked;
+              item->setCheckState(state);
+            }
+          }
+        }
+        return true; // Consume the event to keep popup open
+      }
+      return QObject::eventFilter(obj, event);
+    }
+  private:
+    QComboBox* m_combo;
+    bool m_pressedOnViewport = false;
+  };
+
+  auto* filter = new ComboEventFilter(comboBox, comboBox);
+  comboBox->view()->viewport()->installEventFilter(filter);
+
+  layout->addWidget(container, row, 1, 1, 1);
+}
+
 static const QStringList PATH_TYPES = { "file", "save_file", "directory" };
 
 } // end anonymous namespace
@@ -669,6 +817,8 @@ QLayout* InterfaceBuilder::buildParameterInterface(QGridLayout* layout,
       addStringWidget(layout, i + 1, parameterObject);
     } else if (typeString == "dataset") {
       addDatasetWidget(layout, i + 1, parameterObject);
+    } else if (typeString == "select_scalars") {
+      addSelectScalarsWidget(layout, i + 1, parameterObject, m_dataSource);
     }
   }
 
@@ -732,6 +882,48 @@ QLayout* InterfaceBuilder::buildInterface() const
 static bool setWidgetValue(QObject* o, const QVariant& v)
 {
   // Returns true if the widget type was found, false otherwise.
+
+  // Handle select_scalars container widget
+  if (auto w = qobject_cast<QWidget*>(o)) {
+    if (w->property("type").toString() == "select_scalars") {
+      QStringList selected;
+      if (v.canConvert<QVariantList>()) {
+        for (const auto& item : v.toList()) {
+          selected << item.toString();
+        }
+      } else if (v.canConvert<QStringList>()) {
+        selected = v.toStringList();
+      }
+
+      auto* applyAllCB = w->findChild<QCheckBox*>(w->objectName() + "_apply_all");
+      auto* combo = w->findChild<QComboBox*>(w->objectName() + "_combo");
+      if (!applyAllCB || !combo) {
+        return false;
+      }
+
+      auto* model = qobject_cast<QStandardItemModel*>(combo->model());
+      if (!model) {
+        return false;
+      }
+
+      // Check if all items are selected
+      bool allSelected = true;
+      for (int i = 0; i < model->rowCount(); ++i) {
+        if (!selected.contains(model->item(i)->text())) {
+          allSelected = false;
+          break;
+        }
+      }
+
+      applyAllCB->setChecked(allSelected);
+      for (int i = 0; i < model->rowCount(); ++i) {
+        Qt::CheckState state = selected.contains(model->item(i)->text())
+                                 ? Qt::Checked : Qt::Unchecked;
+        model->item(i)->setData(state, Qt::CheckStateRole);
+      }
+      return true;
+    }
+  }
 
   if (auto cb = qobject_cast<QCheckBox*>(o)) {
     cb->setChecked(v.toBool());
@@ -801,10 +993,53 @@ QVariantMap InterfaceBuilder::parameterValues(const QObject* parent)
 {
   QVariantMap map;
 
+  // Handle select_scalars widgets first, and collect their internal widget
+  // names so we can skip them in the generic loops below.
+  QSet<QString> selectScalarsInternalNames;
+  QList<QWidget*> allWidgets = parent->findChildren<QWidget*>();
+  for (auto* w : allWidgets) {
+    if (w->property("type").toString() != "select_scalars") {
+      continue;
+    }
+    QString name = w->objectName();
+    auto* applyAllCB = w->findChild<QCheckBox*>(name + "_apply_all");
+    auto* combo = w->findChild<QComboBox*>(name + "_combo");
+    if (!applyAllCB || !combo) {
+      continue;
+    }
+
+    selectScalarsInternalNames.insert(applyAllCB->objectName());
+    selectScalarsInternalNames.insert(combo->objectName());
+
+    auto* model = qobject_cast<QStandardItemModel*>(combo->model());
+    if (!model) {
+      continue;
+    }
+
+    QVariantList selectedScalars;
+    if (applyAllCB->isChecked()) {
+      // All scalars selected
+      for (int i = 0; i < model->rowCount(); ++i) {
+        selectedScalars << model->item(i)->text();
+      }
+    } else {
+      // Only checked scalars
+      for (int i = 0; i < model->rowCount(); ++i) {
+        if (model->item(i)->checkState() == Qt::Checked) {
+          selectedScalars << model->item(i)->text();
+        }
+      }
+    }
+    map[name] = selectedScalars;
+  }
+
   // Iterate over all children, taking the value of the named widgets
-  // and stuffing them into the map.pathField->setProperty("type", type);
+  // and stuffing them into the map.
   QList<QCheckBox*> checkBoxes = parent->findChildren<QCheckBox*>();
   for (int i = 0; i < checkBoxes.size(); ++i) {
+    if (selectScalarsInternalNames.contains(checkBoxes[i]->objectName())) {
+      continue;
+    }
     map[checkBoxes[i]->objectName()] =
       (checkBoxes[i]->checkState() == Qt::Checked);
   }
@@ -822,6 +1057,9 @@ QVariantMap InterfaceBuilder::parameterValues(const QObject* parent)
 
   QList<QComboBox*> comboBoxes = parent->findChildren<QComboBox*>();
   for (int i = 0; i < comboBoxes.size(); ++i) {
+    if (selectScalarsInternalNames.contains(comboBoxes[i]->objectName())) {
+      continue;
+    }
     int currentIndex = comboBoxes[i]->currentIndex();
     map[comboBoxes[i]->objectName()] = comboBoxes[i]->itemData(currentIndex);
   }

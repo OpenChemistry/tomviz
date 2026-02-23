@@ -4,7 +4,13 @@
   "description": "",
   "externalCompatible": false,
   "apply_to_each_array": false,
-  "parameters": [],
+  "parameters": [
+    {
+      "name": "selected_scalars",
+      "label": "Scalars",
+      "type": "select_scalars"
+    }
+  ],
   "results": [
     {
       "name": "plot",

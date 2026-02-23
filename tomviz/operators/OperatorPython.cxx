@@ -714,6 +714,10 @@ QVariant castJsonArg(const QJsonValue& arg, const QString& type)
       for (int i = 0; i < arr.size(); ++i) {
         arrayList << arr[i].toDouble();
       }
+    } else if (type == "select_scalars") {
+      for (int i = 0; i < arr.size(); ++i) {
+        arrayList << arr[i].toString();
+      }
     }
     return arrayList;
   } else if (arg.isDouble()) {

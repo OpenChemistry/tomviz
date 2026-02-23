@@ -42,27 +42,43 @@ def psd3D(image, pixel_size):
 
 
 class PoreSizeDistribution(tomviz.operators.CancelableOperator):
-    def transform(self, dataset):
-        scalars = dataset.active_scalars
-
-        if scalars is None:
-            raise RuntimeError("No scalars found!")
-
-        scalars = pad_to_cubic(scalars)
+    def transform(self, dataset, selected_scalars=None):
+        if selected_scalars is None:
+            # Only the active scalars
+            selected_scalars = (dataset.active_name,)
 
         return_values = {}
 
-        column_names = ["x", "PSD"]
-        x, bins = psd3D(scalars, dataset.spacing[0])
+        column_names = ["x"]
+        all_x = None
+        psd_columns = []
 
-        n = len(x)
+        for name in selected_scalars:
+            scalars = dataset.scalars(name)
+            if scalars is None:
+                continue
 
-        table_data = np.empty(shape=(n, 2))
+            scalars = pad_to_cubic(scalars)
+            x, bins = psd3D(scalars, dataset.spacing[0])
 
-        table_data[:, 0] = x
-        table_data[:, 1] = bins
+            if all_x is None:
+                all_x = x
+            column_names.append(name)
+            psd_columns.append(bins)
 
-        table = tomviz.utils.make_spreadsheet(column_names, table_data, ("Spatial Frequency", "Power Spectrum Density"), (False, True))
+        if all_x is None:
+            raise RuntimeError("No scalars found!")
+
+        n = len(all_x)
+        num_cols = 1 + len(psd_columns)
+        table_data = np.empty(shape=(n, num_cols))
+        table_data[:, 0] = all_x
+        for i, col in enumerate(psd_columns):
+            table_data[:, i + 1] = col
+
+        axis_labels = ("Spatial Frequency", "Power Spectrum Density")
+        log_flags = (False, True)
+        table = tomviz.utils.make_spreadsheet(column_names, table_data, axis_labels, log_flags)
         return_values["plot"] = table
 
         return return_values
