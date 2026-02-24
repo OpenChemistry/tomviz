@@ -53,6 +53,7 @@ private slots:
   void openDataLink();
   void openReadTheDocs();
   void openUserGuide();
+  void openRealTimeManual();
   void openVisIntro();
 
   /// Change the active data source in the UI.
