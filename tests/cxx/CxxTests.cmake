@@ -37,7 +37,7 @@ macro(add_cxx_qtest name)
       string(REPLACE ";" "\\;" "_pythonpath" "${_pythonpath}")
     endif()
     set_tests_properties(${name}
-      PROPERTIES ENVIRONMENT "PYTHONPATH=${_pythonpath}")
+      PROPERTIES ENVIRONMENT "PYTHONPATH=${_pythonpath};TOMVIZ_APPLICATION=1")
   endif()
 endmacro()
 

@@ -3,6 +3,7 @@
 
 #include <gtest/gtest.h>
 
+#include <memory>
 #include <thread>
 
 #include <vtkDataObject.h>
@@ -13,6 +14,9 @@
 #include <QDebug>
 #include <QFile>
 #include <QIODevice>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QSignalSpy>
 #include <QString>
 
@@ -234,3 +238,240 @@ TEST_F(OperatorPythonTest, update_data)
     FAIL() << "Unable to load script.";
   }
 }
+
+// --- Breakpoint API tests ---
+
+TEST_F(OperatorPythonTest, breakpoint_default_false)
+{
+  ASSERT_FALSE(pythonOperator->hasBreakpoint());
+}
+
+TEST_F(OperatorPythonTest, breakpoint_set_emits_signal)
+{
+  QSignalSpy spy(pythonOperator, SIGNAL(breakpointChanged()));
+  pythonOperator->setBreakpoint(true);
+  ASSERT_TRUE(pythonOperator->hasBreakpoint());
+  ASSERT_EQ(spy.count(), 1);
+}
+
+TEST_F(OperatorPythonTest, breakpoint_no_signal_on_same_value)
+{
+  pythonOperator->setBreakpoint(true);
+  QSignalSpy spy(pythonOperator, SIGNAL(breakpointChanged()));
+  pythonOperator->setBreakpoint(true);
+  ASSERT_EQ(spy.count(), 0);
+}
+
+TEST_F(OperatorPythonTest, breakpoint_toggle)
+{
+  QSignalSpy spy(pythonOperator, SIGNAL(breakpointChanged()));
+  pythonOperator->setBreakpoint(true);
+  ASSERT_TRUE(pythonOperator->hasBreakpoint());
+  pythonOperator->setBreakpoint(false);
+  ASSERT_FALSE(pythonOperator->hasBreakpoint());
+  ASSERT_EQ(spy.count(), 2);
+}
+
+// --- Serialization tests ---
+
+TEST_F(OperatorPythonTest, serialize_breakpoint)
+{
+  pythonOperator->setLabel("test");
+  pythonOperator->setBreakpoint(true);
+  auto json = pythonOperator->serialize();
+  ASSERT_TRUE(json.contains("breakpoint"));
+  ASSERT_TRUE(json["breakpoint"].toBool());
+}
+
+TEST_F(OperatorPythonTest, serialize_no_breakpoint_by_default)
+{
+  pythonOperator->setLabel("test");
+  auto json = pythonOperator->serialize();
+  ASSERT_FALSE(json.contains("breakpoint"));
+}
+
+TEST_F(OperatorPythonTest, deserialize_restores_label_and_script)
+{
+  QJsonObject json;
+  json["label"] = "My Label";
+  json["script"] = "def transform(dataset): pass";
+  json["description"] = "";
+  pythonOperator->deserialize(json);
+  ASSERT_STREQ(pythonOperator->label().toLatin1().constData(), "My Label");
+  ASSERT_STREQ(pythonOperator->script().toLatin1().constData(),
+               "def transform(dataset): pass");
+}
+
+// --- JSON description parsing tests ---
+
+TEST_F(OperatorPythonTest, json_description_parameters)
+{
+  QString desc = R"({
+    "name": "TestOp",
+    "label": "Test Operator",
+    "parameters": [
+      {"name": "param1", "type": "int", "default": 0},
+      {"name": "param2", "type": "double", "default": 1.0},
+      {"name": "param3", "type": "bool", "default": true}
+    ]
+  })";
+  pythonOperator->setJSONDescription(desc);
+  ASSERT_EQ(pythonOperator->numberOfParameters(), 3);
+  ASSERT_STREQ(pythonOperator->label().toLatin1().constData(),
+               "Test Operator");
+}
+
+TEST_F(OperatorPythonTest, json_description_no_parameters)
+{
+  QString desc = R"({
+    "name": "SimpleOp",
+    "label": "Simple Operator"
+  })";
+  pythonOperator->setJSONDescription(desc);
+  ASSERT_EQ(pythonOperator->numberOfParameters(), 0);
+  ASSERT_STREQ(pythonOperator->label().toLatin1().constData(),
+               "Simple Operator");
+}
+
+TEST_F(OperatorPythonTest, json_description_with_results)
+{
+  QString desc = R"({
+    "name": "ResultOp",
+    "label": "Result Operator",
+    "parameters": [
+      {"name": "threshold", "type": "double", "default": 0.5}
+    ],
+    "results": [
+      {"name": "output_image", "label": "Output Image"}
+    ]
+  })";
+  pythonOperator->setJSONDescription(desc);
+  ASSERT_EQ(pythonOperator->numberOfParameters(), 1);
+  ASSERT_EQ(pythonOperator->numberOfResults(), 1);
+}
+
+// --- Argument serialization round-trip tests ---
+
+TEST_F(OperatorPythonTest, serialize_deserialize_double_argument)
+{
+  QString desc = R"({
+    "name": "TestOp",
+    "label": "Test Operator",
+    "parameters": [
+      {"name": "rotation_center", "type": "double", "default": 0.0}
+    ]
+  })";
+  pythonOperator->setJSONDescription(desc);
+
+  QMap<QString, QVariant> args;
+  args["rotation_center"] = 42.5;
+  pythonOperator->setArguments(args);
+  pythonOperator->setScript("def transform(dataset): pass");
+
+  auto json = pythonOperator->serialize();
+
+  // Deserialize onto a fresh operator
+  auto* newOp = new OperatorPython(nullptr);
+  ASSERT_TRUE(newOp->deserialize(json));
+
+  auto newArgs = newOp->arguments();
+  ASSERT_DOUBLE_EQ(newArgs["rotation_center"].toDouble(), 42.5);
+
+  newOp->deleteLater();
+}
+
+TEST_F(OperatorPythonTest, serialize_deserialize_enumeration_argument)
+{
+  QString desc = R"({
+    "name": "TestOp",
+    "label": "Test Operator",
+    "parameters": [
+      {"name": "transform_source", "type": "enumeration", "default": 0,
+       "options": [{"Manual": "manual"}, {"Load From File": "from_file"}]}
+    ]
+  })";
+  pythonOperator->setJSONDescription(desc);
+
+  QMap<QString, QVariant> args;
+  args["transform_source"] = 1;
+  pythonOperator->setArguments(args);
+  pythonOperator->setScript("def transform(dataset): pass");
+
+  auto json = pythonOperator->serialize();
+
+  auto* newOp = new OperatorPython(nullptr);
+  ASSERT_TRUE(newOp->deserialize(json));
+
+  auto newArgs = newOp->arguments();
+  ASSERT_EQ(newArgs["transform_source"].toInt(), 1);
+
+  newOp->deleteLater();
+}
+
+TEST_F(OperatorPythonTest, deserialize_select_scalars)
+{
+  QString desc = R"({
+    "name": "TestOp",
+    "label": "Test Operator",
+    "parameters": [
+      {"name": "selected_scalars", "type": "select_scalars"}
+    ]
+  })";
+
+  QJsonObject json;
+  json["description"] = desc;
+  json["label"] = "Test Operator";
+  json["script"] = "";
+
+  QJsonObject args;
+  QJsonArray scalarsArray;
+  scalarsArray.append("scalar_a");
+  scalarsArray.append("scalar_b");
+  args["selected_scalars"] = scalarsArray;
+  json["arguments"] = args;
+
+  pythonOperator->deserialize(json);
+
+  auto resultArgs = pythonOperator->arguments();
+  auto scalars = resultArgs["selected_scalars"].toList();
+  ASSERT_EQ(scalars.size(), 2);
+  ASSERT_STREQ(scalars[0].toString().toLatin1().constData(), "scalar_a");
+  ASSERT_STREQ(scalars[1].toString().toLatin1().constData(), "scalar_b");
+}
+
+TEST_F(OperatorPythonTest, serialize_deserialize_roundtrip)
+{
+  QString desc = R"({
+    "name": "TestOp",
+    "label": "Test Operator",
+    "parameters": [
+      {"name": "value", "type": "double", "default": 0.0}
+    ]
+  })";
+  pythonOperator->setJSONDescription(desc);
+  pythonOperator->setScript("def transform(dataset): pass");
+
+  QMap<QString, QVariant> args;
+  args["value"] = 3.14;
+  pythonOperator->setArguments(args);
+
+  auto json = pythonOperator->serialize();
+
+  // Verify the serialized JSON contains expected fields
+  ASSERT_TRUE(json.contains("description"));
+  ASSERT_TRUE(json.contains("label"));
+  ASSERT_TRUE(json.contains("script"));
+  ASSERT_TRUE(json.contains("arguments"));
+  ASSERT_STREQ(json["type"].toString().toLatin1().constData(), "Python");
+
+  auto* newOp = new OperatorPython(nullptr);
+  ASSERT_TRUE(newOp->deserialize(json));
+
+  ASSERT_DOUBLE_EQ(newOp->arguments()["value"].toDouble(), 3.14);
+  ASSERT_STREQ(newOp->label().toLatin1().constData(), "Test Operator");
+  ASSERT_STREQ(newOp->script().toLatin1().constData(),
+               "def transform(dataset): pass");
+
+  newOp->deleteLater();
+}
+

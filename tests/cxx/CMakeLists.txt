@@ -9,6 +9,10 @@ include_directories(SYSTEM
   ${PARAVIEW_INCLUDE_DIRS}
   ${GTEST_INCLUDE_DIRS})
 include_directories(${PROJECT_SOURCE_DIR}/tomviz)
+include_directories(${PROJECT_SOURCE_DIR}/tomviz/modules)
+include_directories(${PROJECT_SOURCE_DIR}/tomviz/operators)
+include_directories(${PROJECT_SOURCE_DIR}/tomviz/animations)
+include_directories(${PROJECT_SOURCE_DIR}/tomviz/loguru)
 include_directories(${PROJECT_SOURCE_DIR}/tomviz/acquisition)
 
 include(CheckIncludeFileCXX)
@@ -49,11 +53,16 @@ set(_pythonpath "${_pythonpath}${_separator}$ENV{PYTHONPATH}")
 # Add the test cases
 add_cxx_test(OperatorPython PYTHONPATH ${_pythonpath})
 add_cxx_test(Variant)
-
+add_cxx_test(ScanID)
+add_cxx_test(Utilities)
+add_cxx_qtest(ModulePlot)
+add_cxx_qtest(Tvh5Data)
+add_cxx_qtest(InterfaceBuilder)
+add_cxx_qtest(PipelineExecution PYTHONPATH ${_pythonpath})
 add_cxx_qtest(DockerUtilities)
 add_cxx_qtest(AcquisitionClient PYTHONPATH "${CMAKE_SOURCE_DIR}/acquisition")
-add_cxx_qtest(PtychoWorkflow)
-add_cxx_qtest(PyXRFWorkflow)
+add_cxx_qtest(PtychoWorkflow PYTHONPATH ${_pythonpath})
+add_cxx_qtest(PyXRFWorkflow PYTHONPATH ${_pythonpath})
 
 # Generate the executable
 create_test_executable(tomvizTests)
