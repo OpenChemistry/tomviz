@@ -100,6 +100,21 @@ Pipeline::Future* ExternalPipelineExecutor::execute(vtkDataObject* data,
   foreach (Operator* op, operators) {
     pipelineOps.append(op->serialize());
   }
+
+  // If all operators prefer C ordering, keep the ordering in C
+  bool keepCOrdering = true;
+  foreach (Operator* op, operators) {
+    auto* pythonOp = qobject_cast<OperatorPython*>(op);
+    if (!pythonOp || !pythonOp->preferCOrdering()) {
+      keepCOrdering = false;
+      break;
+    }
+  }
+
+  if (keepCOrdering) {
+    dataSource["keepCOrdering"] = true;
+  }
+
   dataSource["operators"] = pipelineOps;
   QJsonArray dataSources;
   dataSources.append(dataSource);
