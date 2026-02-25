@@ -178,6 +178,14 @@ public:
     setParent(p);
     parent = p;
 
+    // Make the projectionView expand to fill all available vertical space
+    // without hiding the "Test Rotations" button.  Every nested layout
+    // level must have stretch set on the expanding item, otherwise Qt
+    // treats the extra space as dead space.
+    ui.verticalLayout->setStretch(0, 1);    // mainHLayout fills widget
+    ui.verticalLayout_3->setStretch(0, 1);  // group box fills right column
+    ui.gridLayout_3->setRowStretch(6, 1);   // projectionView fills group
+
     renderer->SetBackground(1, 1, 1);
     mapper->SetOrientation(0);
     slice->SetMapper(mapper);
@@ -802,6 +810,10 @@ public:
 
     bool enable = rotationDataValid();
     ui.testRotationsSettingsGroup->setVisible(enable);
+    ui.plotViewQia->setVisible(enable);
+    bool iterative = (ui.algorithm->currentText() == "mlem" ||
+                      ui.algorithm->currentText() == "ospml_hybrid");
+    ui.plotViewQn->setVisible(enable && !iterative);
     if (!enable) {
       return;
     }
@@ -909,7 +921,7 @@ public:
 
     // Qn is only meaningful for non-iterative algorithms (gridrec, fbp)
     // that can produce negative values in the reconstruction.
-    ui.plotViewQn->setVisible(!iterative);
+    ui.plotViewQn->setVisible(!iterative && rotationDataValid());
   }
 
   void updateTransformSourceUI()
@@ -924,8 +936,10 @@ public:
     ui.saveFileBrowse->setVisible(manual);
     ui.testRotationCentersGroup->setVisible(manual);
     ui.testRotationsSettingsGroup->setVisible(manual && rotationDataValid());
-    ui.plotViewQia->setVisible(manual);
-    ui.plotViewQn->setVisible(manual);
+    ui.plotViewQia->setVisible(manual && rotationDataValid());
+    bool iterAlg = (ui.algorithm->currentText() == "mlem" ||
+                    ui.algorithm->currentText() == "ospml_hybrid");
+    ui.plotViewQn->setVisible(manual && rotationDataValid() && !iterAlg);
     ui.sliceView->setVisible(manual);
 
     // Load-from-file mode: show transform file controls

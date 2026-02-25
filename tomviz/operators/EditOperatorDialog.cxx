@@ -282,7 +282,7 @@ void EditOperatorDialog::setupUI(EditOperatorWidget* opWidget)
   vLayout->setContentsMargins(5, 5, 5, 5);
   vLayout->setSpacing(5);
   if (this->Internals->Op->hasCustomUI()) {
-    vLayout->addWidget(opWidget);
+    vLayout->addWidget(opWidget, 1);
     this->Internals->Widget = opWidget;
     const double* dsPosition = this->Internals->dataSource->displayPosition();
     opWidget->dataSourceMoved(dsPosition[0], dsPosition[1], dsPosition[2]);

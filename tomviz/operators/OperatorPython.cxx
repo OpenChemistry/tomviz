@@ -52,6 +52,8 @@ public:
   {
     m_ui.setupUi(this);
     m_ui.name->setText(o->label());
+    // Ensure the tab widget expands to fill available vertical space.
+    m_ui.verticalLayout->setStretch(1, 1);
     auto* highlighter =
       new pqPythonSyntaxHighlighter(m_ui.script, *m_ui.script);
     highlighter->ConnectHighligter();
@@ -62,7 +64,7 @@ public:
       QVBoxLayout* layout = new QVBoxLayout();
       m_customWidget->setupUI(m_op);
       m_customWidget->setValues(m_op->arguments());
-      layout->addWidget(m_customWidget);
+      layout->addWidget(m_customWidget, 1);
       m_ui.argumentsWidget->setLayout(layout);
     } else {
       QVBoxLayout* layout = new QVBoxLayout();
