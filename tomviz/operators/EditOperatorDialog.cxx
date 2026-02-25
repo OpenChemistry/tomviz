@@ -101,7 +101,10 @@ EditOperatorDialog::EditOperatorDialog(Operator* op, DataSource* dataSource,
 
   QVariant geometry = this->Internals->loadGeometry();
   if (!geometry.isNull()) {
-    this->setGeometry(geometry.toRect());
+    // Only restore size, not position — showEvent will center the dialog
+    // on the main window's screen.  Restoring position can cause the
+    // dialog to appear on a different monitor than the main window.
+    this->resize(geometry.toRect().size());
   }
 
   if (op->hasCustomUI()) {
