@@ -253,8 +253,10 @@ void PythonGeneratedDatasetReaction::addDataset()
     QVBoxLayout* layout = new QVBoxLayout;
     QDialogButtonBox* buttons = new QDialogButtonBox(
       QDialogButtonBox::Cancel | QDialogButtonBox::Ok, Qt::Horizontal, &dialog);
-    QObject::connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
-    QObject::connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
+    QObject::connect(buttons, &QDialogButtonBox::accepted, &dialog,
+                     &QDialog::accept);
+    QObject::connect(buttons, &QDialogButtonBox::rejected, &dialog,
+                     &QDialog::reject);
 
     layout->addWidget(shapeWidget);
     layout->addItem(parametersLayout);
@@ -326,8 +328,10 @@ void PythonGeneratedDatasetReaction::addDataset()
     // Buttons
     QDialogButtonBox* buttons = new QDialogButtonBox(
       QDialogButtonBox::Cancel | QDialogButtonBox::Ok, Qt::Horizontal, &dialog);
-    QObject::connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
-    QObject::connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
+    QObject::connect(buttons, &QDialogButtonBox::accepted, &dialog,
+                     &QDialog::accept);
+    QObject::connect(buttons, &QDialogButtonBox::rejected, &dialog,
+                     &QDialog::reject);
 
     layout->addWidget(shapeLayout);
     layout->addItem(parametersLayout);
@@ -485,8 +489,10 @@ void PythonGeneratedDatasetReaction::addDataset()
     // Buttons
     QDialogButtonBox* buttons = new QDialogButtonBox(
       QDialogButtonBox::Cancel | QDialogButtonBox::Ok, Qt::Horizontal, &dialog);
-    QObject::connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
-    QObject::connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
+    QObject::connect(buttons, &QDialogButtonBox::accepted, &dialog,
+                     &QDialog::accept);
+    QObject::connect(buttons, &QDialogButtonBox::rejected, &dialog,
+                     &QDialog::reject);
 
     layout->addItem(parametersLayout);
     layout->addWidget(buttons);

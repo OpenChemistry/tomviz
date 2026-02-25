@@ -529,24 +529,24 @@ void ModuleVolume::addToPanel(QWidget* panel)
   layout->addWidget(m_controllers);
   updatePanel();
 
-  connect(m_controllers, SIGNAL(jitteringToggled(const bool)), this,
-          SLOT(setJittering(const bool)));
-  connect(m_controllers, SIGNAL(lightingToggled(const bool)), this,
-          SLOT(setLighting(const bool)));
-  connect(m_controllers, SIGNAL(blendingChanged(const int)), this,
-          SLOT(setBlendingMode(const int)));
-  connect(m_controllers, SIGNAL(interpolationChanged(const int)), this,
-          SLOT(onInterpolationChanged(const int)));
-  connect(m_controllers, SIGNAL(ambientChanged(const double)), this,
-          SLOT(onAmbientChanged(const double)));
-  connect(m_controllers, SIGNAL(diffuseChanged(const double)), this,
-          SLOT(onDiffuseChanged(const double)));
-  connect(m_controllers, SIGNAL(specularChanged(const double)), this,
-          SLOT(onSpecularChanged(const double)));
-  connect(m_controllers, SIGNAL(specularPowerChanged(const double)), this,
-          SLOT(onSpecularPowerChanged(const double)));
-  connect(m_controllers, SIGNAL(transferModeChanged(const int)), this,
-          SLOT(onTransferModeChanged(const int)));
+  connect(m_controllers, &ModuleVolumeWidget::jitteringToggled, this,
+          &ModuleVolume::setJittering);
+  connect(m_controllers, &ModuleVolumeWidget::lightingToggled, this,
+          &ModuleVolume::setLighting);
+  connect(m_controllers, &ModuleVolumeWidget::blendingChanged, this,
+          &ModuleVolume::setBlendingMode);
+  connect(m_controllers, &ModuleVolumeWidget::interpolationChanged, this,
+          &ModuleVolume::onInterpolationChanged);
+  connect(m_controllers, &ModuleVolumeWidget::ambientChanged, this,
+          &ModuleVolume::onAmbientChanged);
+  connect(m_controllers, &ModuleVolumeWidget::diffuseChanged, this,
+          &ModuleVolume::onDiffuseChanged);
+  connect(m_controllers, &ModuleVolumeWidget::specularChanged, this,
+          &ModuleVolume::onSpecularChanged);
+  connect(m_controllers, &ModuleVolumeWidget::specularPowerChanged, this,
+          &ModuleVolume::onSpecularPowerChanged);
+  connect(m_controllers, &ModuleVolumeWidget::transferModeChanged, this,
+          &ModuleVolume::onTransferModeChanged);
   connect(m_controllers, &ModuleVolumeWidget::useRgbaMappingToggled, this,
           &ModuleVolume::onRgbaMappingToggled);
   connect(m_controllers,
@@ -563,8 +563,8 @@ void ModuleVolume::addToPanel(QWidget* panel)
             setActiveScalars(m_scalarsCombo->itemData(idx).toInt());
             onScalarArrayChanged();
           });
-  connect(m_controllers, SIGNAL(solidityChanged(const double)), this,
-          SLOT(setSolidity(const double)));
+  connect(m_controllers, &ModuleVolumeWidget::solidityChanged, this,
+          &ModuleVolume::setSolidity);
   connect(m_controllers, &ModuleVolumeWidget::allowMultiVolumeToggled, this,
           &ModuleVolume::onAllowMultiVolumeToggled);
 }

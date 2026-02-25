@@ -202,8 +202,8 @@ void ModuleSegment::addToPanel(QWidget* panel)
   proxiesWidget->addProxy(d->ContourRepresentation, "Appearance",
                           contourRepresentationProperties, true);
   proxiesWidget->updateLayout();
-  connect(proxiesWidget, SIGNAL(changeFinished(vtkSMProxy*)),
-          SIGNAL(renderNeeded()));
+  connect(proxiesWidget, &pqProxiesWidget::changeFinished, this,
+          &ModuleSegment::renderNeeded);
 }
 
 void ModuleSegment::onPropertyChanged()

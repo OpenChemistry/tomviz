@@ -88,19 +88,19 @@ HistogramWidget::HistogramWidget(QWidget* parent)
   auto button = new QToolButton;
   button->setIcon(QIcon(":/pqWidgets/Icons/pqResetRange.svg"));
   button->setToolTip("Reset data range");
-  connect(button, SIGNAL(clicked()), this, SLOT(onResetRangeClicked()));
+  connect(button, &QToolButton::clicked, this, &HistogramWidget::onResetRangeClicked);
   vLayout->addWidget(button);
 
   button = new QToolButton;
   button->setIcon(QIcon(":/icons/pqResetRangeCustom.png"));
   button->setToolTip("Specify data range");
-  connect(button, SIGNAL(clicked()), this, SLOT(onCustomRangeClicked()));
+  connect(button, &QToolButton::clicked, this, &HistogramWidget::onCustomRangeClicked);
   vLayout->addWidget(button);
 
   button = new QToolButton;
   button->setIcon(QIcon(":/pqWidgets/Icons/pqInvert.svg"));
   button->setToolTip("Invert color map");
-  connect(button, SIGNAL(clicked()), this, SLOT(onInvertClicked()));
+  connect(button, &QToolButton::clicked, this, &HistogramWidget::onInvertClicked);
   vLayout->addWidget(button);
 
   button = new QToolButton;
@@ -114,7 +114,7 @@ HistogramWidget::HistogramWidget(QWidget* parent)
   button = new QToolButton;
   button->setIcon(QIcon(":/pqWidgets/Icons/pqFavorites.svg"));
   button->setToolTip("Choose preset color map");
-  connect(button, SIGNAL(clicked()), this, SLOT(onPresetClicked()));
+  connect(button, &QToolButton::clicked, this, &HistogramWidget::onPresetClicked);
   vLayout->addWidget(button);
 
   button = new QToolButton;
@@ -122,7 +122,7 @@ HistogramWidget::HistogramWidget(QWidget* parent)
   button->setIcon(QIcon(":/pqWidgets/Icons/pqSave.svg"));
   button->setToolTip("Save current color map as a preset");
   button->setEnabled(false);
-  connect(button, SIGNAL(clicked()), this, SLOT(onSaveToPresetClicked()));
+  connect(button, &QToolButton::clicked, this, &HistogramWidget::onSaveToPresetClicked);
   vLayout->addWidget(button);
 
   button = new QToolButton;
@@ -131,8 +131,8 @@ HistogramWidget::HistogramWidget(QWidget* parent)
   button->setToolTip("Show color legend in the 3D window");
   button->setEnabled(false);
   button->setCheckable(true);
-  connect(button, SIGNAL(toggled(bool)), this,
-          SIGNAL(colorLegendToggled(bool)));
+  connect(button, &QToolButton::toggled, this,
+          &HistogramWidget::colorLegendToggled);
   button->setChecked(false);
   vLayout->addWidget(button);
 
@@ -147,14 +147,15 @@ HistogramWidget::HistogramWidget(QWidget* parent)
 
   vLayout->addStretch(1);
 
-  connect(&ActiveObjects::instance(), SIGNAL(viewChanged(vtkSMViewProxy*)),
-          this, SLOT(updateUI()));
+  connect(&ActiveObjects::instance(),
+          QOverload<vtkSMViewProxy*>::of(&ActiveObjects::viewChanged),
+          this, [this](vtkSMViewProxy*) { updateUI(); });
   connect(&ActiveObjects::instance(),
           QOverload<DataSource*>::of(&ActiveObjects::dataSourceChanged), this,
           &HistogramWidget::updateColorMapDialogs);
-  connect(&ModuleManager::instance(), SIGNAL(dataSourceRemoved(DataSource*)),
-	  this, SLOT(updateUI()));
-  connect(this, SIGNAL(colorMapUpdated()), this, SLOT(updateUI()));
+  connect(&ModuleManager::instance(), &ModuleManager::dataSourceRemoved,
+	  this, [this](DataSource*) { updateUI(); });
+  connect(this, &HistogramWidget::colorMapUpdated, this, &HistogramWidget::updateUI);
 
   setLayout(hLayout);
 }

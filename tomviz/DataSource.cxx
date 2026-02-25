@@ -1564,7 +1564,7 @@ void DataSource::init(vtkImageData* data, DataSourceType dataType,
   updateColorMap();
 
   // Every time the data changes, we should update the color map.
-  connect(this, SIGNAL(dataChanged()), SLOT(updateColorMap()));
+  connect(this, &DataSource::dataChanged, this, &DataSource::updateColorMap);
 
   connect(this, &DataSource::dataPropertiesChanged,
           [this]() { this->proxy()->MarkModified(nullptr); });

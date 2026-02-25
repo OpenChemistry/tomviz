@@ -272,22 +272,24 @@ OperatorPython::OperatorPython(DataSource* parentObject)
     connectionType = Qt::DirectConnection;
   }
   // Needed so the worker thread can update data in the UI thread.
-  connect(this, SIGNAL(childDataSourceUpdated(vtkSmartPointer<vtkDataObject>)),
-          this, SLOT(updateChildDataSource(vtkSmartPointer<vtkDataObject>)),
+  connect(this, &OperatorPython::childDataSourceUpdated, this,
+          QOverload<vtkSmartPointer<vtkDataObject>>::of(
+            &OperatorPython::updateChildDataSource),
           connectionType);
 
   // This connection is needed so we can create new child data sources in the UI
   // thread from a pipeline worker threads.
-  connect(this, SIGNAL(newChildDataSource(const QString&,
-                                          vtkSmartPointer<vtkDataObject>)),
-          this, SLOT(createNewChildDataSource(const QString&,
-                                              vtkSmartPointer<vtkDataObject>)),
-          connectionType);
   connect(
     this,
-    SIGNAL(newOperatorResult(const QString&, vtkSmartPointer<vtkDataObject>)),
+    QOverload<const QString&, vtkSmartPointer<vtkDataObject>>::of(
+      &OperatorPython::newChildDataSource),
     this,
-    SLOT(setOperatorResult(const QString&, vtkSmartPointer<vtkDataObject>)));
+    [this](const QString& label, vtkSmartPointer<vtkDataObject> data) {
+      createNewChildDataSource(label, data);
+    },
+    connectionType);
+  connect(this, &OperatorPython::newOperatorResult, this,
+          &OperatorPython::setOperatorResult);
 }
 
 OperatorPython::~OperatorPython() {}

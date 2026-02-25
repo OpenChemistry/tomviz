@@ -26,15 +26,14 @@ namespace tomviz {
 
 ActiveObjects::ActiveObjects() : QObject()
 {
-  connect(&pqActiveObjects::instance(), SIGNAL(viewChanged(pqView*)),
-          SLOT(viewChanged(pqView*)));
-  connect(&ModuleManager::instance(), SIGNAL(dataSourceRemoved(DataSource*)),
-          SLOT(dataSourceRemoved(DataSource*)));
-  connect(&ModuleManager::instance(),
-          SIGNAL(moleculeSourceRemoved(MoleculeSource*)),
-          SLOT(moleculeSourceRemoved(MoleculeSource*)));
-  connect(&ModuleManager::instance(), SIGNAL(moduleRemoved(Module*)),
-          SLOT(moduleRemoved(Module*)));
+  connect(&pqActiveObjects::instance(), &pqActiveObjects::viewChanged, this,
+          QOverload<pqView*>::of(&ActiveObjects::viewChanged));
+  connect(&ModuleManager::instance(), &ModuleManager::dataSourceRemoved, this,
+          &ActiveObjects::dataSourceRemoved);
+  connect(&ModuleManager::instance(), &ModuleManager::moleculeSourceRemoved,
+          this, &ActiveObjects::moleculeSourceRemoved);
+  connect(&ModuleManager::instance(), &ModuleManager::moduleRemoved, this,
+          &ActiveObjects::moduleRemoved);
 }
 
 ActiveObjects::~ActiveObjects() = default;
@@ -99,11 +98,14 @@ void ActiveObjects::setActiveDataSource(DataSource* source)
   }
   if (m_activeDataSource != source) {
     if (m_activeDataSource) {
-      disconnect(m_activeDataSource, SIGNAL(dataChanged()), this,
-                 SLOT(dataSourceChanged()));
+      disconnect(m_activeDataSource, &DataSource::dataChanged, this,
+                 static_cast<void (ActiveObjects::*)()>(
+                   &ActiveObjects::dataSourceChanged));
     }
     if (source) {
-      connect(source, SIGNAL(dataChanged()), this, SLOT(dataSourceChanged()));
+      connect(source, &DataSource::dataChanged, this,
+              static_cast<void (ActiveObjects::*)()>(
+                &ActiveObjects::dataSourceChanged));
       m_activeDataSourceType = source->type();
     }
     m_activeDataSource = source;

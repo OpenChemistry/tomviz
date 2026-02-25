@@ -93,7 +93,7 @@ OperatorRunningDelegate::OperatorRunningDelegate(QWidget* parent)
 {
   m_view = qobject_cast<PipelineView*>(parent);
   m_timer = new QTimer(this);
-  connect(m_timer, SIGNAL(timeout()), m_view->viewport(), SLOT(update()));
+  connect(m_timer, &QTimer::timeout, m_view->viewport(), QOverload<>::of(&QWidget::update));
 }
 
 void OperatorRunningDelegate::paint(QPainter* painter,
@@ -184,7 +184,7 @@ void OperatorRunningDelegate::stop()
 
 PipelineView::PipelineView(QWidget* p) : QTreeView(p)
 {
-  connect(this, SIGNAL(clicked(QModelIndex)), SLOT(rowActivated(QModelIndex)));
+  connect(this, &QAbstractItemView::clicked, this, &PipelineView::rowActivated);
   setIndentation(20);
   setRootIsDecorated(false);
   setItemsExpandable(false);
@@ -217,8 +217,8 @@ PipelineView::PipelineView(QWidget* p) : QTreeView(p)
   connect(&ModuleManager::instance(), &ModuleManager::pipelineViewRenderNeeded,
           viewport(), QOverload<>::of(&QWidget::update));
 
-  connect(this, SIGNAL(doubleClicked(QModelIndex)),
-          SLOT(rowDoubleClicked(QModelIndex)));
+  connect(this, &QAbstractItemView::doubleClicked, this,
+          &PipelineView::rowDoubleClicked);
 }
 
 void PipelineView::setModel(QAbstractItemModel* model)
@@ -235,20 +235,20 @@ void PipelineView::setModel(QAbstractItemModel* model)
   // since the PipelineModel listens to those signals and setCurrent
   // has to happen AFTER the slots on the PipelineModel are called.  So
   // we listen to the model and respond after it does its update.
-  connect(pipelineModel, SIGNAL(dataSourceItemAdded(DataSource*)),
-          SLOT(setCurrent(DataSource*)));
-  connect(pipelineModel, SIGNAL(childDataSourceItemAdded(DataSource*)),
-          SLOT(setCurrent(DataSource*)));
-  connect(pipelineModel, SIGNAL(moleculeSourceItemAdded(MoleculeSource*)),
-          SLOT(setCurrent(MoleculeSource*)));
-  connect(pipelineModel, SIGNAL(moleculeSourceItemAdded(MoleculeSource*)),
-          SLOT(setCurrent(MoleculeSource*)));
-  connect(pipelineModel, SIGNAL(moduleItemAdded(Module*)),
-          SLOT(setCurrent(Module*)));
-  connect(pipelineModel, SIGNAL(operatorItemAdded(Operator*)),
-          SLOT(setCurrent(Operator*)));
-  connect(pipelineModel, SIGNAL(dataSourceModified(DataSource*)),
-          SLOT(setCurrent(DataSource*)));
+  connect(pipelineModel, &PipelineModel::dataSourceItemAdded, this,
+          QOverload<DataSource*>::of(&PipelineView::setCurrent));
+  connect(pipelineModel, &PipelineModel::childDataSourceItemAdded, this,
+          QOverload<DataSource*>::of(&PipelineView::setCurrent));
+  connect(pipelineModel, &PipelineModel::moleculeSourceItemAdded, this,
+          QOverload<MoleculeSource*>::of(&PipelineView::setCurrent));
+  connect(pipelineModel, &PipelineModel::moleculeSourceItemAdded, this,
+          QOverload<MoleculeSource*>::of(&PipelineView::setCurrent));
+  connect(pipelineModel, &PipelineModel::moduleItemAdded, this,
+          QOverload<Module*>::of(&PipelineView::setCurrent));
+  connect(pipelineModel, &PipelineModel::operatorItemAdded, this,
+          QOverload<Operator*>::of(&PipelineView::setCurrent));
+  connect(pipelineModel, &PipelineModel::dataSourceModified, this,
+          QOverload<DataSource*>::of(&PipelineView::setCurrent));
 
   // This is needed to work around a bug in Qt 5.10, the select resize mode is
   // setting reset for some reason.

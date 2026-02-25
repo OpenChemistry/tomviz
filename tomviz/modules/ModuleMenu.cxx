@@ -17,7 +17,7 @@ ModuleMenu::ModuleMenu(QToolBar* toolBar, QMenu* menu, QObject* parentObject)
 {
   Q_ASSERT(menu);
   Q_ASSERT(toolBar);
-  connect(menu, SIGNAL(triggered(QAction*)), SLOT(triggered(QAction*)));
+  connect(menu, &QMenu::triggered, this, &ModuleMenu::triggered);
   connect(&ActiveObjects::instance(), QOverload<DataSource*>::of(&ActiveObjects::dataSourceChanged), this, &ModuleMenu::updateActions);
   connect(&ActiveObjects::instance(), &ActiveObjects::moleculeSourceChanged, this, &ModuleMenu::updateActions);
   connect(&ActiveObjects::instance(), &ActiveObjects::resultChanged, this, &ModuleMenu::updateActions);

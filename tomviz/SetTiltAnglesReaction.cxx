@@ -15,8 +15,10 @@ namespace tomviz {
 SetTiltAnglesReaction::SetTiltAnglesReaction(QAction* p, QMainWindow* mw)
   : pqReaction(p), m_mainWindow(mw)
 {
-  connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
-          SLOT(updateEnableState()));
+  connect(&ActiveObjects::instance(),
+          static_cast<void (ActiveObjects::*)(DataSource*)>(
+            &ActiveObjects::dataSourceChanged),
+          this, &SetTiltAnglesReaction::updateEnableState);
   updateEnableState();
 }
 
@@ -52,6 +54,6 @@ void SetTiltAnglesReaction::showSetTiltAnglesUI(QMainWindow* window,
   dialog->setAttribute(Qt::WA_DeleteOnClose);
   dialog->setWindowTitle("Set Tilt Angles");
   dialog->show();
-  connect(op, SIGNAL(destroyed()), dialog, SLOT(reject()));
+  connect(op, &QObject::destroyed, dialog, &QDialog::reject);
 }
 } // namespace tomviz

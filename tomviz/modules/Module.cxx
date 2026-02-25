@@ -114,13 +114,12 @@ bool Module::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 
   if (m_view && m_view->IsA("vtkSMRenderViewProxy") && m_activeDataSource) {
     // FIXME: we're connecting this too many times. Fix it.
-    tomviz::convert<pqView*>(vtkView)->connect(
-      m_activeDataSource, SIGNAL(dataChanged()), SLOT(render()));
-    connect(m_activeDataSource, SIGNAL(dataChanged()), this,
-            SIGNAL(dataSourceChanged()));
-    connect(m_activeDataSource,
-            SIGNAL(displayPositionChanged(double, double, double)),
-            SLOT(dataSourceMoved(double, double, double)));
+    connect(m_activeDataSource, &DataSource::dataChanged,
+            tomviz::convert<pqView*>(vtkView), &pqView::render);
+    connect(m_activeDataSource, &DataSource::dataChanged, this,
+            &Module::dataSourceChanged);
+    connect(m_activeDataSource, &DataSource::displayPositionChanged, this,
+            &Module::dataSourceMoved);
     connect(m_activeDataSource, &DataSource::displayOrientationChanged, this,
             &Module::dataSourceRotated);
   }

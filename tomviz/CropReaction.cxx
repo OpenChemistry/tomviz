@@ -31,6 +31,6 @@ void CropReaction::crop(DataSource* source)
     new EditOperatorDialog(Op, source, true, m_mainWindow);
   dialog->setAttribute(Qt::WA_DeleteOnClose);
   dialog->show();
-  connect(Op, SIGNAL(destroyed()), dialog, SLOT(reject()));
+  connect(Op, &QObject::destroyed, dialog, &QDialog::reject);
 }
 } // namespace tomviz

@@ -11,8 +11,10 @@ namespace tomviz {
 
 Reaction::Reaction(QAction* parentObject) : pqReaction(parentObject)
 {
-  connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
-          SLOT(updateEnableState()));
+  connect(&ActiveObjects::instance(),
+          static_cast<void (ActiveObjects::*)(DataSource*)>(
+            &ActiveObjects::dataSourceChanged),
+          this, &Reaction::updateEnableState);
   connect(&PipelineManager::instance(), &PipelineManager::executionModeUpdated,
           this, &Reaction::updateEnableState);
 

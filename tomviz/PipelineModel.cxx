@@ -317,31 +317,30 @@ PipelineModel::TreeItem* PipelineModel::TreeItem::find(MoleculeSource* source)
 
 PipelineModel::PipelineModel(QObject* p) : QAbstractItemModel(p)
 {
-  connect(&ModuleManager::instance(), SIGNAL(dataSourceAdded(DataSource*)),
-          SLOT(dataSourceAdded(DataSource*)));
-  connect(&ModuleManager::instance(), SIGNAL(childDataSourceAdded(DataSource*)),
-          SLOT(childDataSourceAdded(DataSource*)));
-  connect(&ModuleManager::instance(), SIGNAL(moduleAdded(Module*)),
-          SLOT(moduleAdded(Module*)));
-  connect(&ModuleManager::instance(),
-          SIGNAL(moleculeSourceAdded(MoleculeSource*)),
-          SLOT(moleculeSourceAdded(MoleculeSource*)));
+  connect(&ModuleManager::instance(), &ModuleManager::dataSourceAdded, this,
+          &PipelineModel::dataSourceAdded);
+  connect(&ModuleManager::instance(), &ModuleManager::childDataSourceAdded,
+          this, &PipelineModel::childDataSourceAdded);
+  connect(&ModuleManager::instance(), &ModuleManager::moduleAdded, this,
+          &PipelineModel::moduleAdded);
+  connect(&ModuleManager::instance(), &ModuleManager::moleculeSourceAdded, this,
+          &PipelineModel::moleculeSourceAdded);
 
-  connect(&ActiveObjects::instance(), SIGNAL(viewChanged(vtkSMViewProxy*)),
-          SIGNAL(modelReset()));
-  connect(&ModuleManager::instance(), SIGNAL(dataSourceRemoved(DataSource*)),
-          SLOT(dataSourceRemoved(DataSource*)));
-  connect(&ModuleManager::instance(),
-          SIGNAL(moleculeSourceRemoved(MoleculeSource*)),
-          SLOT(moleculeSourceRemoved(MoleculeSource*)));
-  connect(&ModuleManager::instance(), SIGNAL(moduleRemoved(Module*)),
-          SLOT(moduleRemoved(Module*)));
-  connect(&ModuleManager::instance(),
-          SIGNAL(childDataSourceRemoved(DataSource*)),
-          SLOT(childDataSourceRemoved(DataSource*)));
+  connect(&ActiveObjects::instance(),
+          static_cast<void (ActiveObjects::*)(vtkSMViewProxy*)>(
+            &ActiveObjects::viewChanged),
+          this, [this]() { beginResetModel(); endResetModel(); });
+  connect(&ModuleManager::instance(), &ModuleManager::dataSourceRemoved, this,
+          &PipelineModel::dataSourceRemoved);
+  connect(&ModuleManager::instance(), &ModuleManager::moleculeSourceRemoved,
+          this, &PipelineModel::moleculeSourceRemoved);
+  connect(&ModuleManager::instance(), &ModuleManager::moduleRemoved, this,
+          &PipelineModel::moduleRemoved);
+  connect(&ModuleManager::instance(), &ModuleManager::childDataSourceRemoved,
+          this, &PipelineModel::childDataSourceRemoved);
 
-  connect(&ModuleManager::instance(), SIGNAL(operatorRemoved(Operator*)),
-          SLOT(operatorRemoved(Operator*)));
+  connect(&ModuleManager::instance(), &ModuleManager::operatorRemoved, this,
+          &PipelineModel::operatorRemoved);
   // Need to register this for cross thread dataChanged signal
   qRegisterMetaType<QVector<int>>("QVector<int>");
 }

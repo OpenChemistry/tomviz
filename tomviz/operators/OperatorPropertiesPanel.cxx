@@ -24,8 +24,8 @@ namespace tomviz {
 OperatorPropertiesPanel::OperatorPropertiesPanel(QWidget* p) : QWidget(p)
 {
   // Show active module in the "Operator Properties" panel.
-  connect(&ActiveObjects::instance(), SIGNAL(operatorActivated(Operator*)),
-          SLOT(setOperator(Operator*)));
+  connect(&ActiveObjects::instance(), &ActiveObjects::operatorActivated, this,
+          [this](Operator* op) { setOperator(op); });
 
   // Set up a very simple layout with a description label widget.
   m_layout = new QVBoxLayout;
@@ -37,7 +37,7 @@ OperatorPropertiesPanel::~OperatorPropertiesPanel() = default;
 void OperatorPropertiesPanel::setOperator(Operator* op)
 {
   if (m_activeOperator) {
-    disconnect(m_activeOperator, SIGNAL(labelModified()));
+    disconnect(m_activeOperator, &Operator::labelModified, nullptr, nullptr);
   }
   deleteLayoutContents(m_layout);
   m_operatorWidget = nullptr;
@@ -49,7 +49,7 @@ void OperatorPropertiesPanel::setOperator(Operator* op)
     } else {
       auto description = new QLabel(op->label());
       layout()->addWidget(description);
-      connect(op, &Operator::labelModified, m_activeOperator, [this, description]() {
+      connect(op, &Operator::labelModified, this, [this, description]() {
         description->setText(m_activeOperator->label());
       });
     }

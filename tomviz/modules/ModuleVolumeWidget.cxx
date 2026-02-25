@@ -56,16 +56,18 @@ ModuleVolumeWidget::ModuleVolumeWidget(QWidget* parent_)
   labelsInterp << tr("Nearest Neighbor") << tr("Linear");
   m_ui->cbInterpolation->addItems(labelsInterp);
 
-  connect(m_ui->cbJittering, SIGNAL(toggled(bool)), this,
-          SIGNAL(jitteringToggled(const bool)));
-  connect(m_ui->cbBlending, SIGNAL(currentIndexChanged(int)), this,
-          SLOT(onBlendingChanged(const int)));
-  connect(m_ui->cbInterpolation, SIGNAL(currentIndexChanged(int)), this,
-          SIGNAL(interpolationChanged(const int)));
-  connect(m_ui->cbTransferMode, SIGNAL(currentIndexChanged(int)), this,
-          SIGNAL(transferModeChanged(const int)));
-  connect(m_ui->cbMultiVolume, SIGNAL(toggled(bool)), this,
-          SIGNAL(allowMultiVolumeToggled(const bool)));
+  connect(m_ui->cbJittering, &QCheckBox::toggled, this,
+          &ModuleVolumeWidget::jitteringToggled);
+  connect(m_ui->cbBlending, QOverload<int>::of(&QComboBox::currentIndexChanged),
+          this, &ModuleVolumeWidget::onBlendingChanged);
+  connect(m_ui->cbInterpolation,
+          QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          &ModuleVolumeWidget::interpolationChanged);
+  connect(m_ui->cbTransferMode,
+          QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          &ModuleVolumeWidget::transferModeChanged);
+  connect(m_ui->cbMultiVolume, &QCheckBox::toggled, this,
+          &ModuleVolumeWidget::allowMultiVolumeToggled);
   connect(m_ui->cbMultiVolume, &QCheckBox::toggled, this,
           &ModuleVolumeWidget::setAllowMultiVolume);
 
@@ -83,18 +85,18 @@ ModuleVolumeWidget::ModuleVolumeWidget(QWidget* parent_)
   connect(m_ui->sliRgbaMappingMax, &DoubleSliderWidget::valueEdited, this,
           &ModuleVolumeWidget::onRgbaMappingMaxChanged, Qt::QueuedConnection);
 
-  connect(m_uiLighting->gbLighting, SIGNAL(toggled(bool)), this,
-          SIGNAL(lightingToggled(const bool)));
-  connect(m_uiLighting->sliAmbient, SIGNAL(valueEdited(double)), this,
-          SIGNAL(ambientChanged(const double)));
-  connect(m_uiLighting->sliDiffuse, SIGNAL(valueEdited(double)), this,
-          SIGNAL(diffuseChanged(const double)));
-  connect(m_uiLighting->sliSpecular, SIGNAL(valueEdited(double)), this,
-          SIGNAL(specularChanged(const double)));
-  connect(m_uiLighting->sliSpecularPower, SIGNAL(valueEdited(double)), this,
-          SIGNAL(specularPowerChanged(const double)));
-  connect(m_ui->soliditySlider, SIGNAL(valueEdited(double)), this,
-          SIGNAL(solidityChanged(const double)));
+  connect(m_uiLighting->gbLighting, &QGroupBox::toggled, this,
+          &ModuleVolumeWidget::lightingToggled);
+  connect(m_uiLighting->sliAmbient, &DoubleSliderWidget::valueEdited, this,
+          &ModuleVolumeWidget::ambientChanged);
+  connect(m_uiLighting->sliDiffuse, &DoubleSliderWidget::valueEdited, this,
+          &ModuleVolumeWidget::diffuseChanged);
+  connect(m_uiLighting->sliSpecular, &DoubleSliderWidget::valueEdited, this,
+          &ModuleVolumeWidget::specularChanged);
+  connect(m_uiLighting->sliSpecularPower, &DoubleSliderWidget::valueEdited,
+          this, &ModuleVolumeWidget::specularPowerChanged);
+  connect(m_ui->soliditySlider, &DoubleSliderWidget::valueEdited, this,
+          &ModuleVolumeWidget::solidityChanged);
 
   m_ui->groupRgbaMappingRange->setVisible(false);
   m_ui->rgbaMappingComponentLabel->setVisible(false);

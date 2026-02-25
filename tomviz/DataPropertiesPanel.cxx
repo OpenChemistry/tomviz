@@ -36,6 +36,9 @@
 
 #include <QCheckBox>
 #include <QClipboard>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QTableWidget>
 #include <QDebug>
 #include <QDoubleValidator>
 #include <QFileDialog>
@@ -92,15 +95,24 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
 
   clear();
 
-  connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
-          SLOT(setDataSource(DataSource*)));
-  connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
-          SLOT(updateAxesGridLabels()));
-  connect(&ActiveObjects::instance(), SIGNAL(viewChanged(vtkSMViewProxy*)),
-          SLOT(updateAxesGridLabels()));
-  connect(m_ui->SetTiltAnglesButton, SIGNAL(clicked()), SLOT(setTiltAngles()));
-  connect(m_ui->saveTiltAngles, SIGNAL(clicked()), SLOT(saveTiltAngles()));
-  connect(m_ui->unitBox, SIGNAL(editingFinished()), SLOT(updateUnits()));
+  connect(&ActiveObjects::instance(),
+          static_cast<void (ActiveObjects::*)(DataSource*)>(
+            &ActiveObjects::dataSourceChanged),
+          this, &DataPropertiesPanel::setDataSource);
+  connect(&ActiveObjects::instance(),
+          static_cast<void (ActiveObjects::*)(DataSource*)>(
+            &ActiveObjects::dataSourceChanged),
+          this, &DataPropertiesPanel::updateAxesGridLabels);
+  connect(&ActiveObjects::instance(),
+          static_cast<void (ActiveObjects::*)(vtkSMViewProxy*)>(
+            &ActiveObjects::viewChanged),
+          this, &DataPropertiesPanel::updateAxesGridLabels);
+  connect(m_ui->SetTiltAnglesButton, &QPushButton::clicked, this,
+          &DataPropertiesPanel::setTiltAngles);
+  connect(m_ui->saveTiltAngles, &QPushButton::clicked, this,
+          &DataPropertiesPanel::saveTiltAngles);
+  connect(m_ui->unitBox, &QLineEdit::editingFinished, this,
+          &DataPropertiesPanel::updateUnits);
   connect(m_ui->xLengthBox, &QLineEdit::editingFinished,
           [this]() { this->updateLength(m_ui->xLengthBox, 0); });
   connect(m_ui->yLengthBox, &QLineEdit::editingFinished,
@@ -181,8 +193,8 @@ void DataPropertiesPanel::setDataSource(DataSource* dsource)
   }
   m_currentDataSource = dsource;
   if (dsource) {
-    connect(dsource, SIGNAL(dataChanged()), SLOT(scheduleUpdate()),
-            Qt::UniqueConnection);
+    connect(dsource, &DataSource::dataChanged, this,
+            &DataPropertiesPanel::scheduleUpdate, Qt::UniqueConnection);
     connect(dsource, &DataSource::dataPropertiesChanged, this,
             &DataPropertiesPanel::onDataPropertiesChanged);
     connect(dsource, &DataSource::displayPositionChanged, this,
@@ -373,8 +385,8 @@ void DataPropertiesPanel::updateData()
     return;
   }
 
-  disconnect(m_ui->TiltAnglesTable, SIGNAL(cellChanged(int, int)), this,
-             SLOT(onTiltAnglesModified(int, int)));
+  disconnect(m_ui->TiltAnglesTable, &QTableWidget::cellChanged, this,
+             &DataPropertiesPanel::onTiltAnglesModified);
   clear();
 
   DataSource* dsource = m_currentDataSource;
@@ -437,8 +449,8 @@ void DataPropertiesPanel::updateData()
     m_ui->TiltAnglesTable->hide();
     m_ui->saveTiltAngles->show();
   }
-  connect(m_ui->TiltAnglesTable, SIGNAL(cellChanged(int, int)),
-          SLOT(onTiltAnglesModified(int, int)));
+  connect(m_ui->TiltAnglesTable, &QTableWidget::cellChanged, this,
+          &DataPropertiesPanel::onTiltAnglesModified);
 
   updateTimeSeriesGroup();
   updateComponentsCombo();

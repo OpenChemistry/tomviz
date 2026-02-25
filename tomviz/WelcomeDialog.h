@@ -27,7 +27,7 @@ private slots:
   void onLoadSampleDataClicked();
 
   // React to checkbox events
-  void onDoNotShowAgainStateChanged(int);
+  void onDoNotShowAgainStateChanged(Qt::CheckState);
 
 private:
   QScopedPointer<Ui::WelcomeDialog> m_ui;

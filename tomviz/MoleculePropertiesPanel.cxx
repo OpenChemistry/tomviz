@@ -31,8 +31,8 @@ MoleculePropertiesPanel::MoleculePropertiesPanel(QWidget* parent)
   this->setLayout(m_layout);
 
   connect(&ActiveObjects::instance(),
-          SIGNAL(moleculeSourceChanged(MoleculeSource*)),
-          SLOT(setMoleculeSource(MoleculeSource*)));
+          &ActiveObjects::moleculeSourceChanged, this,
+          &MoleculePropertiesPanel::setMoleculeSource);
   update();
 }
 

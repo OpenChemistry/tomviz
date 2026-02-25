@@ -141,15 +141,15 @@ SelectVolumeWidget::SelectVolumeWidget(const double origin[3],
   ui.endZ->setRange(extent[4], extent[5]);
   ui.endZ->setValue(currentVolume[5]);
 
-  this->connect(ui.startX, SIGNAL(editingFinished()), this,
-                SLOT(valueChanged()));
-  this->connect(ui.startY, SIGNAL(editingFinished()), this,
-                SLOT(valueChanged()));
-  this->connect(ui.startZ, SIGNAL(editingFinished()), this,
-                SLOT(valueChanged()));
-  this->connect(ui.endX, SIGNAL(editingFinished()), this, SLOT(valueChanged()));
-  this->connect(ui.endY, SIGNAL(editingFinished()), this, SLOT(valueChanged()));
-  this->connect(ui.endZ, SIGNAL(editingFinished()), this, SLOT(valueChanged()));
+  this->connect(ui.startX, &QSpinBox::editingFinished, this,
+                &SelectVolumeWidget::valueChanged);
+  this->connect(ui.startY, &QSpinBox::editingFinished, this,
+                &SelectVolumeWidget::valueChanged);
+  this->connect(ui.startZ, &QSpinBox::editingFinished, this,
+                &SelectVolumeWidget::valueChanged);
+  this->connect(ui.endX, &QSpinBox::editingFinished, this, &SelectVolumeWidget::valueChanged);
+  this->connect(ui.endY, &QSpinBox::editingFinished, this, &SelectVolumeWidget::valueChanged);
+  this->connect(ui.endZ, &QSpinBox::editingFinished, this, &SelectVolumeWidget::valueChanged);
   // force through the current values pulled from the operator and set above
   this->valueChanged();
 }

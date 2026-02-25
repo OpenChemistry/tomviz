@@ -183,10 +183,10 @@ WebExportWidget::WebExportWidget(QWidget* p) : QDialog(p)
   // UI binding
   connect(m_buttonBox, &QDialogButtonBox::helpRequested,
           []() { openHelpUrl("visualization/#export-to-web"); });
-  connect(m_exportButton, SIGNAL(pressed()), this, SLOT(onExport()));
-  connect(m_cancelButton, SIGNAL(pressed()), this, SLOT(onCancel()));
-  connect(m_exportType, SIGNAL(currentIndexChanged(int)), this,
-          SLOT(onTypeChange(int)));
+  connect(m_exportButton, &QPushButton::pressed, this, &WebExportWidget::onExport);
+  connect(m_cancelButton, &QPushButton::pressed, this, &WebExportWidget::onCancel);
+  connect(m_exportType, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          &WebExportWidget::onTypeChange);
 
   // Initialize visibility
   onTypeChange(0);

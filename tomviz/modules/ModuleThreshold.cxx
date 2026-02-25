@@ -101,7 +101,8 @@ bool ModuleThreshold::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     p->rename(label());
   }
 
-  connect(data, SIGNAL(activeScalarsChanged()), SLOT(onScalarArrayChanged()));
+  connect(data, &DataSource::activeScalarsChanged, this,
+          &ModuleThreshold::onScalarArrayChanged);
   onScalarArrayChanged();
 
   return true;

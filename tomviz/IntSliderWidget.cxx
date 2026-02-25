@@ -38,13 +38,13 @@ IntSliderWidget::IntSliderWidget(bool showLineEdit, QWidget* p) : QWidget(p)
     this->LineEdit = nullptr;
   }
 
-  QObject::connect(this->Slider, SIGNAL(valueChanged(int)), this,
-                   SLOT(sliderChanged(int)));
+  QObject::connect(this->Slider, &QSlider::valueChanged, this,
+                   &IntSliderWidget::sliderChanged);
   if (showLineEdit) {
-    QObject::connect(this->LineEdit, SIGNAL(textChanged(const QString&)), this,
-                     SLOT(textChanged(const QString&)));
-    QObject::connect(this->LineEdit, SIGNAL(textChangedAndEditingFinished()),
-                     this, SLOT(editingFinished()));
+    QObject::connect(this->LineEdit, &pqLineEdit::textChanged, this,
+                     &IntSliderWidget::textChanged);
+    QObject::connect(this->LineEdit, &pqLineEdit::textChangedAndEditingFinished,
+                     this, &IntSliderWidget::editingFinished);
   }
 }
 

@@ -28,8 +28,10 @@ namespace tomviz {
 AddResampleReaction::AddResampleReaction(QAction* parentObject)
   : pqReaction(parentObject)
 {
-  connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
-          SLOT(updateEnableState()));
+  connect(&ActiveObjects::instance(),
+          static_cast<void (ActiveObjects::*)(DataSource*)>(
+            &ActiveObjects::dataSourceChanged),
+          this, &AddResampleReaction::updateEnableState);
   updateEnableState();
 }
 
@@ -85,8 +87,8 @@ void AddResampleReaction::resample(DataSource* source)
   QVBoxLayout* v = new QVBoxLayout;
   QDialogButtonBox* buttons =
     new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-  connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
-  connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
+  connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+  connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
   v->addWidget(label0);
   v->addLayout(layout);
   v->addWidget(buttons);

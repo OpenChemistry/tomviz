@@ -36,8 +36,10 @@ namespace tomviz {
 SaveWebReaction::SaveWebReaction(QAction* parentObject, MainWindow* mainWindow)
   : pqReaction(parentObject), m_mainWindow(mainWindow)
 {
-  connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
-          SLOT(updateEnableState()));
+  connect(&ActiveObjects::instance(),
+          static_cast<void (ActiveObjects::*)(DataSource*)>(
+            &ActiveObjects::dataSourceChanged),
+          this, &SaveWebReaction::updateEnableState);
   updateEnableState();
 }
 

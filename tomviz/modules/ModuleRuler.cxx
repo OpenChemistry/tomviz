@@ -104,8 +104,8 @@ void ModuleRuler::addToPanel(QWidget* panel)
           &pqPropertyWidget::apply);
   connect(m_widget.data(), &pqPropertyWidget::changeFinished, this,
           &ModuleRuler::endPointsUpdated);
-  connect(m_widget, SIGNAL(widgetVisibilityUpdated(bool)), this,
-          SLOT(updateShowLine(bool)));
+  connect(m_widget, &pqInteractivePropertyWidgetAbstract::widgetVisibilityUpdated,
+          this, &ModuleRuler::updateShowLine);
 
   m_widget->setWidgetVisible(m_showLine);
 
@@ -126,8 +126,8 @@ void ModuleRuler::prepareToRemoveFromPanel(QWidget* vtkNotUsed(panel))
   // Disconnect before the panel is removed to avoid m_showLine always being set
   // to false when the signal widgetVisibilityUpdated(bool) is emitted during
   // the tear down of the pqLinePropertyWidget.
-  disconnect(m_widget, SIGNAL(widgetVisibilityUpdated(bool)), this,
-             SLOT(updateShowLine(bool)));
+  disconnect(m_widget, &pqInteractivePropertyWidgetAbstract::widgetVisibilityUpdated,
+             this, &ModuleRuler::updateShowLine);
 }
 
 bool ModuleRuler::setVisibility(bool val)

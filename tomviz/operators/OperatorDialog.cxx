@@ -16,8 +16,8 @@ OperatorDialog::OperatorDialog(QWidget* parentObject) : Superclass(parentObject)
   QVBoxLayout* layout = new QVBoxLayout(this);
   QDialogButtonBox* buttons = new QDialogButtonBox(
     QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, this);
-  connect(buttons, SIGNAL(accepted()), this, SLOT(accept()));
-  connect(buttons, SIGNAL(rejected()), this, SLOT(reject()));
+  connect(buttons, &QDialogButtonBox::accepted, this, &QDialog::accept);
+  connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
   this->setLayout(layout);
   layout->addWidget(m_ui);
   layout->addWidget(buttons);

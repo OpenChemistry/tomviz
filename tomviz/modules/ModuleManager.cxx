@@ -20,6 +20,7 @@
 #include <pqApplicationCore.h>
 #include <pqDeleteReaction.h>
 #include <pqPVApplicationCore.h>
+#include <pqServerManagerModel.h>
 #include <pqSettings.h>
 
 #include <vtkCamera.h>
@@ -258,7 +259,8 @@ ModuleManager::ModuleManager(QObject* parentObject)
   : Superclass(parentObject), d(new ModuleManager::MMInternals())
 {
   connect(pqApplicationCore::instance()->getServerManagerModel(),
-          SIGNAL(viewRemoved(pqView*)), SLOT(onViewRemoved(pqView*)));
+          &pqServerManagerModel::viewRemoved, this,
+          &ModuleManager::onViewRemoved);
 }
 
 ModuleManager::~ModuleManager() = default;
@@ -1066,8 +1068,8 @@ bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir,
   m_stateObject = doc;
   m_loadDataSources = loadDataSources;
   connect(pqApplicationCore::instance(),
-          SIGNAL(stateLoaded(vtkPVXMLElement*, vtkSMProxyLocator*)),
-          SLOT(onPVStateLoaded(vtkPVXMLElement*, vtkSMProxyLocator*)));
+          &pqApplicationCore::stateLoaded, this,
+          &ModuleManager::onPVStateLoaded);
   // Set up call to ParaView to load state
   std::ostringstream stream;
   document.first_child().print(stream);
@@ -1085,8 +1087,8 @@ bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir,
   // Clean up the state -- since the Qt slot call should be synchronous
   // it should be done before the code returns to here.
   disconnect(pqApplicationCore::instance(),
-             SIGNAL(stateLoaded(vtkPVXMLElement*, vtkSMProxyLocator*)), this,
-             SLOT(onPVStateLoaded(vtkPVXMLElement*, vtkSMProxyLocator*)));
+             &pqApplicationCore::stateLoaded, this,
+             &ModuleManager::onPVStateLoaded);
 
   d->dir = QDir();
   m_stateObject = QJsonObject();

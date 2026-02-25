@@ -426,12 +426,12 @@ RotateAlignWidget::RotateAlignWidget(Operator* op,
   this->Internals->Ui.colorMapButton_1->setIcon(setColorMapIcon);
   this->Internals->Ui.colorMapButton_2->setIcon(setColorMapIcon);
   this->Internals->Ui.colorMapButton_3->setIcon(setColorMapIcon);
-  this->connect(this->Internals->Ui.colorMapButton_1, SIGNAL(clicked()), this,
-                SLOT(showChangeColorMapDialog0()));
-  this->connect(this->Internals->Ui.colorMapButton_2, SIGNAL(clicked()), this,
-                SLOT(showChangeColorMapDialog1()));
-  this->connect(this->Internals->Ui.colorMapButton_3, SIGNAL(clicked()), this,
-                SLOT(showChangeColorMapDialog2()));
+  this->connect(this->Internals->Ui.colorMapButton_1, &QToolButton::clicked, this,
+                &RotateAlignWidget::showChangeColorMapDialog0);
+  this->connect(this->Internals->Ui.colorMapButton_2, &QToolButton::clicked, this,
+                &RotateAlignWidget::showChangeColorMapDialog1);
+  this->connect(this->Internals->Ui.colorMapButton_3, &QToolButton::clicked, this,
+                &RotateAlignWidget::showChangeColorMapDialog2);
 
   this->Internals->mainSlice->SetMapper(this->Internals->mainSliceMapper);
   this->Internals->reconSlice[0]->SetMapper(

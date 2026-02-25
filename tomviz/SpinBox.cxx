@@ -32,8 +32,8 @@ void SpinBox::mousePressEvent(QMouseEvent* event)
     this->pressInUp = this->pressInDown = false;
   }
   if (this->pressInUp || this->pressInDown) {
-    this->connect(this, SIGNAL(valueChanged(int)), this,
-                  SIGNAL(editingFinished()));
+    this->connect(this, QOverload<int>::of(&SpinBox::valueChanged), this,
+                  &SpinBox::editingFinished);
   }
 }
 
@@ -42,8 +42,8 @@ void SpinBox::mouseReleaseEvent(QMouseEvent* event)
   QSpinBox::mouseReleaseEvent(event);
 
   if (this->pressInUp || this->pressInDown) {
-    this->disconnect(this, SIGNAL(valueChanged(int)), this,
-                     SIGNAL(editingFinished()));
+    this->disconnect(this, QOverload<int>::of(&SpinBox::valueChanged), this,
+                     &SpinBox::editingFinished);
   }
 
   QStyleOptionSpinBox opt;

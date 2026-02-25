@@ -15,12 +15,12 @@ ModuleScaleCubeWidget::ModuleScaleCubeWidget(QWidget* parent_)
   m_ui->setupUi(this);
   m_ui->leSideLength->setValidator(new QDoubleValidator(this));
 
-  connect(m_ui->chbAdaptiveScaling, SIGNAL(toggled(bool)), this,
-          SIGNAL(adaptiveScalingToggled(const bool)));
+  connect(m_ui->chbAdaptiveScaling, &QCheckBox::toggled, this,
+          &ModuleScaleCubeWidget::adaptiveScalingToggled);
   connect(m_ui->leSideLength, &QLineEdit::editingFinished, this,
           [&] { sideLengthChanged(m_ui->leSideLength->text().toDouble()); });
-  connect(m_ui->chbAnnotation, SIGNAL(toggled(bool)), this,
-          SIGNAL(annotationToggled(const bool)));
+  connect(m_ui->chbAnnotation, &QCheckBox::toggled, this,
+          &ModuleScaleCubeWidget::annotationToggled);
   connect(m_ui->colorChooserButton, &pqColorChooserButton::chosenColorChanged,
           this, &ModuleScaleCubeWidget::boxColorChanged);
   connect(m_ui->textColorChooserButton,

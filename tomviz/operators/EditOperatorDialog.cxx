@@ -365,7 +365,7 @@ void EditOperatorDialog::showDialogForOperator(Operator* op,
       dialog->show();
 
       // Close the dialog if the Operator is destroyed.
-      connect(op, SIGNAL(destroyed()), dialog, SLOT(reject()));
+      connect(op, &QObject::destroyed, dialog, &QDialog::reject);
     }
   }
 }

@@ -18,30 +18,34 @@ AxesReaction::AxesReaction(QAction* parentObject, AxesReaction::Mode mode)
 {
   m_reactionMode = mode;
 
-  QObject::connect(&ActiveObjects::instance(),
-                   SIGNAL(viewChanged(vtkSMViewProxy*)), this,
-                   SLOT(updateEnableState()), Qt::QueuedConnection);
+  QObject::connect(
+    &ActiveObjects::instance(),
+    QOverload<vtkSMViewProxy*>::of(&ActiveObjects::viewChanged), this,
+    &AxesReaction::updateEnableState, Qt::QueuedConnection);
 
   QObject::connect(&ActiveObjects::instance(),
-                   SIGNAL(dataSourceChanged(DataSource*)), this,
-                   SLOT(updateEnableState()));
+                   static_cast<void (ActiveObjects::*)(DataSource*)>(
+                     &ActiveObjects::dataSourceChanged),
+                   this, &AxesReaction::updateEnableState);
 
   switch (m_reactionMode) {
     case SHOW_ORIENTATION_AXES:
-      QObject::connect(parentObject, SIGNAL(toggled(bool)), this,
-                       SLOT(showOrientationAxes(bool)));
+      QObject::connect(parentObject, &QAction::toggled, this,
+                       &AxesReaction::showOrientationAxes);
       break;
     case SHOW_CENTER_AXES:
-      QObject::connect(parentObject, SIGNAL(toggled(bool)), this,
-                       SLOT(showCenterAxes(bool)));
+      QObject::connect(parentObject, &QAction::toggled, this,
+                       &AxesReaction::showCenterAxes);
       break;
     case PICK_CENTER: {
       auto selectionReaction = new pqRenderViewSelectionReaction(
         parentObject, nullptr,
         pqRenderViewSelectionReaction::SELECT_CUSTOM_BOX);
-      QObject::connect(selectionReaction,
-                       SIGNAL(selectedCustomBox(int, int, int, int)), this,
-                       SLOT(pickCenterOfRotation(int, int)));
+      QObject::connect(
+        selectionReaction,
+        QOverload<int, int, int, int>::of(
+          &pqRenderViewSelectionReaction::selectedCustomBox),
+        this, &AxesReaction::pickCenterOfRotation);
     } break;
     default:
       break;

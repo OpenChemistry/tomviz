@@ -97,19 +97,19 @@ bool ModuleClip::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     onDirectionChanged(m_direction);
     pqCoreUtilities::connect(m_widget, vtkCommand::InteractionEvent, this,
                              SLOT(onPlaneChanged()));
-    connect(data, SIGNAL(dataChanged()), this, SLOT(dataUpdated()));
+    connect(data, &DataSource::dataChanged, this, &ModuleClip::dataUpdated);
     foreach (Module* module,
              ModuleManager::instance().findModulesGeneric(data, nullptr)) {
       if (module->dataSource() == data) {
-        connect(this, SIGNAL(clipFilterUpdated(vtkPlane*, bool)), module,
-                SLOT(updateClippingPlane(vtkPlane*, bool)));
+        connect(this, &ModuleClip::clipFilterUpdated, module,
+                &Module::updateClippingPlane);
       }
     }
     connect(&ModuleManager::instance(), &ModuleManager::moduleAdded, this,
             [this, data](Module* module) {
               if (module->dataSource() == data) {
-                connect(this, SIGNAL(clipFilterUpdated(vtkPlane*, bool)),
-                        module, SLOT(updateClippingPlane(vtkPlane*, bool)));
+                connect(this, &ModuleClip::clipFilterUpdated,
+                        module, &Module::updateClippingPlane);
                 emit clipFilterUpdated(m_clippingPlane, false);
               }
             });
