@@ -52,6 +52,7 @@
 #include <QJsonArray>
 #include <QMap>
 #include <QMessageBox>
+#include <QPushButton>
 #include <QTimer>
 
 #include <cmath>
@@ -1044,28 +1045,28 @@ int DataSource::addOperator(Operator* op, bool append)
       settings->value("OperatorInsertConfirm/DontAsk", false).toBool();
     if (!skipConfirm) {
       QMessageBox msgBox;
-      msgBox.setWindowTitle("Tomviz");
+      msgBox.setWindowTitle("Insert Operator?");
       msgBox.setText(
-        "Recent changes to Tomviz allow insertion of operators. If another "
-        "operator is selected in the pipeline, creating a new operator will "
-        "insert the new operator at the position of the selected operator in "
-        "the pipeline.\n\nDo you wish to continue inserting the operator?");
-      msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-      msgBox.setDefaultButton(QMessageBox::Yes);
-      QCheckBox dontAskAgain("Don't ask again");
+        "Insert this operator before the selected operator in the pipeline?");
+      auto* insertBtn = msgBox.addButton("Insert", QMessageBox::AcceptRole);
+      msgBox.addButton("Append to End", QMessageBox::RejectRole);
+      msgBox.setDefaultButton(insertBtn);
+      QCheckBox dontAskAgain("Don't ask again (always insert)");
       msgBox.setCheckBox(&dontAskAgain);
 
-      auto result = msgBox.exec();
+      msgBox.exec();
 
       if (dontAskAgain.isChecked()) {
         settings->setValue("OperatorInsertConfirm/DontAsk", true);
       }
 
-      if (result != QMessageBox::Yes) {
-        op->deleteLater();
-        return -1;
+      if (msgBox.clickedButton() != insertBtn) {
+        // Append to the end instead of inserting
+        index = -1;
       }
     }
+  }
+  if (index >= 0) {
     this->Internals->Operators.insert(index, op);
   } else {
     index = this->Internals->Operators.count();

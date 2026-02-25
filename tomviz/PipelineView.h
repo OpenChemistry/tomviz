@@ -6,6 +6,7 @@
 
 #include <QTreeView>
 
+#include <QPersistentModelIndex>
 #include <QPointer>
 
 #include "EditOperatorDialog.h"
@@ -47,7 +48,7 @@ protected:
   void leaveEvent(QEvent* event) override;
 
 private:
-  QModelIndex m_hoverIndex;
+  QPersistentModelIndex m_hoverIndex;
 
 private slots:
   void rowActivated(const QModelIndex& idx);

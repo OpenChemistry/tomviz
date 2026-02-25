@@ -591,7 +591,7 @@ QModelIndex PipelineModel::parent(const QModelIndex& index) const
     return QModelIndex();
   }
   auto treeItem = this->treeItem(index);
-  if (!treeItem->parent()) {
+  if (!treeItem || !treeItem->parent()) {
     return QModelIndex();
   }
   return createIndex(treeItem->parent()->childIndex(), 0, treeItem->parent());
