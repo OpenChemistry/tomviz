@@ -55,11 +55,13 @@ bool ModuleFactory::moduleApplicable(const QString& moduleName,
                                      DataSource* dataSource,
                                      vtkSMViewProxy* view)
 {
+  Q_UNUSED(view);
+
   if (moduleName == "Molecule" || moduleName == "Plot") {
     return false;
   }
 
-  if (dataSource && view && vtkSMRenderViewProxy::SafeDownCast(view)) {
+  if (dataSource) {
     if (dataSource->getNumberOfComponents() > 1) {
       if (moduleName == "Contour" || moduleName == "Threshold") {
         return false;
@@ -74,8 +76,10 @@ bool ModuleFactory::moduleApplicable(const QString& moduleName,
                                      MoleculeSource* moleculeSource,
                                      vtkSMViewProxy* view)
 {
+  Q_UNUSED(view);
+
   if (moduleName == "Molecule") {
-    if (moleculeSource && view && vtkSMRenderViewProxy::SafeDownCast(view)) {
+    if (moleculeSource) {
       return true;
     }
   }
@@ -86,19 +90,17 @@ bool ModuleFactory::moduleApplicable(const QString& moduleName,
                                OperatorResult* operatorResult,
                                vtkSMViewProxy* view)
 {
+  Q_UNUSED(view);
+
   if (moduleName == "Plot") {
     return (
       operatorResult &&
-      view &&
-      vtkTable::SafeDownCast(operatorResult->dataObject()) &&
-      vtkSMContextViewProxy::SafeDownCast(view)
+      vtkTable::SafeDownCast(operatorResult->dataObject())
     );
   } else if (moduleName == "Molecule") {
     return (
       operatorResult &&
-      view &&
-      vtkMolecule::SafeDownCast(operatorResult->dataObject()) &&
-      vtkSMRenderViewProxy::SafeDownCast(view)
+      vtkMolecule::SafeDownCast(operatorResult->dataObject())
     );
   }
 
