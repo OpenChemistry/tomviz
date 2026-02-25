@@ -447,7 +447,7 @@ void DataPropertiesPanel::updateData()
     m_tiltAnglesSeparator->hide();
     m_ui->SetTiltAnglesButton->hide();
     m_ui->TiltAnglesTable->hide();
-    m_ui->saveTiltAngles->show();
+    m_ui->saveTiltAngles->hide();
   }
   connect(m_ui->TiltAnglesTable, &QTableWidget::cellChanged, this,
           &DataPropertiesPanel::onTiltAnglesModified);
