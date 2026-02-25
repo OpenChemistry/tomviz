@@ -85,12 +85,17 @@ bool SaveLoadTemplateReaction::loadTemplate(const QString& fileName)
   // Get the parent data source, as well as the active (i.e. data and output)
   auto activeParent = ActiveObjects::instance().activeParentDataSource();
   auto activeData = ActiveObjects::instance().activeDataSource();
-  
+
+  if (!activeParent) {
+    qWarning("No active data source to apply template to.");
+    return false;
+  }
+
   // Read in the template file and apply it to the current data source
   activeParent->deserialize(doc.object());
   // Load the default modules on the output if there are none
   bool noModules = ModuleManager::instance().findModulesGeneric(activeData, nullptr).isEmpty();
-  if (noModules && activeData != activeParent) {
+  if (noModules && activeData && activeData != activeParent) {
     activeParent->pipeline()->addDefaultModules(activeData);
   }
   
