@@ -15,9 +15,13 @@ macro(add_cxx_qtest name)
   set(_one_value_args PYTHONPATH)
   cmake_parse_arguments(fn "" "" "${_one_value_args}" "" ${ARGN})
 
+  # Use a name-scoped variable to avoid clobbering the caller's _pythonpath.
+  # CMake macros do not have their own scope, so a bare _pythonpath would
+  # overwrite the identically-named variable in the calling CMakeLists.txt.
+  set(_qtest_${name}_pythonpath "")
   if(fn_PYTHONPATH)
-    set(_pythonpath "${fn_PYTHONPATH}")
-    message("PYTHONPATH for ${name}: ${_pythonpath})")
+    set(_qtest_${name}_pythonpath "${fn_PYTHONPATH}")
+    message("PYTHONPATH for ${name}: ${_qtest_${name}_pythonpath})")
   endif()
 
   set(_test_src ${name}Test.cxx)
@@ -31,13 +35,13 @@ macro(add_cxx_qtest name)
   set_target_properties(${_executable_name} PROPERTIES ENABLE_EXPORTS TRUE)
 
   add_test(NAME "${name}" COMMAND ${_executable_name})
-  if(_pythonpath)
+  if(_qtest_${name}_pythonpath)
     if (WIN32)
-      string(REPLACE "\\;" ";" "_pythonpath" "${_pythonpath}")
-      string(REPLACE ";" "\\;" "_pythonpath" "${_pythonpath}")
+      string(REPLACE "\\;" ";" "_qtest_${name}_pythonpath" "${_qtest_${name}_pythonpath}")
+      string(REPLACE ";" "\\;" "_qtest_${name}_pythonpath" "${_qtest_${name}_pythonpath}")
     endif()
     set_tests_properties(${name}
-      PROPERTIES ENVIRONMENT "PYTHONPATH=${_pythonpath};TOMVIZ_APPLICATION=1")
+      PROPERTIES ENVIRONMENT "PYTHONPATH=${_qtest_${name}_pythonpath};TOMVIZ_APPLICATION=1")
   endif()
 endmacro()
 
