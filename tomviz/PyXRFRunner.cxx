@@ -284,7 +284,8 @@ public:
   {
     progressDialog->accept();
 
-    auto success = makeHDF5Process.exitStatus() == QProcess::NormalExit;
+    auto success = makeHDF5Process.exitStatus() == QProcess::NormalExit &&
+                   makeHDF5Process.exitCode() == 0;
     if (!success) {
       QString msg = "Make HDF5 failed";
       qCritical() << msg;
@@ -336,7 +337,8 @@ public:
   {
     progressDialog->accept();
 
-    auto success = remakeCsvFileProcess.exitStatus() == QProcess::NormalExit;
+    auto success = remakeCsvFileProcess.exitStatus() == QProcess::NormalExit &&
+                   remakeCsvFileProcess.exitCode() == 0;
     if (!success) {
       QString msg = "Remake CSV file failed";
       qCritical() << msg;
@@ -493,11 +495,19 @@ public:
   {
     progressDialog->accept();
 
-    auto success = processProjectionsProcess.exitStatus() == QProcess::NormalExit;
-    if (!success || !validateOutputDirectory()) {
-      QString msg = "Process projections failed";
+    auto success = processProjectionsProcess.exitStatus() == QProcess::NormalExit &&
+                   processProjectionsProcess.exitCode() == 0;
+    if (!success) {
+      QString msg = QString("Process projections failed (exit code %1)")
+                      .arg(processProjectionsProcess.exitCode());
       qCritical() << msg;
       QMessageBox::critical(parentWidget, "Tomviz", msg);
+      // Show the dialog again
+      showProcessProjectionsDialog();
+      return;
+    }
+
+    if (!validateOutputDirectory()) {
       // Show the dialog again
       showProcessProjectionsDialog();
       return;
