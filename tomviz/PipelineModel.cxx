@@ -1072,9 +1072,30 @@ bool PipelineModel::removeOp(Operator* o)
 {
   auto index = operatorIndex(o);
   if (index.isValid()) {
-    // This will trigger the move of the "transformed" data source
-    // so we need todo this outside the beginRemoveRow(...), otherwise
-    // the model is not correctly invalidated.
+    // If this operator has a child data source (the "transformed" output),
+    // move it to the last remaining operator in the tree model BEFORE calling
+    // removeOperator(). Previously, this move happened via the signal chain
+    // (operatorRemoved -> Pipeline handler -> dataSourceMoved ->
+    // moveDataSourceHelper -> beginMoveRows), but beginMoveRows can crash
+    // when iterating persistent model indexes during the signal chain.
+    // By doing the move explicitly here, the subsequent signal-triggered
+    // moveDataSourceHelper becomes a no-op (oldParent == newParent).
+    auto childDS = o->childDataSource();
+    if (childDS) {
+      auto operators = o->dataSource()->operators();
+      operators.removeAll(o);
+      if (!operators.isEmpty()) {
+        moveDataSourceHelper(childDS, operators.last());
+      }
+    }
+
+    // Re-compute the index since moveDataSourceHelper may have modified the
+    // tree (the operator's child count changed).
+    index = operatorIndex(o);
+    if (!index.isValid()) {
+      return true;
+    }
+
     o->dataSource()->removeOperator(o);
     beginRemoveRows(parent(index), index.row(), index.row());
     auto item = treeItem(index);
@@ -1131,11 +1152,24 @@ void PipelineModel::moveDataSourceHelper(DataSource* dataSource,
                                          Operator* newParent)
 {
   auto index = dataSourceIndex(dataSource);
+  if (!index.isValid()) {
+    return;
+  }
   auto dataSourceItem = treeItem(index);
+  if (!dataSourceItem || !dataSourceItem->parent()) {
+    return;
+  }
   auto oldParent = dataSourceItem->parent()->op();
+  // Already under the target parent (e.g. removeOp pre-moved it).
+  if (oldParent == newParent) {
+    return;
+  }
   auto oldParentIndex = this->operatorIndex(oldParent);
   auto operatorIndex = this->operatorIndex(newParent);
   auto operatorTreeItem = this->treeItem(operatorIndex);
+  if (!operatorTreeItem) {
+    return;
+  }
 
   beginMoveRows(oldParentIndex, index.row(), index.row(), operatorIndex,
                 operatorTreeItem->childCount());
