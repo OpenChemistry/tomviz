@@ -686,6 +686,11 @@ void DataPropertiesPanel::saveTiltAngles()
       return;
   }
 
+  // Ensure the file has a .txt extension
+  if (!fileName.endsWith(".txt", Qt::CaseInsensitive)) {
+    fileName += ".txt";
+  }
+
   auto tiltAngles = dsource->getTiltAngles();
   auto scanIDs = dsource->getScanIDs();
 
