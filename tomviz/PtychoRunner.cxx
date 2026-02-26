@@ -3,6 +3,7 @@
 
 #include "PtychoRunner.h"
 
+#include "CameraReaction.h"
 #include "DataSource.h"
 #include "LoadDataReaction.h"
 #include "ProgressDialog.h"
@@ -295,6 +296,10 @@ public:
         dataSource->setScanIDs(scanIDs);
       }
     }
+
+    // Automatically update camera to BNL convention
+    CameraReaction::resetPositiveZ();
+    CameraReaction::rotateCamera(-90);
 
     QString title = "Loading ptycho data complete";
     auto text =
