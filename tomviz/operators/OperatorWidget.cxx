@@ -32,7 +32,7 @@ void OperatorWidget::setupUI(OperatorPython* op)
   QString json = op->JSONDescription();
   if (!json.isNull()) {
     DataSource* dataSource = nullptr;
-    if (op->hasChildDataSource())
+    if (op->childDataSource())
       dataSource = op->childDataSource();
     else
       dataSource = qobject_cast<DataSource*>(op->parent());
