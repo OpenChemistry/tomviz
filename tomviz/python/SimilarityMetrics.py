@@ -9,12 +9,11 @@ class SimilarityMetrics(tomviz.operators.CancelableOperator):
         """
         import numpy as np  # noqa: F811
         from skimage.transform import resize
-        from skimage.metrics import (structural_similarity,
-                                     mean_squared_error)
+        from skimage.metrics import structural_similarity, mean_squared_error
 
         if reference_dataset is None:
             raise Exception("A probe dataset is required.")
-        
+
         if selected_scalars is None:
             selected_scalars = dataset.scalars_names
 
@@ -57,7 +56,9 @@ class SimilarityMetrics(tomviz.operators.CancelableOperator):
 
         slice_indices = []
 
-        for i, (scan_id, dataset_slice_index) in enumerate(dataset_scan_id_to_slice.items()):
+        for i, (scan_id, dataset_slice_index) in enumerate(
+            dataset_scan_id_to_slice.items()
+        ):
             reference_slice_index = reference_scan_id_to_slice.get(scan_id)
 
             if reference_slice_index is None:
@@ -83,7 +84,11 @@ class SimilarityMetrics(tomviz.operators.CancelableOperator):
             if scalars is None:
                 continue
 
-            reference_scalars = reference_dataset.scalars(name) if name in reference_scalars_names else phase_scalars
+            reference_scalars = (
+                reference_dataset.scalars(name)
+                if name in reference_scalars_names
+                else phase_scalars
+            )
             if reference_scalars is None:
                 continue
 
@@ -96,7 +101,10 @@ class SimilarityMetrics(tomviz.operators.CancelableOperator):
             mse_data = np.empty(n_slices)
             ssim_data = np.empty(n_slices)
 
-            for output_slice_index, (dataset_slice_index, reference_slice_index) in enumerate(slice_indices):
+            for output_slice_index, (
+                dataset_slice_index,
+                reference_slice_index,
+            ) in enumerate(slice_indices):
                 self.progress.value = output_slice_index
 
                 dataset_slice_indexing_list = [slice(None)] * scalars.ndim
@@ -118,14 +126,24 @@ class SimilarityMetrics(tomviz.operators.CancelableOperator):
                 if reference_slice.shape == common_slice_shape:
                     resized_reference_slice = reference_slice
                 else:
-                    resized_reference_slice = resize(reference_slice, common_slice_shape)
+                    resized_reference_slice = resize(
+                        reference_slice, common_slice_shape
+                    )
 
                 # normalize the arrays
-                resized_scalars_slice = (resized_scalars_slice - np.min(resized_scalars_slice))/np.ptp(resized_scalars_slice)
-                resized_reference_slice = (resized_reference_slice - np.min(resized_reference_slice))/np.ptp(resized_reference_slice)
+                resized_scalars_slice = (
+                    resized_scalars_slice - np.min(resized_scalars_slice)
+                ) / np.ptp(resized_scalars_slice)
+                resized_reference_slice = (
+                    resized_reference_slice - np.min(resized_reference_slice)
+                ) / np.ptp(resized_reference_slice)
 
-                mse_data[output_slice_index] = mean_squared_error(resized_reference_slice, resized_scalars_slice)
-                ssim_data[output_slice_index] = structural_similarity(resized_reference_slice, resized_scalars_slice, data_range=1.)
+                mse_data[output_slice_index] = mean_squared_error(
+                    resized_reference_slice, resized_scalars_slice
+                )
+                ssim_data[output_slice_index] = structural_similarity(
+                    resized_reference_slice, resized_scalars_slice, data_range=1.0
+                )
 
             self.progress.value = n_slices
 
@@ -152,7 +170,9 @@ class SimilarityMetrics(tomviz.operators.CancelableOperator):
         return_values = {}
         axis_labels = ("Slice Index", "")
         log_flags = (False, False)
-        table = tomviz.utils.make_spreadsheet(column_names, table_data, axis_labels, log_flags)
+        table = tomviz.utils.make_spreadsheet(
+            column_names, table_data, axis_labels, log_flags
+        )
         return_values["similarity"] = table
 
         return return_values
