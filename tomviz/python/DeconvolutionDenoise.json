@@ -1,0 +1,109 @@
+{
+  "name" : "DeconvolutionDenoise",
+  "label" : "Deconvolution Denoise",
+  "description" : "Deconvolution-based denoising of volumetric data using a probe and a selected regularization method.",
+  "apply_to_each_array": false,
+  "parameters" : [
+      {
+      "name" : "selected_scalars",
+      "label" : "Scalars",
+      "type" : "select_scalars"
+    },
+    {
+      "name" : "method",
+      "label" : "Method",
+      "description" : "The deconvolution method to use",
+      "type" : "enumeration",
+      "default" : 0,
+      "options" : [
+        {"APG_BM3D" : "APG_BM3D"},
+        {"APG_TV" : "APG_TV"},
+        {"ADMM_TV" : "ADMM_TV"}
+      ]
+    },
+    {
+      "name" : "axis",
+      "label" : "Axis",
+      "description" : "The axis along which to process slices",
+      "type" : "enumeration",
+      "default" : 2,
+      "options" : [
+        {"X" : 0},
+        {"Y" : 1},
+        {"Z" : 2}
+      ]
+    },
+    {
+      "name" : "probe",
+      "label" : "Probe",
+      "description" : "The probe dataset used for deconvolution",
+      "type" : "dataset"
+    },
+    {
+      "name" : "fast_axis_scanning",
+      "label" : "Fast Axis Scanning",
+      "description" : "",
+      "type" : "enumeration",
+      "default" : 0,
+      "options" : [
+        {"dilation" : "dilation"},
+        {"average" : "average"}
+      ]
+    },
+    {
+      "name" : "slow_axis_scanning",
+      "label" : "Slow Axis Scanning",
+      "description" : "",
+      "type" : "enumeration",
+      "default" : 1,
+      "options" : [
+        {"dilation" : "dilation"},
+        {"average" : "average"}
+      ]
+    },
+    {
+      "name" : "probe_kernel",
+      "label" : "Probe Kernel",
+      "description" : "The size of the probe kernel",
+      "type" : "int",
+      "default" : 11,
+      "minimum" : 1
+    },
+    {
+      "name" : "scale_x",
+      "label" : "Scale X",
+      "description" : "X Scale factor",
+      "type" : "int",
+      "default" : 1,
+      "minimum" : 1,
+      "enable_if" : "method != 'ADMM_TV'"
+    },
+    {
+      "name" : "scale_y",
+      "label" : "Scale Y",
+      "description" : "Y Scale factor",
+      "type" : "int",
+      "default" : 1,
+      "minimum" : 1,
+      "enable_if" : "method != 'ADMM_TV'"
+    },
+    {
+      "name" : "max_iter",
+      "label" : "Max Iterations",
+      "description" : "Maximum number of iterations",
+      "type" : "int",
+      "default" : 8,
+      "minimum" : 1,
+      "maximum" : 16
+    },
+    {
+      "name" : "mu",
+      "label" : "Mu",
+      "description" : "mu parameter",
+      "type" : "double",
+      "default" : 1.0,
+      "precision" : 5
+    }
+  ],
+  "results" : []
+}

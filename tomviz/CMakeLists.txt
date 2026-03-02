@@ -448,6 +448,8 @@ set(python_files
   BinaryOpen.py
   BinaryClose.py
   DummyMolecule.py
+  DeconvolutionDenoise.py
+  SimilarityMetrics.py
   ElastixRegistration.py
   LabelObjectAttributes.py
   LabelObjectPrincipalAxes.py
@@ -533,6 +535,8 @@ set(json_files
   BinaryOpen.json
   BinaryClose.json
   DummyMolecule.json
+  DeconvolutionDenoise.json
+  SimilarityMetrics.json
   ElastixRegistration.json
   LabelObjectAttributes.json
   LabelObjectPrincipalAxes.json

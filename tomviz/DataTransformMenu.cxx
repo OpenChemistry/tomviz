@@ -82,6 +82,8 @@ void DataTransformMenu::buildTransforms()
   menu->addSeparator();
   auto psdAction = menu->addAction("Power Spectrum Density");
   auto fscAction = menu->addAction("Fourier Shell Correlation");
+  auto deconvolutionDenoiseAction = menu->addAction("Deconvolution Denoise");
+  auto similarityMetricsAction = menu->addAction("Similarity Metrics");
   menu->addSeparator();
   auto cloneAction = menu->addAction("Clone");
   auto deleteDataAction = menu->addAction(
@@ -199,6 +201,14 @@ void DataTransformMenu::buildTransforms()
     fscAction, "Fourier Shell Correlation",
     readInPythonScript("FourierShellCorrelation"), false, false, false,
     readInJSONDescription("FourierShellCorrelation"));
+  new AddPythonTransformReaction(
+    deconvolutionDenoiseAction, "Deconvolution Denoise",
+    readInPythonScript("DeconvolutionDenoise"), false, false, false,
+    readInJSONDescription("DeconvolutionDenoise"));
+  new AddPythonTransformReaction(
+    similarityMetricsAction, "Similarity Metrics",
+    readInPythonScript("SimilarityMetrics"), false, false, false,
+    readInJSONDescription("SimilarityMetrics"));
 
   new CloneDataReaction(cloneAction);
   new DeleteDataReaction(deleteDataAction);
