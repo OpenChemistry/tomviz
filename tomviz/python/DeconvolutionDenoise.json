@@ -101,7 +101,7 @@
       "label" : "Mu",
       "description" : "mu parameter",
       "type" : "double",
-      "default" : 1.0,
+      "default" : 0.01,
       "precision" : 5
     }
   ],
