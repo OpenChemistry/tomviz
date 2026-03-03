@@ -203,7 +203,7 @@ void DataTransformMenu::buildTransforms()
     readInJSONDescription("FourierShellCorrelation"));
   new AddPythonTransformReaction(
     deconvolutionDenoiseAction, "Deconvolution Denoise",
-    readInPythonScript("DeconvolutionDenoise"), false, false, false,
+    readInPythonScript("DeconvolutionDenoise"), true, false, false,
     readInJSONDescription("DeconvolutionDenoise"));
   new AddPythonTransformReaction(
     similarityMetricsAction, "Similarity Metrics",
