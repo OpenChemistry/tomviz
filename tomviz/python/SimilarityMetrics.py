@@ -105,6 +105,9 @@ class SimilarityMetrics(tomviz.operators.CancelableOperator):
                 dataset_slice_index,
                 reference_slice_index,
             ) in enumerate(slice_indices):
+                if self.canceled:
+                    return
+
                 self.progress.value = output_slice_index
 
                 dataset_slice_indexing_list = [slice(None)] * scalars.ndim

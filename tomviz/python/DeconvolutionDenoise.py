@@ -4,7 +4,7 @@ import numpy as np
 import scipy
 
 
-def deconv_admm(g, psf, mu):
+def deconv_admm(g, psf, mu, is_canceled=None):
     # Fast ADMM_TV/L2 algorithm based on "An Augmented Lagrangian Method for Total Variation Video Restoration",
     # Stanley H. Chan, Student Member, IEEE, Ramsin Khoshabeh, Student Member, IEEE, Kristofor B. Gibson, Student Member, IEEE, Philip E. Gill, and Truong Q. Nguyen, Fellow, IEEE
     # IEEE TRANSACTIONS ON IMAGE PROCESSING, VOL. 20, NO. 11, NOVEMBER 2011
@@ -41,6 +41,8 @@ def deconv_admm(g, psf, mu):
     rdiff = np.zeros((max_iter, 1))
 
     while cov > tol and itr < max_iter:
+        if is_canceled is not None and is_canceled():
+            break
 
         dxt_ux, dyt_uy = der_t(ux, uy)
         dxt_yx, dyt_yy = der_t(yx, yy)
@@ -460,7 +462,7 @@ def sp_conv_mat_v1(scale, lr_im_sz, psf, conv_med=["dilation", "dilation"]):
         return conv_mat_dilation(scale, lr_im_sz, psf)
 
 
-def deconv_apg_tv(im, psf, scale, mu, conv_med, max_iter):
+def deconv_apg_tv(im, psf, scale, mu, conv_med, max_iter, is_canceled=None):
     from skimage.transform import rescale
 
     # max_iter = 100
@@ -482,10 +484,16 @@ def deconv_apg_tv(im, psf, scale, mu, conv_med, max_iter):
     rdiff = np.zeros((max_iter, 1))
 
     for i in range(max_iter):
+        if is_canceled is not None and is_canceled():
+            break
         grad = HtH @ w - Hty
         for k in range(10):
+            if is_canceled is not None and is_canceled():
+                break
             w_new = w - a * grad
-            x_new, _, l, r = deconv_admm(np.reshape(w_new, hr_im_sz), [[1]], mu)
+            x_new, _, l, r = deconv_admm(
+                np.reshape(w_new, hr_im_sz), [[1]], mu, is_canceled=is_canceled
+            )
             x_new = x_new.ravel()
             L_new = 0.5 * np.sum((H @ x_new - y) ** 2)
             Q = (
@@ -510,7 +518,7 @@ def deconv_apg_tv(im, psf, scale, mu, conv_med, max_iter):
     return np.reshape(w, hr_im_sz), original, loss, rdiff
 
 
-def deconv_apg_bm3d(im, psf, scale, mu, conv_med, max_iter):
+def deconv_apg_bm3d(im, psf, scale, mu, conv_med, max_iter, is_canceled=None):
     import bm3d
     from skimage.transform import rescale
 
@@ -534,8 +542,12 @@ def deconv_apg_bm3d(im, psf, scale, mu, conv_med, max_iter):
     rdiff = np.zeros((max_iter, 1))
 
     for i in range(max_iter):
+        if is_canceled is not None and is_canceled():
+            break
         grad = HtH @ w - Hty
         for k in range(10):
+            if is_canceled is not None and is_canceled():
+                break
             w_new = w - a * grad
             x_new = bm3d.bm3d(np.reshape(w_new, hr_im_sz), effective_sigma)
             x_new = x_new.ravel()
@@ -561,7 +573,7 @@ def deconv_apg_bm3d(im, psf, scale, mu, conv_med, max_iter):
     return np.reshape(w, hr_im_sz), original, loss, rdiff
 
 
-def deconv_apg_bm3d_poisson(im, psf, scale, mu, conv_med, max_iter):
+def deconv_apg_bm3d_poisson(im, psf, scale, mu, conv_med, max_iter, is_canceled=None):
     import bm3d
 
     ep = 0.1
@@ -588,8 +600,12 @@ def deconv_apg_bm3d_poisson(im, psf, scale, mu, conv_med, max_iter):
     rdiff = np.zeros((max_iter, 1))
 
     for i in range(max_iter):
+        if is_canceled is not None and is_canceled():
+            break
         grad = HtI - H.T @ (y / (H @ w + ep))
         for k in range(10):
+            if is_canceled is not None and is_canceled():
+                break
             w_new = w - a * grad
             w_new_trans = anscombe(w_new)
             w_max = np.max(w_new_trans)
@@ -634,19 +650,22 @@ def deconv(
     conv_med=["dilation", "dilation"],
     deconv_med="ADMM_TV",
     max_iter=50,
+    is_canceled=None,
 ):
 
     if deconv_med == "ADMM_TV":
         if scale[0] * scale[1] != 1:
             print("ADMM_TV does not support upscaling; forcing scale = [1,1].")
-        out, original, loss, rdiff = deconv_admm(im, psf, mu)
+        out, original, loss, rdiff = deconv_admm(im, psf, mu, is_canceled=is_canceled)
     elif deconv_med == "APG_TV":
         out, original, loss, rdiff = deconv_apg_tv(
-            im, psf, scale, mu, conv_med=conv_med, max_iter=max_iter
+            im, psf, scale, mu, conv_med=conv_med, max_iter=max_iter,
+            is_canceled=is_canceled,
         )
     elif deconv_med == "APG_BM3D":
         out, original, loss, rdiff = deconv_apg_bm3d(
-            im, psf, scale, mu, conv_med=conv_med, max_iter=max_iter
+            im, psf, scale, mu, conv_med=conv_med, max_iter=max_iter,
+            is_canceled=is_canceled,
         )
     else:
         raise Exception("Unknown deconvolution method: {deconv_med}")
@@ -801,6 +820,9 @@ class DeconvolutionDenoise(tomviz.operators.CancelableOperator):
                 dataset_slice_index,
                 probe_slice_index,
             ) in enumerate(slice_indices):
+                if self.canceled:
+                    return
+
                 # for slice_index in range(n_slices):
                 self.progress.value = output_slice_index
 
@@ -838,7 +860,11 @@ class DeconvolutionDenoise(tomviz.operators.CancelableOperator):
                     [fast_axis_scanning, slow_axis_scanning],
                     method,
                     max_iter,
+                    is_canceled=lambda: self.canceled,
                 )
+
+                if self.canceled:
+                    return
 
                 output_scalars[output_slice_indexing] = w
 
