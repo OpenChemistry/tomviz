@@ -4,7 +4,7 @@ import numpy as np
 import scipy
 
 
-def deconv_admm(g, psf, mu, is_canceled=None):
+def deconv_admm(g, psf, mu, is_canceled=None, max_iter=50):
     # Fast ADMM_TV/L2 algorithm based on "An Augmented Lagrangian Method for Total Variation Video Restoration",
     # Stanley H. Chan, Student Member, IEEE, Ramsin Khoshabeh, Student Member, IEEE, Kristofor B. Gibson, Student Member, IEEE, Philip E. Gill, and Truong Q. Nguyen, Fellow, IEEE
     # IEEE TRANSACTIONS ON IMAGE PROCESSING, VOL. 20, NO. 11, NOVEMBER 2011
@@ -32,7 +32,6 @@ def deconv_admm(g, psf, mu, is_canceled=None):
     cov = 1
     tol = 1e-4
     itr = 0
-    max_iter = 50
     HtG = np.conj(H) * G
     vx, vy = der_im(f)
     rnorm = np.sum(np.sqrt(vx.ravel() ** 2 + vy.ravel() ** 2))
@@ -656,7 +655,9 @@ def deconv(
     if deconv_med == "ADMM_TV":
         if scale[0] * scale[1] != 1:
             print("ADMM_TV does not support upscaling; forcing scale = [1,1].")
-        out, original, loss, rdiff = deconv_admm(im, psf, mu, is_canceled=is_canceled)
+        out, original, loss, rdiff = deconv_admm(
+            im, psf, mu, is_canceled=is_canceled, max_iter=max_iter
+        )
     elif deconv_med == "APG_TV":
         out, original, loss, rdiff = deconv_apg_tv(
             im, psf, scale, mu, conv_med=conv_med, max_iter=max_iter,
