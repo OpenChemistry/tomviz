@@ -94,7 +94,7 @@
       "type" : "int",
       "default" : 8,
       "minimum" : 1,
-      "maximum" : 16
+      "maximum" : 100000
     },
     {
       "name" : "mu",
