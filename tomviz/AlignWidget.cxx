@@ -402,11 +402,11 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   QHBoxLayout* viewControls = new QHBoxLayout;
   QPushButton* zoomToBox = new QPushButton(
     QIcon(":/pqWidgets/Icons/pqZoomToSelection.svg"), "Zoom to Selection");
-  connect(zoomToBox, SIGNAL(pressed()), this, SLOT(zoomToSelectionStart()));
+  connect(zoomToBox, &QPushButton::pressed, this, &AlignWidget::zoomToSelectionStart);
   viewControls->addWidget(zoomToBox);
   QPushButton* resetCamera =
     new QPushButton(QIcon(":/pqWidgets/Icons/pqResetCamera.svg"), "Reset View");
-  connect(resetCamera, SIGNAL(pressed()), this, SLOT(resetCamera()));
+  connect(resetCamera, &QPushButton::pressed, this, &AlignWidget::resetCamera);
   viewControls->addWidget(resetCamera);
 
   v->addLayout(viewControls);
@@ -467,15 +467,15 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   m_modeSelect->addItem("Toggle Images");
   m_modeSelect->addItem("Show Difference");
   m_modeSelect->setCurrentIndex(0);
-  connect(m_modeSelect, SIGNAL(currentIndexChanged(int)), this,
-          SLOT(changeMode(int)));
+  connect(m_modeSelect, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          &AlignWidget::changeMode);
   optionsLayout->addWidget(m_modeSelect);
 
   QToolButton* presetSelectorButton = new QToolButton;
   presetSelectorButton->setIcon(QIcon(":/pqWidgets/Icons/pqFavorites.svg"));
   presetSelectorButton->setToolTip("Choose preset color map");
-  connect(presetSelectorButton, SIGNAL(clicked()), this,
-          SLOT(onPresetClicked()));
+  connect(presetSelectorButton, &QToolButton::clicked, this,
+          &AlignWidget::onPresetClicked);
   optionsLayout->addWidget(presetSelectorButton);
   v->addLayout(optionsLayout);
 
@@ -517,8 +517,8 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   m_currentSlice->setValue(startRef + 1);
   m_currentSlice->setRange(m_minSliceNum, m_maxSliceNum);
   m_currentSlice->installEventFilter(this);
-  connect(m_currentSlice, SIGNAL(editingFinished()), this,
-          SLOT(currentSliceEdited()));
+  connect(m_currentSlice, &SpinBox::editingFinished, this,
+          &AlignWidget::currentSliceEdited);
   grid->addWidget(m_currentSlice, gridrow, 1, 1, 1, Qt::AlignLeft);
   label = new QLabel("Shortcut: (A/S)");
   grid->addWidget(label, gridrow, 2, 1, 2, Qt::AlignLeft);
@@ -537,11 +537,11 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   m_refNum->setValue(startRef);
   m_refNum->setRange(m_minSliceNum, m_maxSliceNum);
   m_refNum->installEventFilter(this);
-  connect(m_refNum, SIGNAL(valueChanged(int)), SLOT(updateReference()));
+  connect(m_refNum, QOverload<int>::of(&QSpinBox::valueChanged), this, [this](int) { updateReference(); });
   grid->addWidget(m_refNum, gridrow, 1, 1, 1, Qt::AlignLeft);
   m_refNum->setEnabled(false);
-  connect(m_statButton, SIGNAL(toggled(bool)), m_refNum,
-          SLOT(setEnabled(bool)));
+  connect(m_statButton, &QRadioButton::toggled, m_refNum,
+          &QSpinBox::setEnabled);
 
   grid->addWidget(m_prevButton, gridrow, 2, 1, 1, Qt::AlignLeft);
   grid->addWidget(m_nextButton, gridrow, 3, 1, 1, Qt::AlignLeft);
@@ -553,8 +553,8 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   m_referenceSliceMode->addButton(m_statButton);
   m_referenceSliceMode->setExclusive(true);
   m_prevButton->setChecked(true);
-  connect(m_referenceSliceMode, SIGNAL(buttonClicked(int)),
-          SLOT(updateReference()));
+  connect(m_referenceSliceMode, &QButtonGroup::idClicked,
+          this, [this](int) { updateReference(); });
 
   ++gridrow;
   label = new QLabel("Frame rate (fps):");
@@ -563,7 +563,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   m_fpsSpin->setRange(0, 50);
   m_fpsSpin->setValue(5);
   m_fpsSpin->installEventFilter(this);
-  connect(m_fpsSpin, SIGNAL(valueChanged(int)), SLOT(setFrameRate(int)));
+  connect(m_fpsSpin, QOverload<int>::of(&QSpinBox::valueChanged), this, &AlignWidget::setFrameRate);
   grid->addWidget(m_fpsSpin, gridrow, 1, 1, 1, Qt::AlignLeft);
 
   // Slice offsets
@@ -576,11 +576,11 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   QHBoxLayout* buttonLayout = new QHBoxLayout;
   buttonLayout->addStretch();
   m_startButton = new QPushButton("Start");
-  connect(m_startButton, SIGNAL(clicked()), SLOT(startAlign()));
+  connect(m_startButton, &QPushButton::clicked, this, &AlignWidget::startAlign);
   buttonLayout->addWidget(m_startButton);
   m_startButton->setEnabled(false);
   m_stopButton = new QPushButton("Stop");
-  connect(m_stopButton, SIGNAL(clicked()), SLOT(stopAlign()));
+  connect(m_stopButton, &QPushButton::clicked, this, &AlignWidget::stopAlign);
   buttonLayout->addWidget(m_stopButton);
   buttonLayout->addStretch();
   v->addLayout(buttonLayout);
@@ -654,9 +654,9 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
       .arg(m_offsets[m_currentSlice->value()][0])
       .arg(m_offsets[m_currentSlice->value()][1]));
 
-  connect(m_timer, SIGNAL(timeout()), SLOT(onTimeout()));
-  connect(m_offsetTable, SIGNAL(cellChanged(int, int)),
-          SLOT(sliceOffsetEdited(int, int)));
+  connect(m_timer, &QTimer::timeout, this, &AlignWidget::onTimeout);
+  connect(m_offsetTable, &QTableWidget::cellChanged,
+          this, &AlignWidget::sliceOffsetEdited);
   changeSlice(0);
   m_timer->start(200);
 }

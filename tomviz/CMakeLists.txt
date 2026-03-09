@@ -98,8 +98,8 @@ set(SOURCES
   FileFormatManager.h
   FxiFormat.cxx
   FxiFormat.h
-  FxiWorkflowWidget.cxx
-  FxiWorkflowWidget.h
+  ShiftRotationCenterWidget.cxx
+  ShiftRotationCenterWidget.h
   GenericHDF5Format.cxx
   GenericHDF5Format.h
   GradientOpacityWidget.h
@@ -308,6 +308,8 @@ list(APPEND SOURCES
   modules/ModuleMolecule.h
   modules/ModuleOutline.cxx
   modules/ModuleOutline.h
+  modules/ModulePlot.cxx
+  modules/ModulePlot.h
   modules/ModulePropertiesPanel.cxx
   modules/ModulePropertiesPanel.h
   modules/ModuleRuler.cxx
@@ -446,6 +448,8 @@ set(python_files
   BinaryOpen.py
   BinaryClose.py
   DummyMolecule.py
+  DeconvolutionDenoise.py
+  SimilarityMetrics.py
   ElastixRegistration.py
   LabelObjectAttributes.py
   LabelObjectPrincipalAxes.py
@@ -462,8 +466,8 @@ set(python_files
   Recon_ART.py
   Recon_SIRT.py
   Recon_TV_minimization.py
-  Recon_tomopy_gridrec.py
-  Recon_tomopy_fxi.py
+  Recon_tomopy.py
+  ShiftRotationCenter_tomopy.py
   FFT_AbsLog.py
   ManualManipulation.py
   Shift_Stack_Uniformly.py
@@ -508,6 +512,9 @@ set(python_files
   TV_Filter.py
   PoreSizeDistribution.py
   Tortuosity.py
+  PowerSpectrumDensity.py
+  FourierShellCorrelation.py
+  RemoveArrays.py
   Recon_real_time_tomography.py
   )
 
@@ -515,6 +522,7 @@ set(json_files
   AddPoissonNoise.json
   AutoCenterOfMassTiltImageAlignment.json
   AutoCrossCorrelationTiltImageAlignment.json
+  AutoTiltAxisRotationAlignment.json
   AutoTiltAxisShiftAlignment.json
   PyStackRegImageAlignment.json
   BinaryThreshold.json
@@ -527,6 +535,8 @@ set(json_files
   BinaryOpen.json
   BinaryClose.json
   DummyMolecule.json
+  DeconvolutionDenoise.json
+  SimilarityMetrics.json
   ElastixRegistration.json
   LabelObjectAttributes.json
   LabelObjectPrincipalAxes.json
@@ -547,8 +557,8 @@ set(json_files
   Recon_DFT.json
   Recon_DFT_constraint.json
   Recon_TV_minimization.json
-  Recon_tomopy_gridrec.json
-  Recon_tomopy_fxi.json
+  Recon_tomopy.json
+  ShiftRotationCenter_tomopy.json
   Recon_SIRT.json
   Recon_WBP.json
   Shift3D.json
@@ -564,6 +574,9 @@ set(json_files
   TV_Filter.json
   PoreSizeDistribution.json
   Tortuosity.json
+  PowerSpectrumDensity.json
+  FourierShellCorrelation.json
+  RemoveArrays.json
   Recon_real_time_tomography.json
   )
 

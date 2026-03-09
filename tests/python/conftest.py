@@ -53,6 +53,32 @@ def hxn_xrf_example_dataset(hxn_xrf_example_output_dir: Path) -> Dataset:
 
 
 @pytest.fixture
+def chipset_test_data_dir(data_dir: Path) -> Path:
+    output_dir = data_dir / 'chipset_test_data'
+    if not output_dir.exists():
+        # Download it
+        url = DATA_URL + '/69a5e30a90b2fab670f34788/download'
+        download_and_unzip_file(url, output_dir.parent)
+
+    return output_dir
+
+
+@pytest.fixture(scope='function')
+def chipset_xrf_dataset(chipset_test_data_dir: Path) -> Dataset:
+    return load_dataset(chipset_test_data_dir / 'xrf_extracted_elements.emd')
+
+
+@pytest.fixture(scope='function')
+def chipset_ptycho_dataset(chipset_test_data_dir: Path) -> Dataset:
+    return load_dataset(chipset_test_data_dir / 'ptycho_object.emd')
+
+
+@pytest.fixture(scope='function')
+def chipset_probe_dataset(chipset_test_data_dir: Path) -> Dataset:
+    return load_dataset(chipset_test_data_dir / 'ptycho_probe.emd')
+
+
+@pytest.fixture
 def pystackreg_reference_output(data_dir: Path) -> dict[str, np.ndarray]:
     filepath = data_dir / 'test_pystackreg_reference_output.npz'
     if not filepath.exists():

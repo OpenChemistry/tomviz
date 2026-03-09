@@ -1,10 +1,6 @@
 # Shift a 3D dataset using SciPy Interpolation libraries.
 #
 # Developed as part of the tomviz project (www.tomviz.com).
-from tomviz.utils import apply_to_each_array
-
-
-@apply_to_each_array
 def transform(dataset, SHIFT=None):
 
     from scipy import ndimage

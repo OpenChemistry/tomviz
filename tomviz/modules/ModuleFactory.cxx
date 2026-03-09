@@ -8,6 +8,7 @@
 #include "ModuleContour.h"
 #include "ModuleMolecule.h"
 #include "ModuleOutline.h"
+#include "ModulePlot.h"
 #include "ModuleRuler.h"
 #include "ModuleScaleCube.h"
 #include "ModuleSegment.h"
@@ -19,6 +20,10 @@
 
 #include <pqView.h>
 #include <vtkSMViewProxy.h>
+#include <vtkSMContextViewProxy.h>
+#include <vtkSMRenderViewProxy.h>
+#include <vtkMolecule.h>
+#include <vtkTable.h>
 
 #include <QtAlgorithms>
 #include <algorithm>
@@ -40,7 +45,8 @@ QList<QString> ModuleFactory::moduleTypes()
         << "Volume"
         << "Threshold"
         << "Molecule"
-        << "Clip";
+        << "Clip"
+        << "Plot";
   std::sort(reply.begin(), reply.end());
   return reply;
 }
@@ -49,11 +55,13 @@ bool ModuleFactory::moduleApplicable(const QString& moduleName,
                                      DataSource* dataSource,
                                      vtkSMViewProxy* view)
 {
-  if (moduleName == "Molecule") {
+  Q_UNUSED(view);
+
+  if (moduleName == "Molecule" || moduleName == "Plot") {
     return false;
   }
 
-  if (dataSource && view) {
+  if (dataSource) {
     if (dataSource->getNumberOfComponents() > 1) {
       if (moduleName == "Contour" || moduleName == "Threshold") {
         return false;
@@ -68,11 +76,34 @@ bool ModuleFactory::moduleApplicable(const QString& moduleName,
                                      MoleculeSource* moleculeSource,
                                      vtkSMViewProxy* view)
 {
-  if (moleculeSource && view) {
-    if (moduleName == "Molecule") {
+  Q_UNUSED(view);
+
+  if (moduleName == "Molecule") {
+    if (moleculeSource) {
       return true;
     }
   }
+  return false;
+}
+
+bool ModuleFactory::moduleApplicable(const QString& moduleName,
+                               OperatorResult* operatorResult,
+                               vtkSMViewProxy* view)
+{
+  Q_UNUSED(view);
+
+  if (moduleName == "Plot") {
+    return (
+      operatorResult &&
+      vtkTable::SafeDownCast(operatorResult->dataObject())
+    );
+  } else if (moduleName == "Molecule") {
+    return (
+      operatorResult &&
+      vtkMolecule::SafeDownCast(operatorResult->dataObject())
+    );
+  }
+
   return false;
 }
 
@@ -100,6 +131,8 @@ Module* ModuleFactory::allocateModule(const QString& type)
     module = new ModuleMolecule();
   } else if (type== "Clip") {
     module = new ModuleClip();
+  } else if (type == "Plot") {
+    module = new ModulePlot();
   }
   return module;
 }
@@ -180,8 +213,7 @@ Module* ModuleFactory::createModule(const QString& type, OperatorResult* result,
 QIcon ModuleFactory::moduleIcon(const QString& type)
 {
   QIcon icon;
-  DataSource* d = nullptr;
-  Module* mdl = ModuleFactory::createModule(type, d, nullptr);
+  Module* mdl = ModuleFactory::allocateModule(type);
   if (mdl) {
     icon = mdl->icon();
     delete mdl;
@@ -219,6 +251,9 @@ const char* ModuleFactory::moduleType(const Module* module)
   }
   if (qobject_cast<const ModuleMolecule*>(module)) {
     return "Molecule";
+  }
+  if (qobject_cast<const ModulePlot*>(module)) {
+    return "Plot";
   }
   if (qobject_cast<const ModuleClip*>(module)) {
     return "Clip";

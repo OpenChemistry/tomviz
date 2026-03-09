@@ -45,10 +45,11 @@ MoveActiveObject::MoveActiveObject(QObject* p) : Superclass(p)
   this->BoxWidget->SetRepresentation(this->BoxRep.GetPointer());
   this->BoxWidget->SetPriority(1);
 
-  this->connect(&activeObjs, SIGNAL(dataSourceActivated(DataSource*)),
-                SLOT(dataSourceActivated(DataSource*)));
-  this->connect(&activeObjs, SIGNAL(viewChanged(vtkSMViewProxy*)),
-                SLOT(onViewChanged(vtkSMViewProxy*)));
+  this->connect(&activeObjs, &ActiveObjects::dataSourceActivated,
+                this, &MoveActiveObject::dataSourceActivated);
+  this->connect(&activeObjs,
+                QOverload<vtkSMViewProxy*>::of(&ActiveObjects::viewChanged),
+                this, &MoveActiveObject::onViewChanged);
 
   this->connect(&activeObjs, &ActiveObjects::interactionDataSourceFixed, this,
                 &MoveActiveObject::onInteractionDataSourceFixed);

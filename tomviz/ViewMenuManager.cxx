@@ -72,8 +72,10 @@ ViewMenuManager::ViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
       pqCoreUtilities::connect(m_view, vtkCommand::PropertyModifiedEvent, this,
                                SLOT(onViewPropertyChanged()));
   }
-  connect(&ActiveObjects::instance(), SIGNAL(viewChanged(vtkSMViewProxy*)),
-          SLOT(onViewChanged()));
+  connect(&ActiveObjects::instance(),
+          static_cast<void (ActiveObjects::*)(vtkSMViewProxy*)>(
+            &ActiveObjects::viewChanged),
+          this, &ViewMenuManager::onViewChanged);
 
   connect(&ActiveObjects::instance(), &ActiveObjects::dataSourceActivated, this,
           &ViewMenuManager::updateDataSource);
@@ -91,14 +93,14 @@ ViewMenuManager::ViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
   m_perspectiveProjectionAction->setCheckable(true);
   m_perspectiveProjectionAction->setActionGroup(projectionGroup);
   m_perspectiveProjectionAction->setChecked(true);
-  connect(m_perspectiveProjectionAction, SIGNAL(triggered()),
-          SLOT(setProjectionModeToPerspective()));
+  connect(m_perspectiveProjectionAction, &QAction::triggered, this,
+          &ViewMenuManager::setProjectionModeToPerspective);
   m_orthographicProjectionAction = Menu->addAction("Orthographic Projection");
   m_orthographicProjectionAction->setCheckable(true);
   m_orthographicProjectionAction->setActionGroup(projectionGroup);
   m_orthographicProjectionAction->setChecked(false);
-  connect(m_orthographicProjectionAction, SIGNAL(triggered()),
-          SLOT(setProjectionModeToOrthographic()));
+  connect(m_orthographicProjectionAction, &QAction::triggered, this,
+          &ViewMenuManager::setProjectionModeToOrthographic);
 
   Menu->addSeparator();
 

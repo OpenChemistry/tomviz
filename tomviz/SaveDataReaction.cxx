@@ -47,8 +47,10 @@ namespace tomviz {
 SaveDataReaction::SaveDataReaction(QAction* parentObject)
   : pqReaction(parentObject)
 {
-  connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
-          SLOT(updateEnableState()));
+  connect(&ActiveObjects::instance(),
+          static_cast<void (ActiveObjects::*)(DataSource*)>(
+            &ActiveObjects::dataSourceChanged),
+          this, &SaveDataReaction::updateEnableState);
   updateEnableState();
 }
 

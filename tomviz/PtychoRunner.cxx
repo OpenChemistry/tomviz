@@ -3,6 +3,7 @@
 
 #include "PtychoRunner.h"
 
+#include "CameraReaction.h"
 #include "DataSource.h"
 #include "LoadDataReaction.h"
 #include "ProgressDialog.h"
@@ -278,13 +279,27 @@ public:
 
   void loadOutputFiles()
   {
+    // Convert sidList to QVector<int> for scan IDs
+    QVector<int> scanIDs;
+    scanIDs.reserve(sidList.size());
+    for (auto& sid : sidList) {
+      scanIDs.push_back(static_cast<int>(sid));
+    }
+
     for (auto& filePath: outputFiles) {
       auto* dataSource = LoadDataReaction::loadData(filePath);
       if (!dataSource || !dataSource->imageData()) {
         qCritical() << "Failed to load file:" << filePath;
         return;
       }
+      if (!scanIDs.isEmpty()) {
+        dataSource->setScanIDs(scanIDs);
+      }
     }
+
+    // Automatically update camera to BNL convention
+    CameraReaction::resetPositiveZ();
+    CameraReaction::rotateCamera(-90);
 
     QString title = "Loading ptycho data complete";
     auto text =

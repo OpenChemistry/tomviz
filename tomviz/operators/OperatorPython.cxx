@@ -52,6 +52,8 @@ public:
   {
     m_ui.setupUi(this);
     m_ui.name->setText(o->label());
+    // Ensure the tab widget expands to fill available vertical space.
+    m_ui.verticalLayout->setStretch(1, 1);
     auto* highlighter =
       new pqPythonSyntaxHighlighter(m_ui.script, *m_ui.script);
     highlighter->ConnectHighligter();
@@ -62,7 +64,7 @@ public:
       QVBoxLayout* layout = new QVBoxLayout();
       m_customWidget->setupUI(m_op);
       m_customWidget->setValues(m_op->arguments());
-      layout->addWidget(m_customWidget);
+      layout->addWidget(m_customWidget, 1);
       m_ui.argumentsWidget->setLayout(layout);
     } else {
       QVBoxLayout* layout = new QVBoxLayout();
@@ -272,22 +274,24 @@ OperatorPython::OperatorPython(DataSource* parentObject)
     connectionType = Qt::DirectConnection;
   }
   // Needed so the worker thread can update data in the UI thread.
-  connect(this, SIGNAL(childDataSourceUpdated(vtkSmartPointer<vtkDataObject>)),
-          this, SLOT(updateChildDataSource(vtkSmartPointer<vtkDataObject>)),
+  connect(this, &OperatorPython::childDataSourceUpdated, this,
+          QOverload<vtkSmartPointer<vtkDataObject>>::of(
+            &OperatorPython::updateChildDataSource),
           connectionType);
 
   // This connection is needed so we can create new child data sources in the UI
   // thread from a pipeline worker threads.
-  connect(this, SIGNAL(newChildDataSource(const QString&,
-                                          vtkSmartPointer<vtkDataObject>)),
-          this, SLOT(createNewChildDataSource(const QString&,
-                                              vtkSmartPointer<vtkDataObject>)),
-          connectionType);
   connect(
     this,
-    SIGNAL(newOperatorResult(const QString&, vtkSmartPointer<vtkDataObject>)),
+    QOverload<const QString&, vtkSmartPointer<vtkDataObject>>::of(
+      &OperatorPython::newChildDataSource),
     this,
-    SLOT(setOperatorResult(const QString&, vtkSmartPointer<vtkDataObject>)));
+    [this](const QString& label, vtkSmartPointer<vtkDataObject> data) {
+      createNewChildDataSource(label, data);
+    },
+    connectionType);
+  connect(this, &OperatorPython::newOperatorResult, this,
+          &OperatorPython::setOperatorResult);
 }
 
 OperatorPython::~OperatorPython() {}
@@ -713,6 +717,10 @@ QVariant castJsonArg(const QJsonValue& arg, const QString& type)
     } else if (type == "double") {
       for (int i = 0; i < arr.size(); ++i) {
         arrayList << arr[i].toDouble();
+      }
+    } else if (type == "select_scalars") {
+      for (int i = 0; i < arr.size(); ++i) {
+        arrayList << arr[i].toString();
       }
     }
     return arrayList;

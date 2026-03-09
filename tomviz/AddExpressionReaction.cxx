@@ -36,7 +36,7 @@ OperatorPython* AddExpressionReaction::addExpression(DataSource* source)
     new EditOperatorDialog(opPython, source, true, tomviz::mainWidget());
   dialog->setAttribute(Qt::WA_DeleteOnClose, true);
   dialog->show();
-  connect(opPython, SIGNAL(destroyed()), dialog, SLOT(reject()));
+  connect(opPython, &QObject::destroyed, dialog, &QDialog::reject);
   return nullptr;
 }
 

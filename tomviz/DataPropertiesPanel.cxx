@@ -36,8 +36,12 @@
 
 #include <QCheckBox>
 #include <QClipboard>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QTableWidget>
 #include <QDebug>
 #include <QDoubleValidator>
+#include <QFileDialog>
 #include <QKeyEvent>
 #include <QMainWindow>
 #include <QMessageBox>
@@ -91,14 +95,24 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
 
   clear();
 
-  connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
-          SLOT(setDataSource(DataSource*)));
-  connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
-          SLOT(updateAxesGridLabels()));
-  connect(&ActiveObjects::instance(), SIGNAL(viewChanged(vtkSMViewProxy*)),
-          SLOT(updateAxesGridLabels()));
-  connect(m_ui->SetTiltAnglesButton, SIGNAL(clicked()), SLOT(setTiltAngles()));
-  connect(m_ui->unitBox, SIGNAL(editingFinished()), SLOT(updateUnits()));
+  connect(&ActiveObjects::instance(),
+          static_cast<void (ActiveObjects::*)(DataSource*)>(
+            &ActiveObjects::dataSourceChanged),
+          this, &DataPropertiesPanel::setDataSource);
+  connect(&ActiveObjects::instance(),
+          static_cast<void (ActiveObjects::*)(DataSource*)>(
+            &ActiveObjects::dataSourceChanged),
+          this, &DataPropertiesPanel::updateAxesGridLabels);
+  connect(&ActiveObjects::instance(),
+          static_cast<void (ActiveObjects::*)(vtkSMViewProxy*)>(
+            &ActiveObjects::viewChanged),
+          this, &DataPropertiesPanel::updateAxesGridLabels);
+  connect(m_ui->SetTiltAnglesButton, &QPushButton::clicked, this,
+          &DataPropertiesPanel::setTiltAngles);
+  connect(m_ui->saveTiltAngles, &QPushButton::clicked, this,
+          &DataPropertiesPanel::saveTiltAngles);
+  connect(m_ui->unitBox, &QLineEdit::editingFinished, this,
+          &DataPropertiesPanel::updateUnits);
   connect(m_ui->xLengthBox, &QLineEdit::editingFinished,
           [this]() { this->updateLength(m_ui->xLengthBox, 0); });
   connect(m_ui->yLengthBox, &QLineEdit::editingFinished,
@@ -179,8 +193,8 @@ void DataPropertiesPanel::setDataSource(DataSource* dsource)
   }
   m_currentDataSource = dsource;
   if (dsource) {
-    connect(dsource, SIGNAL(dataChanged()), SLOT(scheduleUpdate()),
-            Qt::UniqueConnection);
+    connect(dsource, &DataSource::dataChanged, this,
+            &DataPropertiesPanel::scheduleUpdate, Qt::UniqueConnection);
     connect(dsource, &DataSource::dataPropertiesChanged, this,
             &DataPropertiesPanel::onDataPropertiesChanged);
     connect(dsource, &DataSource::displayPositionChanged, this,
@@ -371,8 +385,8 @@ void DataPropertiesPanel::updateData()
     return;
   }
 
-  disconnect(m_ui->TiltAnglesTable, SIGNAL(cellChanged(int, int)), this,
-             SLOT(onTiltAnglesModified(int, int)));
+  disconnect(m_ui->TiltAnglesTable, &QTableWidget::cellChanged, this,
+             &DataPropertiesPanel::onTiltAnglesModified);
   clear();
 
   DataSource* dsource = m_currentDataSource;
@@ -402,21 +416,41 @@ void DataPropertiesPanel::updateData()
     m_tiltAnglesSeparator->show();
     m_ui->SetTiltAnglesButton->show();
     m_ui->TiltAnglesTable->show();
+    m_ui->saveTiltAngles->show();
     QVector<double> tiltAngles = dsource->getTiltAngles();
+    QVector<int> scanIDs = dsource->getScanIDs();
+    m_hasScanIDs = scanIDs.size() == tiltAngles.size() && !scanIDs.isEmpty();
     m_ui->TiltAnglesTable->setRowCount(tiltAngles.size());
-    m_ui->TiltAnglesTable->setColumnCount(1);
+    int numCols = m_hasScanIDs ? 2 : 1;
+    m_ui->TiltAnglesTable->setColumnCount(numCols);
+    int tiltCol = m_hasScanIDs ? 1 : 0;
     for (int i = 0; i < tiltAngles.size(); ++i) {
+      if (m_hasScanIDs) {
+        QTableWidgetItem* scanItem = new QTableWidgetItem();
+        scanItem->setData(Qt::DisplayRole, QString::number(scanIDs[i]));
+        scanItem->setFlags(scanItem->flags() & ~Qt::ItemIsEditable);
+        m_ui->TiltAnglesTable->setItem(i, 0, scanItem);
+      }
       QTableWidgetItem* item = new QTableWidgetItem();
       item->setData(Qt::DisplayRole, QString::number(tiltAngles[i]));
-      m_ui->TiltAnglesTable->setItem(i, 0, item);
+      m_ui->TiltAnglesTable->setItem(i, tiltCol, item);
     }
+    // Set column headers
+    QStringList headers;
+    if (m_hasScanIDs) {
+      headers << "Scan ID";
+    }
+    headers << "Tilt Angle";
+    m_ui->TiltAnglesTable->setHorizontalHeaderLabels(headers);
+    m_ui->TiltAnglesTable->horizontalHeader()->setStretchLastSection(true);
   } else {
     m_tiltAnglesSeparator->hide();
     m_ui->SetTiltAnglesButton->hide();
     m_ui->TiltAnglesTable->hide();
+    m_ui->saveTiltAngles->hide();
   }
-  connect(m_ui->TiltAnglesTable, SIGNAL(cellChanged(int, int)),
-          SLOT(onTiltAnglesModified(int, int)));
+  connect(m_ui->TiltAnglesTable, &QTableWidget::cellChanged, this,
+          &DataPropertiesPanel::onTiltAnglesModified);
 
   updateTimeSeriesGroup();
   updateComponentsCombo();
@@ -515,6 +549,11 @@ void DataPropertiesPanel::onTiltAnglesModified(int row, int column)
   // The table shouldn't be shown if this is not true, so this slot shouldn't be
   // called
   Q_ASSERT(dsource->type() == DataSource::TiltSeries);
+  // Tilt angles are in column 1 when scan IDs are present, column 0 otherwise
+  int tiltCol = m_hasScanIDs ? 1 : 0;
+  if (column != tiltCol) {
+    return;
+  }
   QTableWidgetItem* item = m_ui->TiltAnglesTable->item(row, column);
   auto ok = false;
   auto value = item->data(Qt::DisplayRole).toDouble(&ok);
@@ -625,6 +664,54 @@ void DataPropertiesPanel::setTiltAngles()
   DataSource* dsource = m_currentDataSource;
   auto mainWindow = qobject_cast<QMainWindow*>(window());
   SetTiltAnglesReaction::showSetTiltAnglesUI(mainWindow, dsource);
+}
+
+void DataPropertiesPanel::saveTiltAngles()
+{
+  DataSource* dsource = m_currentDataSource;
+  if (!dsource) {
+    return;
+  }
+
+  // Prompt user to select a file for saving
+  QString fileName = QFileDialog::getSaveFileName(
+    nullptr,
+    "Save Tilt Angles",
+    QString(),  // Default directory (or you can specify a path)
+    "TXT Files (*.txt);;All Files (*)"
+  );
+
+  // Check if user cancelled
+  if (fileName.isEmpty()) {
+      return;
+  }
+
+  // Ensure the file has a .txt extension
+  if (!fileName.endsWith(".txt", Qt::CaseInsensitive)) {
+    fileName += ".txt";
+  }
+
+  auto tiltAngles = dsource->getTiltAngles();
+  auto scanIDs = dsource->getScanIDs();
+
+  // Open file for writing
+  QFile file(fileName);
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+    QMessageBox::warning(nullptr, "Error",
+      "Could not open file for writing: " + file.errorString());
+    return;
+  }
+
+  // Write scan IDs (if available) and tilt angles, one per line
+  QTextStream out(&file);
+  for (int i = 0; i < tiltAngles.size(); ++i) {
+    if (m_hasScanIDs) {
+      out << scanIDs[i] << " ";
+    }
+    out << tiltAngles[i] << "\n";
+  }
+
+  file.close();
 }
 
 void DataPropertiesPanel::scheduleUpdate()
@@ -811,6 +898,7 @@ void DataPropertiesPanel::clear()
   m_ui->TiltAnglesTable->clear();
   m_ui->TiltAnglesTable->setRowCount(0);
   m_ui->TiltAnglesTable->hide();
+  m_ui->saveTiltAngles->hide();
 }
 
 void DataPropertiesPanel::updateSpacing(int axis, double newLength)

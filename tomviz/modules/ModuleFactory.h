@@ -31,6 +31,9 @@ public:
   static bool moduleApplicable(const QString& moduleName,
                                MoleculeSource* moleculeSource,
                                vtkSMViewProxy* view);
+  static bool moduleApplicable(const QString& moduleName,
+                               OperatorResult* operatorResult,
+                               vtkSMViewProxy* view);
 
   /// Creates a module of the given type to show the dataSource in the view.
   static Module* createModule(const QString& type, DataSource* dataSource,

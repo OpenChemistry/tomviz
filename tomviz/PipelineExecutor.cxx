@@ -211,8 +211,13 @@ ExternalPipelineExecutor::ExternalPipelineExecutor(Pipeline* pipeline)
 void ExternalPipelineExecutor::displayError(const QString& title,
                                             const QString& msg)
 {
-  QMessageBox::critical(tomviz::mainWidget(), title, msg);
   qCritical() << msg;
+  QMessageBox msgBox(tomviz::mainWidget());
+  msgBox.setIcon(QMessageBox::Critical);
+  msgBox.setWindowTitle(title);
+  msgBox.setText("An error occurred during external pipeline execution");
+  msgBox.setDetailedText(msg);
+  msgBox.exec();
 }
 
 QString ExternalPipelineExecutor::workingDir()

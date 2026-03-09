@@ -40,10 +40,12 @@ AcquisitionWidget::AcquisitionWidget(QWidget* parent)
   m_ui->setupUi(this);
   setWindowFlags(Qt::Dialog);
 
-  connect(m_ui->connectButton, SIGNAL(clicked(bool)), SLOT(connectToServer()));
-  connect(m_ui->disconnectButton, SIGNAL(clicked(bool)),
-          SLOT(disconnectFromServer()));
-  connect(m_ui->previewButton, SIGNAL(clicked(bool)), SLOT(setTiltAngle()));
+  connect(m_ui->connectButton, &QAbstractButton::clicked, this,
+          &AcquisitionWidget::connectToServer);
+  connect(m_ui->disconnectButton, &QAbstractButton::clicked, this,
+          &AcquisitionWidget::disconnectFromServer);
+  connect(m_ui->previewButton, &QAbstractButton::clicked, this,
+          &AcquisitionWidget::setTiltAngle);
   connect(m_ui->buttonBox, &QDialogButtonBox::helpRequested,
           []() { openHelpUrl("acquisition"); });
 
@@ -95,7 +97,8 @@ void AcquisitionWidget::connectToServer()
                      .arg(connection->hostName())
                      .arg(connection->port()));
   auto request = m_client->connect(QJsonObject());
-  connect(request, SIGNAL(finished(QJsonValue)), SLOT(onConnect()));
+  connect(request, &AcquisitionClientRequest::finished, this,
+          &AcquisitionWidget::onConnect);
   connect(request, &AcquisitionClientRequest::error, this,
           &AcquisitionWidget::onError);
 }
@@ -112,7 +115,8 @@ void AcquisitionWidget::disconnectFromServer()
 {
   m_ui->statusEdit->setText("Disconnecting");
   auto request = m_client->disconnect(QJsonObject());
-  connect(request, SIGNAL(finished(QJsonValue)), SLOT(onDisconnect()));
+  connect(request, &AcquisitionClientRequest::finished, this,
+          &AcquisitionWidget::onDisconnect);
   connect(request, &AcquisitionClientRequest::error, this,
           &AcquisitionWidget::onError);
 }
@@ -128,8 +132,8 @@ void AcquisitionWidget::setAcquireParameters()
 {
   QJsonObject params;
   auto request = m_client->acquisition_params(params);
-  connect(request, SIGNAL(finished(QJsonValue)),
-          SLOT(acquireParameterResponse(QJsonValue)));
+  connect(request, &AcquisitionClientRequest::finished, this,
+          &AcquisitionWidget::acquireParameterResponse);
   connect(request, &AcquisitionClientRequest::error, this,
           &AcquisitionWidget::onError);
 }
@@ -160,8 +164,8 @@ void AcquisitionWidget::setTiltAngle()
   QJsonObject params;
   params["angle"] = m_ui->tiltAngleSpinBox->value();
   auto request = m_client->tilt_params(params);
-  connect(request, SIGNAL(finished(QJsonValue)),
-          SLOT(acquirePreview(QJsonValue)));
+  connect(request, &AcquisitionClientRequest::finished, this,
+          &AcquisitionWidget::acquirePreview);
   connect(request, &AcquisitionClientRequest::error, this,
           &AcquisitionWidget::onError);
 
@@ -178,8 +182,9 @@ void AcquisitionWidget::acquirePreview(const QJsonValue& result)
   }
 
   auto request = m_client->preview_scan();
-  connect(request, SIGNAL(finished(QString, QByteArray)),
-          SLOT(previewReady(QString, QByteArray)));
+  connect(request, &AcquisitionClientImageRequest::finished, this,
+          [this](const QString& mimeType, const QByteArray& imageData,
+                 const QJsonObject&) { previewReady(mimeType, imageData); });
   connect(request, &AcquisitionClientRequest::error, this,
           &AcquisitionWidget::onError);
 }

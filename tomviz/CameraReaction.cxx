@@ -22,9 +22,10 @@ CameraReaction::CameraReaction(QAction* parentObject, CameraReaction::Mode mode)
   : pqReaction(parentObject)
 {
   m_reactionMode = mode;
-  QObject::connect(&ActiveObjects::instance(),
-                   SIGNAL(viewChanged(vtkSMViewProxy*)), this,
-                   SLOT(updateEnableState()), Qt::QueuedConnection);
+  QObject::connect(
+    &ActiveObjects::instance(),
+    QOverload<vtkSMViewProxy*>::of(&ActiveObjects::viewChanged), this,
+    &CameraReaction::updateEnableState, Qt::QueuedConnection);
   updateEnableState();
 }
 

@@ -94,6 +94,17 @@ def arrays(dataobject):
 
 
 @with_vtk_dataobject
+def remove_array(dataobject, name):
+    pd = dataobject.GetPointData()
+    if pd.GetAbstractArray(name) is None:
+        raise KeyError(f"No scalar array named '{name}'")
+    pd.RemoveArray(name)
+    # If the active scalars were removed, set the first remaining array active
+    if pd.GetScalars() is None and pd.GetNumberOfArrays() > 0:
+        pd.SetActiveScalars(pd.GetArrayName(0))
+
+
+@with_vtk_dataobject
 def set_array(dataobject, newarray, minextent=None, isFortran=True, name=None):
     # Set the extent if needed, i.e. if the minextent is not the same as
     # the data object starting index, or if the newarray shape is not the same
@@ -174,6 +185,34 @@ def set_tilt_angles(dataobject, newarray):
     vtkarray.SetName('tilt_angles')
     do = dsa.WrapDataObject(dataobject)
     do.FieldData.RemoveArray('tilt_angles')
+    do.FieldData.AddArray(vtkarray)
+
+
+@with_vtk_dataobject
+def get_scan_ids(dataobject):
+    # Get the scan IDs array
+    do = dsa.WrapDataObject(dataobject)
+    rawarray = do.FieldData.GetArray('scan_ids')
+    if isinstance(rawarray, dsa.VTKNoneArray):
+        return None
+    vtkarray = dsa.vtkDataArrayToVTKArray(rawarray, do)
+    vtkarray.Association = dsa.ArrayAssociation.FIELD
+    return vtkarray
+
+
+@with_vtk_dataobject
+def set_scan_ids(dataobject, newarray):
+    # replace the scan IDs with the new array
+    from vtkmodules.util.vtkConstants import VTK_INT
+    if newarray is None:
+        do = dsa.WrapDataObject(dataobject)
+        do.FieldData.RemoveArray('scan_ids')
+        return
+    vtkarray = np_s.numpy_to_vtk(newarray, deep=1, array_type=VTK_INT)
+    vtkarray.Association = dsa.ArrayAssociation.FIELD
+    vtkarray.SetName('scan_ids')
+    do = dsa.WrapDataObject(dataobject)
+    do.FieldData.RemoveArray('scan_ids')
     do.FieldData.AddArray(vtkarray)
 
 

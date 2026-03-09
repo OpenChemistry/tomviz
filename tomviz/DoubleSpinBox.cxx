@@ -33,8 +33,8 @@ void DoubleSpinBox::mousePressEvent(QMouseEvent* event)
     this->pressInUp = this->pressInDown = false;
   }
   if (this->pressInUp || this->pressInDown) {
-    this->connect(this, SIGNAL(valueChanged(double)), this,
-                  SIGNAL(editingFinished()));
+    this->connect(this, QOverload<double>::of(&DoubleSpinBox::valueChanged), this,
+                  &DoubleSpinBox::editingFinished);
   }
 }
 
@@ -43,8 +43,8 @@ void DoubleSpinBox::mouseReleaseEvent(QMouseEvent* event)
   QDoubleSpinBox::mouseReleaseEvent(event);
 
   if (this->pressInUp || this->pressInDown) {
-    this->disconnect(this, SIGNAL(valueChanged(double)), this,
-                     SIGNAL(editingFinished()));
+    this->disconnect(this, QOverload<double>::of(&DoubleSpinBox::valueChanged), this,
+                     &DoubleSpinBox::editingFinished);
   }
 
   QStyleOptionSpinBox opt;

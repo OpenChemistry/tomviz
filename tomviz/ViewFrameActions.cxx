@@ -20,6 +20,8 @@ ViewFrameActions::availableViewTypes()
       views.push_back(viewType);
     else if (viewType.Name == "SpreadSheetView")
       views.push_back(viewType);
+    else if (viewType.Name == "XYChartView")
+      views.push_back(viewType);
   }
   return views;
 }

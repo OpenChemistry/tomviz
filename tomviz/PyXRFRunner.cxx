@@ -88,6 +88,9 @@ public:
   // Recon options
   QStringList selectedElements;
 
+  // Scan IDs from the process dialog
+  QVector<int> scanIDs;
+
   bool autoLoadFinalData = true;
 
   Internal(PyXRFRunner* p) : parent(p)
@@ -281,7 +284,8 @@ public:
   {
     progressDialog->accept();
 
-    auto success = makeHDF5Process.exitStatus() == QProcess::NormalExit;
+    auto success = makeHDF5Process.exitStatus() == QProcess::NormalExit &&
+                   makeHDF5Process.exitCode() == 0;
     if (!success) {
       QString msg = "Make HDF5 failed";
       qCritical() << msg;
@@ -333,7 +337,8 @@ public:
   {
     progressDialog->accept();
 
-    auto success = remakeCsvFileProcess.exitStatus() == QProcess::NormalExit;
+    auto success = remakeCsvFileProcess.exitStatus() == QProcess::NormalExit &&
+                   remakeCsvFileProcess.exitCode() == 0;
     if (!success) {
       QString msg = "Remake CSV file failed";
       qCritical() << msg;
@@ -411,6 +416,9 @@ public:
     skipProcessed = processDialog->skipProcessed();
     rotateDatasets = processDialog->rotateDatasets();
 
+    // Store the selected scan IDs
+    scanIDs = processDialog->selectedScanIDs();
+
     // Make sure the output directory exists
     QDir().mkpath(outputDirectory);
 
@@ -487,11 +495,19 @@ public:
   {
     progressDialog->accept();
 
-    auto success = processProjectionsProcess.exitStatus() == QProcess::NormalExit;
-    if (!success || !validateOutputDirectory()) {
-      QString msg = "Process projections failed";
+    auto success = processProjectionsProcess.exitStatus() == QProcess::NormalExit &&
+                   processProjectionsProcess.exitCode() == 0;
+    if (!success) {
+      QString msg = QString("Process projections failed (exit code %1)")
+                      .arg(processProjectionsProcess.exitCode());
       qCritical() << msg;
       QMessageBox::critical(parentWidget, "Tomviz", msg);
+      // Show the dialog again
+      showProcessProjectionsDialog();
+      return;
+    }
+
+    if (!validateOutputDirectory()) {
       // Show the dialog again
       showProcessProjectionsDialog();
       return;
@@ -683,6 +699,11 @@ public:
 
     dataSource->setActiveScalars(firstName.toStdString().c_str());
     dataSource->setLabel("Extracted Elements");
+
+    if (!scanIDs.isEmpty()) {
+      dataSource->setScanIDs(scanIDs);
+    }
+
     dataSource->dataModified();
 
     // Write this to an EMD format

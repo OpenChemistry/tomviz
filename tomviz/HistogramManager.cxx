@@ -198,15 +198,10 @@ HistogramManager::HistogramManager()
   // histogram has been finished on the background thread.
   m_worker->start();
   m_histogramGen->moveToThread(m_worker);
-  connect(m_histogramGen, SIGNAL(histogramDone(vtkSmartPointer<vtkImageData>,
-                                               vtkSmartPointer<vtkTable>)),
-          SLOT(histogramReadyInternal(vtkSmartPointer<vtkImageData>,
-                                      vtkSmartPointer<vtkTable>)));
-  connect(m_histogramGen,
-          SIGNAL(histogram2DDone(vtkSmartPointer<vtkImageData>,
-                                 vtkSmartPointer<vtkImageData>)),
-          SLOT(histogram2DReadyInternal(vtkSmartPointer<vtkImageData>,
-                                        vtkSmartPointer<vtkImageData>)));
+  connect(m_histogramGen, &HistogramMaker::histogramDone, this,
+          &HistogramManager::histogramReadyInternal);
+  connect(m_histogramGen, &HistogramMaker::histogram2DDone, this,
+          &HistogramManager::histogram2DReadyInternal);
 }
 
 HistogramManager::~HistogramManager()
@@ -221,7 +216,7 @@ void HistogramManager::finalize()
   // disconnect all signals/slots
   disconnect(m_histogramGen, nullptr, nullptr, nullptr);
   // when the HistogramMaker is deleted, kill the background thread
-  connect(m_histogramGen, SIGNAL(destroyed()), m_worker, SLOT(quit()));
+  connect(m_histogramGen, &QObject::destroyed, m_worker, &QThread::quit);
   // I can't remember if deleteLater must be called on the owning thread
   // play it safe and let the owning thread call it.
   QMetaObject::invokeMethod(m_histogramGen, "deleteLater");

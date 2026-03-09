@@ -21,6 +21,7 @@
 #include <QFileDialog>
 #include <QGridLayout>
 #include <QGuiApplication>
+#include <QHeaderView>
 #include <QHBoxLayout>
 #include <QJsonArray>
 #include <QKeyEvent>
@@ -124,14 +125,14 @@ public:
 
     QString s = QString::number(angleIncrement, 'f', 2);
     this->angleIncrementLabel = new QLabel(s);
-    connect(startTilt, SIGNAL(valueChanged(int)), this,
-            SLOT(updateAngleIncrement()));
-    connect(endTilt, SIGNAL(valueChanged(int)), this,
-            SLOT(updateAngleIncrement()));
-    connect(startAngle, SIGNAL(valueChanged(double)), this,
-            SLOT(updateAngleIncrement()));
-    connect(endAngle, SIGNAL(valueChanged(double)), this,
-            SLOT(updateAngleIncrement()));
+    connect(startTilt, QOverload<int>::of(&QSpinBox::valueChanged), this,
+            &SetTiltAnglesWidget::updateAngleIncrement);
+    connect(endTilt, QOverload<int>::of(&QSpinBox::valueChanged), this,
+            &SetTiltAnglesWidget::updateAngleIncrement);
+    connect(startAngle, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+            this, &SetTiltAnglesWidget::updateAngleIncrement);
+    connect(endAngle, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+            this, &SetTiltAnglesWidget::updateAngleIncrement);
     layout->addWidget(angleIncrementLabel, 3, 3, 1, 1, Qt::AlignCenter);
 
     auto outerLayout = new QVBoxLayout;
@@ -145,6 +146,7 @@ public:
     this->tableWidget = new QTableWidget;
     this->tableWidget->setRowCount(totalSlices);
     this->tableWidget->setColumnCount(1);
+    this->tableWidget->setHorizontalHeaderLabels({"Tilt Angle"});
     tablePanelLayout->addWidget(this->tableWidget);
 
     // Widget to hold tilt angle import button
@@ -158,7 +160,8 @@ public:
     loadFromFileButton->setText("Load From Text File");
     buttonLayout->addWidget(loadFromFileButton);
     buttonLayout->insertStretch(-1);
-    connect(loadFromFileButton, SIGNAL(clicked()), SLOT(loadFromFile()));
+    connect(loadFromFileButton, &QPushButton::clicked, this,
+            &SetTiltAnglesWidget::loadFromFile);
 
     vtkFieldData* fd = dataObject->GetFieldData();
     vtkDataArray* tiltArray = nullptr;
@@ -223,7 +226,7 @@ public:
     } else {
       QMap<size_t, double> tiltAngles;
       for (vtkIdType i = 0; i < this->tableWidget->rowCount(); ++i) {
-        QTableWidgetItem* item = this->tableWidget->item(i, 0);
+        QTableWidgetItem* item = this->tableWidget->item(i, angleColumn());
         tiltAngles[i] = item->data(Qt::DisplayRole).toDouble();
       }
       this->Op->setTiltAngles(tiltAngles);
@@ -285,7 +288,7 @@ public:
           }
           int startRow = ranges[0].topRow();
           for (int i = 0; i < angles.size(); ++i) {
-            auto item = this->tableWidget->item(i + startRow, 0);
+            auto item = this->tableWidget->item(i + startRow, angleColumn());
             if (item) {
               item->setData(Qt::DisplayRole, angles[i]);
             }
@@ -334,14 +337,73 @@ public slots:
       } else {
         qCritical()
           << QString("Unable to read '%1'.").arg(dialog.selectedFiles()[0]);
+        return;
       }
 
-      QStringList angleStrings = content.split(QRegularExpression("\\s+"));
-      int maxRows =
-        std::min(static_cast<int>(angleStrings.size()), this->tableWidget->rowCount());
-      for (int i = 0; i < maxRows; ++i) {
-        QTableWidgetItem* item = this->tableWidget->item(i, 0);
-        item->setData(Qt::DisplayRole, angleStrings[i]);
+      // Parse lines, trimming and skipping empty lines
+      QStringList rawLines = content.split("\n");
+      QList<QStringList> parsedLines;
+      for (const QString& rawLine : rawLines) {
+        QString line = rawLine.trimmed();
+        if (line.isEmpty()) {
+          continue;
+        }
+        QStringList tokens = line.split(QRegularExpression("\\s+"));
+        parsedLines.append(tokens);
+      }
+
+      if (parsedLines.isEmpty()) {
+        return;
+      }
+
+      // Detect two-column format: every line has exactly 2 tokens,
+      // first parses as int, second parses as double
+      bool twoColumn = true;
+      for (const QStringList& tokens : parsedLines) {
+        if (tokens.size() != 2) {
+          twoColumn = false;
+          break;
+        }
+        bool ok1, ok2;
+        tokens[0].toInt(&ok1);
+        tokens[1].toDouble(&ok2);
+        if (!ok1 || !ok2) {
+          twoColumn = false;
+          break;
+        }
+      }
+
+      int maxRows = std::min(static_cast<int>(parsedLines.size()),
+                             this->tableWidget->rowCount());
+
+      if (twoColumn) {
+        m_hasScanIDs = true;
+        this->tableWidget->setColumnCount(2);
+        this->tableWidget->setHorizontalHeaderLabels(
+          {"Scan ID", "Tilt Angle"});
+        this->tableWidget->horizontalHeader()->setStretchLastSection(true);
+
+        for (int i = 0; i < maxRows; ++i) {
+          // Scan ID column (read-only)
+          QTableWidgetItem* scanItem = new QTableWidgetItem;
+          scanItem->setData(Qt::DisplayRole, parsedLines[i][0]);
+          scanItem->setFlags(scanItem->flags() & ~Qt::ItemIsEditable);
+          this->tableWidget->setItem(i, 0, scanItem);
+
+          // Tilt angle column (editable)
+          QTableWidgetItem* angleItem = new QTableWidgetItem;
+          angleItem->setData(Qt::DisplayRole, parsedLines[i][1]);
+          this->tableWidget->setItem(i, 1, angleItem);
+        }
+      } else {
+        m_hasScanIDs = false;
+        this->tableWidget->setColumnCount(1);
+        this->tableWidget->setHorizontalHeaderLabels({"Tilt Angle"});
+
+        for (int i = 0; i < maxRows; ++i) {
+          QTableWidgetItem* item = this->tableWidget->item(i, 0);
+          item->setData(Qt::DisplayRole, parsedLines[i][0]);
+        }
       }
     }
   }
@@ -355,6 +417,9 @@ private:
   QTabWidget* tabWidget;
   QLabel* angleIncrementLabel;
   double angleIncrement = 1.0;
+  bool m_hasScanIDs = false;
+
+  int angleColumn() const { return m_hasScanIDs ? 1 : 0; }
 
   QPointer<tomviz::SetTiltAnglesOperator> Op;
   QVector<double> previousTiltAngles;

@@ -185,7 +185,9 @@ bool Tvh5Format::loadDataSource(h5::H5ReadWrite& reader,
   if (parent) {
     // This is a child data source. Hook it up to the operator parent.
     parent->setChildDataSource(dataSource);
-    parent->setHasChildDataSource(true);
+    // Don't call setHasChildDataSource(true) here. The operator's own
+    // initialization (JSON "children" section or constructor) is the authority
+    // on whether the executor should expect child data in the return dict.
     parent->newChildDataSource(dataSource);
     // If it has a parent, it will be deserialized later.
   } else {
@@ -218,12 +220,16 @@ bool Tvh5Format::loadDataSource(h5::H5ReadWrite& reader,
   for (auto* op : dataSource->operators())
     op->setComplete();
 
-  if (pipeline) {
-    // Make sure the pipeline is not paused in case the user wishes to
-    // re-run some operators.
-    pipeline->resume();
-    // This will deserialize all children.
-    pipeline->finished();
+  // Ensure the pipeline is not paused. DataSource::deserialize() pauses it
+  // but only resumes when executePipelinesOnLoad is true, which is false
+  // during tvh5 loading.
+  auto* p = dataSource->pipeline();
+  if (p) {
+    p->resume();
+    if (parent) {
+      // This will deserialize all children.
+      p->finished();
+    }
   }
 
   return true;

@@ -27,10 +27,12 @@ AddRenderViewContextMenuBehavior::AddRenderViewContextMenuBehavior(QObject* p)
   : QObject(p)
 {
   connect(pqApplicationCore::instance()->getServerManagerModel(),
-          SIGNAL(viewAdded(pqView*)), SLOT(onViewAdded(pqView*)));
+          &pqServerManagerModel::viewAdded, this,
+          &AddRenderViewContextMenuBehavior::onViewAdded);
   m_menu = new QMenu();
   QAction* bgColorAction = m_menu->addAction("Set Background Color");
-  connect(bgColorAction, SIGNAL(triggered()), SLOT(onSetBackgroundColor()));
+  connect(bgColorAction, &QAction::triggered, this,
+          &AddRenderViewContextMenuBehavior::onSetBackgroundColor);
 
   // Add separator
   m_menu->addSeparator();
@@ -78,7 +80,9 @@ void AddRenderViewContextMenuBehavior::onSetBackgroundColor()
 
   // Must set this to zero so that the render view will use its own
   // background color rather than the global palette.
-  vtkSMPropertyHelper(proxy, "UseColorPaletteForBackground").Set(0);
+  if (proxy->GetProperty("UseColorPaletteForBackground")) {
+    vtkSMPropertyHelper(proxy, "UseColorPaletteForBackground").Set(0);
+  }
 
   proxy->UpdateVTKObjects();
   view->render();

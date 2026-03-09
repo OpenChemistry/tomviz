@@ -1,0 +1,38 @@
+{
+  "name" : "SimilarityMetrics",
+  "label" : "Similarity Metrics",
+  "description" : "Compute similarity metrics between the current dataset and a reference dataset.",
+  "apply_to_each_array": false,
+  "parameters" : [
+    {
+      "name" : "selected_scalars",
+      "label" : "Scalars",
+      "type" : "select_scalars"
+    },
+    {
+      "name" : "axis",
+      "label" : "Axis",
+      "description" : "The axis along which to process slices",
+      "type" : "enumeration",
+      "default" : 2,
+      "options" : [
+        {"X" : 0},
+        {"Y" : 1},
+        {"Z" : 2}
+      ]
+    },
+    {
+      "name" : "reference_dataset",
+      "label" : "Reference Dataset",
+      "description" : "The reference dataset to compare against",
+      "type" : "dataset"
+    }
+  ],
+  "results" : [
+    {
+      "name" : "similarity",
+      "label" : "Similarity",
+      "type" : "table"
+    }
+  ]
+}

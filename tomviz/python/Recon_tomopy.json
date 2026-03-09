@@ -1,0 +1,40 @@
+{
+  "name" : "TomoPy",
+  "label" : "TomoPy Reconstruction",
+  "description" : "Run TomoPy reconstruction on a dataset",
+  "parameters" : [
+    {
+      "name" : "algorithm",
+      "label" : "Algorithm",
+      "description" : "Reconstruction algorithm to use",
+      "type" : "enumeration",
+      "default" : 0,
+      "options" : [
+        {"Gridrec" : "gridrec"},
+        {"FBP" : "fbp"},
+        {"MLEM" : "mlem"},
+        {"OSPML Hybrid" : "ospml_hybrid"}
+      ]
+    },
+    {
+      "name" : "num_iter",
+      "label" : "Number of Iterations",
+      "description" : "Number of iterations (iterative methods only)",
+      "type" : "int",
+      "default" : 5,
+      "minimum" : 1,
+      "maximum" : 1000,
+      "visible_if" : "algorithm == 'mlem' or algorithm == 'ospml_hybrid'"
+    }
+  ],
+  "children": [
+    {
+      "name": "reconstruction",
+      "label": "Reconstruction",
+      "type": "reconstruction"
+    }
+  ],
+  "help" : {
+    "url": "reconstruction/#tomopy"
+  }
+}

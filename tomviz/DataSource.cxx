@@ -44,9 +44,15 @@
 #include <vtkSMTransferFunctionManager.h>
 #include <vtkSMViewProxy.h>
 
+#include <pqApplicationCore.h>
+#include <pqSettings.h>
+
+#include <QCheckBox>
 #include <QDebug>
 #include <QJsonArray>
 #include <QMap>
+#include <QMessageBox>
+#include <QPushButton>
 #include <QTimer>
 
 #include <cmath>
@@ -57,7 +63,11 @@ namespace {
 void createOrResizeTiltAnglesArray(vtkDataObject* data)
 {
   auto fd = data->GetFieldData();
-  int* extent = vtkImageData::SafeDownCast(data)->GetExtent();
+  auto* imageData = vtkImageData::SafeDownCast(data);
+  if (!imageData) {
+    return;
+  }
+  int* extent = imageData->GetExtent();
   int numTiltAngles = extent[5] - extent[4] + 1;
   if (!fd->HasArray("tilt_angles")) {
     vtkNew<vtkDoubleArray> array;
@@ -625,8 +635,22 @@ bool DataSource::deserialize(const QJsonObject& state)
         viewProxy = ActiveObjects::instance().activeView();
       }
       auto type = moduleObj["type"].toString();
+
+      // Plot modules require an OperatorResult, not a DataSource. They
+      // will be recreated when the operator pipeline is re-run and the
+      // user adds the Plot module again.
+      if (type == "Plot") {
+        qWarning() << "Skipping Plot module during state restore. Re-run"
+                    << "the pipeline and add the Plot module to restore it.";
+        continue;
+      }
+
       auto m =
         ModuleManager::instance().createAndAddModule(type, this, viewProxy);
+      if (!m) {
+        qWarning() << "Failed to create module of type:" << type;
+        continue;
+      }
       m->deserialize(moduleObj);
     }
   }
@@ -641,7 +665,7 @@ bool DataSource::deserialize(const QJsonObject& state)
       op = OperatorFactory::instance().createOperator(
         operatorObj["type"].toString(), this);
       if (op && op->deserialize(operatorObj)) {
-        addOperator(op);
+        addOperator(op, /*append=*/true);
       }
     }
 
@@ -686,6 +710,10 @@ DataSource* DataSource::clone() const
 
   if (this->Internals->Type == TiltSeries) {
     newClone->setTiltAngles(getTiltAngles());
+  }
+
+  if (hasScanIDs(this->dataObject())) {
+    newClone->setScanIDs(getScanIDs());
   }
 
   QList<TimeSeriesStep> newTimeSteps;
@@ -999,11 +1027,51 @@ void DataSource::setUnits(const QString& units, bool markModified)
   emit dataPropertiesChanged();
 }
 
-int DataSource::addOperator(Operator* op)
+int DataSource::addOperator(Operator* op, bool append)
 {
   op->setParent(this);
-  int index = this->Internals->Operators.count();
-  this->Internals->Operators.push_back(op);
+  int index = -1;
+  if (!append) {
+    auto activeOp = ActiveObjects::instance().activeOperator();
+    if (activeOp && activeOp->dataSource() == this) {
+      index = this->Internals->Operators.indexOf(activeOp);
+    }
+  }
+  if (index >= 0) {
+    // About to insert (not append). Ask the user for confirmation unless
+    // they previously checked "Don't ask again".
+    auto settings = pqApplicationCore::instance()->settings();
+    bool skipConfirm =
+      settings->value("OperatorInsertConfirm/DontAsk", false).toBool();
+    if (!skipConfirm) {
+      QMessageBox msgBox;
+      msgBox.setWindowTitle("Insert Operator?");
+      msgBox.setText(
+        "Insert this operator before the selected operator in the pipeline?");
+      auto* insertBtn = msgBox.addButton("Insert", QMessageBox::AcceptRole);
+      msgBox.addButton("Append to End", QMessageBox::RejectRole);
+      msgBox.setDefaultButton(insertBtn);
+      QCheckBox dontAskAgain("Don't ask again (always insert)");
+      msgBox.setCheckBox(&dontAskAgain);
+
+      msgBox.exec();
+
+      if (dontAskAgain.isChecked()) {
+        settings->setValue("OperatorInsertConfirm/DontAsk", true);
+      }
+
+      if (msgBox.clickedButton() != insertBtn) {
+        // Append to the end instead of inserting
+        index = -1;
+      }
+    }
+  }
+  if (index >= 0) {
+    this->Internals->Operators.insert(index, op);
+  } else {
+    index = this->Internals->Operators.count();
+    this->Internals->Operators.push_back(op);
+  }
   emit operatorAdded(op);
 
   return index;
@@ -1497,7 +1565,7 @@ void DataSource::init(vtkImageData* data, DataSourceType dataType,
   updateColorMap();
 
   // Every time the data changes, we should update the color map.
-  connect(this, SIGNAL(dataChanged()), SLOT(updateColorMap()));
+  connect(this, &DataSource::dataChanged, this, &DataSource::updateColorMap);
 
   connect(this, &DataSource::dataPropertiesChanged,
           [this]() { this->proxy()->MarkModified(nullptr); });
@@ -1725,6 +1793,77 @@ void DataSource::clearTiltAngles(vtkDataObject* image)
   if (fd->HasArray(arrayName)) {
     fd->RemoveArray(arrayName);
   }
+}
+
+bool DataSource::hasScanIDs(vtkDataObject* image)
+{
+  if (!image)
+    return false;
+
+  return image->GetFieldData()->HasArray("scan_ids");
+}
+
+QVector<int> DataSource::getScanIDs(vtkDataObject* image)
+{
+  QVector<int> result;
+  if (!image)
+    return result;
+
+  auto fd = image->GetFieldData();
+  if (fd->HasArray("scan_ids")) {
+    auto scanIds = fd->GetArray("scan_ids");
+    result.resize(scanIds->GetNumberOfTuples());
+    for (int i = 0; i < result.size(); ++i) {
+      result[i] = static_cast<int>(scanIds->GetTuple1(i));
+    }
+  }
+  return result;
+}
+
+void DataSource::setScanIDs(vtkDataObject* image,
+                            const QVector<int>& scanIDs)
+{
+  if (!image)
+    return;
+
+  auto fd = image->GetFieldData();
+  int numTuples = scanIDs.size();
+  std::vector<int> data(numTuples);
+  for (int i = 0; i < numTuples; ++i) {
+    data[i] = scanIDs[i];
+  }
+  setFieldDataArray<vtkTypeInt32Array>(fd, "scan_ids", numTuples, data.data());
+}
+
+void DataSource::clearScanIDs(vtkDataObject* image)
+{
+  if (!image)
+    return;
+
+  auto fd = image->GetFieldData();
+  if (fd->HasArray("scan_ids")) {
+    fd->RemoveArray("scan_ids");
+  }
+}
+
+bool DataSource::hasScanIDs()
+{
+  return hasScanIDs(dataObject());
+}
+
+QVector<int> DataSource::getScanIDs() const
+{
+  return getScanIDs(dataObject());
+}
+
+void DataSource::setScanIDs(const QVector<int>& scanIDs)
+{
+  setScanIDs(dataObject(), scanIDs);
+}
+
+void DataSource::clearScanIDs()
+{
+  clearScanIDs(dataObject());
 }
 
 bool DataSource::wasSubsampled(vtkDataObject* image)

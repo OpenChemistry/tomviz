@@ -40,6 +40,9 @@ public:
   // dialog already, that dialog is set to the requested mode and given focus.
   static void showDialogForOperator(Operator* op, const QString& viewMode = "");
 
+protected:
+  void showEvent(QShowEvent* event) override;
+
 private slots:
   void onApply();
   void onCancel();

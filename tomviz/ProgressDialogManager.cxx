@@ -27,8 +27,8 @@ ProgressDialogManager::ProgressDialogManager(QMainWindow* mw)
   : Superclass(mw), mainWindow(mw)
 {
   ModuleManager& mm = ModuleManager::instance();
-  QObject::connect(&mm, SIGNAL(dataSourceAdded(DataSource*)), this,
-                   SLOT(dataSourceAdded(DataSource*)));
+  QObject::connect(&mm, &ModuleManager::dataSourceAdded, this,
+                   &ProgressDialogManager::dataSourceAdded);
 }
 
 ProgressDialogManager::~ProgressDialogManager() {}
@@ -153,8 +153,8 @@ void ProgressDialogManager::operatorAdded(Operator* op)
 
 void ProgressDialogManager::dataSourceAdded(DataSource* ds)
 {
-  QObject::connect(ds, SIGNAL(operatorAdded(Operator*)), this,
-                   SLOT(operatorAdded(Operator*)));
+  QObject::connect(ds, &DataSource::operatorAdded, this,
+                   &ProgressDialogManager::operatorAdded);
 }
 
 void ProgressDialogManager::operationProgress(int) {}

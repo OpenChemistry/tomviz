@@ -16,8 +16,10 @@ SetDataTypeReaction::SetDataTypeReaction(QAction* action, QMainWindow* mw,
                                          DataSource::DataSourceType t)
   : pqReaction(action), m_mainWindow(mw), m_type(t)
 {
-  connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
-          SLOT(updateEnableState()));
+  connect(&ActiveObjects::instance(),
+          static_cast<void (ActiveObjects::*)(DataSource*)>(
+            &ActiveObjects::dataSourceChanged),
+          this, &SetDataTypeReaction::updateEnableState);
   setWidgetText(t);
   updateEnableState();
 }

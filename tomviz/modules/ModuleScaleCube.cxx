@@ -51,8 +51,9 @@ ModuleScaleCube::ModuleScaleCube(QObject* parentObject) : Module(parentObject)
             onPositionChanged(p[0], p[1], p[2]);
           });
 
-  connect(this, SIGNAL(onPositionChanged(double, double, double)),
-          SLOT(updateOffset(double, double, double)));
+  connect(this,
+          QOverload<double, double, double>::of(&ModuleScaleCube::onPositionChanged),
+          this, &ModuleScaleCube::updateOffset);
 
   // Connect to m_cubeRep's "modified" signal, and emit it as our own
   // "onSideLengthChanged" signal
@@ -85,8 +86,8 @@ bool ModuleScaleCube::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     return false;
   }
 
-  connect(data, SIGNAL(dataPropertiesChanged()), this,
-          SLOT(dataPropertiesChanged()));
+  connect(data, &DataSource::dataPropertiesChanged, this,
+          &ModuleScaleCube::dataPropertiesChanged);
 
   m_view = vtkPVRenderView::SafeDownCast(vtkView->GetClientSideView());
   m_handleWidget->SetInteractor(m_view->GetInteractor());
@@ -237,27 +238,28 @@ void ModuleScaleCube::addToPanel(QWidget* panel)
                                      static_cast<int>(color[2] * 255.0 + 0.5)));
 
   // Connect the widget's signals to this class' slots
-  connect(m_controllers, SIGNAL(adaptiveScalingToggled(const bool)), this,
-          SLOT(setAdaptiveScaling(const bool)));
-  connect(m_controllers, SIGNAL(sideLengthChanged(const double)), this,
-          SLOT(setSideLength(const double)));
-  connect(m_controllers, SIGNAL(annotationToggled(const bool)), this,
-          SLOT(setAnnotation(const bool)));
+  connect(m_controllers, &ModuleScaleCubeWidget::adaptiveScalingToggled, this,
+          &ModuleScaleCube::setAdaptiveScaling);
+  connect(m_controllers, &ModuleScaleCubeWidget::sideLengthChanged, this,
+          &ModuleScaleCube::setSideLength);
+  connect(m_controllers, &ModuleScaleCubeWidget::annotationToggled, this,
+          &ModuleScaleCube::setAnnotation);
   connect(m_controllers, &ModuleScaleCubeWidget::boxColorChanged, this,
           &ModuleScaleCube::onBoxColorChanged);
   connect(m_controllers, &ModuleScaleCubeWidget::textColorChanged, this,
           &ModuleScaleCube::onTextColorChanged);
 
   // Connect this class' signals to the widget's slots
-  connect(this, SIGNAL(onLengthUnitChanged(const QString)), m_controllers,
-          SLOT(setLengthUnit(const QString)));
-  connect(this, SIGNAL(onPositionUnitChanged(const QString)), m_controllers,
-          SLOT(setPositionUnit(const QString)));
-  connect(this, SIGNAL(onSideLengthChanged(const double)), m_controllers,
-          SLOT(setSideLength(const double)));
-  connect(
-    this, SIGNAL(onPositionChanged(const double, const double, const double)),
-    m_controllers, SLOT(setPosition(const double, const double, const double)));
+  connect(this, &ModuleScaleCube::onLengthUnitChanged, m_controllers,
+          &ModuleScaleCubeWidget::setLengthUnit);
+  connect(this, &ModuleScaleCube::onPositionUnitChanged, m_controllers,
+          &ModuleScaleCubeWidget::setPositionUnit);
+  connect(this, QOverload<const double>::of(&ModuleScaleCube::onSideLengthChanged),
+          m_controllers, &ModuleScaleCubeWidget::setSideLength);
+  connect(this,
+          QOverload<const double, const double, const double>::of(
+            &ModuleScaleCube::onPositionChanged),
+          m_controllers, &ModuleScaleCubeWidget::setPosition);
 }
 
 void ModuleScaleCube::setAdaptiveScaling(const bool val)
@@ -280,15 +282,22 @@ void ModuleScaleCube::setAnnotation(const bool val)
 
 void ModuleScaleCube::setLengthUnit()
 {
-  QString s = qobject_cast<DataSource*>(sender())->getUnits();
+  DataSource* data = qobject_cast<DataSource*>(sender());
+  if (!data) {
+    return;
+  }
+  QString s = data->getUnits();
   m_cubeRep->SetLengthUnit(s.toStdString().c_str());
   emit onLengthUnitChanged(s);
 }
 
 void ModuleScaleCube::setPositionUnit()
 {
-  QString s = qobject_cast<DataSource*>(sender())->getUnits();
-  emit onLengthUnitChanged(s);
+  DataSource* data = qobject_cast<DataSource*>(sender());
+  if (!data) {
+    return;
+  }
+  emit onLengthUnitChanged(data->getUnits());
 }
 
 void ModuleScaleCube::dataPropertiesChanged()

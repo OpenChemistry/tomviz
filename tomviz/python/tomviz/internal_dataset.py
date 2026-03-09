@@ -35,6 +35,9 @@ class Dataset(AbstractDataset):
     def set_scalars(self, name, array):
         internal_utils.set_array(self._data_object, array, name=name)
 
+    def remove_scalars(self, name):
+        internal_utils.remove_array(self._data_object, name)
+
     @property
     def spacing(self):
         return internal_utils.get_spacing(self._data_object)
@@ -58,6 +61,14 @@ class Dataset(AbstractDataset):
     @tilt_axis.setter
     def tilt_axis(self, v):
         self._tilt_axis = v
+
+    @property
+    def scan_ids(self):
+        return internal_utils.get_scan_ids(self._data_object)
+
+    @scan_ids.setter
+    def scan_ids(self, v):
+        internal_utils.set_scan_ids(self._data_object, v)
 
     @property
     def dark(self):

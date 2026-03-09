@@ -147,10 +147,12 @@ PipelineWorker::Run::Run(vtkDataObject* data, QList<Operator*> operators)
 PipelineWorker::Future* PipelineWorker::Run::start()
 {
   auto future = new PipelineWorker::Future(this);
-  connect(this, SIGNAL(finished(bool)), future, SIGNAL(finished(bool)));
-  connect(this, SIGNAL(canceled()), future, SIGNAL(canceled()));
+  connect(this, &PipelineWorker::Run::finished, future,
+          &PipelineWorker::Future::finished);
+  connect(this, &PipelineWorker::Run::canceled, future,
+          &PipelineWorker::Future::canceled);
 
-  QTimer::singleShot(0, this, SLOT(startNextOperator()));
+  QTimer::singleShot(0, this, &PipelineWorker::Run::startNextOperator);
 
   m_state = State::RUNNING;
 

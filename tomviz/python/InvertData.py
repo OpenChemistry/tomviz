@@ -1,4 +1,3 @@
-from tomviz.utils import apply_to_each_array
 import tomviz.operators
 
 
@@ -7,7 +6,6 @@ NUMBER_OF_CHUNKS = 10
 
 class InvertOperator(tomviz.operators.CancelableOperator):
 
-    @apply_to_each_array
     def transform(self, dataset):
         import numpy as np
         self.progress.maximum = NUMBER_OF_CHUNKS

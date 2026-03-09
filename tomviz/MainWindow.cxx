@@ -124,9 +124,11 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   // Update back light azimuth default on view.
   connect(pqApplicationCore::instance()->getServerManagerModel(),
           &pqServerManagerModel::viewAdded, [](pqView* view) {
-            vtkSMPropertyHelper helper(view->getProxy(), "BackLightAzimuth");
-            // See https://github.com/OpenChemistry/tomviz/issues/1525
-            helper.Set(60);
+            if (view && view->getProxy()->IsA("vtkSMRenderViewProxy")) {
+              vtkSMPropertyHelper helper(view->getProxy(), "BackLightAzimuth");
+              // See https://github.com/OpenChemistry/tomviz/issues/1525
+              helper.Set(60);
+            }
           });
 
   // checkOpenGL();
@@ -134,7 +136,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   // Force full messages to be shown
   m_ui->outputWidget->showFullMessages(true);
   m_timer = new QTimer(this);
-  connect(m_timer, SIGNAL(timeout()), SLOT(autosave()));
+  connect(m_timer, &QTimer::timeout, this, &MainWindow::autosave);
   m_timer->start(5 /*minutes*/ * 60 /*seconds per minute*/ *
                  1000 /*msec per second*/);
 
@@ -186,51 +188,45 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   resizeDocks(docks, dockSizes, Qt::Vertical);
 
   // raise dockWidgetMessages on error.
-  connect(m_ui->outputWidget, SIGNAL(messageDisplayed(const QString&, int)),
-          SLOT(handleMessage(const QString&, int)));
+  connect(m_ui->outputWidget, &pqOutputWidget::messageDisplayed, this,
+          &MainWindow::handleMessage);
 
   // Link the histogram in the central widget to the active data source.
   m_ui->centralWidget->connect(
     &ActiveObjects::instance(), &ActiveObjects::transformedDataSourceActivated,
     m_ui->centralWidget, &CentralWidget::setActiveColorMapDataSource);
-  m_ui->centralWidget->connect(&ActiveObjects::instance(),
-                               SIGNAL(moduleActivated(Module*)),
-                               SLOT(setActiveModule(Module*)));
-  m_ui->centralWidget->connect(&ActiveObjects::instance(),
-                               SIGNAL(colorMapChanged(DataSource*)),
-                               SLOT(setActiveColorMapDataSource(DataSource*)));
-  m_ui->centralWidget->connect(m_ui->dataPropertiesPanel,
-                               SIGNAL(colorMapUpdated()),
-                               SLOT(onColorMapUpdated()));
-  m_ui->centralWidget->connect(&ActiveObjects::instance(),
-                               SIGNAL(operatorActivated(Operator*)),
-                               SLOT(setActiveOperator(Operator*)));
+  connect(&ActiveObjects::instance(), &ActiveObjects::moduleActivated,
+          m_ui->centralWidget, &CentralWidget::setActiveModule);
+  connect(&ActiveObjects::instance(), &ActiveObjects::colorMapChanged,
+          m_ui->centralWidget, &CentralWidget::setActiveColorMapDataSource);
+  connect(m_ui->dataPropertiesPanel, &DataPropertiesPanel::colorMapUpdated,
+          m_ui->centralWidget, &CentralWidget::onColorMapUpdated);
+  connect(&ActiveObjects::instance(), &ActiveObjects::operatorActivated,
+          m_ui->centralWidget, &CentralWidget::setActiveOperator);
 
   m_ui->treeWidget->setModel(new PipelineModel(this));
   m_ui->treeWidget->initLayout();
 
   // Ensure that items are expanded by default, can be collapsed at will.
-  connect(m_ui->treeWidget->model(),
-          SIGNAL(rowsInserted(QModelIndex, int, int)), m_ui->treeWidget,
-          SLOT(expandAll()));
-  connect(m_ui->treeWidget->model(), SIGNAL(modelReset()), m_ui->treeWidget,
-          SLOT(expandAll()));
+  connect(m_ui->treeWidget->model(), &QAbstractItemModel::rowsInserted,
+          m_ui->treeWidget, &QTreeView::expandAll);
+  connect(m_ui->treeWidget->model(), &QAbstractItemModel::modelReset,
+          m_ui->treeWidget, &QTreeView::expandAll);
 
   // connect quit.
-  connect(m_ui->actionExit, SIGNAL(triggered()), SLOT(close()));
+  connect(m_ui->actionExit, &QAction::triggered, this, &MainWindow::close);
 
   // Connect up the module/data changed to the appropriate slots.
-  connect(&ActiveObjects::instance(), SIGNAL(dataSourceActivated(DataSource*)),
-          SLOT(dataSourceChanged(DataSource*)));
-  connect(&ActiveObjects::instance(),
-          SIGNAL(moleculeSourceActivated(MoleculeSource*)),
-          SLOT(moleculeSourceChanged(MoleculeSource*)));
-  connect(&ActiveObjects::instance(), SIGNAL(moduleActivated(Module*)),
-          SLOT(moduleChanged(Module*)));
-  connect(&ActiveObjects::instance(), SIGNAL(operatorActivated(Operator*)),
-          SLOT(operatorChanged(Operator*)));
-  connect(&ActiveObjects::instance(), SIGNAL(resultActivated(OperatorResult*)),
-          SLOT(operatorResultChanged(OperatorResult*)));
+  connect(&ActiveObjects::instance(), &ActiveObjects::dataSourceActivated, this,
+          &MainWindow::dataSourceChanged);
+  connect(&ActiveObjects::instance(), &ActiveObjects::moleculeSourceActivated,
+          this, &MainWindow::moleculeSourceChanged);
+  connect(&ActiveObjects::instance(), &ActiveObjects::moduleActivated, this,
+          &MainWindow::moduleChanged);
+  connect(&ActiveObjects::instance(), &ActiveObjects::operatorActivated, this,
+          &MainWindow::operatorChanged);
+  connect(&ActiveObjects::instance(), &ActiveObjects::resultActivated, this,
+          &MainWindow::operatorResultChanged);
 
   // Connect the about dialog up too.
   connect(m_ui->actionAbout, &QAction::triggered, this,
@@ -332,6 +328,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     m_ui->menuTomography->addAction("Tilt Axis Shift Alignment (Auto)");
   QAction* rotateAlignAction =
     m_ui->menuTomography->addAction("Tilt Axis Alignment (Manual)");
+  QAction* shiftRotationCenterAction =
+    m_ui->menuTomography->addAction("Shift Rotation Center (Manual)");
   m_ui->menuTomography->addSeparator();
 
   QAction* reconLabel = m_ui->menuTomography->addAction("Reconstruction:");
@@ -351,8 +349,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   QAction* reconTVMinimizationAction =
     m_ui->menuTomography->addAction("TV Minimization Method");
   QAction* reconTomoPyGridRecAction =
-    m_ui->menuTomography->addAction("TomoPy Gridrec Method");
-  QAction* fxiWorkflowAction = m_ui->menuTomography->addAction("FXI Workflow");
+    m_ui->menuTomography->addAction("TomoPy Reconstruction");
   m_ui->menuTomography->addSeparator();
 
   QAction* simulationLabel =
@@ -411,10 +408,10 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     rotateAlignAction, "Tilt Axis Alignment (manual)",
     readInPythonScript("RotationAlign"), true, false, false,
     readInJSONDescription("RotationAlign"));
-  // new AddRotateAlignReaction(rotateAlignAction);
   new AddPythonTransformReaction(
     autoRotateAlignAction, "Auto Tilt Axis Align",
-    readInPythonScript("AutoTiltAxisRotationAlignment"), true);
+    readInPythonScript("AutoTiltAxisRotationAlignment"), true, false, false,
+    readInJSONDescription("AutoTiltAxisRotationAlignment"));
   new AddPythonTransformReaction(
     autoRotateAlignShiftAction, "Auto Tilt Axis Shift Align",
     readInPythonScript("AutoTiltAxisShiftAlignment"), true, false, false,
@@ -432,6 +429,10 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     autoAlignPyStackRegAction, "Auto Tilt Image Align (PyStackReg)",
     readInPythonScript("PyStackRegImageAlignment"), false, false,
     false, readInJSONDescription("PyStackRegImageAlignment"));
+  new AddPythonTransformReaction(
+    shiftRotationCenterAction, "Shift Rotation Center",
+    readInPythonScript("ShiftRotationCenter_tomopy"), true, false, false,
+    readInJSONDescription("ShiftRotationCenter_tomopy"));
 
   new AddPythonTransformReaction(reconDFMAction, "Reconstruct (Direct Fourier)",
                                  readInPythonScript("Recon_DFT"), true, false,
@@ -455,13 +456,9 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     readInPythonScript("Recon_TV_minimization"), true, false, false,
     readInJSONDescription("Recon_TV_minimization"));
   new AddPythonTransformReaction(
-    reconTomoPyGridRecAction, "Reconstruct (TomoPy Gridrec)",
-    readInPythonScript("Recon_tomopy_gridrec"), true, false, false,
-    readInJSONDescription("Recon_tomopy_gridrec"));
-  new AddPythonTransformReaction(
-    fxiWorkflowAction, "Reconstruct (FXI Workflow)",
-    readInPythonScript("Recon_tomopy_fxi"), true, false, false,
-    readInJSONDescription("Recon_tomopy_fxi"));
+    reconTomoPyGridRecAction, "Reconstruct (TomoPy)",
+    readInPythonScript("Recon_tomopy"), true, false, false,
+    readInJSONDescription("Recon_tomopy"));
 
   new ReconstructionReaction(reconWBP_CAction);
 
@@ -503,16 +500,16 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   QMenu* sampleDataMenu = new QMenu("Sample Data", this);
   m_ui->menubar->insertMenu(m_ui->menuHelp->menuAction(), sampleDataMenu);
   QAction* userGuideAction = m_ui->menuHelp->addAction("User Guide");
-  connect(userGuideAction, SIGNAL(triggered()), SLOT(openUserGuide()));
+  connect(userGuideAction, &QAction::triggered, this, &MainWindow::openUserGuide);
   QAction* introAction = m_ui->menuHelp->addAction("Intro to 3D Visualization");
-  connect(introAction, SIGNAL(triggered()), SLOT(openVisIntro()));
+  connect(introAction, &QAction::triggered, this, &MainWindow::openVisIntro);
 #ifdef TOMVIZ_DATA
   QAction* reconAction =
     sampleDataMenu->addAction("Star Nanoparticle (Reconstruction)");
   QAction* tiltAction =
     sampleDataMenu->addAction("Star Nanoparticle (Tilt Series)");
-  connect(reconAction, SIGNAL(triggered()), SLOT(openRecon()));
-  connect(tiltAction, SIGNAL(triggered()), SLOT(openTilt()));
+  connect(reconAction, &QAction::triggered, this, &MainWindow::openRecon);
+  connect(tiltAction, &QAction::triggered, this, &MainWindow::openTilt);
   sampleDataMenu->addSeparator();
 #endif
   QAction* constantDataAction =
@@ -530,7 +527,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   sampleDataMenu->addSeparator();
   QAction* sampleDataLinkAction =
     sampleDataMenu->addAction("Download More Datasets");
-  connect(sampleDataLinkAction, SIGNAL(triggered()), SLOT(openDataLink()));
+  connect(sampleDataLinkAction, &QAction::triggered, this, &MainWindow::openDataLink);
 
   QAction* loadPaletteAction = m_ui->utilitiesToolbar->addAction(
     QIcon(":pqWidgets/Icons/pqPalette.svg"), "LoadPalette");
@@ -842,7 +839,7 @@ void MainWindow::showEvent(QShowEvent* e)
   QMainWindow::showEvent(e);
   if (m_isFirstShow) {
     m_isFirstShow = false;
-    QTimer::singleShot(1, this, SLOT(onFirstWindowShow()));
+    QTimer::singleShot(1, this, &MainWindow::onFirstWindowShow);
   }
 }
 
@@ -1042,8 +1039,8 @@ void MainWindow::registerCustomOperators(
   QAction* importCustomTransformAction =
     m_customTransformsMenu->addAction("Import Custom Transform...");
   m_customTransformsMenu->addSeparator();
-  connect(importCustomTransformAction, SIGNAL(triggered()),
-          SLOT(importCustomTransform()));
+  connect(importCustomTransformAction, &QAction::triggered, this,
+          &MainWindow::importCustomTransform);
 
   if (!operators.empty()) {
     for (const OperatorDescription& op : operators) {
@@ -1188,7 +1185,7 @@ void MainWindow::findPipelineTemplates() {
   m_pipelineTemplates->addSeparator();
   QAction* actionSaveTemplate = m_pipelineTemplates->addAction("Save Template");
   new SaveLoadTemplateReaction(actionSaveTemplate);
-  connect(actionSaveTemplate, SIGNAL(triggered()), SLOT(findPipelineTemplates()));
+  connect(actionSaveTemplate, &QAction::triggered, this, &MainWindow::findPipelineTemplates);
 }
 
 } // namespace tomviz

@@ -36,7 +36,6 @@
 #include <QVBoxLayout>
 #include <QtDebug>
 
-#include <cassert>
 
 namespace tomviz {
 
@@ -47,8 +46,10 @@ AddPythonTransformReaction::AddPythonTransformReaction(
     interactive(false), requiresTiltSeries(rts), requiresVolume(rv),
     requiresFib(rf)
 {
-  connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
-          SLOT(updateEnableState()));
+  connect(&ActiveObjects::instance(),
+          static_cast<void (ActiveObjects::*)(DataSource*)>(
+            &ActiveObjects::dataSourceChanged),
+          this, &AddPythonTransformReaction::updateEnableState);
   connect(&PipelineManager::instance(), &PipelineManager::executionModeUpdated,
           this, &AddPythonTransformReaction::updateEnableState);
 
@@ -153,6 +154,9 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
   } else if (scriptLabel == "Shift Volume") {
     auto t = source->producer();
     auto data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    if (!data) {
+      return nullptr;
+    }
     int* extent = data->GetExtent();
 
     QDialog dialog(tomviz::mainWidget());
@@ -176,8 +180,8 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     QVBoxLayout* v = new QVBoxLayout;
     QDialogButtonBox* buttons = new QDialogButtonBox(
       QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, &dialog);
-    connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
-    connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
+    connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+    connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
     v->addLayout(layout);
     v->addWidget(buttons);
     dialog.setLayout(v);
@@ -211,8 +215,8 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     QVBoxLayout* v = new QVBoxLayout;
     QDialogButtonBox* buttons = new QDialogButtonBox(
       QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, &dialog);
-    connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
-    connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
+    connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+    connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
     v->addLayout(layout);
     v->addWidget(buttons);
     dialog.setLayout(v);
@@ -230,6 +234,9 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
   } else if (scriptLabel == "Crop") {
     auto t = source->producer();
     auto data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    if (!data) {
+      return nullptr;
+    }
     int* extent = data->GetExtent();
 
     QDialog dialog(tomviz::mainWidget());
@@ -268,8 +275,8 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     QVBoxLayout* v = new QVBoxLayout;
     QDialogButtonBox* buttons = new QDialogButtonBox(
       QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, &dialog);
-    connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
-    connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
+    connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+    connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
     v->addLayout(layout1);
     v->addLayout(layout2);
     v->addWidget(buttons);
@@ -301,6 +308,9 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     int extent[6];
     auto t = source->producer();
     vtkImageData* image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    if (!image) {
+      return nullptr;
+    }
     image->GetOrigin(origin);
     image->GetSpacing(spacing);
     image->GetExtent(extent);
@@ -312,14 +322,14 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
                      selectionWidget, &SelectVolumeWidget::dataMoved);
     QDialogButtonBox* buttons =
       new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-    connect(buttons, SIGNAL(accepted()), dialog, SLOT(accept()));
-    connect(buttons, SIGNAL(rejected()), dialog, SLOT(reject()));
+    connect(buttons, &QDialogButtonBox::accepted, dialog, &QDialog::accept);
+    connect(buttons, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
     layout->addWidget(selectionWidget);
     layout->addWidget(buttons);
     dialog->setLayout(layout);
 
-    this->connect(dialog, SIGNAL(accepted()),
-                  SLOT(addExpressionFromNonModalDialog()));
+    connect(dialog, &QDialog::accepted, this,
+            &AddPythonTransformReaction::addExpressionFromNonModalDialog);
     dialog->show();
     dialog->layout()->setSizeConstraint(
       QLayout::SetFixedSize); // Make the UI non-resizeable
@@ -335,6 +345,9 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
 
     auto t = source->producer();
     auto image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    if (!image) {
+      return nullptr;
+    }
     image->GetOrigin(origin);
     image->GetSpacing(spacing);
     image->GetExtent(extent);
@@ -366,16 +379,16 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
                      selectionWidget, &SelectVolumeWidget::dataMoved);
     QDialogButtonBox* buttons =
       new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-    connect(buttons, SIGNAL(accepted()), dialog, SLOT(accept()));
-    connect(buttons, SIGNAL(rejected()), dialog, SLOT(reject()));
+    connect(buttons, &QDialogButtonBox::accepted, dialog, &QDialog::accept);
+    connect(buttons, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
     layout->addWidget(selectionWidget);
     layout->addWidget(buttons);
     dialog->setLayout(layout);
     dialog->layout()->setSizeConstraint(
       QLayout::SetFixedSize); // Make the UI non-resizeable
 
-    this->connect(dialog, SIGNAL(accepted()),
-                  SLOT(addExpressionFromNonModalDialog()));
+    connect(dialog, &QDialog::accepted, this,
+            &AddPythonTransformReaction::addExpressionFromNonModalDialog);
     dialog->show();
   } else {
     OperatorPython* opPython = new OperatorPython(source);
@@ -388,7 +401,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
         new EditOperatorDialog(opPython, source, true, tomviz::mainWidget());
       dialog->setAttribute(Qt::WA_DeleteOnClose, true);
       dialog->show();
-      connect(opPython, SIGNAL(destroyed()), dialog, SIGNAL(reject()));
+      connect(opPython, &QObject::destroyed, dialog, &QDialog::reject);
     } else {
       source->addOperator(opPython);
     }
@@ -429,13 +442,18 @@ void AddPythonTransformReaction::addExpressionFromNonModalDialog()
       }
     }
 
-    assert(volumeWidget);
+    if (!volumeWidget) {
+      return;
+    }
     int selection_extent[6];
     volumeWidget->getExtentOfSelection(selection_extent);
 
     int image_extent[6];
     auto t = source->producer();
     auto image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    if (!image) {
+      return;
+    }
     image->GetExtent(image_extent);
 
     // The image extent is not necessarily zero-based.  The numpy array is.
@@ -466,13 +484,18 @@ void AddPythonTransformReaction::addExpressionFromNonModalDialog()
       }
     }
 
-    assert(volumeWidget);
+    if (!volumeWidget) {
+      return;
+    }
     int selection_extent[6];
     volumeWidget->getExtentOfSelection(selection_extent);
 
     int image_extent[6];
     auto t = source->producer();
     auto image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    if (!image) {
+      return;
+    }
     image->GetExtent(image_extent);
     int indices[6];
     indices[0] = selection_extent[0] - image_extent[0];

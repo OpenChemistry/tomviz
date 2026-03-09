@@ -5,7 +5,7 @@
 
 #include "ActiveObjects.h"
 #include "AddRenderViewContextMenuBehavior.h"
-#include "FxiWorkflowWidget.h"
+#include "ShiftRotationCenterWidget.h"
 #include "ManualManipulationWidget.h"
 #include "MoveActiveObject.h"
 #include "OperatorPython.h"
@@ -102,8 +102,8 @@ Behaviors::Behaviors(QMainWindow* mainWindow) : QObject(mainWindow)
 
 void Behaviors::registerCustomOperatorUIs()
 {
-  OperatorPython::registerCustomWidget("FxiWorkflowWidget", true,
-                                       FxiWorkflowWidget::New);
+  OperatorPython::registerCustomWidget("ShiftRotationCenterWidget", true,
+                                       ShiftRotationCenterWidget::New);
   OperatorPython::registerCustomWidget("RotationAlignWidget", true,
                                        RotateAlignWidget::New);
   OperatorPython::registerCustomWidget("ManualManipulationWidget", true,

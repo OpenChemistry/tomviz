@@ -42,6 +42,7 @@ void DataTransformMenu::buildTransforms()
   auto convertDataAction = menu->addAction("Convert to Float");
   auto arrayWranglerAction = menu->addAction("Convert Type");
   auto transposeDataAction = menu->addAction("Transpose Data");
+  auto removeArraysAction = menu->addAction("Remove Arrays");
   auto reinterpretSignedToUnignedAction =
     menu->addAction("Reinterpret Signed to Unsigned");
   menu->addSeparator();
@@ -79,6 +80,11 @@ void DataTransformMenu::buildTransforms()
   auto tortuosityAction = menu->addAction("Tortuosity");
   auto poreSizeAction = menu->addAction("Pore Size Distribution");
   menu->addSeparator();
+  auto psdAction = menu->addAction("Power Spectrum Density");
+  auto fscAction = menu->addAction("Fourier Shell Correlation");
+  auto deconvolutionDenoiseAction = menu->addAction("Deconvolution Denoise");
+  auto similarityMetricsAction = menu->addAction("Similarity Metrics");
+  menu->addSeparator();
   auto cloneAction = menu->addAction("Clone");
   auto deleteDataAction = menu->addAction(
     QIcon(":/QtWidgets/Icons/pqDelete.svg"), "Delete Data and Modules");
@@ -90,6 +96,10 @@ void DataTransformMenu::buildTransforms()
   new ConvertToFloatReaction(convertDataAction);
   new ArrayWranglerReaction(arrayWranglerAction, mainWindow);
   new TransposeDataReaction(transposeDataAction, mainWindow);
+  new AddPythonTransformReaction(
+    removeArraysAction, "Remove Arrays",
+    readInPythonScript("RemoveArrays"), false, false, false,
+    readInJSONDescription("RemoveArrays"));
   new AddPythonTransformReaction(
     reinterpretSignedToUnignedAction, "Reinterpret Signed to Unsigned",
     readInPythonScript("ReinterpretSignedToUnsigned"));
@@ -182,6 +192,23 @@ void DataTransformMenu::buildTransforms()
     poreSizeAction, "Pore Size Distribution",
     readInPythonScript("PoreSizeDistribution"), false, false, false,
     readInJSONDescription("PoreSizeDistribution"));
+
+  new AddPythonTransformReaction(
+    psdAction, "Power Spectrum Density",
+    readInPythonScript("PowerSpectrumDensity"), false, false, false,
+    readInJSONDescription("PowerSpectrumDensity"));
+  new AddPythonTransformReaction(
+    fscAction, "Fourier Shell Correlation",
+    readInPythonScript("FourierShellCorrelation"), false, false, false,
+    readInJSONDescription("FourierShellCorrelation"));
+  new AddPythonTransformReaction(
+    deconvolutionDenoiseAction, "Deconvolution Denoise",
+    readInPythonScript("DeconvolutionDenoise"), true, false, false,
+    readInJSONDescription("DeconvolutionDenoise"));
+  new AddPythonTransformReaction(
+    similarityMetricsAction, "Similarity Metrics",
+    readInPythonScript("SimilarityMetrics"), false, false, false,
+    readInJSONDescription("SimilarityMetrics"));
 
   new CloneDataReaction(cloneAction);
   new DeleteDataReaction(deleteDataAction);

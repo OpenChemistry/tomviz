@@ -15,6 +15,14 @@ PathLike = Path | str
 
 def gather_ptycho_info(ptycho_dir: PathLike) -> dict:
     ptycho_dir = Path(ptycho_dir)
+    if not ptycho_dir.is_dir():
+        # It either doesn't exist or it's not a directory
+        return {
+            'sid_list': [],
+            'version_list': [],
+            'angle_list': [],
+            'error_list': [],
+        }
 
     sid_list = sorted([int(x.name[1:]) for x in ptycho_dir.iterdir()
                       if x.is_dir() and x.name.startswith('S')])
@@ -444,10 +452,15 @@ def fetch_angle_from_ptycho_hyan_file(filepath: PathLike) -> float | None:
 def fetch_pixel_sizes_from_ptycho_hyan_file(
     filepath: PathLike,
 ) -> tuple[float, float] | None:
-    print(f'Obtaining pixel sizes from config file: {filepath})')
+    print(f'Obtaining pixel sizes from config file: {filepath}')
     vars_required = [
-        'lambda_nm', 'z_m', 'x_arr_size', 'y_arr_size', 'ccd_pixel_um'
+        'lambda_nm', 'z_m', 'nx', 'ny', 'ccd_pixel_um'
     ]
+    alternatives = {
+        'nx': 'x_arr_size',
+        'ny': 'y_arr_size',
+    }
+    vars_requested = vars_required + list(alternatives.values())
     results = {}
     try:
         with open(filepath, 'r') as rf:
@@ -456,12 +469,21 @@ def fetch_pixel_sizes_from_ptycho_hyan_file(
                     continue
 
                 lhs = line.split('=')[0].strip()
-                if lhs in vars_required:
-                    value = float(line.split('=')[1].strip())
+                if lhs in vars_requested:
+                    value = float(line.split('=', 1)[1].strip())
                     results[lhs] = value
     except Exception as e:
         print('Failed to fetch pixel sizes with error:', e, file=sys.stderr)
         return None
+
+    # Add alternatives if they are present
+    for name in vars_required:
+        if name not in results and name in alternatives:
+            # Check the alt_name
+            alt_name = alternatives[name]
+            if alt_name in results:
+                # Convert it
+                results[name] = results.pop(alt_name)
 
     missing = [x for x in vars_required if x not in results]
     if missing:
@@ -476,7 +498,7 @@ def fetch_pixel_sizes_from_ptycho_hyan_file(
         results['lambda_nm'] * results['z_m'] * 1e6 / results['ccd_pixel_um']
     )
 
-    x_pixel_size = numerator / results['x_arr_size']
-    y_pixel_size = numerator / results['y_arr_size']
+    x_pixel_size = numerator / results['nx']
+    y_pixel_size = numerator / results['ny']
 
     return x_pixel_size, y_pixel_size

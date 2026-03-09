@@ -41,15 +41,15 @@ DoubleSliderWidget::DoubleSliderWidget(bool showLineEdit, QWidget* p)
     this->LineEdit = nullptr;
   }
 
-  QObject::connect(this->Slider, SIGNAL(valueChanged(int)), this,
-                   SLOT(sliderChanged(int)));
-  QObject::connect(this->Slider, SIGNAL(sliderReleased()), this,
-                   SLOT(onSliderReleased()));
+  QObject::connect(this->Slider, &QSlider::valueChanged, this,
+                   &DoubleSliderWidget::sliderChanged);
+  QObject::connect(this->Slider, &QSlider::sliderReleased, this,
+                   &DoubleSliderWidget::onSliderReleased);
   if (showLineEdit) {
-    QObject::connect(this->LineEdit, SIGNAL(textChanged(const QString&)), this,
-                     SLOT(textChanged(const QString&)));
-    QObject::connect(this->LineEdit, SIGNAL(textChangedAndEditingFinished()),
-                     this, SLOT(editingFinished()));
+    QObject::connect(this->LineEdit, &pqLineEdit::textChanged, this,
+                     &DoubleSliderWidget::textChanged);
+    QObject::connect(this->LineEdit, &pqLineEdit::textChangedAndEditingFinished,
+                     this, &DoubleSliderWidget::editingFinished);
   }
 }
 
@@ -169,6 +169,9 @@ bool DoubleSliderWidget::strictRange() const
   }
   const QDoubleValidator* dv =
     qobject_cast<const QDoubleValidator*>(this->LineEdit->validator());
+  if (!dv) {
+    return false;
+  }
   return dv->bottom() == this->minimum() && dv->top() == this->maximum();
 }
 

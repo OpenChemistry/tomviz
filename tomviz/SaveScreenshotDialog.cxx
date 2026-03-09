@@ -60,8 +60,8 @@ SaveScreenshotDialog::SaveScreenshotDialog(QWidget* p) : QDialog(p)
                    &QDialog::reject);
   vLayout->addWidget(buttonBox);
 
-  QObject::connect(lockAspectButton, SIGNAL(clicked()), this,
-                   SLOT(setLockAspectRatio()));
+  QObject::connect(lockAspectButton, &QPushButton::clicked, this,
+                   &SaveScreenshotDialog::setLockAspectRatio);
 
   setLayout(vLayout);
 }
@@ -99,14 +99,15 @@ void SaveScreenshotDialog::setLockAspectRatio()
   m_lockAspectRatio = !m_lockAspectRatio;
   if (m_lockAspectRatio) {
     m_aspectRatio = m_width->value() / static_cast<double>(m_height->value());
-    connect(m_width, SIGNAL(valueChanged(int)), this, SLOT(widthChanged(int)));
-    connect(m_height, SIGNAL(valueChanged(int)), this,
-            SLOT(heightChanged(int)));
+    connect(m_width, QOverload<int>::of(&QSpinBox::valueChanged), this,
+            &SaveScreenshotDialog::widthChanged);
+    connect(m_height, QOverload<int>::of(&QSpinBox::valueChanged), this,
+            &SaveScreenshotDialog::heightChanged);
   } else {
-    disconnect(m_width, SIGNAL(valueChanged(int)), this,
-               SLOT(widthChanged(int)));
-    disconnect(m_height, SIGNAL(valueChanged(int)), this,
-               SLOT(heightChanged(int)));
+    disconnect(m_width, QOverload<int>::of(&QSpinBox::valueChanged), this,
+               &SaveScreenshotDialog::widthChanged);
+    disconnect(m_height, QOverload<int>::of(&QSpinBox::valueChanged), this,
+               &SaveScreenshotDialog::heightChanged);
   }
 }
 

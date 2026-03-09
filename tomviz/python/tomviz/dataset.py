@@ -86,6 +86,15 @@ class Dataset(ABC):
         """
         pass
 
+    @abstractmethod
+    def remove_scalars(self, name: str):
+        """Remove a scalar array from the dataset.
+
+        :param name: The name of the scalar array to remove.
+        :raises KeyError: If the specified name does not exist in the dataset.
+        """
+        pass
+
     @property
     @abstractmethod
     def spacing(self) -> tuple[int, int, int]:
@@ -131,6 +140,24 @@ class Dataset(ABC):
         - 1 = y-axis
         - 2 = z-axis
         - None = not applicable or not set
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def scan_ids(self) -> np.ndarray | None:
+        """Array of scan IDs associated with each projection in a tilt series.
+
+        Returns None if scan IDs have not been set.
+        """
+        pass
+
+    @scan_ids.setter
+    @abstractmethod
+    def scan_ids(self, v: np.ndarray | None):
+        """Set the scan IDs for projections in a tilt series.
+
+        Provide None to clear scan IDs.
         """
         pass
 

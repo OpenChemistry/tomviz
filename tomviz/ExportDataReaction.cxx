@@ -43,8 +43,8 @@ namespace tomviz {
 ExportDataReaction::ExportDataReaction(QAction* parentAction, Module* module)
   : pqReaction(parentAction), m_module(module)
 {
-  connect(&ActiveObjects::instance(), SIGNAL(moduleChanged(Module*)),
-          SLOT(updateEnableState()));
+  connect(&ActiveObjects::instance(), &ActiveObjects::moduleChanged, this,
+          &ExportDataReaction::updateEnableState);
   updateEnableState();
 }
 

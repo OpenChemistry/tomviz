@@ -49,6 +49,9 @@ public:
   /// Returns the selected data source, nullptr if no data source is selected.
   DataSource* selectedDataSource() const { return m_selectedDataSource; }
 
+  /// Returns the active operator.
+  Operator* activeOperator() const { return m_activeOperator; }
+
   /// Returns the active data source.
   MoleculeSource* activeMoleculeSource() const
   {

@@ -94,7 +94,7 @@ void saveSettings(QJsonObject json)
 
 RecentFilesMenu::RecentFilesMenu(QMenu& menu, QObject* p) : QObject(p)
 {
-  connect(&menu, SIGNAL(aboutToShow()), SLOT(aboutToShowMenu()));
+  connect(&menu, &QMenu::aboutToShow, this, &RecentFilesMenu::aboutToShowMenu);
 }
 
 RecentFilesMenu::~RecentFilesMenu() = default;
@@ -240,7 +240,7 @@ void RecentFilesMenu::aboutToShowMenu()
       auto actn = menu->addAction(QIcon(":/icons/tomviz.png"),
                                   object["fileName"].toString("<bug>"));
       actn->setData(object["fileName"].toString("<bug>"));
-      connect(actn, SIGNAL(triggered()), SLOT(stateTriggered()));
+      connect(actn, &QAction::triggered, this, &RecentFilesMenu::stateTriggered);
     }
   }
 }

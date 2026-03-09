@@ -79,7 +79,7 @@ ScaleActorBehavior::ScaleActorBehavior(QObject* parentObject)
 {
   pqServerManagerModel* smmodel =
     pqApplicationCore::instance()->getServerManagerModel();
-  connect(smmodel, SIGNAL(viewAdded(pqView*)), SLOT(viewAdded(pqView*)));
+  connect(smmodel, &pqServerManagerModel::viewAdded, this, &ScaleActorBehavior::viewAdded);
 }
 
 void ScaleActorBehavior::viewAdded(pqView* view)

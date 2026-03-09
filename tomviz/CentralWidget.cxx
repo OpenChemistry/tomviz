@@ -27,6 +27,9 @@
 
 #include "AbstractDataModel.h"
 #include "ActiveObjects.h"
+#include "GradientOpacityWidget.h"
+#include "Histogram2DWidget.h"
+#include "HistogramWidget.h"
 #include "DataSource.h"
 #include "HistogramManager.h"
 #include "Module.h"
@@ -130,15 +133,15 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
     }
   });
 
-  connect(m_ui->histogramWidget, SIGNAL(colorMapUpdated()),
-          SLOT(onColorMapUpdated()));
-  connect(m_ui->histogramWidget, SIGNAL(colorLegendToggled(bool)),
-          SLOT(onColorLegendToggled(bool)));
-  connect(m_ui->gradientOpacityWidget, SIGNAL(mapUpdated()),
-          SLOT(onColorMapUpdated()));
+  connect(m_ui->histogramWidget, &HistogramWidget::colorMapUpdated, this,
+          &CentralWidget::onColorMapUpdated);
+  connect(m_ui->histogramWidget, &HistogramWidget::colorLegendToggled, this,
+          &CentralWidget::onColorLegendToggled);
+  connect(m_ui->gradientOpacityWidget, &GradientOpacityWidget::mapUpdated, this,
+          &CentralWidget::onColorMapUpdated);
   m_ui->gradientOpacityWidget->hide();
-  connect(m_ui->histogramWidget, SIGNAL(opacityChanged()),
-          m_ui->histogram2DWidget, SLOT(updateTransfer2D()));
+  connect(m_ui->histogramWidget, &HistogramWidget::opacityChanged,
+          m_ui->histogram2DWidget, &Histogram2DWidget::updateTransfer2D);
 
   auto& histogramMgr = HistogramManager::instance();
   connect(&histogramMgr, &HistogramManager::histogramReady, this,
@@ -148,7 +151,7 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
 
   m_timer->setInterval(200);
   m_timer->setSingleShot(true);
-  connect(m_timer.data(), SIGNAL(timeout()), SLOT(refreshHistogram()));
+  connect(m_timer.data(), &QTimer::timeout, this, &CentralWidget::refreshHistogram);
   layout()->setContentsMargins(0, 0, 0, 0);
   layout()->setSpacing(0);
 
@@ -186,11 +189,11 @@ void CentralWidget::setActiveModule(Module* module)
   }
   m_activeModule = module;
   if (m_activeModule) {
-    connect(m_activeModule, SIGNAL(colorMapChanged()),
-            SLOT(onColorMapDataSourceChanged()));
+    connect(m_activeModule, &Module::colorMapChanged, this,
+            &CentralWidget::onColorMapDataSourceChanged);
     setColorMapDataSource(module->colorMapDataSource());
-    connect(m_activeModule, SIGNAL(transferModeChanged(const int)), this,
-            SLOT(onTransferModeChanged(const int)));
+    connect(m_activeModule, &Module::transferModeChanged, this,
+            &CentralWidget::onTransferModeChanged);
     onTransferModeChanged(static_cast<int>(m_activeModule->getTransferMode()));
 
   } else {
@@ -222,7 +225,7 @@ void CentralWidget::setColorMapDataSource(DataSource* source)
   m_activeColorMapDataSource = source;
 
   if (source) {
-    connect(source, SIGNAL(dataChanged()), SLOT(onColorMapDataSourceChanged()));
+    connect(source, &DataSource::dataChanged, this, &CentralWidget::onColorMapDataSourceChanged);
   }
 
   if (!source) {
@@ -235,7 +238,7 @@ void CentralWidget::setColorMapDataSource(DataSource* source)
   // Get the actual data source, build a histogram out of it.
   auto image = vtkImageData::SafeDownCast(source->dataObject());
 
-  if (image->GetPointData()->GetScalars() == nullptr) {
+  if (!image || image->GetPointData()->GetScalars() == nullptr) {
     return;
   }
 

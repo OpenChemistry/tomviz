@@ -237,6 +237,10 @@ bool jsonToFile(const QJsonDocument& json);
 QJsonDocument tableToJson(vtkTable* table);
 QJsonDocument vectorToJson(const QVector<vtkVector2i> vector);
 
+/// Write a vtkTable to csv file
+QString tableToCsv(vtkTable* table);
+bool csvToFile(const QString& csv);
+
 /// Write a vtkMolecule to json file
 bool moleculeToFile(vtkMolecule* molecule);
 extern double offWhite[3];

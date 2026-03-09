@@ -20,6 +20,8 @@
 #include <QMessageBox>
 #include <QPointer>
 #include <QPushButton>
+#include <QScreen>
+#include <QShowEvent>
 #include <QVBoxLayout>
 #include <QVariant>
 
@@ -99,7 +101,10 @@ EditOperatorDialog::EditOperatorDialog(Operator* op, DataSource* dataSource,
 
   QVariant geometry = this->Internals->loadGeometry();
   if (!geometry.isNull()) {
-    this->setGeometry(geometry.toRect());
+    // Only restore size, not position — showEvent will center the dialog
+    // on the main window's screen.  Restoring position can cause the
+    // dialog to appear on a different monitor than the main window.
+    this->resize(geometry.toRect().size());
   }
 
   if (op->hasCustomUI()) {
@@ -122,6 +127,40 @@ EditOperatorDialog::EditOperatorDialog(Operator* op, DataSource* dataSource,
 }
 
 EditOperatorDialog::~EditOperatorDialog() {}
+
+void EditOperatorDialog::showEvent(QShowEvent* event)
+{
+  Superclass::showEvent(event);
+
+  // Always center on the main window's screen, overriding any restored
+  // geometry or window manager placement that may put the dialog on a
+  // different monitor.
+  auto* mainWin = tomviz::mainWidget();
+  if (!mainWin) {
+    return;
+  }
+
+  auto* screen = mainWin->screen();
+  auto screenGeom = screen ? screen->availableGeometry()
+                           : QRect(0, 0, 1920, 1080);
+
+  auto mainCenter = mainWin->frameGeometry().center();
+  auto dlgSize = frameGeometry().size();
+
+  // Center on the main window
+  int x = mainCenter.x() - dlgSize.width() / 2;
+  int y = mainCenter.y() - dlgSize.height() / 2;
+
+  // Clamp to the main window's screen so we never spill onto another monitor
+  x = qBound(screenGeom.left(), x,
+              screenGeom.right() - dlgSize.width());
+  y = qBound(screenGeom.top(), y,
+              screenGeom.bottom() - dlgSize.height());
+
+  move(x, y);
+  raise();
+  activateWindow();
+}
 
 void EditOperatorDialog::setViewMode(const QString& mode)
 {
@@ -246,7 +285,7 @@ void EditOperatorDialog::setupUI(EditOperatorWidget* opWidget)
   vLayout->setContentsMargins(5, 5, 5, 5);
   vLayout->setSpacing(5);
   if (this->Internals->Op->hasCustomUI()) {
-    vLayout->addWidget(opWidget);
+    vLayout->addWidget(opWidget, 1);
     this->Internals->Widget = opWidget;
     const double* dsPosition = this->Internals->dataSource->displayPosition();
     opWidget->dataSourceMoved(dsPosition[0], dsPosition[1], dsPosition[2]);
@@ -329,7 +368,7 @@ void EditOperatorDialog::showDialogForOperator(Operator* op,
       dialog->show();
 
       // Close the dialog if the Operator is destroyed.
-      connect(op, SIGNAL(destroyed()), dialog, SLOT(reject()));
+      connect(op, &QObject::destroyed, dialog, &QDialog::reject);
     }
   }
 }

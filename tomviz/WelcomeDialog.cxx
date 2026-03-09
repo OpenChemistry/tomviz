@@ -8,6 +8,9 @@
 #include "MainWindow.h"
 #include "ModuleManager.h"
 
+#include <QCheckBox>
+#include <QPushButton>
+
 #include <pqApplicationCore.h>
 #include <pqSettings.h>
 
@@ -17,10 +20,11 @@ WelcomeDialog::WelcomeDialog(MainWindow* mw)
   : QDialog(mw), m_ui(new Ui::WelcomeDialog)
 {
   m_ui->setupUi(this);
-  connect(m_ui->doNotShowAgain, SIGNAL(stateChanged(int)),
-          SLOT(onDoNotShowAgainStateChanged(int)));
-  connect(m_ui->noButton, SIGNAL(clicked()), SLOT(hide()));
-  connect(m_ui->yesButton, SIGNAL(clicked()), SLOT(onLoadSampleDataClicked()));
+  connect(m_ui->doNotShowAgain, &QCheckBox::checkStateChanged, this,
+          &WelcomeDialog::onDoNotShowAgainStateChanged);
+  connect(m_ui->noButton, &QPushButton::clicked, this, &WelcomeDialog::hide);
+  connect(m_ui->yesButton, &QPushButton::clicked, this,
+          &WelcomeDialog::onLoadSampleDataClicked);
 }
 
 WelcomeDialog::~WelcomeDialog() = default;
@@ -41,7 +45,7 @@ void WelcomeDialog::onLoadSampleDataClicked()
   hide();
 }
 
-void WelcomeDialog::onDoNotShowAgainStateChanged(int state)
+void WelcomeDialog::onDoNotShowAgainStateChanged(Qt::CheckState state)
 {
   bool showDialog = (state != Qt::Checked);
 

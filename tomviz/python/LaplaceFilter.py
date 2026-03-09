@@ -1,7 +1,3 @@
-from tomviz.utils import apply_to_each_array
-
-
-@apply_to_each_array
 def transform(dataset):
     """Apply a Laplace filter to dataset."""
 

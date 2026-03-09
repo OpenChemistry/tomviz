@@ -29,6 +29,7 @@ public:
   double pixelSizeY() const;
   bool skipProcessed() const;
   bool rotateDatasets() const;
+  QVector<int> selectedScanIDs() const;
 
 private:
   class Internal;

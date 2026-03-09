@@ -104,8 +104,8 @@ void ModuleRuler::addToPanel(QWidget* panel)
           &pqPropertyWidget::apply);
   connect(m_widget.data(), &pqPropertyWidget::changeFinished, this,
           &ModuleRuler::endPointsUpdated);
-  connect(m_widget, SIGNAL(widgetVisibilityUpdated(bool)), this,
-          SLOT(updateShowLine(bool)));
+  connect(m_widget, &pqInteractivePropertyWidgetAbstract::widgetVisibilityUpdated,
+          this, &ModuleRuler::updateShowLine);
 
   m_widget->setWidgetVisible(m_showLine);
 
@@ -126,8 +126,8 @@ void ModuleRuler::prepareToRemoveFromPanel(QWidget* vtkNotUsed(panel))
   // Disconnect before the panel is removed to avoid m_showLine always being set
   // to false when the signal widgetVisibilityUpdated(bool) is emitted during
   // the tear down of the pqLinePropertyWidget.
-  disconnect(m_widget, SIGNAL(widgetVisibilityUpdated(bool)), this,
-             SLOT(updateShowLine(bool)));
+  disconnect(m_widget, &pqInteractivePropertyWidgetAbstract::widgetVisibilityUpdated,
+             this, &ModuleRuler::updateShowLine);
 }
 
 bool ModuleRuler::setVisibility(bool val)
@@ -222,13 +222,24 @@ void ModuleRuler::endPointsUpdated()
   vtkSMPropertyHelper(m_rulerSource, "Point1").Get(point1, 3);
   vtkSMPropertyHelper(m_rulerSource, "Point2").Get(point2, 3);
   DataSource* source = dataSource();
-  vtkImageData* img = vtkImageData::SafeDownCast(
-    vtkAlgorithm::SafeDownCast(source->proxy()->GetClientSideObject())
-      ->GetOutputDataObject(0));
+  auto* algo =
+    vtkAlgorithm::SafeDownCast(source->proxy()->GetClientSideObject());
+  if (!algo) {
+    return;
+  }
+  vtkImageData* img =
+    vtkImageData::SafeDownCast(algo->GetOutputDataObject(0));
+  if (!img) {
+    return;
+  }
+  vtkDataArray* scalars = img->GetPointData()->GetScalars();
+  if (!scalars) {
+    return;
+  }
   vtkIdType p1 = img->FindPoint(point1);
   vtkIdType p2 = img->FindPoint(point2);
-  double v1 = img->GetPointData()->GetScalars()->GetTuple1(p1);
-  double v2 = img->GetPointData()->GetScalars()->GetTuple1(p2);
+  double v1 = scalars->GetTuple1(p1);
+  double v2 = scalars->GetTuple1(p2);
   emit newEndpointData(v1, v2);
   renderNeeded();
 }

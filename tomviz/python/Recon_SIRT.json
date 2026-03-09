@@ -1,13 +1,7 @@
 {
   "name" : "ReconstructSIRT",
   "label" : "SIRT Reconstruction",
-  "description" : "Reconstruct a tilt series using Simultaneous Iterative Reconstruction Techniques Technique (SIRT) with a Positivity Constraint.
-
-The tilt series data should be aligned prior to reconstruction and the tilt axis must be parallel to the x-direction.
-
-The size of reconstruction will be (Nx,Ny,Ny). The number of iterations can be specified below.
-
-Reconstrucing a 256x256x256 tomogram typically with Landweber's Method takes about 2 mins for 10 iterations.",
+  "description" : "Reconstruct a tilt series using Simultaneous Iterative Reconstruction Techniques Technique (SIRT) with a Positivity Constraint.\nThe tilt series data should be aligned prior to reconstruction and the tilt axis must be parallel to the x-direction.\nThe size of reconstruction will be (Nx,Ny,Ny). The number of iterations can be specified below.\nReconstrucing a 256x256x256 tomogram typically with Landweber's Method takes about 2 mins for 10 iterations.",
   "children": [
     {
       "name": "reconstruction",

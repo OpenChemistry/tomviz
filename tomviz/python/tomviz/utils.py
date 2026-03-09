@@ -257,7 +257,9 @@ def depad_array(array: np.ndarray, padding: int, tilt_axis: int) -> np.ndarray:
     return array[tuple(slice_list)]
 
 
-def make_spreadsheet(column_names: list[str], table: np.ndarray) -> 'vtkTable':
+def make_spreadsheet(column_names: list[str], table: np.ndarray,
+                     axes_labels: tuple[str, str] = None,
+                     axes_log_scale: tuple[bool, bool] = None) -> 'vtkTable':
     """Make a spreadsheet object to use within Tomviz
 
     If returned from an operator, this will ultimately appear within the
@@ -287,7 +289,7 @@ def make_spreadsheet(column_names: list[str], table: np.ndarray) -> 'vtkTable':
               'column names')
         return
 
-    from vtk import vtkTable, vtkFloatArray
+    from vtk import vtkTable, vtkFloatArray, vtkStringArray, vtkUnsignedCharArray
     vtk_table = vtkTable()
     for (column, name) in enumerate(column_names):
         array = vtkFloatArray()
@@ -298,5 +300,23 @@ def make_spreadsheet(column_names: list[str], table: np.ndarray) -> 'vtkTable':
 
         for row in range(0, rows):
             array.InsertValue(row, table[row, column])
+
+    if axes_labels is not None:
+        label_array = vtkStringArray()
+        label_array.SetName('axes_labels')
+        label_array.SetNumberOfComponents(1)
+        label_array.SetNumberOfTuples(2)
+        label_array.SetValue(0, axes_labels[0])
+        label_array.SetValue(1, axes_labels[1])
+        vtk_table.GetFieldData().AddArray(label_array)
+
+    if axes_log_scale is not None:
+        log_array = vtkUnsignedCharArray()
+        log_array.SetName('axes_log_scale')
+        log_array.SetNumberOfComponents(1)
+        log_array.SetNumberOfTuples(2)
+        log_array.SetValue(0, int(axes_log_scale[0]))
+        log_array.SetValue(1, int(axes_log_scale[1]))
+        vtk_table.GetFieldData().AddArray(log_array)
 
     return vtk_table

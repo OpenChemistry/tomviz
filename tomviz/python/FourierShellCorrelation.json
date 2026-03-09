@@ -1,0 +1,21 @@
+{
+  "name": "FourierShellCorrelation",
+  "label": "Fourier Shell Correlation",
+  "description": "",
+  "externalCompatible": false,
+  "apply_to_each_array": false,
+  "parameters": [
+    {
+      "name": "selected_scalars",
+      "label": "Scalars",
+      "type": "select_scalars"
+    }
+  ],
+  "results": [
+    {
+      "name": "plot",
+      "label": "FSC",
+      "type": "table"
+    }
+  ]
+}

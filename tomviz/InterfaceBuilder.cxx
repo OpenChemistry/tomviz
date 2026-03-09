@@ -10,11 +10,14 @@
 #include "SpinBox.h"
 #include "Utilities.h"
 
+#include <QAbstractItemView>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDebug>
 #include <QDir>
+#include <QEvent>
 #include <QFileDialog>
+#include <QMouseEvent>
 #include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -22,8 +25,14 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QSet>
 #include <QSpinBox>
+#include <QStandardItem>
+#include <QStandardItemModel>
+#include <QVBoxLayout>
 #include <QWidget>
+
+#include <functional>
 
 using tomviz::DataSource;
 
@@ -583,16 +592,155 @@ void addDatasetWidget(QGridLayout* layout, int row, QJsonObject& parameterNode)
   layout->addWidget(comboBox, row, 1, 1, 1);
 }
 
+void addSelectScalarsWidget(QGridLayout* layout, int row,
+                            QJsonObject& parameterNode,
+                            DataSource* dataSource)
+{
+  QJsonValueRef nameValue = parameterNode["name"];
+  QJsonValueRef labelValue = parameterNode["label"];
+
+  if (nameValue.isUndefined()) {
+    QJsonDocument document(parameterNode);
+    qWarning() << QString("Parameter %1 has no name. Skipping.")
+                    .arg(document.toJson().data());
+    return;
+  }
+
+  QString name = nameValue.toString();
+
+  QLabel* label = new QLabel(name);
+  if (!labelValue.isUndefined()) {
+    label->setText(labelValue.toString());
+  }
+  layout->addWidget(label, row, 0, 1, 1);
+
+  // Container widget
+  QWidget* container = new QWidget();
+  container->setObjectName(name);
+  container->setProperty("type", "select_scalars");
+  label->setBuddy(container);
+
+  QVBoxLayout* vLayout = new QVBoxLayout();
+  vLayout->setContentsMargins(0, 0, 0, 0);
+  container->setLayout(vLayout);
+
+  // "Apply to all scalars" checkbox
+  bool showApplyAll = parameterNode.value("show_apply_all").toBool(true);
+  QCheckBox* applyAllCheckBox = new QCheckBox("Apply to all scalars");
+  applyAllCheckBox->setObjectName(name + "_apply_all");
+  applyAllCheckBox->setChecked(showApplyAll);
+  applyAllCheckBox->setVisible(showApplyAll);
+  vLayout->addWidget(applyAllCheckBox);
+
+  // Checkable combo box for individual scalar selection
+  QComboBox* comboBox = new QComboBox();
+  comboBox->setObjectName(name + "_combo");
+  QStandardItemModel* model = new QStandardItemModel(comboBox);
+  comboBox->setModel(model);
+  comboBox->setEnabled(!showApplyAll);
+
+  if (dataSource) {
+    QStringList scalars = dataSource->listScalars();
+    for (const QString& scalar : scalars) {
+      QStandardItem* item = new QStandardItem(scalar);
+      item->setFlags(Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
+      item->setData(Qt::Checked, Qt::CheckStateRole);
+      model->appendRow(item);
+    }
+
+    // Restore previous selection from "default" if present
+    QJsonValueRef defaultNode = parameterNode["default"];
+    if (!defaultNode.isUndefined() && defaultNode.isArray()) {
+      QJsonArray defaultArray = defaultNode.toArray();
+      QSet<QString> selected;
+      for (const auto& v : defaultArray) {
+        selected.insert(v.toString());
+      }
+
+      bool allSelected = true;
+      for (int i = 0; i < model->rowCount(); ++i) {
+        bool isSelected = selected.contains(model->item(i)->text());
+        model->item(i)->setData(isSelected ? Qt::Checked : Qt::Unchecked,
+                                Qt::CheckStateRole);
+        if (!isSelected) {
+          allSelected = false;
+        }
+      }
+      applyAllCheckBox->setChecked(showApplyAll && allSelected);
+      comboBox->setEnabled(!applyAllCheckBox->isChecked());
+    }
+
+    // Auto-hide when only one scalar
+    if (scalars.size() <= 1) {
+      label->setVisible(false);
+      container->setVisible(false);
+    }
+  }
+
+  vLayout->addWidget(comboBox);
+
+  // Toggle combo box enabled state based on checkbox
+  QObject::connect(applyAllCheckBox, &QCheckBox::toggled,
+                   [comboBox](bool checked) {
+    comboBox->setEnabled(!checked);
+  });
+
+  // Install event filter on combo box viewport to prevent popup from closing
+  // on item click, while still toggling the checkbox. Only toggle on release
+  // if a matching press was seen on the viewport — this ignores the orphaned
+  // release from the click that originally opened the popup.
+  class ComboEventFilter : public QObject
+  {
+  public:
+    ComboEventFilter(QComboBox* combo, QObject* parent)
+      : QObject(parent), m_combo(combo) {}
+    bool eventFilter(QObject* obj, QEvent* event) override
+    {
+      if (event->type() == QEvent::MouseButtonPress) {
+        m_pressedOnViewport = true;
+        return true; // Consume press to keep popup open
+      }
+      if (event->type() == QEvent::MouseButtonRelease) {
+        if (!m_pressedOnViewport) {
+          return true; // No matching press — consume without toggling
+        }
+        m_pressedOnViewport = false;
+        // Manually toggle the check state of the item under the cursor
+        auto* view = m_combo->view();
+        auto index = view->indexAt(
+          static_cast<QMouseEvent*>(event)->pos());
+        if (index.isValid()) {
+          auto* model =
+            qobject_cast<QStandardItemModel*>(m_combo->model());
+          if (model) {
+            auto* item = model->itemFromIndex(index);
+            if (item && (item->flags() & Qt::ItemIsUserCheckable)) {
+              auto state = item->checkState() == Qt::Checked
+                             ? Qt::Unchecked : Qt::Checked;
+              item->setCheckState(state);
+            }
+          }
+        }
+        return true; // Consume the event to keep popup open
+      }
+      return QObject::eventFilter(obj, event);
+    }
+  private:
+    QComboBox* m_combo;
+    bool m_pressedOnViewport = false;
+  };
+
+  auto* filter = new ComboEventFilter(comboBox, comboBox);
+  comboBox->view()->viewport()->installEventFilter(filter);
+
+  layout->addWidget(container, row, 1, 1, 1);
+}
+
 static const QStringList PATH_TYPES = { "file", "save_file", "directory" };
 
 } // end anonymous namespace
 
 namespace tomviz {
-
-bool setupEnableTriggerAbstract(QWidget* refWidget, QWidget* widget,
-                                const QString& comparator,
-                                const QVariant& compareValue,
-                                bool visibility);
 
 InterfaceBuilder::InterfaceBuilder(QObject* parentObject, DataSource* ds)
   : QObject(parentObject), m_dataSource(ds)
@@ -671,6 +819,8 @@ QLayout* InterfaceBuilder::buildParameterInterface(QGridLayout* layout,
       addStringWidget(layout, i + 1, parameterObject);
     } else if (typeString == "dataset") {
       addDatasetWidget(layout, i + 1, parameterObject);
+    } else if (typeString == "select_scalars") {
+      addSelectScalarsWidget(layout, i + 1, parameterObject, m_dataSource);
     }
   }
 
@@ -685,64 +835,6 @@ void InterfaceBuilder::setupEnableAndVisibleStates(
 {
   setupEnableStates(parent, parameters, true);
   setupEnableStates(parent, parameters, false);
-}
-
-void InterfaceBuilder::setupEnableStates(const QObject* parent,
-                                         QJsonArray& parameters,
-                                         bool visible) const
-{
-  static const QStringList validComparators = {
-    "==", "!=", ">", ">=", "<", "<="
-  };
-
-  QJsonObject::size_type numParameters = parameters.size();
-  for (QJsonObject::size_type i = 0; i < numParameters; ++i) {
-    QJsonValueRef parameterNode = parameters[i];
-    QJsonObject parameterObject = parameterNode.toObject();
-
-    QString text = visible ? "visible_if" : "enable_if";
-    QString enableIfValue = parameterObject[text].toString("");
-    if (enableIfValue.isEmpty()) {
-      continue;
-    }
-
-    QString widgetName = parameterObject["name"].toString("");
-    if (widgetName.isEmpty()) {
-      qCritical() << text << "parameters must have a name. Ignoring...";
-      continue;
-    }
-    auto* widget = parent->findChild<QWidget*>(widgetName);
-    if (!widget) {
-      qCritical() << "Failed to find widget with name:" << widgetName;
-      continue;
-    }
-
-    auto split = enableIfValue.simplified().split(" ");
-    if (split.size() != 3) {
-      qCritical() << "Invalid" << text << "string:" << enableIfValue;
-      continue;
-    }
-
-    auto refWidgetName = split[0];
-    auto comparator = split[1];
-    auto compareValue = split[2];
-    auto* refWidget = parent->findChild<QWidget*>(refWidgetName);
-
-    if (!refWidget) {
-      qCritical() << "Invalid widget name in" << text << "string:" << enableIfValue;
-      continue;
-    }
-
-    if (!validComparators.contains(comparator)) {
-      qCritical() << "Invalid comparator in" << text << "string:" << enableIfValue;
-      continue;
-    }
-
-    if (!setupEnableTriggerAbstract(refWidget, widget, comparator,
-                                    compareValue, visible)) {
-      qCritical() << "Failed to set up" << text << "trigger for" << widgetName;
-    }
-  }
 }
 
 QLayout* InterfaceBuilder::buildInterface() const
@@ -792,6 +884,48 @@ QLayout* InterfaceBuilder::buildInterface() const
 static bool setWidgetValue(QObject* o, const QVariant& v)
 {
   // Returns true if the widget type was found, false otherwise.
+
+  // Handle select_scalars container widget
+  if (auto w = qobject_cast<QWidget*>(o)) {
+    if (w->property("type").toString() == "select_scalars") {
+      QStringList selected;
+      if (v.canConvert<QVariantList>()) {
+        for (const auto& item : v.toList()) {
+          selected << item.toString();
+        }
+      } else if (v.canConvert<QStringList>()) {
+        selected = v.toStringList();
+      }
+
+      auto* applyAllCB = w->findChild<QCheckBox*>(w->objectName() + "_apply_all");
+      auto* combo = w->findChild<QComboBox*>(w->objectName() + "_combo");
+      if (!applyAllCB || !combo) {
+        return false;
+      }
+
+      auto* model = qobject_cast<QStandardItemModel*>(combo->model());
+      if (!model) {
+        return false;
+      }
+
+      // Check if all items are selected
+      bool allSelected = true;
+      for (int i = 0; i < model->rowCount(); ++i) {
+        if (!selected.contains(model->item(i)->text())) {
+          allSelected = false;
+          break;
+        }
+      }
+
+      applyAllCB->setChecked(allSelected);
+      for (int i = 0; i < model->rowCount(); ++i) {
+        Qt::CheckState state = selected.contains(model->item(i)->text())
+                                 ? Qt::Checked : Qt::Unchecked;
+        model->item(i)->setData(state, Qt::CheckStateRole);
+      }
+      return true;
+    }
+  }
 
   if (auto cb = qobject_cast<QCheckBox*>(o)) {
     cb->setChecked(v.toBool());
@@ -861,10 +995,53 @@ QVariantMap InterfaceBuilder::parameterValues(const QObject* parent)
 {
   QVariantMap map;
 
+  // Handle select_scalars widgets first, and collect their internal widget
+  // names so we can skip them in the generic loops below.
+  QSet<QString> selectScalarsInternalNames;
+  QList<QWidget*> allWidgets = parent->findChildren<QWidget*>();
+  for (auto* w : allWidgets) {
+    if (w->property("type").toString() != "select_scalars") {
+      continue;
+    }
+    QString name = w->objectName();
+    auto* applyAllCB = w->findChild<QCheckBox*>(name + "_apply_all");
+    auto* combo = w->findChild<QComboBox*>(name + "_combo");
+    if (!applyAllCB || !combo) {
+      continue;
+    }
+
+    selectScalarsInternalNames.insert(applyAllCB->objectName());
+    selectScalarsInternalNames.insert(combo->objectName());
+
+    auto* model = qobject_cast<QStandardItemModel*>(combo->model());
+    if (!model) {
+      continue;
+    }
+
+    QVariantList selectedScalars;
+    if (applyAllCB->isChecked()) {
+      // All scalars selected
+      for (int i = 0; i < model->rowCount(); ++i) {
+        selectedScalars << model->item(i)->text();
+      }
+    } else {
+      // Only checked scalars
+      for (int i = 0; i < model->rowCount(); ++i) {
+        if (model->item(i)->checkState() == Qt::Checked) {
+          selectedScalars << model->item(i)->text();
+        }
+      }
+    }
+    map[name] = selectedScalars;
+  }
+
   // Iterate over all children, taking the value of the named widgets
-  // and stuffing them into the map.pathField->setProperty("type", type);
+  // and stuffing them into the map.
   QList<QCheckBox*> checkBoxes = parent->findChildren<QCheckBox*>();
   for (int i = 0; i < checkBoxes.size(); ++i) {
+    if (selectScalarsInternalNames.contains(checkBoxes[i]->objectName())) {
+      continue;
+    }
     map[checkBoxes[i]->objectName()] =
       (checkBoxes[i]->checkState() == Qt::Checked);
   }
@@ -882,6 +1059,9 @@ QVariantMap InterfaceBuilder::parameterValues(const QObject* parent)
 
   QList<QComboBox*> comboBoxes = parent->findChildren<QComboBox*>();
   for (int i = 0; i < comboBoxes.size(); ++i) {
+    if (selectScalarsInternalNames.contains(comboBoxes[i]->objectName())) {
+      continue;
+    }
     int currentIndex = comboBoxes[i]->currentIndex();
     map[comboBoxes[i]->objectName()] = comboBoxes[i]->itemData(currentIndex);
   }
@@ -1047,51 +1227,189 @@ bool compare(const T* widget, const QVariant& compareValue,
   return false;
 }
 
-template <typename T>
-bool setupEnableTrigger(T* refWidget, QWidget* widget,
-                        const QString& comparator, const QVariant& compareValue,
-                        const char* property)
+// Represents a single condition clause like "algorithm == 'mlem'"
+struct EnableCondition
 {
-  // Set up the callback function
-  auto func = [=](){
-    auto result = compare(refWidget, compareValue, comparator);
-    setWidgetProperty(widget, property, result);
-  };
-  // Make the connection
-  widget->connect(refWidget, changedSignal<T>(), widget, func);
+  QWidget* refWidget = nullptr;
+  QString comparator;
+  QVariant compareValue;
+};
 
-  // Trigger the update one time, since defaults are already set.
-  func();
-
-  return true;
+// Evaluate a single condition by delegating to the typed compare() function
+static bool evaluateCondition(const EnableCondition& cond)
+{
+  auto* w = cond.refWidget;
+  if (isWidgetType<QSpinBox>(w)) {
+    return compare(qobject_cast<QSpinBox*>(w), cond.compareValue, cond.comparator);
+  } else if (isWidgetType<QDoubleSpinBox>(w)) {
+    return compare(qobject_cast<QDoubleSpinBox*>(w), cond.compareValue, cond.comparator);
+  } else if (isWidgetType<QCheckBox>(w)) {
+    return compare(qobject_cast<QCheckBox*>(w), cond.compareValue, cond.comparator);
+  } else if (isWidgetType<QComboBox>(w)) {
+    return compare(qobject_cast<QComboBox*>(w), cond.compareValue, cond.comparator);
+  } else if (isWidgetType<QLineEdit>(w)) {
+    return compare(qobject_cast<QLineEdit*>(w), cond.compareValue, cond.comparator);
+  }
+  return false;
 }
 
-bool setupEnableTriggerAbstract(QWidget* refWidget, QWidget* widget,
-                                const QString& comparator,
-                                const QVariant& compareValue,
-                                bool visibility)
+// Evaluate a compound expression: list of condition groups joined by "or",
+// where each group is a list of conditions joined by "and".
+// Result = (g0[0] && g0[1] && ...) || (g1[0] && g1[1] && ...) || ...
+static bool evaluateCompound(
+  const QList<QList<EnableCondition>>& orGroups)
 {
-  const char* property = visibility ? "visible" : "enabled";
-  if (isWidgetType<QSpinBox>(refWidget)) {
-    return setupEnableTrigger(qobject_cast<QSpinBox*>(refWidget), widget,
-                              comparator, compareValue, property);
-  } else if (isWidgetType<QDoubleSpinBox>(refWidget)) {
-    return setupEnableTrigger(qobject_cast<QDoubleSpinBox*>(refWidget), widget,
-                              comparator, compareValue, property);
-  } else if (isWidgetType<QCheckBox>(refWidget)) {
-    return setupEnableTrigger(qobject_cast<QCheckBox*>(refWidget), widget,
-                              comparator, compareValue, property);
-  } else if (isWidgetType<QComboBox>(refWidget)) {
-    return setupEnableTrigger(qobject_cast<QComboBox*>(refWidget), widget,
-                              comparator, compareValue, property);
-  } else if (isWidgetType<QLineEdit>(refWidget)) {
-    return setupEnableTrigger(qobject_cast<QLineEdit*>(refWidget), widget,
-                              comparator, compareValue, property);
+  for (auto& andGroup : orGroups) {
+    bool groupResult = true;
+    for (auto& cond : andGroup) {
+      if (!evaluateCondition(cond)) {
+        groupResult = false;
+        break;
+      }
+    }
+    if (groupResult) {
+      return true;
+    }
   }
-
-  qCritical() << "Unhandled widget type for object: "
-              << refWidget->objectName();
   return false;
+}
+
+static void connectWidgetChanged(QWidget* refWidget, QWidget* target,
+                                 std::function<void()> func)
+{
+  if (isWidgetType<QSpinBox>(refWidget)) {
+    target->connect(qobject_cast<QSpinBox*>(refWidget),
+                    changedSignal<QSpinBox>(), target, func);
+  } else if (isWidgetType<QDoubleSpinBox>(refWidget)) {
+    target->connect(qobject_cast<QDoubleSpinBox*>(refWidget),
+                    changedSignal<QDoubleSpinBox>(), target, func);
+  } else if (isWidgetType<QCheckBox>(refWidget)) {
+    target->connect(qobject_cast<QCheckBox*>(refWidget),
+                    changedSignal<QCheckBox>(), target, func);
+  } else if (isWidgetType<QComboBox>(refWidget)) {
+    target->connect(qobject_cast<QComboBox*>(refWidget),
+                    changedSignal<QComboBox>(), target, func);
+  } else if (isWidgetType<QLineEdit>(refWidget)) {
+    target->connect(qobject_cast<QLineEdit*>(refWidget),
+                    changedSignal<QLineEdit>(), target, func);
+  } else {
+    qCritical() << "Unhandled widget type for enable/visible trigger:"
+                << refWidget->objectName();
+  }
+}
+
+void InterfaceBuilder::setupEnableStates(const QObject* parent,
+                                         QJsonArray& parameters,
+                                         bool visible) const
+{
+  static const QStringList validComparators = {
+    "==", "!=", ">", ">=", "<", "<="
+  };
+
+  QJsonObject::size_type numParameters = parameters.size();
+  for (QJsonObject::size_type i = 0; i < numParameters; ++i) {
+    QJsonValueRef parameterNode = parameters[i];
+    QJsonObject parameterObject = parameterNode.toObject();
+
+    QString text = visible ? "visible_if" : "enable_if";
+    QString enableIfValue = parameterObject[text].toString("");
+    if (enableIfValue.isEmpty()) {
+      continue;
+    }
+
+    QString widgetName = parameterObject["name"].toString("");
+    if (widgetName.isEmpty()) {
+      qCritical() << text << "parameters must have a name. Ignoring...";
+      continue;
+    }
+    auto* widget = parent->findChild<QWidget*>(widgetName);
+    if (!widget) {
+      qCritical() << "Failed to find widget with name:" << widgetName;
+      continue;
+    }
+
+    // Split on " or " first, then each piece on " and ".
+    // Precedence: "and" binds tighter than "or".
+    auto orParts = enableIfValue.simplified().split(" or ",
+                                                     Qt::KeepEmptyParts,
+                                                     Qt::CaseInsensitive);
+
+    QList<QList<EnableCondition>> orGroups;
+    bool parseError = false;
+
+    for (auto& orPart : orParts) {
+      auto andParts = orPart.simplified().split(" and ",
+                                                 Qt::KeepEmptyParts,
+                                                 Qt::CaseInsensitive);
+      QList<EnableCondition> andGroup;
+      for (auto& clause : andParts) {
+        auto tokens = clause.simplified().split(" ");
+        if (tokens.size() != 3) {
+          qCritical() << "Invalid" << text << "clause:" << clause
+                      << "in expression:" << enableIfValue;
+          parseError = true;
+          break;
+        }
+
+        auto refWidgetName = tokens[0];
+        auto comparator = tokens[1];
+        auto compareValue = tokens[2];
+
+        auto* refWidget = parent->findChild<QWidget*>(refWidgetName);
+        if (!refWidget) {
+          qCritical() << "Invalid widget name" << refWidgetName << "in"
+                      << text << "string:" << enableIfValue;
+          parseError = true;
+          break;
+        }
+
+        if (!validComparators.contains(comparator)) {
+          qCritical() << "Invalid comparator" << comparator << "in"
+                      << text << "string:" << enableIfValue;
+          parseError = true;
+          break;
+        }
+
+        EnableCondition cond;
+        cond.refWidget = refWidget;
+        cond.comparator = comparator;
+        cond.compareValue = compareValue;
+        andGroup.append(cond);
+      }
+
+      if (parseError) {
+        break;
+      }
+      orGroups.append(andGroup);
+    }
+
+    if (parseError) {
+      continue;
+    }
+
+    const char* property = visible ? "visible" : "enabled";
+
+    // Build the evaluation callback
+    auto evalFunc = [orGroups, widget, property]() {
+      bool result = evaluateCompound(orGroups);
+      setWidgetProperty(widget, property, result);
+    };
+
+    // Connect every referenced widget's changed signal to re-evaluate
+    QSet<QWidget*> connectedWidgets;
+    for (auto& andGroup : orGroups) {
+      for (auto& cond : andGroup) {
+        if (connectedWidgets.contains(cond.refWidget)) {
+          continue;
+        }
+        connectedWidgets.insert(cond.refWidget);
+        connectWidgetChanged(cond.refWidget, widget, evalFunc);
+      }
+    }
+
+    // Evaluate once for the initial state
+    evalFunc();
+  }
 }
 
 } // namespace tomviz

@@ -11,8 +11,57 @@
 
 #include <QDir>
 #include <QFileDialog>
+#include <QFileInfo>
 #include <QMessageBox>
 #include <QPointer>
+#include <QStandardPaths>
+
+namespace {
+
+bool executableExists(const QString& command)
+{
+  if (command.isEmpty()) {
+    return false;
+  }
+  // If the command contains a path separator, treat it as a file path
+  if (command.contains('/') || command.contains(QDir::separator())) {
+    QFileInfo info(command);
+    return info.isFile() && info.isExecutable();
+  }
+  // Otherwise check whether it can be found in $PATH
+  return !QStandardPaths::findExecutable(command).isEmpty();
+}
+
+// Returns the best available pyxrf-utils command by checking, in order:
+// 1. The previously saved command (if it still exists)
+// 2. "run-pyxrf-utils" in $PATH
+// 3. "pyxrf-utils" in $PATH
+// 4. An absolute fallback path
+// 5. Empty string (not found)
+QString findPyxrfUtilsCommand(const QString& savedCommand)
+{
+  if (executableExists(savedCommand)) {
+    return savedCommand;
+  }
+
+  const QStringList candidates = { "run-pyxrf-utils", "pyxrf-utils" };
+  for (const auto& candidate : candidates) {
+    if (executableExists(candidate)) {
+      return candidate;
+    }
+  }
+
+  const QString absoluteFallback =
+    "/nsls2/data2/hxn/legacy/Hiran/tomviz/conda_envs/"
+    "tomviz-latest-wip/bin/run-pyxrf-utils";
+  if (executableExists(absoluteFallback)) {
+    return absoluteFallback;
+  }
+
+  return "";
+}
+
+} // anonymous namespace
 
 namespace tomviz {
 
@@ -225,6 +274,18 @@ public:
       return false;
     }
 
+    // Check that the executable exists when it will actually be used
+    if (!useAlreadyExistingData() || remakeCsvFile()) {
+      auto cmd = command();
+      if (!executableExists(cmd)) {
+        reason =
+          QString("The pyxrf-utils executable \"%1\" was not found. "
+                  "Please specify a valid path to the executable.")
+            .arg(cmd.isEmpty() ? QString("(empty)") : cmd);
+        return false;
+      }
+    }
+
     return true;
   }
 
@@ -243,7 +304,8 @@ public:
     settings->beginGroup("pyxrf");
 
     // Do this in the general pyxrf settings
-    setCommand(settings->value("pyxrfUtilsCommand", "pyxrf-utils").toString());
+    auto savedCommand = settings->value("pyxrfUtilsCommand", "").toString();
+    setCommand(findPyxrfUtilsCommand(savedCommand));
 
     settings->beginGroup("makeHDF5");
     setMethod(settings->value("method", "New").toString());

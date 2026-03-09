@@ -40,11 +40,34 @@
 #include <QMainWindow>
 #include <QMenu>
 #include <QMessageBox>
+#include <QMouseEvent>
 #include <QPainter>
 #include <QSet>
 #include <QTimer>
 
 namespace tomviz {
+
+namespace {
+
+/// Returns true if the operator's breakpoint has been reached: the operator
+/// has a breakpoint, is still Queued, and all preceding operators are Complete.
+bool isBreakpointReached(Operator* op)
+{
+  if (!op || !op->hasBreakpoint() || !op->isQueued())
+    return false;
+  auto ds = op->dataSource();
+  if (!ds)
+    return false;
+  for (auto o : ds->operators()) {
+    if (o == op)
+      break;
+    if (!o->isCompleted())
+      return false;
+  }
+  return true;
+}
+
+} // namespace
 
 class OperatorRunningDelegate : public QItemDelegate
 {
@@ -70,18 +93,60 @@ OperatorRunningDelegate::OperatorRunningDelegate(QWidget* parent)
 {
   m_view = qobject_cast<PipelineView*>(parent);
   m_timer = new QTimer(this);
-  connect(m_timer, SIGNAL(timeout()), m_view->viewport(), SLOT(update()));
+  connect(m_timer, &QTimer::timeout, m_view->viewport(), QOverload<>::of(&QWidget::update));
 }
 
 void OperatorRunningDelegate::paint(QPainter* painter,
                                     const QStyleOptionViewItem& option,
                                     const QModelIndex& index) const
 {
-
   auto pipelineModel = qobject_cast<PipelineModel*>(m_view->model());
   auto op = pipelineModel->op(index);
 
+  if (op && index.column() == Column::label) {
+    // Reserve space on the left for the breakpoint indicator, then let the
+    // base class paint the label content in the remaining area.
+    int bpWidth = PipelineView::breakpointAreaWidth();
+    QRect bpRect(option.rect.left(), option.rect.top(), bpWidth,
+                 option.rect.height());
+
+    // Draw the breakpoint / play / hover indicator
+    QPixmap pixmap;
+    qreal opacity = 1.0;
+    if (isBreakpointReached(op)) {
+      pixmap = QPixmap(":/icons/play.png");
+    } else if (op->hasBreakpoint()) {
+      pixmap = QPixmap(":/icons/breakpoint.png");
+    } else {
+      // Show semi-transparent breakpoint icon on hover
+      auto hoverIdx = m_view->hoverIndex();
+      if (hoverIdx.isValid() && hoverIdx.row() == index.row() &&
+          hoverIdx.parent() == index.parent()) {
+        pixmap = QPixmap(":/icons/breakpoint.png");
+        opacity = 0.3;
+      }
+    }
+
+    if (!pixmap.isNull()) {
+      painter->save();
+      painter->setOpacity(opacity);
+      int iconSize = qMin(bpRect.width(), bpRect.height()) - 4;
+      QRect iconRect(bpRect.left() + (bpWidth - iconSize) / 2,
+                     bpRect.top() + (bpRect.height() - iconSize) / 2,
+                     iconSize, iconSize);
+      painter->drawPixmap(iconRect, pixmap);
+      painter->restore();
+    }
+
+    // Paint the rest of the label content shifted to the right
+    QStyleOptionViewItem shiftedOption = option;
+    shiftedOption.rect.setLeft(option.rect.left() + bpWidth);
+    QItemDelegate::paint(painter, shiftedOption, index);
+    return;
+  }
+
   QItemDelegate::paint(painter, option, index);
+
   if (op && index.column() == Column::state) {
     if (op->state() == OperatorState::Running) {
       QPixmap pixmap(":/icons/spinner.png");
@@ -119,10 +184,11 @@ void OperatorRunningDelegate::stop()
 
 PipelineView::PipelineView(QWidget* p) : QTreeView(p)
 {
-  connect(this, SIGNAL(clicked(QModelIndex)), SLOT(rowActivated(QModelIndex)));
+  connect(this, &QAbstractItemView::clicked, this, &PipelineView::rowActivated);
   setIndentation(20);
   setRootIsDecorated(false);
   setItemsExpandable(false);
+  setMouseTracking(true);
 
   QString customStyle = "QTreeView::branch { background-color: white; }";
   setStyleSheet(customStyle);
@@ -151,8 +217,8 @@ PipelineView::PipelineView(QWidget* p) : QTreeView(p)
   connect(&ModuleManager::instance(), &ModuleManager::pipelineViewRenderNeeded,
           viewport(), QOverload<>::of(&QWidget::update));
 
-  connect(this, SIGNAL(doubleClicked(QModelIndex)),
-          SLOT(rowDoubleClicked(QModelIndex)));
+  connect(this, &QAbstractItemView::doubleClicked, this,
+          &PipelineView::rowDoubleClicked);
 }
 
 void PipelineView::setModel(QAbstractItemModel* model)
@@ -169,20 +235,20 @@ void PipelineView::setModel(QAbstractItemModel* model)
   // since the PipelineModel listens to those signals and setCurrent
   // has to happen AFTER the slots on the PipelineModel are called.  So
   // we listen to the model and respond after it does its update.
-  connect(pipelineModel, SIGNAL(dataSourceItemAdded(DataSource*)),
-          SLOT(setCurrent(DataSource*)));
-  connect(pipelineModel, SIGNAL(childDataSourceItemAdded(DataSource*)),
-          SLOT(setCurrent(DataSource*)));
-  connect(pipelineModel, SIGNAL(moleculeSourceItemAdded(MoleculeSource*)),
-          SLOT(setCurrent(MoleculeSource*)));
-  connect(pipelineModel, SIGNAL(moleculeSourceItemAdded(MoleculeSource*)),
-          SLOT(setCurrent(MoleculeSource*)));
-  connect(pipelineModel, SIGNAL(moduleItemAdded(Module*)),
-          SLOT(setCurrent(Module*)));
-  connect(pipelineModel, SIGNAL(operatorItemAdded(Operator*)),
-          SLOT(setCurrent(Operator*)));
-  connect(pipelineModel, SIGNAL(dataSourceModified(DataSource*)),
-          SLOT(setCurrent(DataSource*)));
+  connect(pipelineModel, &PipelineModel::dataSourceItemAdded, this,
+          QOverload<DataSource*>::of(&PipelineView::setCurrent));
+  connect(pipelineModel, &PipelineModel::childDataSourceItemAdded, this,
+          QOverload<DataSource*>::of(&PipelineView::setCurrent));
+  connect(pipelineModel, &PipelineModel::moleculeSourceItemAdded, this,
+          QOverload<MoleculeSource*>::of(&PipelineView::setCurrent));
+  connect(pipelineModel, &PipelineModel::moleculeSourceItemAdded, this,
+          QOverload<MoleculeSource*>::of(&PipelineView::setCurrent));
+  connect(pipelineModel, &PipelineModel::moduleItemAdded, this,
+          QOverload<Module*>::of(&PipelineView::setCurrent));
+  connect(pipelineModel, &PipelineModel::operatorItemAdded, this,
+          QOverload<Operator*>::of(&PipelineView::setCurrent));
+  connect(pipelineModel, &PipelineModel::dataSourceModified, this,
+          QOverload<DataSource*>::of(&PipelineView::setCurrent));
 
   // This is needed to work around a bug in Qt 5.10, the select resize mode is
   // setting reset for some reason.
@@ -230,6 +296,7 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   QAction* snapshotAction = nullptr;
   QAction* showInterfaceAction = nullptr;
   QAction* exportTableResultAction = nullptr;
+  QAction* exportTableCsvAction = nullptr;
   QAction* reloadAndResampleAction = nullptr;
   bool allowReExecute = false;
   CloneDataReaction* cloneReaction;
@@ -237,6 +304,7 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   if (result && qobject_cast<Operator*>(result->parent())) {
     if (vtkTable::SafeDownCast(result->dataObject())) {
       exportTableResultAction = contextMenu.addAction("Save as JSON");
+      exportTableCsvAction = contextMenu.addAction("Save as CSV");
     } else {
       return;
     }
@@ -413,6 +481,8 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
     }
   } else if (selectedItem == exportTableResultAction) {
     exportTableAsJson(vtkTable::SafeDownCast(result->dataObject()));
+  } else if (selectedItem == exportTableCsvAction) {
+    exportTableAsCsv(vtkTable::SafeDownCast(result->dataObject()));
   } else if (selectedItem == reloadAndResampleAction) {
     dataSource->reloadAndResample();
   }
@@ -422,6 +492,12 @@ void PipelineView::exportTableAsJson(vtkTable* table)
 {
   auto json = tableToJson(table);
   jsonToFile(json);
+}
+
+void PipelineView::exportTableAsCsv(vtkTable* table)
+{
+  auto csv = tableToCsv(table);
+  csvToFile(csv);
 }
 
 void PipelineView::deleteItems(const QModelIndexList& idxs)
@@ -493,15 +569,52 @@ void PipelineView::deleteItems(const QModelIndexList& idxs)
 
 void PipelineView::rowActivated(const QModelIndex& idx)
 {
-  if (idx.isValid() && idx.column() == Column::state) {
-    auto pipelineModel = qobject_cast<PipelineModel*>(model());
-    if (pipelineModel) {
-      if (auto module = pipelineModel->module(idx)) {
-        module->setVisibility(!module->visibility());
-        emit model()->dataChanged(idx, idx);
-        if (pqView* view = tomviz::convert<pqView*>(module->view())) {
-          view->render();
+  if (!idx.isValid())
+    return;
+
+  auto pipelineModel = qobject_cast<PipelineModel*>(model());
+  if (!pipelineModel)
+    return;
+
+  if (idx.column() == Column::label) {
+    if (auto op = pipelineModel->op(idx)) {
+      // Check if the click landed in the breakpoint area (left side of the
+      // label column).
+      auto cursorPos = viewport()->mapFromGlobal(QCursor::pos());
+      auto cellRect = visualRect(idx);
+      int clickX = cursorPos.x() - cellRect.left();
+      if (clickX >= 0 && clickX < breakpointAreaWidth()) {
+        auto ds = op->dataSource();
+        auto pipeline = ds->pipeline();
+        // Don't allow breakpoint changes while the pipeline is running.
+        if (pipeline && pipeline->isRunning()) {
+          return;
         }
+        if (isBreakpointReached(op)) {
+          // Resume execution from this operator
+          auto operators = ds->operators();
+          Operator* nextBp = nullptr;
+          int bpIdx = operators.indexOf(op);
+          for (int i = bpIdx + 1; i < operators.size(); ++i) {
+            if (operators[i]->hasBreakpoint()) {
+              nextBp = operators[i];
+              break;
+            }
+          }
+          pipeline->execute(ds, op, nextBp)->deleteWhenFinished();
+        } else {
+          // Toggle breakpoint
+          op->setBreakpoint(!op->hasBreakpoint());
+        }
+        return;
+      }
+    }
+  } else if (idx.column() == Column::state) {
+    if (auto module = pipelineModel->module(idx)) {
+      module->setVisibility(!module->visibility());
+      emit model()->dataChanged(idx, idx);
+      if (pqView* view = tomviz::convert<pqView*>(module->view())) {
+        view->render();
       }
     }
   }
@@ -548,9 +661,9 @@ void PipelineView::currentChanged(const QModelIndex& current,
   auto pipelineModel = qobject_cast<PipelineModel*>(model());
   Q_ASSERT(pipelineModel);
 
-  // First set the selected data source to nullptr, in case the new selection
-  // is not a data source.
+  // Clear stale active state before setting new selection.
   ActiveObjects::instance().setSelectedDataSource(nullptr);
+  ActiveObjects::instance().setActiveOperator(nullptr);
   if (auto dataSource = pipelineModel->dataSource(current)) {
     ActiveObjects::instance().setSelectedDataSource(dataSource);
   } else if (auto module = pipelineModel->module(current)) {
@@ -667,6 +780,38 @@ void PipelineView::setModuleVisibility(const QModelIndexList& idxs,
       view->render();
     }
   }
+}
+
+void PipelineView::mouseMoveEvent(QMouseEvent* event)
+{
+  auto idx = indexAt(event->pos());
+  if (idx != m_hoverIndex) {
+    auto oldIndex = m_hoverIndex;
+    m_hoverIndex = idx;
+    // Repaint old and new rows so the hover breakpoint indicator updates
+    if (oldIndex.isValid()) {
+      auto labelIdx = model()->index(oldIndex.row(), Column::label,
+                                     oldIndex.parent());
+      update(labelIdx);
+    }
+    if (idx.isValid()) {
+      auto labelIdx = model()->index(idx.row(), Column::label, idx.parent());
+      update(labelIdx);
+    }
+  }
+  QTreeView::mouseMoveEvent(event);
+}
+
+void PipelineView::leaveEvent(QEvent* event)
+{
+  if (m_hoverIndex.isValid()) {
+    auto oldIndex = m_hoverIndex;
+    m_hoverIndex = QModelIndex();
+    auto labelIdx = model()->index(oldIndex.row(), Column::label,
+                                   oldIndex.parent());
+    update(labelIdx);
+  }
+  QTreeView::leaveEvent(event);
 }
 
 void PipelineView::initLayout()

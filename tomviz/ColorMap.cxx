@@ -11,6 +11,7 @@
 #include <vtk_jsoncpp.h>
 
 #include <QApplication>
+#include <QDebug>
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -189,7 +190,10 @@ void ColorMap::loadFromFile()
 #endif
   }
 
-  file.open(QIODevice::ReadOnly);
+  if (!file.open(QIODevice::ReadOnly)) {
+    qCritical() << "Unable to open color map file:" << file.fileName();
+    return;
+  }
   QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
   file.close();
   QJsonArray objects = doc.array();

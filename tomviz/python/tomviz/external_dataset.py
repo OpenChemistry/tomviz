@@ -14,6 +14,7 @@ class Dataset(AbstractDataset):
         self.arrays = arrays
         self.tilt_angles = None
         self.tilt_axis = None
+        self.scan_ids = None
         # The currently active scalar
         self.active_name = active
         # If we weren't given the active array, set the first as the active
@@ -124,6 +125,14 @@ class Dataset(AbstractDataset):
     def white(self, v: np.ndarray | None):
         self._white = v
 
+    @property
+    def scan_ids(self) -> np.ndarray | None:
+        return self._scan_ids
+
+    @scan_ids.setter
+    def scan_ids(self, v: np.ndarray | None):
+        self._scan_ids = v
+
     def create_child_dataset(self):
         child = copy.deepcopy(self)
         # Set tilt angles to None to be consistent with internal dataset
@@ -134,6 +143,13 @@ class Dataset(AbstractDataset):
             s = self.spacing
             child.spacing = [s[0], s[1], s[0]]
         return child
+
+    def remove_scalars(self, name):
+        if name not in self.arrays:
+            raise KeyError(f"No scalar array named '{name}'")
+        del self.arrays[name]
+        if self.active_name == name and self.arrays:
+            self.active_name = next(iter(self.arrays.keys()))
 
     def rename_active(self, new_name: str):
         self.arrays[new_name] = self.arrays.pop(self.active_name)

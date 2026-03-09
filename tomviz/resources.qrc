@@ -33,5 +33,9 @@
         <file>icons/pqLock@2x.png</file>
         <file>icons/greybar.png</file>
         <file>icons/greybar@2x.png</file>
+        <file>icons/breakpoint.png</file>
+        <file>icons/breakpoint@2x.png</file>
+        <file>icons/play.png</file>
+        <file>icons/play@2x.png</file>
     </qresource>
 </RCC>

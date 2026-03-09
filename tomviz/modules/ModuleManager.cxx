@@ -20,6 +20,7 @@
 #include <pqApplicationCore.h>
 #include <pqDeleteReaction.h>
 #include <pqPVApplicationCore.h>
+#include <pqServerManagerModel.h>
 #include <pqSettings.h>
 
 #include <vtkCamera.h>
@@ -258,7 +259,8 @@ ModuleManager::ModuleManager(QObject* parentObject)
   : Superclass(parentObject), d(new ModuleManager::MMInternals())
 {
   connect(pqApplicationCore::instance()->getServerManagerModel(),
-          SIGNAL(viewRemoved(pqView*)), SLOT(onViewRemoved(pqView*)));
+          &pqServerManagerModel::viewRemoved, this,
+          &ModuleManager::onViewRemoved);
 }
 
 ModuleManager::~ModuleManager() = default;
@@ -759,8 +761,10 @@ bool ModuleManager::serialize(QJsonObject& doc, const QDir& stateDir,
         jView["active"] = true;
       }
 
-      jView["useColorPaletteForBackground"] =
-        vtkSMPropertyHelper(view, "UseColorPaletteForBackground").GetAsInt();
+      if (view->GetProperty("UseColorPaletteForBackground")) {
+        jView["useColorPaletteForBackground"] =
+          vtkSMPropertyHelper(view, "UseColorPaletteForBackground").GetAsInt();
+      }
 
       // Now to get some more specific information about the view!
       pugi::xml_document document;
@@ -969,7 +973,9 @@ bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir,
     auto viewId = view["id"].toInt();
     auto proxyNode = pvState.append_child("Proxy");
     proxyNode.append_attribute("group").set_value("views");
-    proxyNode.append_attribute("type").set_value("RenderView");
+    auto xmlName = view["xmlName"].toString("RenderView");
+    proxyNode.append_attribute("type").set_value(
+      xmlName.toStdString().c_str());
     proxyNode.append_attribute("id").set_value(viewId);
     proxyNode.append_attribute("servers").set_value(view["servers"].toInt());
 
@@ -1062,8 +1068,8 @@ bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir,
   m_stateObject = doc;
   m_loadDataSources = loadDataSources;
   connect(pqApplicationCore::instance(),
-          SIGNAL(stateLoaded(vtkPVXMLElement*, vtkSMProxyLocator*)),
-          SLOT(onPVStateLoaded(vtkPVXMLElement*, vtkSMProxyLocator*)));
+          &pqApplicationCore::stateLoaded, this,
+          &ModuleManager::onPVStateLoaded);
   // Set up call to ParaView to load state
   std::ostringstream stream;
   document.first_child().print(stream);
@@ -1081,8 +1087,8 @@ bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir,
   // Clean up the state -- since the Qt slot call should be synchronous
   // it should be done before the code returns to here.
   disconnect(pqApplicationCore::instance(),
-             SIGNAL(stateLoaded(vtkPVXMLElement*, vtkSMProxyLocator*)), this,
-             SLOT(onPVStateLoaded(vtkPVXMLElement*, vtkSMProxyLocator*)));
+             &pqApplicationCore::stateLoaded, this,
+             &ModuleManager::onPVStateLoaded);
 
   d->dir = QDir();
   m_stateObject = QJsonObject();

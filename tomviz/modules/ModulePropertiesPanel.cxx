@@ -28,21 +28,21 @@ ModulePropertiesPanel::ModulePropertiesPanel(QWidget* parentObject)
   ui.setupUi(this);
 
   // Show active module in the "Module Properties" panel.
-  this->connect(&ActiveObjects::instance(), SIGNAL(moduleChanged(Module*)),
-                SLOT(setModule(Module*)));
+  this->connect(&ActiveObjects::instance(), &ActiveObjects::moduleChanged,
+                this, &ModulePropertiesPanel::setModule);
   this->connect(&ActiveObjects::instance(),
-                SIGNAL(viewChanged(vtkSMViewProxy*)),
-                SLOT(setView(vtkSMViewProxy*)));
+                QOverload<vtkSMViewProxy*>::of(&ActiveObjects::viewChanged),
+                this, &ModulePropertiesPanel::setView);
 
   /* Disabled the search box for now, uncomment to enable again.
-    this->connect(ui.SearchBox, SIGNAL(advancedSearchActivated(bool)),
-                  SLOT(updatePanel()));
-    this->connect(ui.SearchBox, SIGNAL(textChanged(const QString&)),
-                  SLOT(updatePanel()));
+    this->connect(ui.SearchBox, &pqSearchBox::advancedSearchActivated,
+                  this, &ModulePropertiesPanel::updatePanel);
+    this->connect(ui.SearchBox, &pqSearchBox::textChanged,
+                  this, &ModulePropertiesPanel::updatePanel);
   */
 
-  this->connect(ui.DetachColorMap, SIGNAL(clicked(bool)),
-                SLOT(detachColorMap(bool)));
+  this->connect(ui.DetachColorMap, &QAbstractButton::clicked, this,
+                &ModulePropertiesPanel::detachColorMap);
 }
 
 ModulePropertiesPanel::~ModulePropertiesPanel() {}
@@ -53,8 +53,8 @@ void ModulePropertiesPanel::setModule(Module* module)
     if (this->Internals->ActiveModule) {
       DataSource* dataSource = this->Internals->ActiveModule->dataSource();
       if (dataSource) {
-        QObject::disconnect(dataSource, SIGNAL(dataChanged()), this,
-                            SLOT(updatePanel()));
+        QObject::disconnect(dataSource, &DataSource::dataChanged, this,
+                            &ModulePropertiesPanel::updatePanel);
       }
       this->Internals->ActiveModule->prepareToRemoveFromPanel(this);
     }
@@ -62,8 +62,8 @@ void ModulePropertiesPanel::setModule(Module* module)
     if (module) {
       DataSource* dataSource = module->dataSource();
       if (dataSource) {
-        QObject::connect(dataSource, SIGNAL(dataChanged()), this,
-                         SLOT(updatePanel()));
+        QObject::connect(dataSource, &DataSource::dataChanged, this,
+                         &ModulePropertiesPanel::updatePanel);
       }
     }
   }

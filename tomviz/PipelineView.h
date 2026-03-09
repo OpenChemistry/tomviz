@@ -6,6 +6,7 @@
 
 #include <QTreeView>
 
+#include <QPersistentModelIndex>
 #include <QPointer>
 
 #include "EditOperatorDialog.h"
@@ -29,6 +30,13 @@ public:
   void setModel(QAbstractItemModel*) override;
   void initLayout();
 
+  /// Returns the model index currently hovered by the mouse, if any.
+  QModelIndex hoverIndex() const { return m_hoverIndex; }
+
+  /// Width in pixels reserved for the breakpoint indicator area in the label
+  /// column.
+  static constexpr int breakpointAreaWidth() { return 20; }
+
 protected:
   void keyPressEvent(QKeyEvent*) override;
   void contextMenuEvent(QContextMenuEvent*) override;
@@ -36,6 +44,11 @@ protected:
                       const QModelIndex& previous) override;
   void deleteItems(const QModelIndexList& idxs);
   bool enableDeleteItems(const QModelIndexList& idxs);
+  void mouseMoveEvent(QMouseEvent* event) override;
+  void leaveEvent(QEvent* event) override;
+
+private:
+  QPersistentModelIndex m_hoverIndex;
 
 private slots:
   void rowActivated(const QModelIndex& idx);
@@ -48,6 +61,7 @@ private slots:
   void deleteItemsConfirm(const QModelIndexList& idxs);
   void setModuleVisibility(const QModelIndexList& idxs, bool visible);
   void exportTableAsJson(vtkTable*);
+  void exportTableAsCsv(vtkTable*);
 };
 } // namespace tomviz
 

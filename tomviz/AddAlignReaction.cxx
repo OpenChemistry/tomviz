@@ -33,6 +33,6 @@ void AddAlignReaction::align(DataSource* source)
   dialog->setAttribute(Qt::WA_DeleteOnClose);
   dialog->setWindowTitle("Manual Image Alignment");
   dialog->show();
-  connect(Op, SIGNAL(destroyed()), dialog, SLOT(reject()));
+  connect(Op, &QObject::destroyed, dialog, &QDialog::reject);
 }
 } // namespace tomviz

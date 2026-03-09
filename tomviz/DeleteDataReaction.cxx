@@ -12,8 +12,10 @@ namespace tomviz {
 DeleteDataReaction::DeleteDataReaction(QAction* parentObject)
   : pqReaction(parentObject)
 {
-  connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
-          SLOT(activeDataSourceChanged()));
+  connect(&ActiveObjects::instance(),
+          static_cast<void (ActiveObjects::*)(DataSource*)>(
+            &ActiveObjects::dataSourceChanged),
+          this, &DeleteDataReaction::activeDataSourceChanged);
   m_activeDataSource = ActiveObjects::instance().activeDataSource();
   updateEnableState();
 }

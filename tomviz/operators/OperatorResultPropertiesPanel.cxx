@@ -22,8 +22,8 @@ OperatorResultPropertiesPanel::OperatorResultPropertiesPanel(QWidget* p)
   : QWidget(p)
 {
   // Show active module in the "OperatorResult Properties" panel.
-  connect(&ActiveObjects::instance(), SIGNAL(resultChanged(OperatorResult*)),
-          SLOT(setOperatorResult(OperatorResult*)));
+  connect(&ActiveObjects::instance(), &ActiveObjects::resultChanged, this,
+          &OperatorResultPropertiesPanel::setOperatorResult);
 
   // Set up a very simple layout with a description label widget.
   m_layout = new QVBoxLayout;

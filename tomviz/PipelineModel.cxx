@@ -317,31 +317,30 @@ PipelineModel::TreeItem* PipelineModel::TreeItem::find(MoleculeSource* source)
 
 PipelineModel::PipelineModel(QObject* p) : QAbstractItemModel(p)
 {
-  connect(&ModuleManager::instance(), SIGNAL(dataSourceAdded(DataSource*)),
-          SLOT(dataSourceAdded(DataSource*)));
-  connect(&ModuleManager::instance(), SIGNAL(childDataSourceAdded(DataSource*)),
-          SLOT(childDataSourceAdded(DataSource*)));
-  connect(&ModuleManager::instance(), SIGNAL(moduleAdded(Module*)),
-          SLOT(moduleAdded(Module*)));
-  connect(&ModuleManager::instance(),
-          SIGNAL(moleculeSourceAdded(MoleculeSource*)),
-          SLOT(moleculeSourceAdded(MoleculeSource*)));
+  connect(&ModuleManager::instance(), &ModuleManager::dataSourceAdded, this,
+          &PipelineModel::dataSourceAdded);
+  connect(&ModuleManager::instance(), &ModuleManager::childDataSourceAdded,
+          this, &PipelineModel::childDataSourceAdded);
+  connect(&ModuleManager::instance(), &ModuleManager::moduleAdded, this,
+          &PipelineModel::moduleAdded);
+  connect(&ModuleManager::instance(), &ModuleManager::moleculeSourceAdded, this,
+          &PipelineModel::moleculeSourceAdded);
 
-  connect(&ActiveObjects::instance(), SIGNAL(viewChanged(vtkSMViewProxy*)),
-          SIGNAL(modelReset()));
-  connect(&ModuleManager::instance(), SIGNAL(dataSourceRemoved(DataSource*)),
-          SLOT(dataSourceRemoved(DataSource*)));
-  connect(&ModuleManager::instance(),
-          SIGNAL(moleculeSourceRemoved(MoleculeSource*)),
-          SLOT(moleculeSourceRemoved(MoleculeSource*)));
-  connect(&ModuleManager::instance(), SIGNAL(moduleRemoved(Module*)),
-          SLOT(moduleRemoved(Module*)));
-  connect(&ModuleManager::instance(),
-          SIGNAL(childDataSourceRemoved(DataSource*)),
-          SLOT(childDataSourceRemoved(DataSource*)));
+  connect(&ActiveObjects::instance(),
+          static_cast<void (ActiveObjects::*)(vtkSMViewProxy*)>(
+            &ActiveObjects::viewChanged),
+          this, [this]() { beginResetModel(); endResetModel(); });
+  connect(&ModuleManager::instance(), &ModuleManager::dataSourceRemoved, this,
+          &PipelineModel::dataSourceRemoved);
+  connect(&ModuleManager::instance(), &ModuleManager::moleculeSourceRemoved,
+          this, &PipelineModel::moleculeSourceRemoved);
+  connect(&ModuleManager::instance(), &ModuleManager::moduleRemoved, this,
+          &PipelineModel::moduleRemoved);
+  connect(&ModuleManager::instance(), &ModuleManager::childDataSourceRemoved,
+          this, &PipelineModel::childDataSourceRemoved);
 
-  connect(&ModuleManager::instance(), SIGNAL(operatorRemoved(Operator*)),
-          SLOT(operatorRemoved(Operator*)));
+  connect(&ModuleManager::instance(), &ModuleManager::operatorRemoved, this,
+          &PipelineModel::operatorRemoved);
   // Need to register this for cross thread dataChanged signal
   qRegisterMetaType<QVector<int>>("QVector<int>");
 }
@@ -592,7 +591,7 @@ QModelIndex PipelineModel::parent(const QModelIndex& index) const
     return QModelIndex();
   }
   auto treeItem = this->treeItem(index);
-  if (!treeItem->parent()) {
+  if (!treeItem || !treeItem->parent()) {
     return QModelIndex();
   }
   return createIndex(treeItem->parent()->childIndex(), 0, treeItem->parent());
@@ -787,6 +786,22 @@ void PipelineModel::dataSourceAdded(DataSource* dataSource)
     emit dataSourceModified(transformed);
   });
 
+  // Refresh all operator rows when a breakpoint is reached: the breakpoint
+  // operator's label column shows the play icon, and operators from the
+  // breakpoint onwards have their state column updated (Complete → Queued).
+  connect(pipeline, &Pipeline::breakpointReached, [this](Operator* op) {
+    auto ds = op->dataSource();
+    if (!ds)
+      return;
+    auto ops = ds->operators();
+    int bpIdx = ops.indexOf(op);
+    for (int i = bpIdx; i < ops.size(); ++i) {
+      auto idx = operatorIndex(ops[i]);
+      auto stateIdx = index(idx.row(), Column::state, idx.parent());
+      emit dataChanged(idx, stateIdx);
+    }
+  });
+
   // When restoring a data source from a state file it will have its operators
   // before we can listen to the signal above. Display those operators.
   foreach (auto op, dataSource->operators()) {
@@ -856,16 +871,35 @@ void PipelineModel::operatorAdded(Operator* op,
   // Make sure dataChange signal is emitted when operator is complete
   connect(op, &Operator::transformingDone, [this, op]() {
     auto opIndex = operatorIndex(op);
-    auto statusIndex = index(opIndex.row(), 1, opIndex.parent());
+    auto statusIndex = index(opIndex.row(), Column::state, opIndex.parent());
     emit dataChanged(statusIndex, statusIndex);
+  });
+  // Refresh label column when breakpoint state changes (delegate paints it)
+  connect(op, &Operator::breakpointChanged, [this, op]() {
+    auto opIndex = operatorIndex(op);
+    emit dataChanged(opIndex, opIndex);
   });
   connect(op, &Operator::dataSourceMoved, this,
           &PipelineModel::dataSourceMoved);
 
   auto index = dataSourceIndex(dataSource);
   auto dataSourceItem = treeItem(index);
-  // Operators are just append as last child.
+  // Find the correct insertion row based on the operator's position in the
+  // DataSource's operator list.
   int insertionRow = dataSourceItem->childCount();
+  auto operators = dataSource->operators();
+  int opIndex = operators.indexOf(op);
+  if (opIndex >= 0 && opIndex < operators.size() - 1) {
+    // Mid-chain insertion: find the tree item of the next operator and insert
+    // before it.
+    auto nextOp = operators[opIndex + 1];
+    for (int i = 0; i < dataSourceItem->childCount(); ++i) {
+      if (dataSourceItem->child(i)->op() == nextOp) {
+        insertionRow = i;
+        break;
+      }
+    }
+  }
   beginInsertRows(index, insertionRow, insertionRow);
   dataSourceItem->insertChild(insertionRow, PipelineModel::Item(op));
   endInsertRows();
@@ -1038,9 +1072,30 @@ bool PipelineModel::removeOp(Operator* o)
 {
   auto index = operatorIndex(o);
   if (index.isValid()) {
-    // This will trigger the move of the "transformed" data source
-    // so we need todo this outside the beginRemoveRow(...), otherwise
-    // the model is not correctly invalidated.
+    // If this operator has a child data source (the "transformed" output),
+    // move it to the last remaining operator in the tree model BEFORE calling
+    // removeOperator(). Previously, this move happened via the signal chain
+    // (operatorRemoved -> Pipeline handler -> dataSourceMoved ->
+    // moveDataSourceHelper -> beginMoveRows), but beginMoveRows can crash
+    // when iterating persistent model indexes during the signal chain.
+    // By doing the move explicitly here, the subsequent signal-triggered
+    // moveDataSourceHelper becomes a no-op (oldParent == newParent).
+    auto childDS = o->childDataSource();
+    if (childDS) {
+      auto operators = o->dataSource()->operators();
+      operators.removeAll(o);
+      if (!operators.isEmpty()) {
+        moveDataSourceHelper(childDS, operators.last());
+      }
+    }
+
+    // Re-compute the index since moveDataSourceHelper may have modified the
+    // tree (the operator's child count changed).
+    index = operatorIndex(o);
+    if (!index.isValid()) {
+      return true;
+    }
+
     o->dataSource()->removeOperator(o);
     beginRemoveRows(parent(index), index.row(), index.row());
     auto item = treeItem(index);
@@ -1097,11 +1152,24 @@ void PipelineModel::moveDataSourceHelper(DataSource* dataSource,
                                          Operator* newParent)
 {
   auto index = dataSourceIndex(dataSource);
+  if (!index.isValid()) {
+    return;
+  }
   auto dataSourceItem = treeItem(index);
+  if (!dataSourceItem || !dataSourceItem->parent()) {
+    return;
+  }
   auto oldParent = dataSourceItem->parent()->op();
+  // Already under the target parent (e.g. removeOp pre-moved it).
+  if (oldParent == newParent) {
+    return;
+  }
   auto oldParentIndex = this->operatorIndex(oldParent);
   auto operatorIndex = this->operatorIndex(newParent);
   auto operatorTreeItem = this->treeItem(operatorIndex);
+  if (!operatorTreeItem) {
+    return;
+  }
 
   beginMoveRows(oldParentIndex, index.row(), index.row(), operatorIndex,
                 operatorTreeItem->childCount());

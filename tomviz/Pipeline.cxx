@@ -188,16 +188,23 @@ Pipeline::Future* Pipeline::execute(DataSource* dataSource)
     return emptyFuture();
   }
 
-  return execute(dataSource, firstModifiedOperator);
+  return executeRange(dataSource, firstModifiedOperator, nullptr, true);
 }
 
 Pipeline::Future* Pipeline::execute(DataSource* ds, Operator* start)
 {
-  return execute(ds, start, nullptr);
+  return executeRange(ds, start, nullptr, true);
 }
 
 Pipeline::Future* Pipeline::execute(DataSource* ds, Operator* start,
                                     Operator* end)
+{
+  return executeRange(ds, start, end, false);
+}
+
+Pipeline::Future* Pipeline::executeRange(DataSource* ds, Operator* start,
+                                         Operator* end,
+                                         bool checkBreakpoints)
 {
   if (paused()) {
     return emptyFuture();
@@ -220,7 +227,6 @@ Pipeline::Future* Pipeline::execute(DataSource* ds, Operator* start,
     return future;
   }
   int startIndex = 0;
-  // We currently only support running the last operator or the entire pipeline.
   if (start == nullptr) {
     start = operators.first();
   }
@@ -243,6 +249,38 @@ Pipeline::Future* Pipeline::execute(DataSource* ds, Operator* start,
       ds = transformedDataSource(ds);
     }
   }
+  // If start is not the first operator and we haven't already adjusted
+  // startIndex (e.g. when resuming from a breakpoint), start from the
+  // correct position using the already-transformed intermediate data.
+  // but can only use the already transformed intermediate data if the
+  // previous operator is the one that created it, otherwise operators
+  // could be applied multiple times to already transformed data.
+  else if (start != operators.first() && startIndex == 0) {
+    startIndex = operators.indexOf(start);
+    if (startIndex > 0) {
+      auto prevOp = operators[startIndex - 1];
+      // We can only use intermediate data if:
+      // 1. The previous op completed (so its output is valid)
+      // 2. The current op hasn't run yet (Queued)
+      // 3. No operators after start have already finished (would mean
+      //    mid-chain insertion/edit, not a breakpoint resume)
+      bool canUseIntermediateData =
+        prevOp->isCompleted() && start->isQueued();
+      if (canUseIntermediateData) {
+        for (int i = startIndex + 1; i < operators.size(); ++i) {
+          if (operators[i]->isFinished()) {
+            canUseIntermediateData = false;
+            break;
+          }
+        }
+      }
+      if (canUseIntermediateData) {
+        ds = transformedDataSource(ds);
+      } else {
+        startIndex = 0;
+      }
+    }
+  }
 
   // If we have been asked to run until the new operator we can just return
   // the transformed data.
@@ -262,6 +300,27 @@ Pipeline::Future* Pipeline::execute(DataSource* ds, Operator* start,
     endIndex = operators.indexOf(end);
   }
 
+  // Search for breakpoints within the actual execution range.  This happens
+  // AFTER startIndex determination so that the search covers the real range
+  // (which may start earlier than the modified operator).
+  Operator* breakpointOp = nullptr;
+  if (checkBreakpoints) {
+    int searchEnd = (endIndex == -1) ? operators.size() : endIndex;
+    for (int i = startIndex; i < searchEnd; ++i) {
+      if (operators[i]->hasBreakpoint()) {
+        breakpointOp = operators[i];
+        break;
+      }
+    }
+    if (breakpointOp) {
+      int bpIdx = operators.indexOf(breakpointOp);
+      for (int i = bpIdx; i < operators.size(); ++i) {
+        operators[i]->resetState();
+      }
+      endIndex = bpIdx;
+    }
+  }
+
   auto branchFuture =
     m_executor->execute(ds->dataObject(), operators, startIndex, endIndex);
   connect(branchFuture, &Pipeline::Future::finished, this,
@@ -271,6 +330,11 @@ Pipeline::Future* Pipeline::execute(DataSource* ds, Operator* start,
     this, branchFuture->operators(), branchFuture, operators.last() == end);
   connect(pipelineFuture, &Pipeline::Future::finished, this,
           &Pipeline::finished);
+
+  if (breakpointOp) {
+    connect(pipelineFuture, &Pipeline::Future::finished, this,
+            [this, breakpointOp]() { emit breakpointReached(breakpointOp); });
+  }
 
   return pipelineFuture;
 }
@@ -362,8 +426,13 @@ void Pipeline::branchFinished()
   // hasChildDataSource is true.
   auto lastOp = start->operators().last();
   if (!lastOp->isCompleted()) {
-    // Cannot continue
-    return;
+    // The DataSource's last operator hasn't completed. This can happen when
+    // execution stopped early (e.g. at a breakpoint). If the last actually
+    // executed operator completed, update the visualization with the
+    // intermediate result; otherwise bail out.
+    if (operators.isEmpty() || !operators.last()->isCompleted()) {
+      return;
+    }
   }
 
   if (!lastOp->hasChildDataSource()) {
@@ -488,9 +557,11 @@ void Pipeline::addDataSource(DataSource* dataSource)
               &Operator::newChildDataSource),
             [this](DataSource* ds) { addDataSource(ds); });
 
-    // We need to ensure we move add datasource to the end of the branch
+    // We need to ensure we move add datasource to the end of the branch,
+    // but only if the new operator is the last one (appended). For mid-chain
+    // insertions, the child DataSource should stay where it is.
     auto operators = op->dataSource()->operators();
-    if (operators.size() > 1) {
+    if (operators.size() > 1 && op == operators.last()) {
       auto transformedDataSourceOp =
         findTransformedDataSourceOperator(op->dataSource());
       if (transformedDataSourceOp != nullptr) {

@@ -1124,6 +1124,55 @@ QJsonDocument tableToJson(vtkTable* table)
   return QJsonDocument(rows);
 }
 
+QString tableToCsv(vtkTable* table)
+{
+  QStringList lines;
+  QStringList headers;
+  for (vtkIdType j = 0; j < table->GetNumberOfColumns(); ++j) {
+    headers << QString(table->GetColumnName(j));
+  }
+  lines << headers.join(",");
+  for (vtkIdType i = 0; i < table->GetNumberOfRows(); ++i) {
+    auto row = table->GetRow(i);
+    QStringList fields;
+    for (vtkIdType j = 0; j < row->GetSize(); ++j) {
+      auto value = row->GetValue(j);
+      if (value.IsNumeric()) {
+        fields << QString::number(value.ToDouble());
+      } else {
+        fields << QString();
+      }
+    }
+    lines << fields.join(",");
+  }
+  return lines.join("\n");
+}
+
+bool csvToFile(const QString& csv)
+{
+  QStringList filters;
+  filters << "CSV Files (*.csv)";
+  QFileDialog dialog;
+  dialog.setFileMode(QFileDialog::AnyFile);
+  dialog.setNameFilters(filters);
+  dialog.setAcceptMode(QFileDialog::AcceptSave);
+  QString fileName = dialogToFileName(&dialog);
+  if (fileName.isEmpty()) {
+    return false;
+  }
+  if (!fileName.endsWith(".csv")) {
+    fileName = QString("%1.csv").arg(fileName);
+  }
+  QFile file(fileName);
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+    qCritical() << QString("Error opening file for writing: %1").arg(fileName);
+    return false;
+  }
+  file.write(csv.toUtf8());
+  file.close();
+  return true;
+}
+
 QJsonDocument vectorToJson(const QVector<vtkVector2i> vector)
 {
   QJsonArray rows;
