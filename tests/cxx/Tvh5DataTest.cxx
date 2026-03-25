@@ -52,7 +52,9 @@ private:
   {
     QTemporaryFile tmpFile(QDir::tempPath() + "/tomviz_test_XXXXXX.tvh5");
     tmpFile.setAutoRemove(false);
-    tmpFile.open();
+    if (!tmpFile.open()) {
+      return {};
+    }
     auto path = tmpFile.fileName();
     tmpFile.close();
     m_tempFiles.push_back(path);
