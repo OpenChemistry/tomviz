@@ -21,6 +21,7 @@
 #include "PythonUtilities.h"
 #include "RAWFileReaderDialog.h"
 #include "RecentFilesMenu.h"
+#include "SystemMemory.h"
 #include "TimeSeriesStep.h"
 #include "Utilities.h"
 #include "vtkOMETiffReader.h"
@@ -227,6 +228,25 @@ DataSource* LoadDataReaction::loadData(const QString& fileName,
   return loadData(fileNames, val);
 }
 
+unsigned long long estimateMemoryRequired(const QString& fileName)
+{
+  QFileInfo info(fileName);
+  // Perform different checks based upon the file type
+  auto ext = info.suffix().toLower();
+
+  // FIXME: compute estimation
+  return 1000;
+}
+
+bool LoadDataReaction::checkMemoryUsage(const QString& fileName)
+{
+  auto requiredMemory = estimateMemoryRequired(fileName);
+  auto availMemory = getAvailableSystemMemory();
+
+  // FIXME: add check
+  return true;
+}
+
 DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
                                        const QJsonObject& options)
 {
@@ -243,6 +263,13 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
   if (fileNames.size() > 0) {
     fileName = fileNames[0];
   }
+
+  if (!checkMemoryUsage(fileName)) {
+    // If it fails the memory check, it means the user was warned that they
+    // may not have enough memory, and they canceled the load.
+    return nullptr;
+  }
+
   QFileInfo info(fileName);
   if (info.suffix().toLower() == "tvh5") {
     // Need to specify a path inside the tvh5 file to load
