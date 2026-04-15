@@ -19,6 +19,14 @@ jobs:
             name: Linux,
             os: ubuntu-latest
           }
+        - {
+            name: macOS,
+            os: macos-latest
+          }
+        - {
+            name: Windows,
+            os: windows-latest
+          }
 
     defaults:
       run:
@@ -65,6 +73,10 @@ jobs:
         conda install -y --override-channels -c conda-forge --file tomviz/tests/python/requirements-dev.txt
         pip install --no-build-isolation --no-deps -U tomviz/tomviz/python
         pip install --no-build-isolation --no-deps -U tomviz/acquisition
+
+    - name: Install PyXRF Requirements
+      if: matrix.config.name == 'Linux'
+      run: |
         # These do not have to be in the same environment as Tomviz, but the dependencies
         # are so far compatible and we'll just let it go for the tests.
         conda install -y --override-channels -c conda-forge --file tomviz/.github/workflows/pyxrf_requirements.txt
@@ -74,7 +86,7 @@ jobs:
       env:
           # Make sure the Qt tests run offscreen
           QT_QPA_PLATFORM: offscreen
-          TOMVIZ_REQUIRE_PYXRF: true
+          TOMVIZ_REQUIRE_PYXRF: ${{ matrix.config.name == 'Linux' }}
       run: |
         cd tomviz-build
         export TOMVIZ_TEST_PYTHON_EXECUTABLE=$(which python3)
