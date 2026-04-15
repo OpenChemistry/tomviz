@@ -11,6 +11,8 @@
 
 #include "ComputeHistogram.h"
 
+#include <iostream>
+
 #include <QCoreApplication>
 #include <QThread>
 
@@ -76,7 +78,7 @@ void PopulateHistogram(vtkImageData* input, vtkTable* output)
       arrayPtr->GetNumberOfTuples(), arrayPtr->GetNumberOfComponents(),
       minmax[0], minmax[1], pops, 1.0 / inc, invalid));
     default:
-      cout << "UpdateFromFile: Unknown data type" << endl;
+      std::cout << "UpdateFromFile: Unknown data type" << std::endl;
   }
 
 #ifndef NDEBUG
@@ -86,7 +88,7 @@ void PopulateHistogram(vtkImageData* input, vtkTable* output)
   assert(total == arrayPtr->GetNumberOfTuples());
 #endif
   if (invalid) {
-    cout << "Warning: NaN or infinite value in dataset" << endl;
+    std::cout << "Warning: NaN or infinite value in dataset" << std::endl;
   }
 
   output->AddColumn(extents);
@@ -132,7 +134,7 @@ void Populate2DHistogram(vtkImageData* input, vtkImageData* output)
       reinterpret_cast<VTK_TT*>(arrayPtr->GetVoidPointer(0)), dim, numComp,
       minmax, output, spacing));
     default:
-      cout << "UpdateFromFile: Unknown data type" << endl;
+      std::cout << "UpdateFromFile: Unknown data type" << std::endl;
   }
 }
 

@@ -18,6 +18,8 @@
 #include "TimeSeriesStep.h"
 #include "Utilities.h"
 
+#include <iostream>
+
 #include <vtkDataObject.h>
 #include <vtkDoubleArray.h>
 #include <vtkFieldData.h>
@@ -243,14 +245,14 @@ bool DataSource::appendSlice(vtkImageData* slice)
     if (data) {
       int extents[6];
       data->GetExtent(extents);
-      cout << "The data is ";
+      std::cout << "The data is ";
       for (int i = 0; i < 6; ++i)
-        cout << extents[i] << ", ";
-      cout << endl;
+        std::cout << extents[i] << ", ";
+      std::cout << std::endl;
       for (int i = 0; i < 4; ++i) {
         if (extents[i] != sliceExtents[i]) {
-          cout << "Mismatch: " << extents[i] << " != " << sliceExtents[i]
-               << endl;
+          std::cout << "Mismatch: " << extents[i] << " != " << sliceExtents[i]
+               << std::endl;
           return false;
         }
       }
@@ -1088,7 +1090,7 @@ bool DataSource::removeOperator(Operator* op)
     op->deleteLater();
 
     foreach (Operator* opPtr, this->Internals->Operators) {
-      cout << "Operator: " << opPtr->label().toLatin1().data() << endl;
+      std::cout << "Operator: " << opPtr->label().toLatin1().data() << std::endl;
     }
 
     return true;

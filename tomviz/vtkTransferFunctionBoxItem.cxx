@@ -17,7 +17,8 @@
 #include <vtkPoints2D.h>
 #include <vtkTransform2D.h>
 #include <vtkUnsignedCharArray.h>
-#include <vtkVectorOperators.h>
+
+#include <iostream>
 
 namespace {
 inline bool PointIsWithinBounds2D(double point[2], double bounds[4],

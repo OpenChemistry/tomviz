@@ -16,6 +16,7 @@
 #include "vtk_pugixml.h"
 
 #include <sys/stat.h>
+#include <iostream>
 #include <string>
 #include <algorithm>
 
@@ -310,7 +311,7 @@ bool vtkOMETiffReader::vtkOMETiffReaderInternal::Initialize()
       if (!TIFFGetField(this->Image, TIFFTAG_TILEWIDTH, &this->TileWidth) ||
           !TIFFGetField(this->Image, TIFFTAG_TILELENGTH, &this->TileHeight))
       {
-        cerr << "Cannot read tile width and height from file" << endl;
+        std::cerr << "Cannot read tile width and height from file" << std::endl;
       }
       else
       {
@@ -344,14 +345,14 @@ bool vtkOMETiffReader::vtkOMETiffReaderInternal::Initialize()
     this->OmeXmlRaw = new char*[255];
     if (!TIFFGetField(this->Image, TIFFTAG_IMAGEDESCRIPTION, this->OmeXmlRaw))
     {
-      cerr << "Failed to read ImageDescription from tiff file" << endl;
+      std::cerr << "Failed to read ImageDescription from tiff file" << std::endl;
       return false;
     }
     // look for the number of images
     std::string ome_xml = this->OmeXmlRaw[0];
     pugi::xml_parse_result result = this->OmeXml.load_buffer((void*)ome_xml.c_str(), ome_xml.length());
     if (!result) {
-      cerr << "Cannot read OME-XML" << endl;
+      std::cerr << "Cannot read OME-XML" << std::endl;
       return false;
     }
 
@@ -359,7 +360,7 @@ bool vtkOMETiffReader::vtkOMETiffReaderInternal::Initialize()
     {
       pugi::xml_node rootNode = this->OmeXml.root().child("OME");
       if (strcmp(rootNode.name(), "OME")) {
-        cerr << "XML comment is not OME-XML" << endl;
+        std::cerr << "XML comment is not OME-XML" << std::endl;
         return false;
       }
       pugi::xml_node imageNode = rootNode.child("Image");
@@ -1471,9 +1472,9 @@ int vtkOMETiffReader::CanReadFile(const char* fname)
 void vtkOMETiffReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os,indent);
-  os << indent << "OrientationType: " << this->OrientationType << endl;
-  os << indent << "OrientationTypeSpecifiedFlag: " << this->OrientationTypeSpecifiedFlag << endl;
-  os << indent << "OriginSpecifiedFlag: " << this->OriginSpecifiedFlag << endl;
-  os << indent << "SpacingSpecifiedFlag: " << this->SpacingSpecifiedFlag << endl;
+  os << indent << "OrientationType: " << this->OrientationType << std::endl;
+  os << indent << "OrientationTypeSpecifiedFlag: " << this->OrientationTypeSpecifiedFlag << std::endl;
+  os << indent << "OriginSpecifiedFlag: " << this->OriginSpecifiedFlag << std::endl;
+  os << indent << "SpacingSpecifiedFlag: " << this->SpacingSpecifiedFlag << std::endl;
 }
 }
