@@ -222,7 +222,10 @@ def transform_single_external_operator(transform_method: Callable,
     tomviz_pipeline_env = description_dict['tomviz_pipeline_env']
 
     # Find the `tomviz-pipeline` executable
-    exec_path = Path(tomviz_pipeline_env) / 'bin/tomviz-pipeline'
+    if sys.platform == 'win32':
+        exec_path = Path(tomviz_pipeline_env) / 'Scripts' / 'tomviz-pipeline.exe'
+    else:
+        exec_path = Path(tomviz_pipeline_env) / 'bin' / 'tomviz-pipeline'
     if not exec_path.exists():
         msg = f'Tomviz pipeline executable does not exist: {exec_path}'
         raise RuntimeError(msg)

@@ -722,7 +722,23 @@ PyXRFRunner::PyXRFRunner(QObject* parent)
 {
 }
 
-PyXRFRunner::~PyXRFRunner() = default;
+PyXRFRunner::~PyXRFRunner()
+{
+  // Terminate any running processes to avoid SEGFAULT from QProcess
+  // being destroyed while still running.
+  QProcess* processes[] = { &m_internal->makeHDF5Process,
+                            &m_internal->remakeCsvFileProcess,
+                            &m_internal->processProjectionsProcess };
+  for (auto* p : processes) {
+    if (p->state() != QProcess::NotRunning) {
+      p->terminate();
+      if (!p->waitForFinished(5000)) {
+        p->kill();
+        p->waitForFinished(3000);
+      }
+    }
+  }
+}
 
 bool PyXRFRunner::isInstalled()
 {

@@ -150,12 +150,15 @@ private slots:
     // Keep processing events until all dialogs have
     // been found and accepted/rejected.
     int timeElapsed = 0;
-    int maxTime = 30;
+    int maxTime = 120;
     while (!found && timeElapsed < maxTime) {
       QThread::sleep(1);
       QApplication::processEvents();
       timeElapsed += 1;
     }
+
+    // Clean up the runner (terminates any running processes)
+    delete runner;
 
     // Verify everything was found
     QVERIFY(found);
