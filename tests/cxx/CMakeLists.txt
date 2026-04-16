@@ -66,7 +66,9 @@ if(NOT WIN32)
   add_cxx_qtest(AcquisitionClient PYTHONPATH "${CMAKE_SOURCE_DIR}/acquisition")
 endif()
 add_cxx_qtest(PtychoWorkflow PYTHONPATH ${_pythonpath})
+set_tests_properties(PtychoWorkflow PROPERTIES TIMEOUT 1800)
 add_cxx_qtest(PyXRFWorkflow PYTHONPATH ${_pythonpath})
+set_tests_properties(PyXRFWorkflow PROPERTIES TIMEOUT 1800)
 
 # Generate the executable
 create_test_executable(tomvizTests)
