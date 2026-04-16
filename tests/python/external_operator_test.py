@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 
 import numpy as np
@@ -43,14 +44,21 @@ def test_transform_single_external_operator():
     # Find the environment that has tomviz-pipeline installed.
     # Use sys.prefix for the current environment, but also check
     # the conda env path since tests may run from a different prefix.
+    if sys.platform == 'win32':
+        scripts_dir = 'Scripts'
+        exec_name = 'tomviz-pipeline.exe'
+    else:
+        scripts_dir = 'bin'
+        exec_name = 'tomviz-pipeline'
+
     tomviz_pipeline_env = sys.prefix
-    exec_path = Path(tomviz_pipeline_env) / 'bin' / 'tomviz-pipeline'
+    exec_path = Path(tomviz_pipeline_env) / scripts_dir / exec_name
     if not exec_path.exists():
         # Try the conda env path
-        conda_prefix = sys.environ.get('CONDA_PREFIX')
+        conda_prefix = os.environ.get('CONDA_PREFIX')
         if conda_prefix:
             tomviz_pipeline_env = conda_prefix
-            exec_path = Path(tomviz_pipeline_env) / 'bin' / 'tomviz-pipeline'
+            exec_path = Path(tomviz_pipeline_env) / scripts_dir / exec_name
 
     if not exec_path.exists():
         pytest.skip('tomviz-pipeline not found')

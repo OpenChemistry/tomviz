@@ -8,3 +8,5 @@ pyfftw
 pygments
 pystackreg
 h5py
+click
+scikit-image

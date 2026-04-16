@@ -19,6 +19,14 @@ jobs:
             name: Linux,
             os: ubuntu-latest
           }
+        - {
+            name: macOS,
+            os: macos-latest
+          }
+        - {
+            name: Windows,
+            os: windows-latest
+          }
 
     defaults:
       run:
@@ -52,8 +60,14 @@ jobs:
         echo "build_env.yml file contents is:"
         cat build_env.yml
 
-    - name: Build Tomviz
+    - name: Build Tomviz (Unix)
+      if: runner.os != 'Windows'
       run: bash tomviz/.github/workflows/scripts/build_tomviz.sh
+
+    - name: Build Tomviz (Windows)
+      if: runner.os == 'Windows'
+      shell: cmd /C CALL {0}
+      run: tomviz\.github\workflows\scripts\build_tomviz.bat
 
     - name: Install Runtime Requirements
       # I can't get the defaults channel fully removed, so we have to

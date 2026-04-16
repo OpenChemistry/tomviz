@@ -29,7 +29,7 @@ namespace tomviz {
 class DataSourceBase;
 class Operator;
 class Pipeline;
-class TimeSeriesStep;
+struct TimeSeriesStep;
 
 using MetadataType = std::map<std::string, Variant>;
 

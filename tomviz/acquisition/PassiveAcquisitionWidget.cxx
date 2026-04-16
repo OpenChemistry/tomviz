@@ -226,7 +226,10 @@ void PassiveAcquisitionWidget::imageReady(QString mimeType, QByteArray result,
   path.append(".tiff");
 
   QFile file(dir.path() + path);
-  file.open(QIODevice::WriteOnly);
+  if (!file.open(QIODevice::WriteOnly)) {
+    qWarning() << "Failed to open file for writing:" << file.fileName();
+    return;
+  }
   file.write(result);
   qDebug() << "Data file:" << file.fileName();
   file.close();

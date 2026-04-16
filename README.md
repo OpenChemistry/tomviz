@@ -22,8 +22,19 @@ Installing
 ----------
 <img align="right" src="https://github.com/OpenChemistry/tomviz/blob/master/docs/images/animation_nponcarbon1_small.gif">
 
-We recommend downloading the current [stable release](../../releases),
-but also provide nightly binaries built by our [dashboards][Dashboard] for
+Tomviz is currently undergoing major upgrades. Updated packages are available
+on [conda-forge](https://anaconda.org/conda-forge/tomviz) for Linux:
+
+    conda install -c conda-forge tomviz
+
+Within the next 6 months, we plan to provide conda-forge packages for all
+other operating systems (Windows, macOS), as well as installable binary
+packages (MSI, DMG, etc.).
+
+### Older releases
+
+For older releases, we recommend downloading the [stable release](../../releases).
+Nightly binaries were also previously built by our [dashboards][Dashboard] for
 Windows, macOS, and Linux.
 
 __Windows__: Follow the installation instructions, double-click on the Tomviz

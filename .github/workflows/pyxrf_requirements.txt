@@ -4,7 +4,8 @@ pyxrf
 xrf-tomo
 xraylib
 scikit-beam
-tomopy
+# 1.15.3 is required for NumPy 2.x compatibility
+tomopy>=1.15.3
 # These are required for installing the pyxrf-utils environment
 hatchling
 # Pandas needs to be pinned to prevent a bug in xrf-tomo, until

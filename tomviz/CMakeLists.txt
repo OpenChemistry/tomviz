@@ -245,7 +245,6 @@ set(SOURCES
   Tvh5Format.h
   Utilities.cxx
   Utilities.h
-  core/Variant.cxx
   core/Variant.h
   ViewFrameActions.cxx
   ViewFrameActions.h
@@ -765,7 +764,9 @@ configure_file(tomvizConfig.h.in tomvizConfig.h @ONLY)
 configure_file(tomvizPythonConfig.h.in tomvizPythonConfig.h @ONLY)
 
 add_library(tomvizlib STATIC ${SOURCES} ${accel_srcs})
-set_target_properties(tomvizlib PROPERTIES OUTPUT_NAME tomviz)
+if(NOT WIN32)
+  set_target_properties(tomvizlib PROPERTIES OUTPUT_NAME tomviz)
+endif()
 
 # Need to set this property so that in stack traces, tomviz symbols
 # can be resolved.

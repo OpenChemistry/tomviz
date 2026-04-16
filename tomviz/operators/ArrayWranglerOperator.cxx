@@ -102,7 +102,7 @@ namespace {
 // The template is disabled for other output types
 template <typename vtkInputDataType, typename vtkOutputArrayType,
           typename = std::enable_if<std::is_unsigned<
-            decltype(vtkOutputArrayType::GetDataTypeValueMax())>::value>>
+            typename vtkOutputArrayType::ValueType>::value>>
 void wrangleVtkArrayTypeUnsigned(vtkOutputArrayType* array, int nComps,
                                  int componentToKeep, vtkIdType nTuples,
                                  void* data, double oldrange[2])
@@ -111,7 +111,7 @@ void wrangleVtkArrayTypeUnsigned(vtkOutputArrayType* array, int nComps,
   // assert(oldrange[1] != oldrange[0]);
 
   // GetDataTypeValueMax() is supposed to return the native data type
-  auto newmax = vtkOutputArrayType::GetDataTypeValueMax();
+  auto newmax = array->GetDataTypeValueMax();
   using outputType = decltype(newmax);
 
   // We will adjust the old range to the new range as follows:
