@@ -56,6 +56,8 @@ set(SOURCES
   SAM2SeedWidget.h
   SelectCylinderWidget.cxx
   SelectCylinderWidget.h
+  SelectVolumeRangeWidget.cxx
+  SelectVolumeRangeWidget.h
   ThresholdRangeWidget.cxx
   ThresholdRangeWidget.h
   SelectVolumeWidget.cxx
@@ -623,6 +625,7 @@ set(json_files
   ImageMath.json
   ConnectedComponents.json
   ClipEdges.json
+  ClearVolume.json
   OtsuMultipleThreshold.json
   BinaryDilate.json
   BinaryErode.json

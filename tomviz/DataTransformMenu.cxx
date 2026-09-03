@@ -159,8 +159,9 @@ void DataTransformMenu::buildTransforms()
   new AddPythonTransformReaction(rotateAction, "Rotate",
                                  readInPythonScript("Rotate3D"),
                                  readInJSONDescription("Rotate3D"));
-  new AddPythonTransformReaction(clearAction, "Clear Volume",
-                                 readInPythonScript("ClearVolume"));
+  new AddPythonTransformReaction(clearAction, "Clear Subvolume",
+                                 readInPythonScript("ClearVolume"),
+                                 readInJSONDescription("ClearVolume"));
   new AddPythonTransformReaction(swapAction, "Swap Axes",
                                  readInPythonScript("SwapAxes"),
                                  readInJSONDescription("SwapAxes"));
