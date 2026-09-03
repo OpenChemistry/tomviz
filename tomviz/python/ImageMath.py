@@ -61,8 +61,13 @@ def _resample_to_shape(array, shape):
     import numpy as np
     from scipy.ndimage import zoom
 
-    factors = [n / m for n, m in zip(shape, array.shape)]
-    out = zoom(array, factors, order=1)
+    # An axis that differs by only a voxel or two (an extra row or
+    # column in one acquisition) is trimmed or padded rather than
+    # stretched, which would blur it for no gain.
+    factors = [1.0 if abs(n - m) <= 2 else n / m
+               for n, m in zip(shape, array.shape)]
+    out = array if all(f == 1.0 for f in factors) else \
+        zoom(array, factors, order=1)
     # zoom rounds its output size; trim or edge-pad the odd voxel
     slices = tuple(slice(0, n) for n in shape)
     out = out[slices]

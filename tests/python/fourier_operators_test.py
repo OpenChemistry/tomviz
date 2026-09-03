@@ -203,3 +203,11 @@ def test_fourier_mask_rejects_a_mismatched_or_empty_mask():
         _run_fourier_mask(data, np.ones((4, 4, 4), dtype=np.uint8))
     with pytest.raises(Exception):
         _run_fourier_mask(data, np.zeros((8, 8, 8), dtype=np.uint8))
+
+
+def test_image_math_pads_an_off_by_one_second_dataset():
+    a = np.full((8, 8, 8), 5.0)
+    b = np.full((8, 9, 7), 2.0)
+    out = _run_image_math(a, b, operation=1, resample_to_match=True)
+    assert out.shape == a.shape
+    assert np.allclose(out, 7.0)
