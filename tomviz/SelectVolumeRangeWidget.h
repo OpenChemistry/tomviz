@@ -11,10 +11,15 @@
 #include <QPointer>
 
 class QDoubleSpinBox;
+class QHideEvent;
+class QShowEvent;
 class QVBoxLayout;
 
 namespace tomviz {
 
+namespace pipeline {
+class Node;
+}
 class SelectVolumeWidget;
 
 /// Box selection for operators that act on a sub-volume, such as Clear
@@ -31,11 +36,22 @@ public:
 
   void getValues(QMap<QString, QVariant>& map) override;
   void setValues(const QMap<QString, QVariant>& map) override;
+  void setNodeContext(pipeline::Node* node,
+                      pipeline::Pipeline* pipeline) override;
+
+protected:
+  void showEvent(QShowEvent* event) override;
+  void hideEvent(QHideEvent* event) override;
 
 private:
   // The box widget takes its selection at construction, so restoring a
   // saved range means rebuilding it
   void buildSelector(const int selection[6]);
+  // The box is only shown while this editor is visible and its node is
+  // the active one, so it never lingers over unrelated work
+  void updateBoxEnabled();
+
+  QPointer<pipeline::Node> m_node;
 
   double m_origin[3] = { 0, 0, 0 };
   double m_spacing[3] = { 1, 1, 1 };

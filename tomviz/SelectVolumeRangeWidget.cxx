@@ -3,12 +3,16 @@
 
 #include "SelectVolumeRangeWidget.h"
 
+#include "ActiveObjects.h"
 #include "SelectVolumeWidget.h"
+#include "pipeline/Node.h"
 #include "pipeline/data/VolumeData.h"
 
 #include <vtkImageData.h>
 
 #include <QDoubleSpinBox>
+#include <QHideEvent>
+#include <QShowEvent>
 #include <QFormLayout>
 #include <QVBoxLayout>
 
@@ -37,6 +41,9 @@ SelectVolumeRangeWidget::SelectVolumeRangeWidget(
   m_layout->setContentsMargins(0, 0, 0, 0);
   buildSelector(m_extent);
 
+  connect(&ActiveObjects::instance(), &ActiveObjects::activeNodeChanged, this,
+          [this](pipeline::Node*) { updateBoxEnabled(); });
+
   auto* form = new QFormLayout;
   m_fillValue = new QDoubleSpinBox(this);
   m_fillValue->setRange(std::numeric_limits<double>::lowest(),
@@ -59,6 +66,35 @@ void SelectVolumeRangeWidget::buildSelector(const int selection[6])
                                       m_position, this);
   m_selector->setBoxEnabled(false); // shown by updateBoxEnabled when due
   m_layout->insertWidget(0, m_selector);
+  updateBoxEnabled();
+}
+
+void SelectVolumeRangeWidget::updateBoxEnabled()
+{
+  if (!m_selector) {
+    return;
+  }
+  bool active = !m_node || ActiveObjects::instance().activeNode() == m_node;
+  m_selector->setBoxEnabled(isVisible() && active);
+}
+
+void SelectVolumeRangeWidget::setNodeContext(pipeline::Node* node,
+                                             pipeline::Pipeline*)
+{
+  m_node = node;
+  updateBoxEnabled();
+}
+
+void SelectVolumeRangeWidget::showEvent(QShowEvent* event)
+{
+  CustomPythonNodeWidget::showEvent(event);
+  updateBoxEnabled();
+}
+
+void SelectVolumeRangeWidget::hideEvent(QHideEvent* event)
+{
+  CustomPythonNodeWidget::hideEvent(event);
+  updateBoxEnabled();
 }
 
 void SelectVolumeRangeWidget::getValues(QMap<QString, QVariant>& map)
