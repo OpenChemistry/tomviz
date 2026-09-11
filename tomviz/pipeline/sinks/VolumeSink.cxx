@@ -19,6 +19,8 @@
 #include <QFormLayout>
 #include <QGroupBox>
 #include <QJsonArray>
+#include <QInputDialog>
+#include <QLineEdit>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QSettings>
@@ -1261,6 +1263,50 @@ void VolumeSink::applyLightingPreset(LightingPreset preset)
   setLighting(p.shade);
 }
 
+UserLightingPreset VolumeSink::currentLightingValues() const
+{
+  UserLightingPreset p;
+  p.shade = lighting();
+  p.ambient = ambient();
+  p.diffuse = diffuse();
+  p.specular = specular();
+  p.specularPower = specularPower();
+  // What is actually rendering: a level left behind with shadows off
+  // must not switch them back on when the preset is applied
+  p.scattering = effectiveScattering();
+  p.reach = shadowReach();
+  p.anisotropy = scatteringAnisotropy();
+  p.smoothNormals = smoothNormals();
+  return p;
+}
+
+void VolumeSink::applyUserLightingPreset(const UserLightingPreset& p)
+{
+  if (p.scattering > 0.0) {
+    setShadowsEnabled(true);
+  }
+  setAmbient(p.ambient);
+  setDiffuse(p.diffuse);
+  setSpecular(p.specular);
+  setSpecularPower(p.specularPower);
+  setVolumetricScattering(p.scattering);
+  setShadowReach(p.reach);
+  setScatteringAnisotropy(p.anisotropy);
+  setSmoothNormals(p.smoothNormals);
+  setLighting(p.shade);
+}
+
+QString VolumeSink::matchingUserLightingPreset() const
+{
+  auto current = currentLightingValues();
+  for (const auto& preset : LightingPresetStore::instance().presets()) {
+    if (preset.matches(current)) {
+      return preset.name;
+    }
+  }
+  return QString();
+}
+
 VolumeSink::LightingPreset VolumeSink::currentLightingPreset() const
 {
   // With shading off none of the other parameters affect the render, so any
@@ -2091,6 +2137,7 @@ QWidget* VolumeSink::createSinkPropertiesWidget(QWidget* parent)
     widget->setAnisotropy(scatteringAnisotropy());
     widget->setSmoothNormals(smoothNormals());
     widget->setActiveLightingPreset(static_cast<int>(currentLightingPreset()));
+    widget->setActiveUserLightingPreset(matchingUserLightingPreset());
     widget->setScatteringAvailable(scatteringSupported(),
                                    scatteringUnavailableReason());
   };
@@ -2151,6 +2198,54 @@ QWidget* VolumeSink::createSinkPropertiesWidget(QWidget* parent)
               return;
             }
             applyLightingPreset(p);
+          });
+  connect(widget, &VolumeSinkWidget::userLightingPresetSelected, this,
+          [this, widget](const QString& name) {
+            auto preset = LightingPresetStore::instance().preset(name);
+            if (preset.name.isEmpty()) {
+              return;
+            }
+            if (preset.scattering > 0.0 && !confirmVolumetricShadows(widget)) {
+              QSignalBlocker blocker(widget);
+              widget->setActiveUserLightingPreset(
+                matchingUserLightingPreset());
+              return;
+            }
+            applyUserLightingPreset(preset);
+          });
+  connect(widget, &VolumeSinkWidget::saveUserLightingPresetRequested, this,
+          [this, widget]() {
+            auto& store = LightingPresetStore::instance();
+            QString suggested;
+            for (int n = 1;; ++n) {
+              suggested = QString("Lighting %1").arg(n);
+              if (!store.contains(suggested)) {
+                break;
+              }
+            }
+            bool ok = false;
+            auto name = QInputDialog::getText(widget, "Save Lighting Preset",
+                                              "Preset name:", QLineEdit::Normal,
+                                              suggested, &ok)
+                          .trimmed();
+            if (!ok || name.isEmpty()) {
+              return;
+            }
+            if (store.contains(name) &&
+                QMessageBox::question(widget, "Save Lighting Preset",
+                                      QString("Replace the saved preset "
+                                              "\"%1\"?")
+                                        .arg(name)) != QMessageBox::Yes) {
+              return;
+            }
+            auto preset = currentLightingValues();
+            preset.name = name;
+            store.save(preset);
+            widget->setActiveUserLightingPreset(name);
+          });
+  connect(widget, &VolumeSinkWidget::deleteUserLightingPresetRequested, this,
+          [](const QString& name) {
+            LightingPresetStore::instance().remove(name);
           });
   connect(widget, &VolumeSinkWidget::shadowsToggled, this,
           [this, widget](bool enabled) {

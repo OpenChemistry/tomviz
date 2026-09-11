@@ -7,7 +7,12 @@
 
 #include "vtkVolumeMapper.h"
 
+#include "LightingPresetStore.h"
+
+#include <QComboBox>
+#include <QHBoxLayout>
 #include <QPushButton>
+#include <QSignalBlocker>
 #include <QVBoxLayout>
 
 namespace tomviz {
@@ -61,6 +66,36 @@ VolumeSinkWidget::VolumeSinkWidget(QWidget* parent_)
     connect(presets[i], &QPushButton::clicked, this,
             [this, i]() { emit lightingPresetClicked(i); });
   }
+
+  // Saved presets: the user's own bundles, below the built-in buttons
+  auto* userRow = new QHBoxLayout;
+  m_userPresets = new QComboBox(this);
+  m_userPresets->setToolTip("Lighting settings you saved earlier.");
+  auto* saveUserPreset = new QPushButton("Save...", this);
+  saveUserPreset->setToolTip("Save the current lighting settings under a name.");
+  m_deleteUserPreset = new QPushButton("Delete", this);
+  m_deleteUserPreset->setToolTip("Remove the selected saved preset.");
+  userRow->addWidget(m_userPresets, 1);
+  userRow->addWidget(saveUserPreset);
+  userRow->addWidget(m_deleteUserPreset);
+  m_uiLighting->lightingLayout->insertLayout(1, userRow);
+  refreshUserLightingPresets();
+  connect(&pipeline::LightingPresetStore::instance(), &pipeline::LightingPresetStore::changed,
+          this, &VolumeSinkWidget::refreshUserLightingPresets);
+  connect(m_userPresets, QOverload<int>::of(&QComboBox::currentIndexChanged),
+          this, [this](int idx) {
+            m_deleteUserPreset->setEnabled(idx > 0);
+            if (idx > 0) {
+              emit userLightingPresetSelected(m_userPresets->itemText(idx));
+            }
+          });
+  connect(saveUserPreset, &QPushButton::clicked, this,
+          &VolumeSinkWidget::saveUserLightingPresetRequested);
+  connect(m_deleteUserPreset, &QPushButton::clicked, this, [this]() {
+    if (m_userPresets->currentIndex() > 0) {
+      emit deleteUserLightingPresetRequested(m_userPresets->currentText());
+    }
+  });
 
   m_ui->soliditySlider->setLineEditWidth(leWidth);
 
@@ -246,6 +281,30 @@ void VolumeSinkWidget::setActiveLightingPreset(const int preset)
   for (int i = 0; i < presets.size(); ++i) {
     presets[i]->setChecked(i == preset);
   }
+}
+
+void VolumeSinkWidget::refreshUserLightingPresets()
+{
+  QSignalBlocker blocker(m_userPresets);
+  auto current = m_userPresets->currentIndex() > 0
+                   ? m_userPresets->currentText()
+                   : QString();
+  m_userPresets->clear();
+  m_userPresets->addItem("Saved presets...");
+  for (const auto& preset : pipeline::LightingPresetStore::instance().presets()) {
+    m_userPresets->addItem(preset.name);
+  }
+  int idx = current.isEmpty() ? -1 : m_userPresets->findText(current);
+  m_userPresets->setCurrentIndex(idx < 0 ? 0 : idx);
+  m_deleteUserPreset->setEnabled(m_userPresets->currentIndex() > 0);
+}
+
+void VolumeSinkWidget::setActiveUserLightingPreset(const QString& name)
+{
+  QSignalBlocker blocker(m_userPresets);
+  int idx = name.isEmpty() ? -1 : m_userPresets->findText(name);
+  m_userPresets->setCurrentIndex(idx < 0 ? 0 : idx);
+  m_deleteUserPreset->setEnabled(m_userPresets->currentIndex() > 0);
 }
 
 QList<QPushButton*> VolumeSinkWidget::presetButtons() const

@@ -5,6 +5,7 @@
 #define tomvizPipelineVolumeSink_h
 
 #include "LegacyModuleSink.h"
+#include "LightingPresetStore.h"
 
 #include <QPointer>
 #include <QTimer>
@@ -131,6 +132,11 @@ public:
     Full
   };
   void applyLightingPreset(LightingPreset preset);
+  /// The lighting settings as they stand, ready to be saved by name.
+  UserLightingPreset currentLightingValues() const;
+  void applyUserLightingPreset(const UserLightingPreset& preset);
+  /// Name of the saved preset the current settings match, if any.
+  QString matchingUserLightingPreset() const;
   /// The preset matching the current parameter values, or Custom.
   LightingPreset currentLightingPreset() const;
 

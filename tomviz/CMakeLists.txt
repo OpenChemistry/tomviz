@@ -329,6 +329,8 @@ set(SOURCES
   pipeline/sinks/LabelMapSink.h
   pipeline/sinks/LabelTableWidget.cxx
   pipeline/sinks/LabelTableWidget.h
+  pipeline/sinks/LightingPresetStore.cxx
+  pipeline/sinks/LightingPresetStore.h
   pipeline/sinks/VolumeBricking.cxx
   pipeline/sinks/VolumeBricking.h
   pipeline/sinks/SliceSink.cxx

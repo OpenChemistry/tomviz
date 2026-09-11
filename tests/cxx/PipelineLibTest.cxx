@@ -28,6 +28,7 @@
 #include "data/VolumeData.h"
 #include "sinks/VolumeStatsSink.h"
 #include "sinks/LegacyModuleSink.h"
+#include "sinks/LightingPresetStore.h"
 #include "sinks/VolumeSink.h"
 #include "sinks/SliceSink.h"
 #include "sinks/ContourSink.h"
@@ -4105,6 +4106,48 @@ TEST_F(PipelineLibTest, VolumeSinkExplodedViewSerializationRoundTrip)
   EXPECT_EQ(restored.explodedAxis(), 1);
   EXPECT_EQ(restored.explodedChunks(), 5);
   EXPECT_DOUBLE_EQ(restored.explodedGap(), 0.4);
+}
+
+TEST_F(PipelineLibTest, UserLightingPresetsRoundTripAndApply)
+{
+  auto& store = LightingPresetStore::instance();
+  auto named = [&store](const QString& name) {
+    int n = 0;
+    for (const auto& p : store.presets()) {
+      n += p.name == name ? 1 : 0;
+    }
+    return n;
+  };
+  store.remove("Bench");
+
+  VolumeSink sink;
+  sink.setLighting(true);
+  sink.setAmbient(0.42);
+  sink.setDiffuse(0.6);
+  sink.setSpecularPower(12.0);
+  sink.setSmoothNormals(true);
+  auto preset = sink.currentLightingValues();
+  preset.name = "Bench";
+  store.save(preset);
+  EXPECT_EQ(sink.matchingUserLightingPreset(), "Bench");
+
+  // Saving under the same name replaces rather than duplicates
+  preset.ambient = 0.2;
+  store.save(preset);
+  EXPECT_EQ(named("Bench"), 1);
+  EXPECT_TRUE(sink.matchingUserLightingPreset().isEmpty());
+
+  VolumeSink other;
+  other.applyUserLightingPreset(UserLightingPreset::deserialize(
+    store.preset("Bench").serialize()));
+  EXPECT_DOUBLE_EQ(other.ambient(), 0.2);
+  EXPECT_DOUBLE_EQ(other.diffuse(), 0.6);
+  EXPECT_DOUBLE_EQ(other.specularPower(), 12.0);
+  EXPECT_TRUE(other.smoothNormals());
+  EXPECT_EQ(other.matchingUserLightingPreset(), "Bench");
+
+  store.remove("Bench");
+  EXPECT_EQ(named("Bench"), 0);
 }
 
 TEST_F(PipelineLibTest, VolumeSinkCutOutProperties)

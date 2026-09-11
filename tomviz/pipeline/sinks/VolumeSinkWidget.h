@@ -8,6 +8,7 @@
 #include <QWidget>
 
 class QFormLayout;
+class QComboBox;
 class QPushButton;
 class QVBoxLayout;
 
@@ -59,6 +60,8 @@ public:
   /// Highlight the preset button matching the sink's current lighting
   /// state (VolumeSink::LightingPreset); -1 (Custom) unchecks them all.
   void setActiveLightingPreset(const int preset);
+  /// Select @a name in the saved-presets combo (empty for none).
+  void setActiveUserLightingPreset(const QString& name);
   /// Enable or disable the presets and controls that cast volumetric
   /// shadows. When disabling, @a reason is shown as their tool tip.
   void setScatteringAvailable(const bool available, const QString& reason);
@@ -104,6 +107,9 @@ signals:
   void anisotropyChanged(const double value);
   void smoothNormalsToggled(const bool state);
   void lightingPresetClicked(const int preset);
+  void userLightingPresetSelected(const QString& name);
+  void saveUserLightingPresetRequested();
+  void deleteUserLightingPresetRequested(const QString& name);
   void transferModeChanged(const int mode);
   void solidityChanged(const double value);
   void useRgbaMappingToggled(const bool b);
@@ -121,6 +127,8 @@ private:
   bool usesLighting(const int mode) const;
   /// The preset buttons, indexed by VolumeSink::LightingPreset.
   QList<QPushButton*> presetButtons() const;
+  /// Rebuild the saved-presets combo from the store.
+  void refreshUserLightingPresets();
   /// Grey out the Advanced shadow controls whenever they cannot do
   /// anything: shadows switched off, or scattering unavailable entirely.
   void updateShadowControlsEnabled();
@@ -131,6 +139,10 @@ private:
   // check box instead and a disabled parent (non-composite blending
   // greys the whole group) would latch the shadow controls off.
   bool m_scatteringAvailable = true;
+
+  QComboBox* m_userPresets = nullptr;
+
+  QPushButton* m_deleteUserPreset = nullptr;
 
   QScopedPointer<Ui::VolumeSinkWidget> m_ui;
   QScopedPointer<Ui::VolumeLightingForm> m_uiLighting;
