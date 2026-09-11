@@ -4063,6 +4063,50 @@ TEST_F(PipelineLibTest, LinkedClipsMatchByPhysicalPosition)
   EXPECT_EQ(coarse->direction(), ClipSink::Custom);
 }
 
+TEST_F(PipelineLibTest, VolumeSinkExplodedViewExcludesCutOut)
+{
+  struct OpenVolumeSink : VolumeSink
+  {
+    using VolumeSink::consume;
+  };
+  auto* sink = new OpenVolumeSink();
+  pipeline->addNode(sink);
+  QMap<QString, PortData> inputs;
+  inputs["volume"] = makeVolumeWithGeometry(8, 8, 16, 1, 1, 1);
+  ASSERT_TRUE(sink->consume(inputs));
+
+  sink->setCutOutEnabled(true);
+  sink->setExplodedEnabled(true);
+  EXPECT_TRUE(sink->explodedEnabled());
+  EXPECT_FALSE(sink->cutOutEnabled());
+  sink->setCutOutEnabled(true);
+  EXPECT_FALSE(sink->explodedEnabled());
+
+  // Parameters clamp to their supported ranges
+  sink->setExplodedChunks(100);
+  EXPECT_EQ(sink->explodedChunks(), 16);
+  sink->setExplodedGap(3.0);
+  EXPECT_DOUBLE_EQ(sink->explodedGap(), 1.0);
+  sink->setExplodedAxis(7);
+  EXPECT_EQ(sink->explodedAxis(), 2);
+}
+
+TEST_F(PipelineLibTest, VolumeSinkExplodedViewSerializationRoundTrip)
+{
+  VolumeSink sink;
+  sink.setExplodedAxis(1);
+  sink.setExplodedChunks(5);
+  sink.setExplodedGap(0.4);
+  sink.setExplodedEnabled(true);
+
+  VolumeSink restored;
+  ASSERT_TRUE(restored.deserialize(sink.serialize()));
+  EXPECT_TRUE(restored.explodedEnabled());
+  EXPECT_EQ(restored.explodedAxis(), 1);
+  EXPECT_EQ(restored.explodedChunks(), 5);
+  EXPECT_DOUBLE_EQ(restored.explodedGap(), 0.4);
+}
+
 TEST_F(PipelineLibTest, VolumeSinkCutOutProperties)
 {
   VolumeSink sink;

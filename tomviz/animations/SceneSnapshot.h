@@ -33,6 +33,10 @@ struct SinkSnapshot
   std::optional<bool> cutOutEnabled;
   std::optional<int> cutOutCorner;
   std::optional<std::array<double, 3>> cutOutPosition;
+  std::optional<bool> explodedEnabled;
+  std::optional<int> explodedAxis;
+  std::optional<int> explodedChunks;
+  std::optional<double> explodedGap;
 
   static SinkSnapshot capture(pipeline::LegacyModuleSink* sink);
   QJsonObject serialize() const;

@@ -23,6 +23,7 @@
 #include <QPushButton>
 #include <QSettings>
 #include <QSignalBlocker>
+#include <QSpinBox>
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QWidget>
@@ -46,9 +47,13 @@
 #include <vtkMultiBlockVolumeMapper.h>
 #include <vtkObjectFactory.h>
 #include <vtkOpenGLRenderWindow.h>
+#include <vtkCamera.h>
 #include <vtkPlaneCollection.h>
+#include <vtkPropCollection.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderer.h>
+#include <vtkSMRenderViewProxy.h>
+#include <vtkTransform.h>
 #include <vtkSmartVolumeMapper.h>
 #include <vtkTextureObject.h>
 #include <vtkVolume.h>
@@ -741,7 +746,9 @@ void VolumeSink::setVisibility(bool visible)
   // executed. consume() re-applies visibility() once data arrives.
   auto* mapper = m_volume->GetMapper();
   bool hasInput = mapper && mapper->GetDataObjectInput();
-  m_volume->SetVisibility(visible && hasInput ? 1 : 0);
+  for (auto* slab : allVolumes()) {
+    slab->SetVisibility(visible && hasInput ? 1 : 0);
+  }
   LegacyModuleSink::setVisibility(visible);
 }
 
@@ -757,6 +764,20 @@ bool VolumeSink::initialize(vtkSMViewProxy* view)
   }
 
   renderView()->AddPropToRenderer(m_volume);
+  for (auto& slab : m_explodedVolumes) {
+    renderView()->AddPropToRenderer(slab);
+  }
+  m_explodedOrderDirty = true;
+  // Slabs composite in prop order, so re-order them before every render
+  if (auto* renderer = renderView()->GetRenderer()) {
+    m_sortObserver->SetClientData(this);
+    m_sortObserver->SetCallback(
+      [](vtkObject*, unsigned long, void* clientData, void*) {
+        static_cast<VolumeSink*>(clientData)->sortExplodedProps();
+      });
+    m_sortObserverId =
+      renderer->AddObserver(vtkCommand::StartEvent, m_sortObserver);
+  }
 
   // The scattering guard draws its first frame of any new configuration
   // deliberately coarse so it can time it safely. Watch for the end of each
@@ -789,7 +810,13 @@ void VolumeSink::onRenderFinished()
     emit lightingStateChanged();
   }
 
-  if (m_volumeMapper->ConsumeSuppressedFrame()) {
+  bool suppressed = false;
+  bool refine = false;
+  for (auto* mapper : allMappers()) {
+    suppressed |= mapper->ConsumeSuppressedFrame();
+    refine |= mapper->ConsumeRefinementRequest();
+  }
+  if (suppressed) {
     // An unlit interactive frame is on screen. In principle ParaView follows
     // interaction with a still render, which is what brings the scattering
     // look back - but that depends on an EndInteractionEvent reaching the
@@ -803,7 +830,7 @@ void VolumeSink::onRenderFinished()
   }
   m_settleTimer.stop();
 
-  if (!m_volumeMapper->ConsumeRefinementRequest()) {
+  if (!refine) {
     return;
   }
   // Queued: we are inside the render that just finished, and re-entering the
@@ -822,14 +849,25 @@ bool VolumeSink::finalize()
       }
       m_refinementObserverId = 0;
     }
+    if (m_sortObserverId) {
+      if (auto* renderer = renderView()->GetRenderer()) {
+        renderer->RemoveObserver(m_sortObserverId);
+      }
+      m_sortObserverId = 0;
+    }
     renderView()->RemovePropFromRenderer(m_volume);
+    for (auto& slab : m_explodedVolumes) {
+      renderView()->RemovePropFromRenderer(slab);
+    }
   }
   return LegacyModuleSink::finalize();
 }
 
 void VolumeSink::clearVisualization()
 {
-  m_volume->SetVisibility(0);
+  for (auto* slab : allVolumes()) {
+    slab->SetVisibility(0);
+  }
 }
 
 bool VolumeSink::consume(const QMap<QString, PortData>& inputs)
@@ -859,7 +897,10 @@ bool VolumeSink::consume(const QMap<QString, PortData>& inputs)
   applyActiveScalars();
   // Re-derive the cut planes: the new data may have different bounds.
   applyCutOut();
-  m_volume->SetVisibility(visibility() ? 1 : 0);
+  applyExploded();
+  for (auto* slab : allVolumes()) {
+    slab->SetVisibility(visibility() ? 1 : 0);
+  }
 
   onMetadataChanged();
   return true;
@@ -1096,7 +1137,11 @@ void VolumeSink::applyScattering()
   // are out of reach, so a scattering frame there cannot be bounded. Leaving
   // that mapper at its zero default is the backstop that guarantees the
   // bricked path never renders one, whatever state arrives.
-  m_volumeMapper->SetRequestedVolumetricScattering(effectiveScattering());
+  // Each exploded slab would budget a full frame of scattering on its own,
+  // so shadows stay off while the view is exploded (the extra slabs never
+  // leave zero).
+  m_volumeMapper->SetRequestedVolumetricScattering(
+    m_explodedEnabled ? 0.0 : effectiveScattering());
 }
 
 bool VolumeSink::scatteringSupported() const
@@ -1105,7 +1150,7 @@ bool VolumeSink::scatteringSupported() const
   // vtkMultiBlockVolumeMapper, whose per-brick mappers are private - there is
   // no way to cap their sampling, so a scattering frame there is unbounded.
   // These are also the largest volumes, i.e. the likeliest to hang the GPU.
-  if (m_usingMultiBlock) {
+  if (m_usingMultiBlock || m_explodedEnabled) {
     return false;
   }
   // Escape hatch for sites deploying to hardware known not to cope, or for
@@ -1137,7 +1182,9 @@ double VolumeSink::shadowReach() const
 
 void VolumeSink::setShadowReach(double value)
 {
-  m_volumeMapper->SetGlobalIlluminationReach(value);
+  for (auto* mapper : allMappers()) {
+    mapper->SetGlobalIlluminationReach(value);
+  }
   m_multiBlockMapper->SetGlobalIlluminationReach(value);
   emit lightingStateChanged();
   emit renderNeeded();
@@ -1167,7 +1214,9 @@ double VolumeSink::opacityRenderCost(vtkPiecewiseFunction* curve)
 
 void VolumeSink::setWorstCaseOpacity(vtkPiecewiseFunction* curve)
 {
-  m_volumeMapper->SetCostCurveOverride(curve);
+  for (auto* mapper : allMappers()) {
+    mapper->SetCostCurveOverride(curve);
+  }
 }
 
 void VolumeSink::setAnimatedScalarOpacity(vtkPiecewiseFunction* opacity)
@@ -1179,7 +1228,9 @@ void VolumeSink::setAnimatedScalarOpacity(vtkPiecewiseFunction* opacity)
 
 void VolumeSink::setSmoothNormals(bool enabled)
 {
-  m_volumeMapper->SetComputeNormalFromOpacity(enabled);
+  for (auto* mapper : allMappers()) {
+    mapper->SetComputeNormalFromOpacity(enabled);
+  }
   m_multiBlockMapper->SetComputeNormalFromOpacity(enabled);
   emit lightingStateChanged();
   emit renderNeeded();
@@ -1244,7 +1295,9 @@ int VolumeSink::blendingMode() const
 void VolumeSink::setBlendingMode(int mode)
 {
   // Keep both mappers in sync so the setting survives a switch between them.
-  m_volumeMapper->SetBlendMode(mode);
+  for (auto* mapper : allMappers()) {
+    mapper->SetBlendMode(mode);
+  }
   m_multiBlockMapper->SetBlendMode(mode);
   emit renderNeeded();
 }
@@ -1277,7 +1330,9 @@ void VolumeSink::setJittering(bool enabled)
   // to its per-brick mappers, so the toggle has no effect on bricked
   // (over-2048) volumes - which is the safe default, since jittering also helps
   // hide brick seams.
-  m_volumeMapper->SetUseJittering(enabled ? 1 : 0);
+  for (auto* mapper : allMappers()) {
+    mapper->SetUseJittering(enabled ? 1 : 0);
+  }
   emit renderNeeded();
 }
 
@@ -1335,7 +1390,9 @@ void VolumeSink::applyActiveScalars()
     selected = pointData->GetScalars();
   }
   if (selected && selected->GetName()) {
-    m_volumeMapper->SelectScalarArray(selected->GetName());
+    for (auto* mapper : allMappers()) {
+      mapper->SelectScalarArray(selected->GetName());
+    }
     m_multiBlockMapper->SelectScalarArray(selected->GetName());
   }
 }
@@ -1360,7 +1417,9 @@ void VolumeSink::warnClippingUnsupported() const
 void VolumeSink::addClippingPlane(vtkPlane* plane)
 {
   if (plane) {
-    m_volumeMapper->AddClippingPlane(plane);
+    for (auto* mapper : allMappers()) {
+      mapper->AddClippingPlane(plane);
+    }
     if (m_usingMultiBlock) {
       warnClippingUnsupported();
     }
@@ -1371,14 +1430,18 @@ void VolumeSink::addClippingPlane(vtkPlane* plane)
 void VolumeSink::removeClippingPlane(vtkPlane* plane)
 {
   if (plane) {
-    m_volumeMapper->RemoveClippingPlane(plane);
+    for (auto* mapper : allMappers()) {
+      mapper->RemoveClippingPlane(plane);
+    }
     emit renderNeeded();
   }
 }
 
 void VolumeSink::removeAllClippingPlanes()
 {
-  m_volumeMapper->RemoveAllClippingPlanes();
+  for (auto* mapper : allMappers()) {
+    mapper->RemoveAllClippingPlanes();
+  }
   emit renderNeeded();
 }
 
@@ -1395,6 +1458,11 @@ void VolumeSink::setCutOutEnabled(bool enabled)
     return;
   }
   m_cutOutEnabled = enabled;
+  if (enabled && m_explodedEnabled) {
+    // The two own the mapper's cropping; only one can be on. Not a user
+    // request to reframe, so leave the camera alone.
+    setExplodedEnabledInternal(false, /*refitCamera=*/false);
+  }
   applyCutOut();
   emit cutOutChanged();
   emit renderNeeded();
@@ -1439,6 +1507,315 @@ void VolumeSink::setCutOutPosition(int axis, double fraction)
   emit renderNeeded();
 }
 
+std::vector<SmartVolumeMapper*> VolumeSink::allMappers()
+{
+  std::vector<SmartVolumeMapper*> mappers{ m_volumeMapper.Get() };
+  for (auto& mapper : m_explodedMappers) {
+    mappers.push_back(mapper);
+  }
+  return mappers;
+}
+
+std::vector<vtkVolume*> VolumeSink::allVolumes()
+{
+  std::vector<vtkVolume*> volumes{ m_volume.Get() };
+  for (auto& slab : m_explodedVolumes) {
+    volumes.push_back(slab);
+  }
+  return volumes;
+}
+
+bool VolumeSink::explodedEnabled() const
+{
+  return m_explodedEnabled;
+}
+
+void VolumeSink::setExplodedEnabled(bool enabled)
+{
+  setExplodedEnabledInternal(enabled, /*refitCamera=*/true);
+}
+
+void VolumeSink::setExplodedEnabledInternal(bool enabled, bool refitCamera)
+{
+  if (m_explodedEnabled == enabled) {
+    return;
+  }
+  if (enabled && m_usingMultiBlock) {
+    qWarning("VolumeSink: the exploded view is not supported for volumes "
+             "larger than the GPU's 3-D texture size limit, which are "
+             "rendered in bricks.");
+    emit explodedChanged(); // put the checkbox back
+    return;
+  }
+  m_explodedEnabled = enabled;
+  if (enabled && m_cutOutEnabled) {
+    m_cutOutEnabled = false;
+    emit cutOutChanged();
+  }
+  applyExploded();
+  applyCutOut();
+  applyScattering();
+  emit lightingStateChanged();
+  emit explodedChanged();
+  if (refitCamera) {
+    resetCameraQueued();
+  }
+  emit renderNeeded();
+}
+
+int VolumeSink::explodedAxis() const
+{
+  return m_explodedAxis;
+}
+
+void VolumeSink::setExplodedAxis(int axis)
+{
+  axis = qBound(0, axis, 2);
+  if (m_explodedAxis == axis) {
+    return;
+  }
+  m_explodedAxis = axis;
+  applyExploded();
+  emit explodedChanged();
+  resetCameraQueued();
+  emit renderNeeded();
+}
+
+int VolumeSink::explodedChunks() const
+{
+  return m_explodedChunks;
+}
+
+void VolumeSink::setExplodedChunks(int chunks)
+{
+  chunks = qBound(2, chunks, 16);
+  if (m_explodedChunks == chunks) {
+    return;
+  }
+  m_explodedChunks = chunks;
+  applyExploded();
+  emit explodedChanged();
+  emit renderNeeded();
+}
+
+double VolumeSink::explodedGap() const
+{
+  return m_explodedGap;
+}
+
+void VolumeSink::setExplodedGap(double fraction)
+{
+  fraction = qBound(0.0, fraction, 1.0);
+  if (m_explodedGap == fraction) {
+    return;
+  }
+  m_explodedGap = fraction;
+  applyDisplayTransform();
+  emit explodedChanged();
+  emit renderNeeded();
+}
+
+void VolumeSink::teardownExplodedSlabs()
+{
+  if (renderView()) {
+    for (auto& slab : m_explodedVolumes) {
+      renderView()->RemovePropFromRenderer(slab);
+    }
+  }
+  m_explodedVolumes.clear();
+  m_explodedMappers.clear();
+  m_explodedOrderDirty = true;
+}
+
+void VolumeSink::applyExploded()
+{
+  auto vol = volumeData();
+  if (!vol || !vol->isValid() || !m_explodedEnabled || m_usingMultiBlock) {
+    if (m_explodedEnabled && m_usingMultiBlock) {
+      // Data grew past the texture limit while exploded: drop the mode
+      qWarning("VolumeSink: the exploded view is not supported for volumes "
+               "larger than the GPU's 3-D texture size limit, which are "
+               "rendered in bricks. Turning it off.");
+      m_explodedEnabled = false;
+      applyScattering();
+      emit lightingStateChanged();
+      emit explodedChanged();
+    }
+    bool hadSlabs = !m_explodedVolumes.empty();
+    teardownExplodedSlabs();
+    if (hadSlabs) {
+      double none[6] = { 0, 0, 0, 0, 0, 0 };
+      m_volumeMapper->SetCroppingState(0, none, VTK_CROP_SUBVOLUME);
+      applyDisplayTransform();
+    }
+    return;
+  }
+
+  auto* image = vol->imageData();
+  const int chunks = m_explodedChunks;
+
+  // Extra slabs are clones of slab 0's configuration on the same image.
+  // Shadows stay at zero on them (see applyScattering).
+  while (static_cast<int>(m_explodedMappers.size()) < chunks - 1) {
+    auto mapper = vtkSmartPointer<SmartVolumeMapper>::New();
+    mapper->SetScalarModeToUsePointFieldData();
+    mapper->SetBlendMode(m_volumeMapper->GetBlendMode());
+    mapper->SetUseJittering(m_volumeMapper->GetUseJittering());
+    mapper->SetGlobalIlluminationReach(
+      m_volumeMapper->GetGlobalIlluminationReach());
+    mapper->SetComputeNormalFromOpacity(
+      m_volumeMapper->GetComputeNormalFromOpacity());
+    if (auto* planes = m_volumeMapper->GetClippingPlanes()) {
+      planes->InitTraversal();
+      while (auto* plane = planes->GetNextItem()) {
+        mapper->AddClippingPlane(plane);
+      }
+    }
+    auto slab = vtkSmartPointer<vtkVolume>::New();
+    slab->SetMapper(mapper);
+    slab->SetProperty(m_volumeProperty);
+    slab->SetVisibility(m_volume->GetVisibility());
+    if (renderView()) {
+      renderView()->AddPropToRenderer(slab);
+    }
+    m_explodedMappers.push_back(mapper);
+    m_explodedVolumes.push_back(slab);
+    m_explodedOrderDirty = true;
+  }
+  while (static_cast<int>(m_explodedMappers.size()) > chunks - 1) {
+    if (renderView()) {
+      renderView()->RemovePropFromRenderer(m_explodedVolumes.back());
+    }
+    m_explodedVolumes.pop_back();
+    m_explodedMappers.pop_back();
+    m_explodedOrderDirty = true;
+  }
+
+  double bounds[6];
+  image->GetBounds(bounds);
+  const int axis = m_explodedAxis;
+  const double lo = bounds[2 * axis];
+  const double length = bounds[2 * axis + 1] - lo;
+  auto mappers = allMappers();
+  for (int k = 0; k < chunks; ++k) {
+    auto* mapper = mappers[k];
+    if (mapper->GetInputDataObject(0, 0) != image) {
+      mapper->SetInputData(image);
+    }
+    if (auto* name = m_volumeMapper->GetArrayName()) {
+      mapper->SelectScalarArray(name);
+    }
+    double planes[6];
+    for (int a = 0; a < 3; ++a) {
+      planes[2 * a] = bounds[2 * a];
+      planes[2 * a + 1] = bounds[2 * a + 1];
+    }
+    planes[2 * axis] = lo + length * k / chunks;
+    planes[2 * axis + 1] = lo + length * (k + 1) / chunks;
+    mapper->SetCroppingState(1, planes, VTK_CROP_SUBVOLUME);
+  }
+  applyDisplayTransform();
+}
+
+void VolumeSink::applyDisplayTransform()
+{
+  auto vol = volumeData();
+  if (!vol || !vol->isValid()) {
+    return;
+  }
+  auto pos = vol->displayPosition();
+  auto orient = vol->displayOrientation();
+  m_volume->SetPosition(pos.data());
+  m_volume->SetOrientation(orient.data());
+  if (m_explodedVolumes.empty()) {
+    return;
+  }
+
+  // Each slab k sits gap * length further along the axis in data space;
+  // rotate that offset the way vtkProp3D applies the orientation so the
+  // slabs still line up after a display rotation.
+  double bounds[6];
+  vol->imageData()->GetBounds(bounds);
+  const int axis = m_explodedAxis;
+  const double length = bounds[2 * axis + 1] - bounds[2 * axis];
+  vtkNew<vtkTransform> rotation;
+  rotation->PostMultiply();
+  rotation->RotateY(orient[1]);
+  rotation->RotateX(orient[0]);
+  rotation->RotateZ(orient[2]);
+  for (size_t i = 0; i < m_explodedVolumes.size(); ++i) {
+    double offset[3] = { 0, 0, 0 };
+    offset[axis] = (static_cast<double>(i) + 1) * m_explodedGap * length;
+    rotation->TransformVector(offset, offset);
+    double slabPos[3] = { pos[0] + offset[0], pos[1] + offset[1],
+                          pos[2] + offset[2] };
+    m_explodedVolumes[i]->SetPosition(slabPos);
+    m_explodedVolumes[i]->SetOrientation(orient.data());
+  }
+}
+
+void VolumeSink::sortExplodedProps()
+{
+  if (m_explodedVolumes.empty() || !renderView()) {
+    return;
+  }
+  auto* renderer = renderView()->GetRenderer();
+  auto* camera = renderer ? renderer->GetActiveCamera() : nullptr;
+  if (!camera) {
+    return;
+  }
+  // Slab k lies further along the axis the larger k is. With the camera
+  // looking along +axis the high slabs are the far ones and must draw
+  // first; otherwise slab 0 is farthest.
+  double axisDir[3] = { 0, 0, 0 };
+  axisDir[m_explodedAxis] = 1.0;
+  auto vol = volumeData();
+  auto orient = vol && vol->isValid() ? vol->displayOrientation()
+                                      : std::array<double, 3>{ 0, 0, 0 };
+  vtkNew<vtkTransform> rotation;
+  rotation->PostMultiply();
+  rotation->RotateY(orient[1]);
+  rotation->RotateX(orient[0]);
+  rotation->RotateZ(orient[2]);
+  rotation->TransformVector(axisDir, axisDir);
+  double view[3];
+  camera->GetDirectionOfProjection(view);
+  bool reversed = view[0] * axisDir[0] + view[1] * axisDir[1] +
+                    view[2] * axisDir[2] > 0.0;
+  if (!m_explodedOrderDirty && reversed == m_explodedOrderReversed) {
+    return;
+  }
+  m_explodedOrderReversed = reversed;
+  m_explodedOrderDirty = false;
+  auto volumes = allVolumes();
+  if (reversed) {
+    std::reverse(volumes.begin(), volumes.end());
+  }
+  // Reorder the collection itself: RemoveViewProp would release each
+  // slab's GPU texture and force a full re-upload on the next frame.
+  auto* props = renderer->GetViewProps();
+  for (auto* slab : volumes) {
+    props->RemoveItem(slab);
+    props->AddItem(slab);
+  }
+}
+
+void VolumeSink::resetCameraQueued()
+{
+  vtkWeakPointer<vtkSMRenderViewProxy> proxy(
+    vtkSMRenderViewProxy::SafeDownCast(view()));
+  if (proxy) {
+    QMetaObject::invokeMethod(
+      this,
+      [proxy]() {
+        if (proxy) {
+          proxy->ResetCamera();
+        }
+      },
+      Qt::QueuedConnection);
+  }
+}
+
 void VolumeSink::applyCutOut()
 {
   auto vol = volumeData();
@@ -1446,6 +1823,9 @@ void VolumeSink::applyCutOut()
     return;
   }
 
+  if (m_explodedEnabled) {
+    return; // applyExploded() owns the cropping planes
+  }
   if (!m_cutOutEnabled) {
     double none[6] = { 0, 0, 0, 0, 0, 0 };
     m_volumeMapper->SetCroppingState(0, none, VTK_CROP_SUBVOLUME);
@@ -1493,6 +1873,10 @@ QString VolumeSink::scatteringUnavailableReason() const
               "so it is rendered in bricks. Volumetric shadows cannot be "
               "bounded on that path and are unavailable here. Subsample or "
               "crop the volume to use them.");
+  }
+  if (m_explodedEnabled) {
+    return tr("Volumetric shadows are unavailable while the exploded view "
+              "is on, since every slab would render its own shadow pass.");
   }
   return tr("Volumetric shadows are turned off by the "
             "Volume.AllowVolumetricScattering setting.");
@@ -1622,9 +2006,74 @@ QWidget* VolumeSink::createSinkPropertiesWidget(QWidget* parent)
   connect(this, &VolumeSink::cutOutChanged, widget,
           [syncCutOut]() { syncCutOut(); });
 
+  // --- Exploded view ---
+  auto* explodedBox = new QGroupBox("Exploded View", widget);
+  explodedBox->setCheckable(true);
+  explodedBox->setToolTip(
+    "Render the volume as slabs pulled apart along one axis. The data is "
+    "not modified.");
+  {
+    QSignalBlocker blocker(explodedBox);
+    explodedBox->setChecked(explodedEnabled());
+  }
+  auto* explodedBody = new QWidget(explodedBox);
+  auto* explodedForm = new QFormLayout(explodedBody);
+  explodedForm->setContentsMargins(0, 0, 0, 0);
+  auto* explodedLayout = new QVBoxLayout(explodedBox);
+  explodedLayout->addWidget(explodedBody);
+  connect(explodedBox, &QGroupBox::toggled, this,
+          [this](bool on) { setExplodedEnabled(on); });
+
+  auto* axisCombo = new QComboBox(explodedBody);
+  axisCombo->addItems({ "X", "Y", "Z" });
+  {
+    QSignalBlocker blocker(axisCombo);
+    axisCombo->setCurrentIndex(explodedAxis());
+  }
+  explodedForm->addRow("Axis", axisCombo);
+  connect(axisCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+          this, [this](int idx) { setExplodedAxis(idx); });
+
+  auto* chunksSpin = new QSpinBox(explodedBody);
+  chunksSpin->setRange(2, 16);
+  chunksSpin->setValue(explodedChunks());
+  chunksSpin->setToolTip("How many slabs the volume is split into.");
+  explodedForm->addRow("Slabs", chunksSpin);
+  connect(chunksSpin, QOverload<int>::of(&QSpinBox::valueChanged), this,
+          [this](int n) { setExplodedChunks(n); });
+
+  auto* gapSlider = new DoubleSliderWidget(true, explodedBody);
+  gapSlider->setLineEditWidth(50);
+  gapSlider->setMinimum(0.0);
+  gapSlider->setMaximum(1.0);
+  gapSlider->setValue(explodedGap());
+  gapSlider->setToolTip(
+    "Space between slabs, as a fraction of the volume's length along the "
+    "axis.");
+  explodedForm->addRow("Gap", gapSlider);
+  connect(gapSlider, &DoubleSliderWidget::valueEdited, this,
+          [this](double v) { setExplodedGap(v); });
+  connect(gapSlider, &DoubleSliderWidget::valueChanged, this,
+          [this](double v) { setExplodedGap(v); });
+
+  auto syncExploded = [this, explodedBox, explodedBody, axisCombo,
+                       chunksSpin, gapSlider]() {
+    QSignalBlocker b1(explodedBox), b2(axisCombo), b3(chunksSpin),
+      b4(gapSlider);
+    explodedBox->setChecked(explodedEnabled());
+    explodedBody->setVisible(explodedEnabled());
+    axisCombo->setCurrentIndex(explodedAxis());
+    chunksSpin->setValue(explodedChunks());
+    gapSlider->setValue(explodedGap());
+  };
+  syncExploded();
+  connect(this, &VolumeSink::explodedChanged, widget,
+          [syncExploded]() { syncExploded(); });
+
   // Below the Lighting group, ahead of the trailing stretch
   auto* mainLayout = widget->mainLayout();
   mainLayout->insertWidget(mainLayout->count() - 1, cutOutBox);
+  mainLayout->insertWidget(mainLayout->count() - 1, explodedBox);
 
   // Push all lighting state (values + active preset highlight) into the
   // widget; reused whenever any lighting parameter changes on this sink.
@@ -1740,6 +2189,13 @@ QJsonObject VolumeSink::serialize() const
                                    m_cutOutPosition[2] };
   json["cutOut"] = cutOut;
 
+  QJsonObject exploded;
+  exploded["enabled"] = m_explodedEnabled;
+  exploded["axis"] = m_explodedAxis;
+  exploded["chunks"] = m_explodedChunks;
+  exploded["gap"] = m_explodedGap;
+  json["exploded"] = exploded;
+
   QJsonObject light;
   light["enabled"] = lighting();
   light["ambient"] = ambient();
@@ -1777,6 +2233,17 @@ bool VolumeSink::deserialize(const QJsonObject& json)
     m_cutOutEnabled = cutOut["enabled"].toBool();
     applyCutOut();
   }
+  if (json.contains("exploded")) {
+    auto exploded = json["exploded"].toObject();
+    m_explodedAxis = qBound(0, exploded["axis"].toInt(2), 2);
+    m_explodedChunks = qBound(2, exploded["chunks"].toInt(4), 16);
+    m_explodedGap = qBound(0.0, exploded["gap"].toDouble(0.25), 1.0);
+    m_explodedEnabled = exploded["enabled"].toBool();
+    if (m_explodedEnabled) {
+      m_cutOutEnabled = false;
+    }
+    applyExploded();
+  }
   if (json.contains("rayJittering")) {
     setJittering(json["rayJittering"].toBool());
   }
@@ -1813,10 +2280,7 @@ void VolumeSink::onMetadataChanged()
 {
   auto vol = volumeData();
   if (!vol) return;
-  auto pos = vol->displayPosition();
-  auto orient = vol->displayOrientation();
-  m_volume->SetPosition(pos.data());
-  m_volume->SetOrientation(orient.data());
+  applyDisplayTransform();
   applyActiveScalars();
   QMetaObject::invokeMethod(this, &VolumeSink::populateScalarsCombo,
                             Qt::QueuedConnection);

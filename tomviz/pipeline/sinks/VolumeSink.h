@@ -11,6 +11,8 @@
 #include <vtkNew.h>
 #include <vtkSmartPointer.h>
 
+#include <vector>
+
 class QComboBox;
 
 class vtkCallbackCommand;
@@ -175,11 +177,25 @@ public:
   double cutOutPosition(int axis) const;
   void setCutOutPosition(int axis, double fraction);
 
+  /// Exploded view: render the volume as evenly sized slabs along one
+  /// axis, pulled apart by a gap, without touching the data. Mutually
+  /// exclusive with the cut-out, and unsupported on bricked volumes.
+  bool explodedEnabled() const;
+  void setExplodedEnabled(bool enabled);
+  int explodedAxis() const;
+  void setExplodedAxis(int axis);
+  int explodedChunks() const;
+  void setExplodedChunks(int chunks);
+  /// Gap between slabs as a fraction (0-1) of the axis length.
+  double explodedGap() const;
+  void setExplodedGap(double fraction);
+
   void onMetadataChanged() override;
 
 signals:
   void interpolationTypeChanged(int type);
   void cutOutChanged();
+  void explodedChanged();
   void lightingChanged(bool enabled);
   /// Emitted whenever any lighting parameter changes; the properties widget
   /// uses this to refresh its sliders and the active preset highlight.
@@ -204,6 +220,24 @@ private:
   void warnClippingUnsupported() const;
   /// Push the cut-out state onto the mapper for the current bounds.
   void applyCutOut();
+  /// Build or tear down the extra slab actors and crop every slab to its
+  /// share of the axis.
+  void applyExploded();
+  void teardownExplodedSlabs();
+  /// Switch the exploded view on or off; the camera is only refit for a
+  /// user request, not when the cut-out displaces it.
+  void setExplodedEnabledInternal(bool enabled, bool refitCamera);
+  /// Place every slab: the display transform from the metadata, plus each
+  /// slab's offset along the exploded axis.
+  void applyDisplayTransform();
+  /// Volumes composite in prop order, so before each render put the
+  /// slabs back to front along the view direction.
+  void sortExplodedProps();
+  /// Slab 0 plus the extra slabs, for settings that apply to every mapper.
+  std::vector<SmartVolumeMapper*> allMappers();
+  std::vector<vtkVolume*> allVolumes();
+  /// Refit the camera once the rendered extent changed.
+  void resetCameraQueued();
   // Log why scatteringSupported() is false.
   void warnScatteringUnsupported() const;
   // User-facing version of the above, for the properties widget. Empty when
@@ -235,6 +269,19 @@ private:
   bool m_cutOutEnabled = false;
   int m_cutOutCorner = 0;
   double m_cutOutPosition[3] = { 0.5, 0.5, 0.5 };
+  // Exploded-view state; applied by applyExploded(). Slab 0 is m_volume
+  // and m_volumeMapper; these hold slabs 1..chunks-1.
+  bool m_explodedEnabled = false;
+  int m_explodedAxis = 2;
+  int m_explodedChunks = 4;
+  double m_explodedGap = 0.25;
+  std::vector<vtkSmartPointer<vtkVolume>> m_explodedVolumes;
+  std::vector<vtkSmartPointer<SmartVolumeMapper>> m_explodedMappers;
+  bool m_explodedOrderReversed = false;
+  // Slabs were added or re-added in natural order; re-sort regardless
+  bool m_explodedOrderDirty = true;
+  vtkNew<vtkCallbackCommand> m_sortObserver;
+  unsigned long m_sortObserverId = 0;
   vtkNew<vtkVolume> m_volume;
   vtkNew<vtkVolumeProperty> m_volumeProperty;
   vtkNew<vtkPiecewiseFunction> m_gradientOpacity;

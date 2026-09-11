@@ -145,6 +145,10 @@ SinkSnapshot SinkSnapshot::capture(LegacyModuleSink* sink)
     snapshot.cutOutPosition = { { volume->cutOutPosition(0),
                                   volume->cutOutPosition(1),
                                   volume->cutOutPosition(2) } };
+    snapshot.explodedEnabled = volume->explodedEnabled();
+    snapshot.explodedAxis = volume->explodedAxis();
+    snapshot.explodedChunks = volume->explodedChunks();
+    snapshot.explodedGap = volume->explodedGap();
   }
   return snapshot;
 }
@@ -167,6 +171,14 @@ QJsonObject SinkSnapshot::serialize() const
     cutOut["position"] = QJsonArray{ pos[0], pos[1], pos[2] };
     json["cutOut"] = cutOut;
   }
+  if (explodedEnabled) {
+    QJsonObject exploded;
+    exploded["enabled"] = *explodedEnabled;
+    exploded["axis"] = explodedAxis.value_or(2);
+    exploded["chunks"] = explodedChunks.value_or(4);
+    exploded["gap"] = explodedGap.value_or(0.25);
+    json["exploded"] = exploded;
+  }
   return json;
 }
 
@@ -181,6 +193,13 @@ SinkSnapshot SinkSnapshot::deserialize(const QJsonObject& json)
     snapshot.scalarOpacity = vtkSmartPointer<vtkPiecewiseFunction>::New();
     tomviz::deserialize(snapshot.scalarOpacity.Get(),
                         json["scalarOpacity"].toObject());
+  }
+  if (json.contains("exploded")) {
+    auto exploded = json["exploded"].toObject();
+    snapshot.explodedEnabled = exploded["enabled"].toBool();
+    snapshot.explodedAxis = exploded["axis"].toInt(2);
+    snapshot.explodedChunks = exploded["chunks"].toInt(4);
+    snapshot.explodedGap = exploded["gap"].toDouble(0.25);
   }
   if (json.contains("cutOut")) {
     auto cutOut = json["cutOut"].toObject();
@@ -241,6 +260,12 @@ void SceneSnapshot::apply(Pipeline* pipeline) const
           }
         }
         volume->setCutOutEnabled(*snapshot.cutOutEnabled);
+      }
+      if (snapshot.explodedEnabled) {
+        volume->setExplodedAxis(snapshot.explodedAxis.value_or(2));
+        volume->setExplodedChunks(snapshot.explodedChunks.value_or(4));
+        volume->setExplodedGap(snapshot.explodedGap.value_or(0.25));
+        volume->setExplodedEnabled(*snapshot.explodedEnabled);
       }
     }
     if (sink->visibility() != snapshot.visible) {
@@ -335,6 +360,25 @@ void applySceneTransition(Pipeline* pipeline, const SceneSnapshot& from,
         if (*a.cutOutEnabled != *b.cutOutEnabled &&
             volume->cutOutEnabled() != enabled) {
           volume->setCutOutEnabled(enabled);
+        }
+      }
+      if (a.explodedEnabled && b.explodedEnabled) {
+        // The gap slides; everything else switches halfway
+        if (a.explodedGap && b.explodedGap && *a.explodedGap != *b.explodedGap) {
+          volume->setExplodedGap(lerp(*a.explodedGap, *b.explodedGap, u));
+        }
+        const SinkSnapshot& side = u < 0.5 ? a : b;
+        if (a.explodedAxis != b.explodedAxis && side.explodedAxis &&
+            volume->explodedAxis() != *side.explodedAxis) {
+          volume->setExplodedAxis(*side.explodedAxis);
+        }
+        if (a.explodedChunks != b.explodedChunks && side.explodedChunks &&
+            volume->explodedChunks() != *side.explodedChunks) {
+          volume->setExplodedChunks(*side.explodedChunks);
+        }
+        if (*a.explodedEnabled != *b.explodedEnabled &&
+            volume->explodedEnabled() != *side.explodedEnabled) {
+          volume->setExplodedEnabled(*side.explodedEnabled);
         }
       }
     }
