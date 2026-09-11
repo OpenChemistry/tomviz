@@ -53,6 +53,10 @@ struct Viewpoint
   /// moving the camera there and back.
   QByteArray thumbnail;
 
+  /// Caption shown in the render view (and exported movies) while the
+  /// path is at this viewpoint and on the leg leaving it. Empty = none.
+  QString label;
+
   /// Module state recorded with this viewpoint (visibility, opacity,
   /// volume cut-out); played back in step with the camera path.
   SceneSnapshot scene;

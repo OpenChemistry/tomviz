@@ -68,6 +68,9 @@ QJsonObject Viewpoint::serialize() const
   json["duration"] = duration;
   json["eased"] = eased;
   json["name"] = name;
+  if (!label.isEmpty()) {
+    json["label"] = label;
+  }
   if (!thumbnail.isEmpty()) {
     json["thumbnail"] = QString::fromLatin1(thumbnail.toBase64());
   }
@@ -91,6 +94,7 @@ Viewpoint Viewpoint::deserialize(const QJsonObject& json)
   viewpoint.duration = json["duration"].toDouble(viewpoint.duration);
   viewpoint.eased = json["eased"].toBool(viewpoint.eased);
   viewpoint.name = json["name"].toString();
+  viewpoint.label = json["label"].toString();
   viewpoint.thumbnail =
     QByteArray::fromBase64(json["thumbnail"].toString().toLatin1());
   viewpoint.scene = SceneSnapshot::deserialize(json["scene"].toObject());

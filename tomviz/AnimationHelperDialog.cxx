@@ -48,6 +48,7 @@
 
 #include <QBuffer>
 #include <QCheckBox>
+#include <QLineEdit>
 #include <QHBoxLayout>
 #include <QIcon>
 #include <QLabel>
@@ -158,6 +159,8 @@ public:
   Ui::AnimationHelperDialog ui;
   // Whether Add/Update Viewpoint also records the module state
   QCheckBox* recordScene = nullptr;
+  // Caption shown in the view while the path is at the selected viewpoint
+  QLineEdit* viewpointLabel = nullptr;
   pqPropertyLinks pqLinks;
   QPointer<AnimationHelperDialog> parent;
   vtkWeakPointer<vtkSMProxy> linkedScene;
@@ -180,6 +183,21 @@ public:
   Internal(AnimationHelperDialog* p) : QObject(p), parent(p)
   {
     ui.setupUi(p);
+
+    auto* labelRow = new QHBoxLayout;
+    auto* labelTitle = new QLabel("Label:", parent);
+    viewpointLabel = new QLineEdit(parent);
+    viewpointLabel->setPlaceholderText("Caption shown while at this viewpoint");
+    viewpointLabel->setToolTip(
+      "Text drawn in the corner of the 3D view, and in exported movies, "
+      "from this viewpoint until the next one.");
+    labelTitle->setBuddy(viewpointLabel);
+    labelRow->addWidget(labelTitle);
+    labelRow->addWidget(viewpointLabel, 1);
+    ui.cameraLayout->insertLayout(
+      ui.cameraLayout->indexOf(ui.segmentLayout) + 1, labelRow);
+    connect(viewpointLabel, &QLineEdit::editingFinished, this,
+            &Internal::labelChanged);
 
     recordScene = new QCheckBox("Record module state with viewpoints", parent);
     recordScene->setToolTip(
@@ -652,10 +670,15 @@ public:
 
     QSignalBlocker blockedDuration(ui.segmentDuration);
     QSignalBlocker blockedEased(ui.segmentEased);
+    QSignalBlocker blockedLabel(viewpointLabel);
     if (hasSegment) {
       ui.segmentDuration->setValue(viewpoints.at(row).duration);
       ui.segmentEased->setChecked(viewpoints.at(row).eased);
     }
+    bool hasViewpoint = row >= 0 && row < viewpoints.size();
+    viewpointLabel->setText(hasViewpoint ? viewpoints.at(row).label
+                                         : QString());
+    viewpointLabel->setEnabled(hasViewpoint);
 
     ui.segmentDurationLabel->setEnabled(hasSegment);
     ui.segmentDuration->setEnabled(hasSegment);
@@ -731,6 +754,21 @@ public:
   void removeViewpoint()
   {
     CameraViewpoints::instance().removeAt(ui.viewpointList->currentRow());
+  }
+
+  void labelChanged()
+  {
+    auto& viewpoints = CameraViewpoints::instance();
+    int row = ui.viewpointList->currentRow();
+    if (row < 0 || row >= viewpoints.size()) {
+      return;
+    }
+    auto viewpoint = viewpoints.at(row);
+    if (viewpoint.label == viewpointLabel->text()) {
+      return;
+    }
+    viewpoint.label = viewpointLabel->text();
+    viewpoints.replace(row, viewpoint);
   }
 
   void segmentChanged()

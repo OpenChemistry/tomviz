@@ -463,8 +463,10 @@ TEST_F(AnimationTest, RecordedModuleStateSurvivesAStateFileRoundTrip)
   slice->setVisibility(false);
 
   Viewpoint viewpoint;
+  viewpoint.label = "Cu channel";
   viewpoint.scene = SceneSnapshot::capture(&pipeline);
   auto restored = Viewpoint::deserialize(viewpoint.serialize());
+  EXPECT_EQ(restored.label, "Cu channel");
 
   int id = pipeline.nodeId(slice);
   ASSERT_TRUE(restored.scene.sinks.contains(id));
