@@ -3,6 +3,7 @@
 
 #include "VolumeData.h"
 
+#include "ComputeHistogram.h"
 #include "Utilities.h"
 
 #include <vtkColorTransferFunction.h>
@@ -286,6 +287,26 @@ std::array<double, 2> VolumeData::scalarRange() const
     s->GetFiniteRange(range.data(), -1);
   }
   return range;
+}
+
+double VolumeData::scalarPercentile(double fraction) const
+{
+  auto* s = scalars();
+  if (!s) {
+    return 0.0;
+  }
+  auto range = scalarRange();
+  double result = range[0];
+  switch (s->GetDataType()) {
+    vtkTemplateMacro(
+      result = ComputePercentile(
+        reinterpret_cast<VTK_TT*>(s->GetVoidPointer(0)),
+        s->GetNumberOfTuples(), s->GetNumberOfComponents(), range.data(),
+        fraction));
+    default:
+      break;
+  }
+  return result;
 }
 
 std::array<double, 2> VolumeData::colorMapRange() const

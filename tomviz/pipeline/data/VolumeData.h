@@ -114,6 +114,10 @@ public:
   /// Get the scalar range [min, max] of the active scalars
   std::array<double, 2> scalarRange() const;
 
+  /// Value below which @a fraction (0 to 1) of the active scalars lie,
+  /// estimated from a histogram; the magnitude for multi-component data.
+  double scalarPercentile(double fraction) const;
+
   /// The range the color map should span: scalarRange(), or the union of
   /// every step's range when this is a time series.
   ///

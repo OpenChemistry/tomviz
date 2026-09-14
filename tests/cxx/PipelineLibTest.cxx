@@ -60,6 +60,8 @@
 #include <QSignalSpy>
 #include <QTemporaryDir>
 #include <QTemporaryFile>
+
+#include <limits>
 #include <QTest>
 #include <QTextStream>
 
@@ -1040,6 +1042,27 @@ TEST_F(PipelineLibTest, VolumeDataMetadata)
   vol.setUnits("nm");
   EXPECT_EQ(vol.label(), "Test Volume");
   EXPECT_EQ(vol.units(), "nm");
+}
+
+TEST_F(PipelineLibTest, VolumeDataPercentile)
+{
+  // 1000 voxels holding 0..999: the p-th percentile is about 10 * p
+  vtkNew<vtkImageData> image;
+  image->SetDimensions(10, 10, 10);
+  image->AllocateScalars(VTK_FLOAT, 1);
+  auto* values = static_cast<float*>(image->GetScalarPointer());
+  for (int i = 0; i < 1000; ++i) {
+    values[i] = static_cast<float>(i);
+  }
+  VolumeData vol;
+  vol.setImageData(image);
+
+  EXPECT_NEAR(vol.scalarPercentile(0.8), 800.0, 2.0);
+  EXPECT_NEAR(vol.scalarPercentile(0.0), 0.0, 1.0);
+  EXPECT_NEAR(vol.scalarPercentile(1.0), 999.0, 1.0);
+  // A NaN is ignored rather than poisoning the estimate
+  values[0] = std::numeric_limits<float>::quiet_NaN();
+  EXPECT_NEAR(vol.scalarPercentile(0.8), 800.0, 2.0);
 }
 
 // --- SphereSource tests ---

@@ -18,6 +18,7 @@ ThresholdRangeWidget::ThresholdRangeWidget(
   const QMap<QString, pipeline::PortData>& inputs, QWidget* parent)
   : CustomPythonNodeWidget(parent)
 {
+  double lowerGuess = 0.0;
   if (auto it = inputs.constFind(QStringLiteral("volume"));
       it != inputs.constEnd()) {
     if (auto vol = it.value().value<pipeline::VolumeDataPtr>();
@@ -25,6 +26,7 @@ ThresholdRangeWidget::ThresholdRangeWidget(
       auto range = vol->scalarRange();
       m_dataRange[0] = range[0];
       m_dataRange[1] = range[1];
+      lowerGuess = vol->scalarPercentile(0.8);
     }
   }
   if (!(m_dataRange[1] > m_dataRange[0])) {
@@ -64,10 +66,9 @@ ThresholdRangeWidget::ThresholdRangeWidget(
     }
   });
 
-  // Until told otherwise, mirror ThresholdSink's initial pick
-  double mid = 0.5 * (m_dataRange[0] + m_dataRange[1]);
-  double span = m_dataRange[1] - m_dataRange[0];
-  setThresholds(mid - 0.1 * span, mid + 0.1 * span);
+  // Until told otherwise, mirror ThresholdSink's initial pick: the
+  // brightest 20% of the data
+  setThresholds(lowerGuess, m_dataRange[1]);
 }
 
 void ThresholdRangeWidget::setThresholds(double lower, double upper)

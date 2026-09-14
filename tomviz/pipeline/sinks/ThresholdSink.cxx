@@ -135,13 +135,12 @@ bool ThresholdSink::consume(const QMap<QString, PortData>& inputs)
     }
   }
 
-  // Auto-set to the middle 10% of range if not explicitly set
-  // (copied from old ModuleThreshold::initialize).
+  // Start at the brightest 20% of the data if not explicitly set. Most
+  // voxels of a reconstruction are dim background, and thresholding
+  // into that noise produces a huge surface that is slow to render.
   if (!m_rangeSet) {
-    double delta = (range[1] - range[0]);
-    double mid = (range[0] + range[1]) / 2.0;
-    m_lower = mid - 0.1 * delta;
-    m_upper = mid + 0.1 * delta;
+    m_lower = volume->scalarPercentile(0.8);
+    m_upper = range[1];
   }
 
   // SM proxy work must happen on the GUI thread; consume() runs there
