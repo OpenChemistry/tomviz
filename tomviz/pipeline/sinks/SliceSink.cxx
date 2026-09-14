@@ -1011,10 +1011,16 @@ QWidget* SliceSink::createSinkPropertiesWidget(QWidget* parent)
             }
           });
 
-  // Update UI when direction/slice changes from the sink itself
+  // Update UI when direction/slice changes from the sink itself, e.g.
+  // grabbing the plane's arrow in the view switches it to Custom
   connect(this, &SliceSink::directionChanged, widget,
-          [sliceSlider, thickSpin, pointInputs, normalInputs,
+          [sliceSlider, thickSpin, pointInputs, normalInputs, dirCombo,
            this](Direction dir) {
+            int idx = dirCombo->findData(static_cast<int>(dir));
+            if (idx >= 0 && idx != dirCombo->currentIndex()) {
+              QSignalBlocker blocker(dirCombo);
+              dirCombo->setCurrentIndex(idx);
+            }
             bool isOrthoDir = (dir != Custom);
             sliceSlider->setVisible(isOrthoDir);
             for (int i = 0; i < 3; ++i) {
