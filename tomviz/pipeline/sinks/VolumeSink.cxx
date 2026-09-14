@@ -18,6 +18,9 @@
 #include <QDebug>
 #include <QFormLayout>
 #include <QGroupBox>
+#include <QStyle>
+#include <QStyleOptionGroupBox>
+#include <QStylePainter>
 #include <QJsonArray>
 #include <QInputDialog>
 #include <QLineEdit>
@@ -366,6 +369,75 @@ double smallestSpacing(vtkImageData* image)
                                    std::abs(spacing[2]));
   return smallest > 0.0 ? smallest : 1.0;
 }
+
+/// A checkable group box that shrinks to its title row while unchecked.
+/// Hiding the body alone leaves the frame, which the style draws from the
+/// title down to the bottom of the widget, so an empty box remains. The
+/// widget itself is cut off at the title instead (the style option says
+/// where that is, since it varies by style) and the frame is left out of
+/// the paint so its top edge cannot peek through.
+class CollapsingGroupBox : public QGroupBox
+{
+public:
+  using QGroupBox::QGroupBox;
+
+  void setCollapsed(bool collapsed)
+  {
+    m_collapsed = collapsed;
+    // Keep the body from claiming space below the cut-off; a hidden widget
+    // still holds the layout's margins.
+    if (auto* l = layout()) {
+      if (collapsed) {
+        l->setContentsMargins(0, 0, 0, 0);
+      } else {
+        l->setContentsMargins(style()->pixelMetric(QStyle::PM_LayoutLeftMargin),
+                              style()->pixelMetric(QStyle::PM_LayoutTopMargin),
+                              style()->pixelMetric(
+                                QStyle::PM_LayoutRightMargin),
+                              style()->pixelMetric(
+                                QStyle::PM_LayoutBottomMargin));
+      }
+    }
+    if (collapsed) {
+      setFixedHeight(titleHeight());
+    } else {
+      setMinimumHeight(0);
+      setMaximumHeight(QWIDGETSIZE_MAX);
+    }
+    updateGeometry();
+    update();
+  }
+
+protected:
+  void paintEvent(QPaintEvent* event) override
+  {
+    if (!m_collapsed) {
+      QGroupBox::paintEvent(event);
+      return;
+    }
+    QStylePainter painter(this);
+    QStyleOptionGroupBox opt;
+    initStyleOption(&opt);
+    opt.subControls &= ~QStyle::SC_GroupBoxFrame;
+    painter.drawComplexControl(QStyle::CC_GroupBox, opt);
+  }
+
+private:
+  int titleHeight() const
+  {
+    QStyleOptionGroupBox opt;
+    initStyleOption(&opt);
+    const auto label =
+      style()->subControlRect(QStyle::CC_GroupBox, &opt,
+                              QStyle::SC_GroupBoxLabel, this);
+    const auto check =
+      style()->subControlRect(QStyle::CC_GroupBox, &opt,
+                              QStyle::SC_GroupBoxCheckBox, this);
+    return std::max(label.bottom(), check.bottom()) + 1;
+  }
+
+  bool m_collapsed = false;
+};
 
 } // namespace
 
@@ -2046,7 +2118,14 @@ QWidget* VolumeSink::createSinkPropertiesWidget(QWidget* parent)
   // --- Cut-out ---
   // A checkable group below Lighting; the corner and position rows are
   // only shown while the cut-out is on so the panel stays uncluttered.
-  auto* cutOutBox = new QGroupBox("Cut Out", widget);
+  // An unchecked group collapses to its title row so nothing empty is
+  // drawn below it.
+  auto collapseUnless = [](CollapsingGroupBox* box, QWidget* body, bool on) {
+    body->setVisible(on);
+    box->setCollapsed(!on);
+  };
+
+  auto* cutOutBox = new CollapsingGroupBox("Cut Out", widget);
   cutOutBox->setCheckable(true);
   cutOutBox->setToolTip(
     "Remove one octant of the volume so the interior can be seen from "
@@ -2092,17 +2171,17 @@ QWidget* VolumeSink::createSinkPropertiesWidget(QWidget* parent)
             [this, axis](double v) { setCutOutPosition(axis, v); });
   }
 
-  auto syncCutOut = [this, cutOutBox, cutOutBody]() {
+  auto syncCutOut = [this, cutOutBox, cutOutBody, collapseUnless]() {
     QSignalBlocker blocker(cutOutBox);
     cutOutBox->setChecked(cutOutEnabled());
-    cutOutBody->setVisible(cutOutEnabled());
+    collapseUnless(cutOutBox, cutOutBody, cutOutEnabled());
   };
   syncCutOut();
   connect(this, &VolumeSink::cutOutChanged, widget,
           [syncCutOut]() { syncCutOut(); });
 
   // --- Exploded view ---
-  auto* explodedBox = new QGroupBox("Exploded View", widget);
+  auto* explodedBox = new CollapsingGroupBox("Exploded View", widget);
   explodedBox->setCheckable(true);
   explodedBox->setToolTip(
     "Render the volume as slabs pulled apart along one axis. The data is "
@@ -2152,11 +2231,11 @@ QWidget* VolumeSink::createSinkPropertiesWidget(QWidget* parent)
           [this](double v) { setExplodedGap(v); });
 
   auto syncExploded = [this, explodedBox, explodedBody, axisCombo,
-                       chunksSpin, gapSlider]() {
+                       chunksSpin, gapSlider, collapseUnless]() {
     QSignalBlocker b1(explodedBox), b2(axisCombo), b3(chunksSpin),
       b4(gapSlider);
     explodedBox->setChecked(explodedEnabled());
-    explodedBody->setVisible(explodedEnabled());
+    collapseUnless(explodedBox, explodedBody, explodedEnabled());
     axisCombo->setCurrentIndex(explodedAxis());
     chunksSpin->setValue(explodedChunks());
     gapSlider->setValue(explodedGap());
