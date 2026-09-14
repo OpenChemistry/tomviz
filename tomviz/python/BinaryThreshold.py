@@ -50,6 +50,16 @@ class BinaryThreshold(tomviz.operators.CancelableOperator):
             threshold_filter = itk.BinaryThresholdImageFilter[
                 itk_input_image_type, itk_output_image_type].New()
             python_cast = itkutils.get_python_voxel_type(itk_image)
+            if python_cast is int:
+                # Round inward so a fractional threshold keeps only the
+                # integer values inside it, as the sliders show
+                import math
+                lower_threshold = math.ceil(lower_threshold)
+                upper_threshold = math.floor(upper_threshold)
+                if lower_threshold > upper_threshold:
+                    raise RuntimeError(
+                        'No integer value lies between the lower and '
+                        'upper thresholds')
             threshold_filter.SetLowerThreshold(python_cast(lower_threshold))
             threshold_filter.SetUpperThreshold(python_cast(upper_threshold))
             threshold_filter.SetInsideValue(1)
