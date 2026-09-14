@@ -30,6 +30,9 @@
 #include "sinks/LegacyModuleSink.h"
 #include "sinks/LightingPresetStore.h"
 #include "sinks/VolumeSink.h"
+#include "sinks/LabelMapSink.h"
+#include "sinks/LabelMapSurface.h"
+#include "data/LabelMapData.h"
 #include "sinks/SliceSink.h"
 #include "sinks/ContourSink.h"
 #include "sinks/ThresholdSink.h"
@@ -83,8 +86,11 @@
 #include <vtkMolecule.h>
 #include <vtkPointData.h>
 #include <vtkSmartPointer.h>
+#include <vtkCellData.h>
+#include <vtkPolyData.h>
 #include <vtkStringArray.h>
 #include <vtkTable.h>
+#include <vtkUnsignedCharArray.h>
 #include <vtkXMLImageDataWriter.h>
 
 namespace py = pybind11;
@@ -4113,6 +4119,163 @@ TEST_F(PipelineLibTest, VolumeSinkExplodedViewExcludesCutOut)
   EXPECT_DOUBLE_EQ(sink->explodedGap(), 1.0);
   sink->setExplodedAxis(7);
   EXPECT_EQ(sink->explodedAxis(), 2);
+}
+
+// A 12^3 label map: label 1 fills a 4^3 block, label 2 a 2^3 block
+// touching it, background 0 everywhere else.
+PortData makeTwoLabelVolume()
+{
+  vtkNew<vtkImageData> image;
+  image->SetDimensions(12, 12, 12);
+  image->AllocateScalars(VTK_UNSIGNED_CHAR, 1);
+  auto* p = static_cast<unsigned char*>(image->GetScalarPointer());
+  std::fill(p, p + 12 * 12 * 12, 0);
+  for (int z = 3; z < 7; ++z) {
+    for (int y = 3; y < 7; ++y) {
+      for (int x = 3; x < 7; ++x) {
+        p[(z * 12 + y) * 12 + x] = 1;
+      }
+      for (int x = 7; x < 9; ++x) {
+        if (y < 5 && z < 5) {
+          p[(z * 12 + y) * 12 + x] = 2;
+        }
+      }
+    }
+  }
+  image->GetPointData()->GetScalars()->SetName("labels");
+  return PortData(std::any(makeVolumeData(image, PortType::LabelMap)),
+                  PortType::LabelMap);
+}
+
+TEST_F(PipelineLibTest, LabelMapSurfaceExtractsOneClosedSurfacePerLabel)
+{
+  auto data = makeTwoLabelVolume();
+  auto labels = labelMapData(data.value<VolumeDataPtr>());
+  ASSERT_TRUE(labels);
+  labels->refreshLabels();
+  const auto& table = labels->labels();
+  ASSERT_EQ(table.count(), 3); // 0, 1, 2
+
+  auto regions = regionLabels(table, 0.0);
+  EXPECT_EQ(regions, (QVector<double>{ 1.0, 2.0 }));
+  // Label 0 is hidden by convention; 1 and 2 start visible
+  EXPECT_EQ(visibleLabels(table, 0.0), regions);
+
+  // Unsmoothed: the raw voxel faces. A 4^3 block has 6 faces of 16
+  // quads, minus the 2x2 patch label 2 covers on one of them; the
+  // shared patch is a face of label 2 too, so it is still output once.
+  auto surface =
+    extractLabelSurface(labels->imageData(), regions, regions, 0, 0.0);
+  ASSERT_TRUE(surface);
+  EXPECT_EQ(surface->GetNumberOfCells(), 6 * 16 + 6 * 4 - 4);
+  auto* boundary = surface->GetCellData()->GetArray("BoundaryLabels");
+  ASSERT_TRUE(boundary);
+  EXPECT_EQ(boundary->GetNumberOfComponents(), 2);
+
+  // Hiding label 2 drops its faces except the one it shares with 1,
+  // which now bounds 1 alone
+  auto only1 = extractLabelSurface(labels->imageData(), regions,
+                                   QVector<double>{ 1.0 }, 0, 0.0);
+  EXPECT_EQ(only1->GetNumberOfCells(), 6 * 16);
+
+  // Colors come from the table, per face
+  colorLabelSurface(surface, table, 0.0);
+  auto* colors = vtkUnsignedCharArray::SafeDownCast(
+    surface->GetCellData()->GetArray(kLabelColorsArrayName));
+  ASSERT_TRUE(colors);
+  EXPECT_EQ(colors->GetNumberOfTuples(), surface->GetNumberOfCells());
+  EXPECT_EQ(surface->GetCellData()->GetScalars(), colors);
+  int counted[3] = { 0, 0, 0 };
+  for (vtkIdType c = 0; c < surface->GetNumberOfCells(); ++c) {
+    unsigned char rgb[3];
+    colors->GetTypedTuple(c, rgb);
+    for (int i = 1; i <= 2; ++i) {
+      QColor expected = table.at(table.indexOfValue(i)).color;
+      if (rgb[0] == expected.red() && rgb[1] == expected.green() &&
+          rgb[2] == expected.blue()) {
+        ++counted[i];
+      }
+    }
+  }
+  EXPECT_EQ(counted[1] + counted[2], surface->GetNumberOfCells());
+  EXPECT_GE(counted[2], 6 * 4 - 4);
+
+  // Smoothing keeps the topology and adds point normals
+  auto smooth =
+    extractLabelSurface(labels->imageData(), regions, regions, 8, 0.0);
+  EXPECT_GT(smooth->GetNumberOfCells(), 0);
+  EXPECT_TRUE(smooth->GetPointData()->GetNormals());
+  EXPECT_TRUE(smooth->GetCellData()->GetArray("BoundaryLabels"));
+
+  // Nothing to draw: no visible labels, or a single slice
+  EXPECT_EQ(extractLabelSurface(labels->imageData(), regions, {}, 0, 0.0)
+              ->GetNumberOfCells(),
+            0);
+  vtkNew<vtkImageData> slice;
+  slice->SetDimensions(12, 12, 1);
+  slice->AllocateScalars(VTK_UNSIGNED_CHAR, 1);
+  EXPECT_EQ(extractLabelSurface(slice, regions, regions, 0, 0.0)
+              ->GetNumberOfCells(),
+            0);
+}
+
+TEST_F(PipelineLibTest, LabelMapSinkSurfaceFollowsLabelsAndRepresentation)
+{
+  struct OpenLabelMapSink : LabelMapSink
+  {
+    using LabelMapSink::prepareConsume;
+    using LabelMapSink::consume;
+  };
+  auto* sink = new OpenLabelMapSink();
+  pipeline->addNode(sink);
+  EXPECT_EQ(sink->representation(), LabelMapSink::Representation::Surface);
+
+  // The trio SinkNode::runConsume runs; the payload in `inputs` is what
+  // the sink's volumeData() weakly refers to afterwards.
+  QMap<QString, PortData> inputs;
+  inputs["volume"] = makeTwoLabelVolume();
+  sink->prepareConsume(inputs);
+  ASSERT_TRUE(sink->consume(inputs));
+  ASSERT_TRUE(sink->surface());
+  const auto cells = sink->surface()->GetNumberOfCells();
+  EXPECT_GT(cells, 0);
+
+  // Hiding a label re-extracts; a color edit only recolors
+  auto labels = sink->labelMap();
+  ASSERT_TRUE(labels);
+  auto* before = sink->surface();
+  labels->labels().setColor(labels->labels().indexOfValue(1.0), Qt::cyan);
+  sink->applyLabels();
+  EXPECT_EQ(sink->surface(), before);
+  labels->labels().setVisible(labels->labels().indexOfValue(2.0), false);
+  sink->applyLabels();
+  EXPECT_NE(sink->surface(), before);
+  EXPECT_LT(sink->surface()->GetNumberOfCells(), cells);
+
+  // Switching to the volume representation keeps the mesh around, and
+  // smoothing changes rebuild it
+  sink->setRepresentation(LabelMapSink::Representation::Volume);
+  EXPECT_EQ(sink->representation(), LabelMapSink::Representation::Volume);
+  sink->setRepresentation(LabelMapSink::Representation::Surface);
+  auto* unsmoothed = sink->surface();
+  sink->setSurfaceSmoothing(0);
+  EXPECT_NE(sink->surface(), unsmoothed);
+  EXPECT_FALSE(sink->surface()->GetPointData()->GetNormals());
+
+  // Serialization round trip, and old files keep their volume look
+  sink->setSurfaceOpacity(0.4);
+  sink->setSurfaceSmoothing(3);
+  auto json = sink->serialize();
+  LabelMapSink restored;
+  ASSERT_TRUE(restored.deserialize(json));
+  EXPECT_EQ(restored.representation(),
+            LabelMapSink::Representation::Surface);
+  EXPECT_EQ(restored.surfaceSmoothing(), 3);
+  EXPECT_DOUBLE_EQ(restored.surfaceOpacity(), 0.4);
+  json.remove("representation");
+  LabelMapSink older;
+  ASSERT_TRUE(older.deserialize(json));
+  EXPECT_EQ(older.representation(), LabelMapSink::Representation::Volume);
 }
 
 TEST_F(PipelineLibTest, VolumeSinkExplodedViewSerializationRoundTrip)

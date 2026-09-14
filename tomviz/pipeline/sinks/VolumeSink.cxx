@@ -748,8 +748,9 @@ void VolumeSink::setVisibility(bool visible)
   // executed. consume() re-applies visibility() once data arrives.
   auto* mapper = m_volume->GetMapper();
   bool hasInput = mapper && mapper->GetDataObjectInput();
+  bool shown = visible && hasInput && volumeRenderingEnabled();
   for (auto* slab : allVolumes()) {
-    slab->SetVisibility(visible && hasInput ? 1 : 0);
+    slab->SetVisibility(shown ? 1 : 0);
   }
   LegacyModuleSink::setVisibility(visible);
 }
@@ -900,8 +901,9 @@ bool VolumeSink::consume(const QMap<QString, PortData>& inputs)
   // Re-derive the cut planes: the new data may have different bounds.
   applyCutOut();
   applyExploded();
+  bool shown = visibility() && volumeRenderingEnabled();
   for (auto* slab : allVolumes()) {
-    slab->SetVisibility(visibility() ? 1 : 0);
+    slab->SetVisibility(shown ? 1 : 0);
   }
 
   onMetadataChanged();

@@ -211,6 +211,12 @@ protected:
   bool consume(const QMap<QString, PortData>& inputs) override;
   void updateColorMap() override;
 
+  /// Whether the volume props should be drawn at all while this sink is
+  /// visible. A subclass that draws the data some other way (LabelMapSink's
+  /// surface representation) returns false to keep the volume off screen
+  /// without touching the sink's own visibility flag.
+  virtual bool volumeRenderingEnabled() const { return true; }
+
 private:
   void applyActiveScalars();
   void populateScalarsCombo();

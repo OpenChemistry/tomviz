@@ -3,17 +3,32 @@
 
 #include "LabelMapSink.h"
 
+#include "DoubleSliderWidget.h"
+#include "LabelMapSurface.h"
 #include "LabelTableWidget.h"
 #include "VolumeSinkWidget.h"
 #include "InputPort.h"
 #include "data/LabelMapData.h"
 
+#include <QComboBox>
+#include <QFormLayout>
+#include <QGroupBox>
 #include <QIcon>
+#include <QSignalBlocker>
+#include <QSpinBox>
 #include <QVBoxLayout>
 
+#include <vtkActor.h>
 #include <vtkImageData.h>
+#include <vtkPVRenderView.h>
+#include <vtkPlane.h>
+#include <vtkPolyData.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkProperty.h>
 #include <vtkSmartPointer.h>
 #include <vtkVolumeProperty.h>
+
+#include <algorithm>
 
 namespace tomviz {
 namespace pipeline {
@@ -37,9 +52,201 @@ LabelMapSink::LabelMapSink(QObject* parent) : VolumeSink(parent)
     applyLabels();
     emit labelsChanged();
   });
+
+  // The surface representation. Colors are written per face by
+  // colorLabelSurface, so the mapper takes them as they are.
+  m_surfaceMapper->SetScalarModeToUseCellData();
+  m_surfaceMapper->SetColorModeToDirectScalars();
+  m_surfaceMapper->ScalarVisibilityOn();
+  m_surfaceProperty->SetAmbient(0.1);
+  m_surfaceProperty->SetDiffuse(0.9);
+  m_surfaceProperty->SetSpecular(0.2);
+  m_surfaceProperty->SetSpecularPower(30.0);
+  m_surfaceProperty->SetRepresentationToSurface();
+  m_surfaceActor->SetMapper(m_surfaceMapper);
+  m_surfaceActor->SetProperty(m_surfaceProperty);
+  m_surfaceActor->SetVisibility(0);
 }
 
 LabelMapSink::~LabelMapSink() = default;
+
+bool LabelMapSink::volumeRenderingEnabled() const
+{
+  return m_representation == Representation::Volume;
+}
+
+LabelMapSink::Representation LabelMapSink::representation() const
+{
+  return m_representation;
+}
+
+void LabelMapSink::setRepresentation(Representation representation)
+{
+  if (m_representation == representation) {
+    return;
+  }
+  m_representation = representation;
+  // Re-applies the sink's own visibility to the volume props, which now
+  // read volumeRenderingEnabled() the other way.
+  setVisibility(visibility());
+  updateSurface();
+  emit representationChanged();
+  emit renderNeeded();
+}
+
+int LabelMapSink::surfaceSmoothing() const
+{
+  return m_surfaceSmoothing;
+}
+
+void LabelMapSink::setSurfaceSmoothing(int iterations)
+{
+  iterations = std::max(0, iterations);
+  if (m_surfaceSmoothing == iterations) {
+    return;
+  }
+  m_surfaceSmoothing = iterations;
+  updateSurface();
+  emit representationChanged();
+}
+
+double LabelMapSink::surfaceOpacity() const
+{
+  return m_surfaceProperty->GetOpacity();
+}
+
+void LabelMapSink::setSurfaceOpacity(double opacity)
+{
+  m_surfaceProperty->SetOpacity(std::clamp(opacity, 0.0, 1.0));
+  emit representationChanged();
+  emit renderNeeded();
+}
+
+vtkPolyData* LabelMapSink::surface() const
+{
+  return m_surface;
+}
+
+void LabelMapSink::setVisibility(bool visible)
+{
+  VolumeSink::setVisibility(visible);
+  showSurfaceActor();
+}
+
+bool LabelMapSink::initialize(vtkSMViewProxy* view)
+{
+  if (!VolumeSink::initialize(view)) {
+    return false;
+  }
+  renderView()->AddPropToRenderer(m_surfaceActor);
+  return true;
+}
+
+bool LabelMapSink::finalize()
+{
+  if (renderView()) {
+    renderView()->RemovePropFromRenderer(m_surfaceActor);
+  }
+  return VolumeSink::finalize();
+}
+
+void LabelMapSink::clearVisualization()
+{
+  VolumeSink::clearVisualization();
+  m_surfaceActor->SetVisibility(0);
+}
+
+void LabelMapSink::addClippingPlane(vtkPlane* plane)
+{
+  VolumeSink::addClippingPlane(plane);
+  if (plane) {
+    m_surfaceMapper->AddClippingPlane(plane);
+    emit renderNeeded();
+  }
+}
+
+void LabelMapSink::removeClippingPlane(vtkPlane* plane)
+{
+  VolumeSink::removeClippingPlane(plane);
+  if (plane) {
+    m_surfaceMapper->RemoveClippingPlane(plane);
+    emit renderNeeded();
+  }
+}
+
+void LabelMapSink::onMetadataChanged()
+{
+  VolumeSink::onMetadataChanged();
+  applySurfaceTransform();
+}
+
+void LabelMapSink::showSurfaceActor()
+{
+  bool shown = visibility() && m_representation == Representation::Surface &&
+               m_surface && m_surface->GetNumberOfCells() > 0;
+  m_surfaceActor->SetVisibility(shown ? 1 : 0);
+}
+
+void LabelMapSink::applySurfaceTransform()
+{
+  auto vol = volumeData();
+  if (!vol || !vol->isValid() || !m_surface) {
+    return;
+  }
+  auto orient = vol->displayOrientation();
+  m_surfaceActor->SetOrientation(orient.data());
+
+  // The mesh has the origin and spacing that were current when it was
+  // extracted baked into its points. Follow later metadata edits with
+  // the actor's position and scale rather than re-extracting.
+  auto origin = vol->origin();
+  auto spacing = vol->spacing();
+  auto displayPos = vol->displayPosition();
+  double pos[3];
+  double scale[3];
+  for (int i = 0; i < 3; ++i) {
+    pos[i] = displayPos[i] + origin[i] - m_surfaceOrigin[i];
+    scale[i] = m_surfaceSpacing[i] != 0.0 ? spacing[i] / m_surfaceSpacing[i]
+                                          : 1.0;
+  }
+  m_surfaceActor->SetPosition(pos);
+  m_surfaceActor->SetScale(scale);
+}
+
+void LabelMapSink::updateSurface()
+{
+  auto labels = labelMap();
+  auto vol = volumeData();
+  if (m_representation != Representation::Surface || !labels || !vol ||
+      !vol->isValid() || !labels->labelsSupported()) {
+    m_surfaceActor->SetVisibility(0);
+    return;
+  }
+
+  // 0 is the conventional background label; it is never a region.
+  const double background = 0.0;
+  SurfaceKey key;
+  key.image = vol->imageData();
+  key.imageTime = key.image->GetMTime();
+  key.regions = regionLabels(labels->labels(), background);
+  key.visible = visibleLabels(labels->labels(), background);
+  key.smoothing = m_surfaceSmoothing;
+
+  if (!m_surface || !(key == m_surfaceKey)) {
+    m_surface = extractLabelSurface(key.image, key.regions, key.visible,
+                                    key.smoothing, background);
+    m_surfaceKey = key;
+    m_surfaceOrigin = vol->origin();
+    m_surfaceSpacing = vol->spacing();
+    m_surfaceMapper->SetInputData(m_surface);
+  }
+  // Cheap, so a color edit never costs an extraction.
+  colorLabelSurface(m_surface, labels->labels(), background);
+
+  applySurfaceTransform();
+  showSurfaceActor();
+  emit renderNeeded();
+}
 
 QIcon LabelMapSink::icon() const
 {
@@ -105,6 +312,7 @@ bool LabelMapSink::consume(const QMap<QString, PortData>& inputs)
     labels->refreshLabels();
     applyLabels();
   }
+  updateSurface();
 
   emit labelsChanged();
   return true;
@@ -113,6 +321,10 @@ bool LabelMapSink::consume(const QMap<QString, PortData>& inputs)
 QJsonObject LabelMapSink::serialize() const
 {
   auto json = VolumeSink::serialize();
+  json["representation"] =
+    m_representation == Representation::Surface ? "Surface" : "Volume";
+  json["surfaceSmoothing"] = m_surfaceSmoothing;
+  json["surfaceOpacity"] = surfaceOpacity();
   // A real label map carries its table in its own payload. An adopted
   // one has nowhere else to put it: the port's payload is a plain
   // volume shared with other sinks, so the colors and names the user
@@ -132,11 +344,24 @@ bool LabelMapSink::deserialize(const QJsonObject& json)
     return false;
   }
   m_restoredAdopted = json.value("adoptedLabelMap").toObject();
+  // A state file written before the surface representation existed
+  // was showing a volume; keep that look rather than the new default.
+  setRepresentation(json.value("representation").toString() == "Surface"
+                      ? Representation::Surface
+                      : Representation::Volume);
+  if (json.contains("surfaceSmoothing")) {
+    setSurfaceSmoothing(json.value("surfaceSmoothing").toInt());
+  }
+  if (json.contains("surfaceOpacity")) {
+    setSurfaceOpacity(json.value("surfaceOpacity").toDouble(1.0));
+  }
   return true;
 }
 
 void LabelMapSink::applyLabels()
 {
+  updateSurface();
+
   auto labels = labelMap();
   if (!labels || labels->labels().isEmpty()) {
     return;
@@ -161,11 +386,105 @@ QWidget* LabelMapSink::createSinkPropertiesWidget(QWidget* parent)
   }
 
   volumeWidget->setCategoricalMode(true);
+  auto* form = volumeWidget->formLayout();
+  auto* mainLayout = volumeWidget->mainLayout();
+
+  // Representation, ahead of Active Scalars
+  auto* repCombo = new QComboBox(volumeWidget);
+  repCombo->addItem("Surface", static_cast<int>(Representation::Surface));
+  repCombo->addItem("Volume", static_cast<int>(Representation::Volume));
+  form->insertRow(0, "Representation", repCombo);
+  connect(repCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          [this, repCombo](int idx) {
+            setRepresentation(static_cast<Representation>(
+              repCombo->itemData(idx).toInt()));
+          });
 
   // Directly under the form holding Active Scalars, which is what
   // decides where the labels are read from in the first place.
   auto* table = new LabelTableWidget(this, volumeWidget);
-  volumeWidget->mainLayout()->insertWidget(1, table);
+  mainLayout->insertWidget(1, table);
+
+  auto* surfaceBox = new QGroupBox("Surface", volumeWidget);
+  auto* surfaceForm = new QFormLayout(surfaceBox);
+  auto* smoothingSpin = new QSpinBox(surfaceBox);
+  smoothingSpin->setRange(0, 200);
+  smoothingSpin->setToolTip("Surface Nets smoothing iterations. 0 shows the "
+                            "raw voxel faces.");
+  // Only commit a typed value once editing is done, since each change
+  // re-extracts the surface.
+  smoothingSpin->setKeyboardTracking(false);
+  surfaceForm->addRow("Smoothing", smoothingSpin);
+  auto* opacitySlider = new DoubleSliderWidget(true, surfaceBox);
+  opacitySlider->setLineEditWidth(50);
+  opacitySlider->setMinimum(0.0);
+  opacitySlider->setMaximum(1.0);
+  opacitySlider->setResolution(100);
+  surfaceForm->addRow("Opacity", opacitySlider);
+  mainLayout->insertWidget(2, surfaceBox);
+  connect(smoothingSpin, QOverload<int>::of(&QSpinBox::valueChanged), this,
+          [this](int value) { setSurfaceSmoothing(value); });
+  connect(opacitySlider, &DoubleSliderWidget::valueEdited, this,
+          [this](double value) { setSurfaceOpacity(value); });
+
+  // Everything else the volume panel offers is about volume rendering.
+  // Note what is showing now, so the rows the categorical mode already
+  // hid stay hidden when the volume controls come back.
+  QList<QWidget*> volumeOnly;
+  for (int i = 0; i < mainLayout->count(); ++i) {
+    auto* item = mainLayout->itemAt(i);
+    auto* w = item ? item->widget() : nullptr;
+    if (w && w != table && w != surfaceBox && !w->isHidden()) {
+      volumeOnly.append(w);
+    }
+  }
+  // Rows 0 and 1 are Representation and Active Scalars
+  QList<int> volumeOnlyRows;
+  for (int row = 2; row < form->rowCount(); ++row) {
+    bool shown = false;
+    for (auto role : { QFormLayout::LabelRole, QFormLayout::FieldRole,
+                       QFormLayout::SpanningRole }) {
+      auto* item = form->itemAt(row, role);
+      if (!item) {
+        continue;
+      }
+      if (auto* w = item->widget()) {
+        shown = shown || !w->isHidden();
+      } else if (item->layout()) {
+        shown = true;
+      }
+    }
+    if (shown) {
+      volumeOnlyRows.append(row);
+    }
+  }
+
+  auto sync = [this, repCombo, smoothingSpin, opacitySlider, surfaceBox,
+               volumeOnly, volumeOnlyRows, form]() {
+    const bool surface = m_representation == Representation::Surface;
+    {
+      QSignalBlocker blocker(repCombo);
+      repCombo->setCurrentIndex(
+        repCombo->findData(static_cast<int>(m_representation)));
+    }
+    {
+      QSignalBlocker blocker(smoothingSpin);
+      smoothingSpin->setValue(m_surfaceSmoothing);
+    }
+    {
+      QSignalBlocker blocker(opacitySlider);
+      opacitySlider->setValue(surfaceOpacity());
+    }
+    surfaceBox->setVisible(surface);
+    for (auto* w : volumeOnly) {
+      w->setVisible(!surface);
+    }
+    for (int row : volumeOnlyRows) {
+      form->setRowVisible(row, !surface);
+    }
+  };
+  sync();
+  connect(this, &LabelMapSink::representationChanged, widget, sync);
 
   return widget;
 }
