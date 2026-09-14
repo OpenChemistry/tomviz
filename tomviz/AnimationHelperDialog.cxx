@@ -336,6 +336,9 @@ public:
     connect(&ModuleAnimations::instance(), &ModuleAnimations::changed, this,
             [this]() {
               refreshAnimationList();
+              // The keyframe list shows the recorded curves, which are
+              // rebuilt whenever the list changes
+              refreshKeyframeRows();
               updateEnableStates();
             });
 
@@ -1210,6 +1213,54 @@ public:
     }
   }
 
+  // The curves the viewpoints recorded for this volume, keyed by
+  // viewpoint, or an empty map when nothing was recorded or an authored
+  // morph has taken the curve over.
+  QMap<int, vtkSmartPointer<vtkPiecewiseFunction>> recordedCurves(
+    pipeline::Node* node)
+  {
+    QMap<int, vtkSmartPointer<vtkPiecewiseFunction>> curves;
+    for (auto* animation : ModuleAnimations::instance().animations()) {
+      auto* morph = qobject_cast<ScalarOpacityAnimation*>(animation);
+      if (!morph || !morph->recorded() || morph->baseNode != node) {
+        continue;
+      }
+      for (const auto& keyframe : morph->keyframes()) {
+        curves.insert(keyframe.anchor, keyframe.curve);
+      }
+    }
+    return curves;
+  }
+
+  // The first edit to a volume's keyframes starts from what the
+  // viewpoints recorded, so the recorded morph can be adjusted rather
+  // than recaptured anchor by anchor. Adding the result authors a morph
+  // that takes the curve over from the recorded one.
+  void seedStagedFromRecorded(pipeline::Node* node)
+  {
+    if (!node || !stagedCurves.value(node).isEmpty()) {
+      return;
+    }
+    auto recorded = recordedCurves(node);
+    for (auto it = recorded.constBegin(); it != recorded.constEnd(); ++it) {
+      auto copy = vtkSmartPointer<vtkPiecewiseFunction>::New();
+      copy->DeepCopy(it.value());
+      stagedCurves[node].insert(it.key(), copy);
+    }
+  }
+
+  static bool curveIsAllZero(vtkPiecewiseFunction* curve)
+  {
+    double node[4];
+    for (int i = 0; curve && i < curve->GetSize(); ++i) {
+      curve->GetNodeValue(i, node);
+      if (node[1] > 0.0) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   // One row per viewpoint, or a plain start and end when there is no
   // camera path to key against.
   int keyframeRowCount()
@@ -1246,6 +1297,11 @@ public:
 
     auto& viewpoints = CameraViewpoints::instance();
     auto staged = stagedCurves.value(node);
+    // Until the user edits, the list shows what the viewpoints recorded
+    // for this volume, so the recorded morph is something to look at
+    // rather than take on faith.
+    const bool showingRecorded = staged.isEmpty();
+    auto recorded = showingRecorded ? recordedCurves(node) : decltype(staged)();
     int rows = keyframeRowCount();
     for (int anchor = 0; anchor < rows; ++anchor) {
       QString label;
@@ -1259,6 +1315,16 @@ public:
       if (staged.contains(anchor)) {
         item->setText(label);
         item->setIcon(QIcon(curvePreview(staged.value(anchor), range,
+                                         ui.keyframeList->iconSize(),
+                                         parent->palette())));
+      } else if (recorded.contains(anchor)) {
+        auto curve = recorded.value(anchor);
+        item->setText(label + (curveIsAllZero(curve) ? "  (recorded: hidden)"
+                                                     : "  (recorded)"));
+        item->setToolTip("Recorded with the viewpoint. Update the viewpoint "
+                         "to change it, or capture over it here to start a "
+                         "morph of your own from the recorded curves.");
+        item->setIcon(QIcon(curvePreview(curve, range,
                                          ui.keyframeList->iconSize(),
                                          parent->palette())));
       } else {
@@ -1285,6 +1351,7 @@ public:
       return;
     }
 
+    seedStagedFromRecorded(node);
     auto copy = vtkSmartPointer<vtkPiecewiseFunction>::New();
     copy->DeepCopy(live);
     // The histogram editor parks nodes at the ends of the data range
@@ -1344,6 +1411,7 @@ public:
       return;
     }
 
+    seedStagedFromRecorded(node);
     stagedCurves[node].remove(anchor);
     refreshKeyframeRows();
     updateEnableStates();
