@@ -3,8 +3,6 @@
 
 #include "SceneSnapshot.h"
 
-#include "ModuleAnimation.h"
-#include "ModuleAnimations.h"
 #include "OpacityInterpolation.h"
 #include "ScalarOpacityAnimation.h"
 #include "Utilities.h"
@@ -109,21 +107,6 @@ vtkSmartPointer<vtkPiecewiseFunction> zeroed(vtkPiecewiseFunction* curve)
   return out;
 }
 
-bool hasExplicitAnimation(LegacyModuleSink* sink, const QString& type)
-{
-  for (auto* animation : ModuleAnimations::instance().animations()) {
-    if (animation && animation->baseNode == sink && animation->type() == type) {
-      return true;
-    }
-  }
-  return false;
-}
-
-double lerp(double a, double b, double u)
-{
-  return a + (b - a) * u;
-}
-
 } // namespace
 
 SinkSnapshot SinkSnapshot::capture(LegacyModuleSink* sink)
@@ -220,6 +203,7 @@ SceneSnapshot SceneSnapshot::capture(Pipeline* pipeline)
   if (!pipeline) {
     return scene;
   }
+  scene.recorded = true;
   for (auto* node : pipeline->nodes()) {
     if (auto* sink = qobject_cast<LegacyModuleSink*>(node)) {
       scene.sinks.insert(pipeline->nodeId(sink), SinkSnapshot::capture(sink));
@@ -228,18 +212,22 @@ SceneSnapshot SceneSnapshot::capture(Pipeline* pipeline)
   return scene;
 }
 
-void SceneSnapshot::apply(Pipeline* pipeline) const
+void SceneSnapshot::apply(Pipeline* pipeline, const QSet<int>* known) const
 {
   if (!pipeline) {
     return;
   }
-  // Modules this viewpoint never saw were not on screen when it was
-  // saved. A viewpoint that recorded nothing at all leaves them alone.
-  if (!sinks.isEmpty()) {
+  // A module some viewpoint recorded but this one lacks was not on
+  // screen when this one was saved. Modules no viewpoint knows are left
+  // alone, and so is everything when this viewpoint recorded nothing.
+  if (!sinks.isEmpty() && known) {
     for (auto* node : pipeline->nodes()) {
       auto* sink = qobject_cast<LegacyModuleSink*>(node);
-      if (sink && !sinks.contains(pipeline->nodeId(sink)) &&
-          sink->visibility()) {
+      if (!sink) {
+        continue;
+      }
+      const int id = pipeline->nodeId(sink);
+      if (known->contains(id) && !sinks.contains(id) && sink->visibility()) {
         sink->setVisibility(false);
       }
     }
@@ -289,6 +277,10 @@ void SceneSnapshot::apply(Pipeline* pipeline) const
 QJsonObject SceneSnapshot::serialize() const
 {
   QJsonObject json;
+  if (!recorded) {
+    return json;
+  }
+  json["recorded"] = true;
   for (auto it = sinks.cbegin(); it != sinks.cend(); ++it) {
     json[QString::number(it.key())] = it.value().serialize();
   }
@@ -305,133 +297,30 @@ SceneSnapshot SceneSnapshot::deserialize(const QJsonObject& json)
       scene.sinks.insert(id, SinkSnapshot::deserialize(it.value().toObject()));
     }
   }
+  // Files from before the flag recorded a scene exactly when it listed
+  // modules
+  scene.recorded = json["recorded"].toBool(!scene.sinks.isEmpty());
   return scene;
 }
 
-void applySceneTransition(Pipeline* pipeline, const SceneSnapshot& from,
-                          const SceneSnapshot& to, double u,
-                          QSet<int>& overriddenVolumes)
+std::optional<double> sinkFlatOpacity(LegacyModuleSink* sink)
 {
-  if (!pipeline) {
-    return;
-  }
-  u = std::clamp(u, 0.0, 1.0);
+  return flatOpacity(sink);
+}
 
-  auto ids = QSet<int>(from.sinks.keyBegin(), from.sinks.keyEnd());
-  ids.unite(QSet<int>(to.sinks.keyBegin(), to.sinks.keyEnd()));
-  // A module neither viewpoint saw was added after both were saved, so
-  // it is off screen for the whole leg, the same as Go To would leave
-  // it. Only when both ends recorded something, though: a blank end
-  // holds everything.
-  if (!from.isEmpty() && !to.isEmpty()) {
-    for (auto* node : pipeline->nodes()) {
-      auto* sink = qobject_cast<LegacyModuleSink*>(node);
-      if (sink && !ids.contains(pipeline->nodeId(sink)) &&
-          sink->visibility()) {
-        sink->setVisibility(false);
-      }
-    }
-  }
+void setSinkFlatOpacity(LegacyModuleSink* sink, double value)
+{
+  setFlatOpacity(sink, value);
+}
 
-  for (int id : ids) {
-    auto* sink = qobject_cast<LegacyModuleSink*>(pipeline->nodeById(id));
-    if (!sink) {
-      continue;
-    }
-    // A viewpoint saved with recording off knows nothing about the
-    // modules and holds them all. A recorded viewpoint that lacks a
-    // module was saved before that module existed, so the module was
-    // not on screen there: it counts as hidden at that end and fades in
-    // or out across the leg like any other appearing module.
-    auto endpoint = [id](const SceneSnapshot& end, const SceneSnapshot& other) {
-      if (end.sinks.contains(id)) {
-        return end.sinks[id];
-      }
-      SinkSnapshot snapshot = other.sinks[id];
-      if (!end.isEmpty()) {
-        snapshot.visible = false;
-      }
-      return snapshot;
-    };
-    const SinkSnapshot a = endpoint(from, to);
-    const SinkSnapshot b = endpoint(to, from);
+bool opacityCurvesEqual(vtkPiecewiseFunction* a, vtkPiecewiseFunction* b)
+{
+  return curvesEqual(a, b);
+}
 
-    bool visibilityChanges = a.visible != b.visible;
-    bool fades = false;
-
-    // Flat opacity, fading through zero when the module appears or goes
-    if (a.opacity && b.opacity && !hasExplicitAnimation(sink, "opacity")) {
-      double start = a.visible ? *a.opacity : 0.0;
-      double stop = b.visible ? *b.opacity : 0.0;
-      if (start != stop) {
-        setFlatOpacity(sink, lerp(start, stop, u));
-        fades = true;
-      }
-    }
-
-    if (auto* volume = qobject_cast<VolumeSink*>(sink)) {
-      if (a.scalarOpacity && b.scalarOpacity &&
-          !hasExplicitAnimation(sink, "scalarOpacity")) {
-        auto start = a.visible ? a.scalarOpacity : zeroed(b.scalarOpacity);
-        auto stop = b.visible ? b.scalarOpacity : zeroed(a.scalarOpacity);
-        if (!curvesEqual(start, stop)) {
-          double range[2];
-          colorMapRange(volume, range);
-          vtkNew<vtkPiecewiseFunction> blend;
-          interpolateOpacity(start, stop, u, range, blend);
-          volume->setAnimatedScalarOpacity(blend);
-          overriddenVolumes.insert(id);
-          fades = true;
-        }
-      }
-      if (a.cutOutEnabled && b.cutOutEnabled) {
-        if (a.cutOutPosition && b.cutOutPosition &&
-            *a.cutOutPosition != *b.cutOutPosition) {
-          for (int axis = 0; axis < 3; ++axis) {
-            volume->setCutOutPosition(
-              axis, lerp((*a.cutOutPosition)[axis], (*b.cutOutPosition)[axis], u));
-          }
-        }
-        int corner = u < 0.5 ? a.cutOutCorner.value_or(0) : b.cutOutCorner.value_or(0);
-        if (a.cutOutCorner != b.cutOutCorner && volume->cutOutCorner() != corner) {
-          volume->setCutOutCorner(corner);
-        }
-        bool enabled = u < 0.5 ? *a.cutOutEnabled : *b.cutOutEnabled;
-        if (*a.cutOutEnabled != *b.cutOutEnabled &&
-            volume->cutOutEnabled() != enabled) {
-          volume->setCutOutEnabled(enabled);
-        }
-      }
-      if (a.explodedEnabled && b.explodedEnabled) {
-        // The gap slides; everything else switches halfway
-        if (a.explodedGap && b.explodedGap && *a.explodedGap != *b.explodedGap) {
-          volume->setExplodedGap(lerp(*a.explodedGap, *b.explodedGap, u));
-        }
-        const SinkSnapshot& side = u < 0.5 ? a : b;
-        if (a.explodedAxis != b.explodedAxis && side.explodedAxis &&
-            volume->explodedAxis() != *side.explodedAxis) {
-          volume->setExplodedAxis(*side.explodedAxis);
-        }
-        if (a.explodedChunks != b.explodedChunks && side.explodedChunks &&
-            volume->explodedChunks() != *side.explodedChunks) {
-          volume->setExplodedChunks(*side.explodedChunks);
-        }
-        if (*a.explodedEnabled != *b.explodedEnabled &&
-            volume->explodedEnabled() != *side.explodedEnabled) {
-          volume->setExplodedEnabled(*side.explodedEnabled);
-        }
-      }
-    }
-
-    if (visibilityChanges) {
-      // With a fade the module stays shown until it is fully transparent
-      bool visible = fades ? (u >= 1.0 ? b.visible : (a.visible || b.visible))
-                           : (u < 0.5 ? a.visible : b.visible);
-      if (sink->visibility() != visible) {
-        sink->setVisibility(visible);
-      }
-    }
-  }
+vtkSmartPointer<vtkPiecewiseFunction> zeroedCurve(vtkPiecewiseFunction* curve)
+{
+  return zeroed(curve);
 }
 
 } // namespace tomviz

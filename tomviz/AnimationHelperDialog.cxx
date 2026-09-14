@@ -12,6 +12,7 @@
 #include "ModuleAnimations.h"
 #include "MovieExportDialog.h"
 #include "OpacityAnimation.h"
+#include "RecordedAnimations.h"
 #include "ScalarOpacityAnimation.h"
 #include "SceneSnapshot.h"
 #include "SliceAnimation.h"
@@ -24,6 +25,8 @@
 #include "pipeline/sinks/ContourSink.h"
 #include "pipeline/sinks/SliceSink.h"
 #include "pipeline/sinks/VolumeSink.h"
+
+#include <functional>
 
 #include <pqAnimationCue.h>
 #include <pqImageUtil.h>
@@ -202,9 +205,10 @@ public:
     recordScene = new QCheckBox("Record module state with viewpoints", parent);
     recordScene->setToolTip(
       "Also save which modules are visible, their opacity, and any volume "
-      "cut-out or exploded view with each viewpoint, and move between those "
-      "states while flying the path. A module added after a viewpoint was "
-      "saved counts as hidden there until that viewpoint is updated.");
+      "cut-out or exploded view with each viewpoint. Whatever differs "
+      "between two viewpoints is listed under Visualizations, marked "
+      "recorded, and plays between them. A module added after a viewpoint "
+      "was saved counts as hidden there until that viewpoint is updated.");
     recordScene->setChecked(true);
     ui.cameraLayout->addWidget(recordScene);
 
@@ -745,7 +749,10 @@ public:
     }
 
     viewpoints.at(row).applyTo(context.camera);
-    viewpoints.at(row).scene.apply(pipeline());
+    // Modules some viewpoint recorded but this one lacks were not on
+    // screen here; ones no viewpoint knows are left as they are.
+    auto known = RecordedAnimations::instance().recordedNodeIds();
+    viewpoints.at(row).scene.apply(pipeline(), &known);
     if (auto* renderer = context.proxy->GetRenderer()) {
       renderer->ResetCameraClippingRange();
     }
@@ -1189,7 +1196,9 @@ public:
 
     for (auto* animation : ModuleAnimations::instance().animations()) {
       auto* morph = qobject_cast<ScalarOpacityAnimation*>(animation);
-      if (!morph || morph->baseNode != node) {
+      // Only a morph authored here: the recorded one belongs to the
+      // viewpoints and is edited by updating them
+      if (!morph || morph->recorded() || morph->baseNode != node) {
         continue;
       }
       for (const auto& keyframe : morph->keyframes()) {
@@ -1379,8 +1388,10 @@ public:
     // One animation per visualization, property and leg: adding the same
     // thing again replaces it, while the same property on another leg is
     // a second animation.
+    // Recorded animations are not replaced here: they step aside from
+    // the legs an authored one runs on by themselves.
     for (auto* existing : ModuleAnimations::instance().animations()) {
-      if (existing->baseNode == node &&
+      if (!existing->recorded() && existing->baseNode == node &&
           existing->type() == animation->type() &&
           (property == "curve" || existing->segment == segment)) {
         ModuleAnimations::instance().remove(existing);
@@ -1449,50 +1460,82 @@ public:
     return nullptr;
   }
 
+  // One row of the animation list, with its remove button. The removal
+  // is deferred because the button lives in the row it deletes.
+  void addAnimationRow(const QString& text, const QString& tooltip,
+                       const QString& removeTooltip,
+                       std::function<void()> remove)
+  {
+    auto* row = new QWidget();
+    auto* layout = new QHBoxLayout(row);
+    layout->setContentsMargins(4, 1, 4, 1);
+    auto* label = new QLabel(text, row);
+    label->setToolTip(tooltip);
+    layout->addWidget(label);
+    layout->addStretch();
+    auto* removeButton = new QToolButton(row);
+    removeButton->setText("x");
+    removeButton->setAutoRaise(true);
+    removeButton->setToolTip(removeTooltip);
+    layout->addWidget(removeButton);
+    connect(removeButton, &QToolButton::clicked, this, [remove]() {
+      QTimer::singleShot(0, remove);
+    });
+
+    auto* item = new QListWidgetItem();
+    item->setSizeHint(row->sizeHint());
+    ui.animationList->addItem(item);
+    ui.animationList->setItemWidget(item, row);
+  }
+
+  QString nodeLabel(pipeline::Node* node)
+  {
+    QString label = node ? node->label() : QString();
+    return label.isEmpty() ? QString("Visualization") : label;
+  }
+
   // The list of everything that will animate, one row per animation, so
-  // authoring is visible state rather than something to remember.
+  // authoring is visible state rather than something to remember. The
+  // animations authored here come first; then, marked as such, every
+  // change the camera viewpoints recorded.
   void refreshAnimationList()
   {
     ui.animationList->clear();
 
     for (auto* animation : ModuleAnimations::instance().animations()) {
-      QString nodeLabel =
-        animation->baseNode ? animation->baseNode->label() : QString();
-      if (nodeLabel.isEmpty()) {
-        nodeLabel = "Visualization";
+      if (animation->recorded()) {
+        continue;
       }
-
-      QString text = nodeLabel + ": " + animation->describeParameters();
+      QString text =
+        nodeLabel(animation->baseNode) + ": " + animation->describeParameters();
       if (animation->segment >= 0) {
         text += ", during " + segmentLabel(animation->segment);
       }
-
-      auto* row = new QWidget();
-      auto* layout = new QHBoxLayout(row);
-      layout->setContentsMargins(4, 1, 4, 1);
-      auto* label = new QLabel(text, row);
-      layout->addWidget(label);
-      layout->addStretch();
-      auto* removeButton = new QToolButton(row);
-      removeButton->setText("x");
-      removeButton->setAutoRaise(true);
-      removeButton->setToolTip("Remove this animation");
-      layout->addWidget(removeButton);
-
-      // Deferred: the button lives in the row this removal deletes.
       QPointer<ModuleAnimation> target(animation);
-      connect(removeButton, &QToolButton::clicked, this, [target]() {
-        QTimer::singleShot(0, [target]() {
-          if (target) {
-            ModuleAnimations::instance().remove(target);
-          }
-        });
+      addAnimationRow(text, QString(), "Remove this animation", [target]() {
+        if (target) {
+          ModuleAnimations::instance().remove(target);
+        }
       });
+    }
 
-      auto* item = new QListWidgetItem();
-      item->setSizeHint(row->sizeHint());
-      ui.animationList->addItem(item);
-      ui.animationList->setItemWidget(item, row);
+    auto& viewpoints = CameraViewpoints::instance();
+    auto* pip = pipeline();
+    for (const auto& change : RecordedAnimations::instance().changes(pip)) {
+      auto* node = pip ? pip->nodeById(change.nodeId) : nullptr;
+      const QString from = viewpoints.at(change.fromAnchor).name;
+      const QString to = viewpoints.at(change.toAnchor).name;
+      QString text = nodeLabel(node) + ": " + change.description + ", " +
+                     from + " to " + to + "  (recorded)";
+      QString tooltip =
+        "Recorded with the viewpoints: this is how the visualization "
+        "differs between " + from + " and " + to + ". Update " + to +
+        " from the view to change it.";
+      QString removeTooltip = "Keep it as it is at " + from +
+                              " on this leg (edits " + to + ")";
+      addAnimationRow(text, tooltip, removeTooltip, [change, pip]() {
+        RecordedAnimations::instance().remove(change, pip);
+      });
     }
   }
 
@@ -1516,9 +1559,19 @@ public:
   void clearAllAnimations()
   {
     clearCameraCues();
-    CameraViewpoints::instance().stopFlight();
+    auto& viewpoints = CameraViewpoints::instance();
+    viewpoints.stopFlight();
     if (ui.enableTimeSeriesAnimations->isVisible()) {
       ui.enableTimeSeriesAnimations->setChecked(false);
+    }
+    // The state recorded with the viewpoints exists only to animate, so
+    // it goes too; the viewpoints themselves stay.
+    for (int i = 0; i < viewpoints.size(); ++i) {
+      if (!viewpoints.at(i).scene.isEmpty()) {
+        auto viewpoint = viewpoints.at(i);
+        viewpoint.scene = SceneSnapshot();
+        viewpoints.replace(i, viewpoint);
+      }
     }
     ModuleAnimations::instance().clear();
 

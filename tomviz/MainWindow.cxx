@@ -31,6 +31,7 @@
 #include "AddAlignReaction.h"
 #include "AddPythonTransformReaction.h"
 #include "AnimationHelperDialog.h"
+#include "animations/RecordedAnimations.h"
 #include "AxesReaction.h"
 #include "Behaviors.h"
 #include "CameraReaction.h"
@@ -1636,6 +1637,9 @@ void MainWindow::initPipeline()
   m_pipelineStrip->setPipeline(p);
   m_pipelineControls->setPipeline(p);
   ActiveObjects::instance().setPipeline(p);
+  // The animations recorded with the camera viewpoints follow the
+  // viewpoints and the authored animations from here on
+  RecordedAnimations::instance().install();
   m_progressDialogManager = new ProgressDialogManager(this);
   m_progressDialogManager->setPipeline(p);
 

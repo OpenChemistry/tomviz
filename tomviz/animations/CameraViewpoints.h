@@ -58,7 +58,9 @@ struct Viewpoint
   QString label;
 
   /// Module state recorded with this viewpoint (visibility, opacity,
-  /// volume cut-out); played back in step with the camera path.
+  /// volume curve, cut-out, exploded view). RecordedAnimations turns
+  /// the differences between viewpoints into animations and rows in the
+  /// Animation Helper.
   SceneSnapshot scene;
 
   void readFrom(vtkCamera* camera);
@@ -154,7 +156,6 @@ private:
 
   QList<Viewpoint> m_viewpoints;
   QPointer<QObject> m_flight;
-  QPointer<QObject> m_sceneFlight;
   // Held by pointer rather than by value so the header does not have to
   // pull in the interpolator to destroy it.
   vtkSmartPointer<vtkCameraInterpolator> m_interpolator;

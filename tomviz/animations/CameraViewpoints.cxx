@@ -5,7 +5,6 @@
 
 #include "ActiveObjects.h"
 #include "CameraAnimation.h"
-#include "SceneAnimation.h"
 
 #include <QJsonArray>
 #include <QRegularExpression>
@@ -343,13 +342,6 @@ void CameraViewpoints::startFlight(pqRenderView* view, bool snapToHead)
     if (snapToHead) {
       flight->onTimeChanged();
     }
-    // The recorded module state travels with the camera
-    auto* sceneFlight =
-      new SceneAnimation(ActiveObjects::instance().pipeline());
-    m_sceneFlight = sceneFlight;
-    if (snapToHead) {
-      sceneFlight->onTimeChanged();
-    }
   }
 }
 
@@ -358,10 +350,6 @@ void CameraViewpoints::stopFlight()
   if (m_flight) {
     m_flight->deleteLater();
     m_flight = nullptr;
-  }
-  if (m_sceneFlight) {
-    m_sceneFlight->deleteLater();
-    m_sceneFlight = nullptr;
   }
 }
 

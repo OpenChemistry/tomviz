@@ -8,6 +8,7 @@
 #include "ModuleAnimations.h"
 #include "OpacityInterpolation.h"
 #include "OpacityAnimation.h"
+#include "RecordedAnimations.h"
 #include "SceneSnapshot.h"
 #include "Pipeline.h"
 #include "SliceAnimation.h"
@@ -29,7 +30,7 @@ using tomviz::interpolateOpacity;
 using tomviz::ModuleAnimations;
 using tomviz::OpacityAnimation;
 using tomviz::SceneSnapshot;
-using tomviz::applySceneTransition;
+using tomviz::RecordedAnimations;
 using tomviz::SliceAnimation;
 using tomviz::Viewpoint;
 using tomviz::pipeline::planeTravelRange;
@@ -475,90 +476,91 @@ TEST_F(AnimationTest, RecordedModuleStateSurvivesAStateFileRoundTrip)
   EXPECT_DOUBLE_EQ(*restored.scene.sinks[id].opacity, 0.3);
 }
 
-TEST_F(AnimationTest, ModulesAddedAfterAViewpointAppearOnTheLegThatHasThem)
+TEST_F(AnimationTest, RecordedChangesListWhatDiffersBetweenViewpoints)
 {
   tomviz::pipeline::Pipeline pipeline;
   auto* older = new tomviz::pipeline::SliceSink();
   pipeline.addNode(older);
   older->setOpacity(1.0);
-  auto from = SceneSnapshot::capture(&pipeline);
+  Viewpoint first;
+  first.name = "Start";
+  first.scene = SceneSnapshot::capture(&pipeline);
+  viewpoints().append(first);
+
+  // A blank viewpoint in the middle records nothing and is skipped over
+  Viewpoint blank;
+  blank.name = "Blank";
+  viewpoints().append(blank);
 
   auto* added = new tomviz::pipeline::SliceSink();
   pipeline.addNode(added);
   added->setOpacity(0.6);
-  auto to = SceneSnapshot::capture(&pipeline);
+  older->setOpacity(0.4);
+  Viewpoint last;
+  last.name = "End";
+  last.scene = SceneSnapshot::capture(&pipeline);
+  viewpoints().append(last);
 
-  // Not on screen at the older viewpoint, so it fades in along the leg
-  QSet<int> overridden;
-  applySceneTransition(&pipeline, from, to, 0.0, overridden);
-  EXPECT_DOUBLE_EQ(added->opacity(), 0.0);
-  applySceneTransition(&pipeline, from, to, 0.5, overridden);
-  EXPECT_TRUE(added->visibility());
-  EXPECT_DOUBLE_EQ(added->opacity(), 0.3);
-  applySceneTransition(&pipeline, from, to, 1.0, overridden);
-  EXPECT_TRUE(added->visibility());
-  EXPECT_DOUBLE_EQ(added->opacity(), 0.6);
-  EXPECT_TRUE(older->visibility());
+  auto& recorded = RecordedAnimations::instance();
+  auto changes = recorded.changes(&pipeline);
+  ASSERT_EQ(changes.size(), 2);
+  // Pipeline order: the older slice first
+  EXPECT_EQ(changes[0].nodeId, pipeline.nodeId(older));
+  EXPECT_EQ(changes[0].property, "opacity");
+  EXPECT_EQ(changes[0].description, "opacity 1 to 0.4");
+  EXPECT_EQ(changes[0].fromAnchor, 0);
+  EXPECT_EQ(changes[0].toAnchor, 2);
+  EXPECT_EQ(changes[1].nodeId, pipeline.nodeId(added));
+  EXPECT_EQ(changes[1].description, "fades in to 0.6");
 
-  // And out again flying back
-  applySceneTransition(&pipeline, to, from, 1.0, overridden);
-  EXPECT_FALSE(added->visibility());
-  EXPECT_DOUBLE_EQ(added->opacity(), 0.0);
-
-  // A viewpoint saved with recording off knows nothing and holds it
-  added->setVisibility(true);
-  added->setOpacity(0.6);
-  SceneSnapshot blank;
-  applySceneTransition(&pipeline, blank, to, 0.5, overridden);
-  EXPECT_TRUE(added->visibility());
-  EXPECT_DOUBLE_EQ(added->opacity(), 0.6);
-
-  // Go To hides what the viewpoint never saw, unless it saw nothing
-  // Added after both viewpoints: off screen for the whole leg
-  auto* newest = new tomviz::pipeline::SliceSink();
-  pipeline.addNode(newest);
-  applySceneTransition(&pipeline, from, to, 0.5, overridden);
-  EXPECT_FALSE(newest->visibility());
-  newest->setVisibility(true);
-  applySceneTransition(&pipeline, blank, to, 0.5, overridden);
-  EXPECT_TRUE(newest->visibility());
-
-  from.apply(&pipeline);
+  // Both slices are known to the path; Go To the first viewpoint hides
+  // the one it never saw, and a blank viewpoint touches nothing
+  auto known = recorded.recordedNodeIds();
+  EXPECT_TRUE(known.contains(pipeline.nodeId(added)));
+  viewpoints().at(0).scene.apply(&pipeline, &known);
   EXPECT_FALSE(added->visibility());
   EXPECT_TRUE(older->visibility());
   added->setVisibility(true);
-  blank.apply(&pipeline);
+  viewpoints().at(1).scene.apply(&pipeline, &known);
   EXPECT_TRUE(added->visibility());
+  // A module no viewpoint recorded is left alone by Go To
+  auto* stranger = new tomviz::pipeline::SliceSink();
+  pipeline.addNode(stranger);
+  viewpoints().at(0).scene.apply(&pipeline, &known);
+  EXPECT_TRUE(stranger->visibility());
+
+  // Removing a row edits the later viewpoint: the older slice keeps its
+  // opacity of 1 there, so only the fade-in is left
+  recorded.remove(changes[0], &pipeline);
+  changes = recorded.changes(&pipeline);
+  ASSERT_EQ(changes.size(), 1);
+  EXPECT_EQ(changes[0].nodeId, pipeline.nodeId(added));
+  const auto& edited = viewpoints().at(2).scene.sinks[pipeline.nodeId(older)];
+  EXPECT_DOUBLE_EQ(*edited.opacity, 1.0);
+
+  // Removing the fade-in leaves the added slice hidden at the end too
+  recorded.remove(changes[0], &pipeline);
+  EXPECT_TRUE(recorded.changes(&pipeline).isEmpty());
+  EXPECT_FALSE(viewpoints().at(2).scene.sinks[pipeline.nodeId(added)].visible);
 }
 
-TEST_F(AnimationTest, SceneTransitionsFadeWhatChangedAndHoldTheRest)
+TEST_F(AnimationTest, AnchorSpansFollowThePathStops)
 {
-  tomviz::pipeline::Pipeline pipeline;
-  auto* steady = new tomviz::pipeline::SliceSink();
-  auto* fading = new tomviz::pipeline::SliceSink();
-  pipeline.addNode(steady);
-  pipeline.addNode(fading);
-  steady->setOpacity(1.0);
-  fading->setOpacity(0.8);
-
-  auto from = SceneSnapshot::capture(&pipeline);
-  fading->setVisibility(false);
-  auto to = SceneSnapshot::capture(&pipeline);
-
-  // A module identical at both ends is never written, so an edit made
-  // after recording stays put
-  steady->setOpacity(0.4);
-  QSet<int> overridden;
-  applySceneTransition(&pipeline, from, to, 0.5, overridden);
-  EXPECT_DOUBLE_EQ(steady->opacity(), 0.4);
-
-  // The disappearing module fades out and only hides at the end
-  EXPECT_TRUE(fading->visibility());
-  EXPECT_DOUBLE_EQ(fading->opacity(), 0.4);
-  applySceneTransition(&pipeline, from, to, 1.0, overridden);
-  EXPECT_FALSE(fading->visibility());
-  EXPECT_DOUBLE_EQ(fading->opacity(), 0.0);
-  applySceneTransition(&pipeline, from, to, 0.0, overridden);
-  EXPECT_TRUE(fading->visibility());
-  EXPECT_DOUBLE_EQ(fading->opacity(), 0.8);
+  viewpoints().append(viewpointAt(0, 1.0, false));
+  viewpoints().append(viewpointAt(1, 1.0, false));
+  viewpoints().append(viewpointAt(2, 2.0, false));
+  // Stops at 0, 0.25, 1; anchors 0 and 2 recorded
+  QList<int> anchors = { 0, 2 };
+  auto before = tomviz::anchorSpanAt(anchors, -0.1);
+  EXPECT_EQ(before.from, 0);
+  EXPECT_EQ(before.to, 0);
+  auto middle = tomviz::anchorSpanAt(anchors, 0.5);
+  EXPECT_EQ(middle.from, 0);
+  EXPECT_EQ(middle.to, 2);
+  EXPECT_DOUBLE_EQ(middle.u, 0.5);
+  auto after = tomviz::anchorSpanAt(anchors, 1.0);
+  EXPECT_EQ(after.from, 2);
+  EXPECT_EQ(after.to, 2);
+  EXPECT_DOUBLE_EQ(after.u, 1.0);
 }
+

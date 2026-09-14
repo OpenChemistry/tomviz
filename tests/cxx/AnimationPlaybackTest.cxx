@@ -2,6 +2,8 @@
    It is released under the 3-Clause BSD License, see "LICENSE". */
 
 #include <QApplication>
+#include <QJsonArray>
+#include <QJsonObject>
 #include <QTest>
 
 #include <pqActiveObjects.h>
@@ -160,6 +162,99 @@ private slots:
   }
 };
 
+#include "ModuleAnimations.h"
+#include "OpacityAnimation.h"
+#include "RecordedAnimations.h"
+#include "SceneSnapshot.h"
+#include "pipeline/Pipeline.h"
+#include "pipeline/sinks/SliceSink.h"
+
+// The animations built from recorded viewpoint state: they need a
+// ParaView core to exist, so they are exercised here rather than in the
+// plain gtest suite.
+class RecordedAnimationTest : public QObject
+{
+  Q_OBJECT
+
+private slots:
+  void cleanup()
+  {
+    ModuleAnimations::instance().clear();
+    CameraViewpoints::instance().clear();
+  }
+
+  void recordedOpacityFadesInAndYieldsToAuthoredAnimations()
+  {
+    pipeline::Pipeline pipeline;
+    Viewpoint first = viewpointAt(0.0);
+    first.scene = SceneSnapshot::capture(&pipeline);
+    CameraViewpoints::instance().append(first);
+
+    auto* slice = new pipeline::SliceSink();
+    pipeline.addNode(slice);
+    slice->setOpacity(0.6);
+    Viewpoint second = viewpointAt(10.0);
+    second.scene = SceneSnapshot::capture(&pipeline);
+    CameraViewpoints::instance().append(second);
+
+    auto& recorded = RecordedAnimations::instance();
+    recorded.sync(&pipeline);
+    auto animations = ModuleAnimations::instance().animations();
+    QCOMPARE(animations.size(), 1);
+    auto* fade = qobject_cast<RecordedAnimation*>(animations.first());
+    QVERIFY(fade);
+    QVERIFY(fade->recorded());
+    QCOMPARE(fade->type(), QString("opacity"));
+
+    // Hidden at the head (keeping the opacity it will fade up to), half
+    // way at the middle, arrived at the end
+    fade->applyPathTime(0.0);
+    QVERIFY(!slice->visibility());
+    QCOMPARE(slice->opacity(), 0.6);
+    fade->applyPathTime(0.5);
+    QVERIFY(slice->visibility());
+    QCOMPARE(slice->opacity(), 0.3);
+    fade->applyPathTime(1.0);
+    QVERIFY(slice->visibility());
+    QCOMPARE(slice->opacity(), 0.6);
+
+    // An authored opacity animation on the same leg takes it over: the
+    // recorded one leaves the slice alone there and the list shows the
+    // authored row instead
+    auto* authored = new OpacityAnimation(slice, 1.0, 0.2);
+    authored->segment = 0;
+    ModuleAnimations::instance().add(authored);
+    recorded.sync(&pipeline);
+    RecordedAnimation* rebuilt = nullptr;
+    for (auto* animation : ModuleAnimations::instance().animations()) {
+      if (animation->recorded()) {
+        rebuilt = qobject_cast<RecordedAnimation*>(animation);
+      }
+    }
+    QVERIFY(rebuilt);
+    slice->setOpacity(0.9);
+    rebuilt->applyPathTime(0.5);
+    QCOMPARE(slice->opacity(), 0.9);
+    QVERIFY(recorded.changes(&pipeline).isEmpty());
+
+    // Not saved: rebuilt from the viewpoints instead
+    auto json = ModuleAnimations::instance().serialize(&pipeline);
+    QCOMPARE(json["modules"].toArray().size(), 1);
+
+    // Removing the recorded change edits the viewpoint, and a sync then
+    // has nothing recorded left to build
+    ModuleAnimations::instance().remove(authored);
+    recorded.sync(&pipeline);
+    auto changes = recorded.changes(&pipeline);
+    QCOMPARE(changes.size(), 1);
+    recorded.remove(changes.first(), &pipeline);
+    recorded.sync(&pipeline);
+    for (auto* animation : ModuleAnimations::instance().animations()) {
+      QVERIFY(!animation->recorded());
+    }
+  }
+};
+
 int main(int argc, char** argv)
 {
   qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -168,7 +263,10 @@ int main(int argc, char** argv)
   pqApplicationCore::instance()->getObjectBuilder()->createServer(
     pqServerResource("builtin:"));
   AnimationPlaybackTest tc;
-  return QTest::qExec(&tc, argc, argv);
+  int status = QTest::qExec(&tc, argc, argv);
+  RecordedAnimationTest recorded;
+  status |= QTest::qExec(&recorded, argc, argv);
+  return status;
 }
 
 #include "AnimationPlaybackTest.moc"

@@ -125,13 +125,24 @@ public:
 
   void onTimeChanged() override
   {
+    if (timeKeeper()) {
+      applyProgress(progress());
+    }
+  }
+
+  // Frame 0 is not announced when the clock already sits there
+  void onPlaybackStarted() override { applyProgress(0.0); }
+
+  /// Apply the blend for progress @a t in [0, 1]. Public so it can be
+  /// driven without a time keeper.
+  void applyProgress(double t)
+  {
     auto* target = sink();
-    if (!timeKeeper() || !target || m_keyframes.isEmpty()) {
+    if (!target || m_keyframes.isEmpty()) {
       return;
     }
 
     auto& viewpoints = CameraViewpoints::instance();
-    const double t = progress();
 
     // The keyframe pair whose window contains the current time. Before
     // the first keyframe the first curve holds; after the last, the last.
@@ -166,7 +177,13 @@ public:
     }
 
     target->setAnimatedScalarOpacity(m_current);
+    curveApplied(m_current);
   }
+
+protected:
+  /// The blend just handed to the volume. A subclass that ties the
+  /// volume's visibility to its curve reads it here.
+  virtual void curveApplied(vtkPiecewiseFunction*) {}
 
 private:
   QList<OpacityKeyframe> m_keyframes;

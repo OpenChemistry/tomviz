@@ -54,7 +54,9 @@ public:
     // override module state (e.g. the scalar opacity morph) use the
     // playback-ended hook to hand control back to the user's settings.
     // The scene is replaced on state load, so follow the active one.
-    if (auto* manager = pqPVApplicationCore::instance()->animationManager()) {
+    auto* core = pqPVApplicationCore::instance();
+    auto* manager = core ? core->animationManager() : nullptr;
+    if (manager) {
       connect(manager, &pqAnimationManager::activeSceneChanged, this,
               [this]() { bindToScene(); });
     }
@@ -125,6 +127,11 @@ public:
   /// A short phrase for the animation list, e.g. "iso value 120 to 400".
   virtual QString describeParameters() const { return {}; }
 
+  /// True for an animation derived from the state recorded with the
+  /// camera viewpoints (see RecordedAnimations). Rebuilt from the
+  /// viewpoints rather than saved, and never authored by hand.
+  virtual bool recorded() const { return false; }
+
   /// The name this animation is saved under in a state file. Empty means
   /// it is not saved, because whatever created it rebuilds it instead.
   virtual QString type() const { return QString(); }
@@ -138,7 +145,8 @@ private:
   /// fires no matter which scene is current.
   void bindToScene()
   {
-    auto* manager = pqPVApplicationCore::instance()->animationManager();
+    auto* core = pqPVApplicationCore::instance();
+    auto* manager = core ? core->animationManager() : nullptr;
     auto* scene = manager ? manager->getActiveScene() : nullptr;
     if (scene == m_boundScene) {
       return;

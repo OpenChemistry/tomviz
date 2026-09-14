@@ -8,6 +8,7 @@
 
 #include <QHash>
 #include <QJsonObject>
+#include <QSet>
 
 #include <array>
 #include <optional>
@@ -48,34 +49,35 @@ struct SinkSnapshot
 struct SceneSnapshot
 {
   QHash<int, SinkSnapshot> sinks;
+  /// Whether anything was recorded at all. A viewpoint saved with
+  /// recording on but no visualizations yet has recorded that there
+  /// were none, which is not the same as having recorded nothing.
+  bool recorded = false;
 
-  bool isEmpty() const { return sinks.isEmpty(); }
+  bool isEmpty() const { return !recorded; }
 
   static SceneSnapshot capture(pipeline::Pipeline* pipeline);
   /// Put every recorded module back the way it was, as "Go To" does.
-  /// Modules the snapshot never saw are hidden, since they were not on
-  /// screen when it was taken; an empty snapshot (recording was off)
-  /// touches nothing.
-  void apply(pipeline::Pipeline* pipeline) const;
+  /// Of the modules in @a known (those some viewpoint recorded), any
+  /// this snapshot lacks is hidden, since it was not on screen when the
+  /// snapshot was taken. An empty snapshot (recording was off) touches
+  /// nothing, and neither does a null @a known.
+  void apply(pipeline::Pipeline* pipeline,
+             const QSet<int>* known = nullptr) const;
 
   QJsonObject serialize() const;
   static SceneSnapshot deserialize(const QJsonObject& json);
 };
 
-/// Move every recorded module a fraction @a u of the way from @a from to
-/// @a to. Values that are identical at both ends are left alone, so a
-/// module the user never changed between two viewpoints stays under
-/// their control; a module with an explicit ModuleAnimation for a
-/// property keeps that animation. Modules that appear or disappear fade
-/// through their opacity where they have one and otherwise switch
-/// halfway. A module missing from one end's snapshot was added after
-/// that viewpoint was saved and counts as hidden there; a snapshot that
-/// is empty altogether (recording was off) holds every module as it is.
-/// Volumes whose curve was touched are added to @a overriddenVolumes so
-/// the caller can hand them back afterwards.
-void applySceneTransition(pipeline::Pipeline* pipeline,
-                          const SceneSnapshot& from, const SceneSnapshot& to,
-                          double u, QSet<int>& overriddenVolumes);
+/// Flat opacity of the surface and plane modules that have one.
+std::optional<double> sinkFlatOpacity(pipeline::LegacyModuleSink* sink);
+void setSinkFlatOpacity(pipeline::LegacyModuleSink* sink, double value);
+
+/// Node-for-node equality of two opacity curves.
+bool opacityCurvesEqual(vtkPiecewiseFunction* a, vtkPiecewiseFunction* b);
+
+/// The same curve with every opacity at zero: the hidden end of a fade.
+vtkSmartPointer<vtkPiecewiseFunction> zeroedCurve(vtkPiecewiseFunction* curve);
 
 } // namespace tomviz
 

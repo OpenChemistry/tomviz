@@ -239,7 +239,9 @@ QJsonObject ModuleAnimations::serialize(pipeline::Pipeline* pipeline) const
 {
   QJsonArray array;
   for (const auto& animation : m_animations) {
-    if (!pipeline || !animation || !animation->baseNode) {
+    // Recorded animations are rebuilt from the viewpoints on load
+    if (!pipeline || !animation || !animation->baseNode ||
+        animation->recorded()) {
       continue;
     }
 
