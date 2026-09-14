@@ -12,6 +12,7 @@
 
 #include <vtkCamera.h>
 #include <vtkCameraInterpolator.h>
+#include <vtkTupleInterpolator.h>
 
 #include <algorithm>
 
@@ -291,13 +292,34 @@ void CameraViewpoints::rebuildInterpolator()
     return;
   }
 
-  // A spline needs three points to curve through; with two it is just a
-  // slower way of drawing a straight line.
-  if (m_viewpoints.size() < 3) {
-    m_interpolator->SetInterpolationTypeToLinear();
-  } else {
-    m_interpolator->SetInterpolationTypeToSpline();
-  }
+  // A spline needs three points to curve through; with two it would
+  // ease in and out of the straight line on its own, on top of the
+  // segment's easing, so two viewpoints get a plain linear blend.
+  //
+  // The interpolators are supplied ready-made rather than through
+  // vtkCameraInterpolator's Linear/Spline modes: in the VTK we build
+  // against, changing a vtkTupleInterpolator's type wipes its component
+  // count, and the camera interpolator sets the count first and the type
+  // second, so its linear mode stores nothing and hands back
+  // uninitialized memory, which parked the camera at the origin on every
+  // two-viewpoint path. In manual mode it leaves the types alone.
+  const bool linear = m_viewpoints.size() < 3;
+  auto tuple = [linear]() {
+    auto interpolator = vtkSmartPointer<vtkTupleInterpolator>::New();
+    if (linear) {
+      interpolator->SetInterpolationTypeToLinear();
+    } else {
+      interpolator->SetInterpolationTypeToSpline();
+    }
+    return interpolator;
+  };
+  m_interpolator->SetInterpolationTypeToManual();
+  m_interpolator->SetPositionInterpolator(tuple());
+  m_interpolator->SetFocalPointInterpolator(tuple());
+  m_interpolator->SetViewUpInterpolator(tuple());
+  m_interpolator->SetViewAngleInterpolator(tuple());
+  m_interpolator->SetParallelScaleInterpolator(tuple());
+  m_interpolator->SetClippingRangeInterpolator(tuple());
 
   for (int i = 0; i < m_viewpoints.size(); ++i) {
     vtkNew<vtkCamera> camera;
