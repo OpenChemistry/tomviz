@@ -4,12 +4,7 @@
 #include "ThresholdRangeWidget.h"
 
 #include "DoubleSliderWidget.h"
-#include "pipeline/InputPort.h"
-#include "pipeline/Link.h"
-#include "pipeline/Node.h"
-#include "pipeline/OutputPort.h"
 #include "pipeline/data/VolumeData.h"
-#include "pipeline/sinks/ThresholdSink.h"
 
 #include <QFormLayout>
 #include <QJsonArray>
@@ -47,6 +42,9 @@ ThresholdRangeWidget::ThresholdRangeWidget(
   };
   m_lower = makeSlider();
   m_upper = makeSlider();
+  // wireParameterBindings finds the controls by parameter name
+  m_lower->setObjectName("lower_threshold");
+  m_upper->setObjectName("upper_threshold");
   layout->addRow("Lower Threshold", m_lower);
   layout->addRow("Upper Threshold", m_upper);
   layout->addRow(new QLabel(QString("Data range: %1 to %2")
@@ -87,8 +85,8 @@ void ThresholdRangeWidget::getValues(QMap<QString, QVariant>& map)
 void ThresholdRangeWidget::setValues(const QMap<QString, QVariant>& map)
 {
   // Values still equal to the JSON defaults mean the node has never been
-  // edited, so start from the threshold visualization (or the data-based
-  // guess) rather than the meaningless declared numbers.
+  // edited, so keep the data-based guess rather than the meaningless
+  // declared numbers. A bound Threshold visualization overrides both.
   auto isDefault = [this, &map](const QString& key) {
     return !map.contains(key) ||
            (m_jsonDefaults.contains(key) &&
@@ -96,40 +94,10 @@ void ThresholdRangeWidget::setValues(const QMap<QString, QVariant>& map)
                           1.0 + m_jsonDefaults[key]));
   };
   if (isDefault("lower_threshold") && isDefault("upper_threshold")) {
-    if (m_haveSuggestion) {
-      setThresholds(m_suggested[0], m_suggested[1]);
-    }
     return;
   }
   setThresholds(map.value("lower_threshold", m_lower->value()).toDouble(),
                 map.value("upper_threshold", m_upper->value()).toDouble());
-}
-
-void ThresholdRangeWidget::setNodeContext(pipeline::Node* node,
-                                          pipeline::Pipeline*)
-{
-  if (!node) {
-    return;
-  }
-  // A visible Threshold visualization on the same data, whether it sits
-  // beside this node on the input port or was moved downstream of it.
-  QList<pipeline::OutputPort*> ports;
-  if (auto* in = node->inputPort("volume"); in && in->link()) {
-    ports.append(in->link()->from());
-  }
-  ports.append(node->outputPorts());
-  for (auto* port : ports) {
-    for (auto* link : port->links()) {
-      auto* sink =
-        qobject_cast<pipeline::ThresholdSink*>(link->to()->node());
-      if (sink && sink->visibility()) {
-        m_suggested[0] = sink->lowerThreshold();
-        m_suggested[1] = sink->upperThreshold();
-        m_haveSuggestion = true;
-        return;
-      }
-    }
-  }
 }
 
 void ThresholdRangeWidget::setJSONDescription(const QString& json)

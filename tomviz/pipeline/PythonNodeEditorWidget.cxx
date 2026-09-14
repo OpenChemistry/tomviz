@@ -595,6 +595,7 @@ void PythonNodeEditorWidget::installCustomWidget()
   m_customParamsWidget->setJSONDescription(m_jsonDescription);
   m_customParamsWidget->setValues(m_currentValues);
   m_paramsLayout->addWidget(m_customParamsWidget, 1);
+  emit parameterWidgetInstalled();
 }
 
 void PythonNodeEditorWidget::installJsonFormWidget()
@@ -620,6 +621,7 @@ void PythonNodeEditorWidget::installJsonFormWidget()
     m_jsonDescription, m_currentValues, portScalars, m_paramsTab);
   m_paramsLayout->addWidget(m_paramsWidget, 1);
   m_paramsLayout->addStretch();
+  emit parameterWidgetInstalled();
 }
 
 void PythonNodeEditorWidget::rebuildParametersTab(const QString& json)

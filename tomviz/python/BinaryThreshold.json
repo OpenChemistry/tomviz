@@ -1,7 +1,7 @@
 {
   "name": "BinaryThreshold",
   "label": "Binary Threshold",
-  "description": "Threshold image. Voxels with values between the lower and upper thresholds are considered object, others background. The sliders span the data's actual range and start from the visible Threshold visualization when there is one.",
+  "description": "Threshold image. Voxels with values between the lower and upper thresholds are considered object, others background. The sliders span the data's actual range and follow a Threshold visualization on the same data while the dialog is open, so the segmentation matches what you see.",
   "externalCompatible": false,
   "widget": "ThresholdRangeWidget",
   "children": [
@@ -16,13 +16,21 @@
       "name": "lower_threshold",
       "label": "Lower Threshold",
       "type": "double",
-      "default": 40.0
+      "default": 40.0,
+      "bindToSink": {
+        "type": "ThresholdSink",
+        "property": "lowerThreshold"
+      }
     },
     {
       "name": "upper_threshold",
       "label": "Upper Threshold",
       "type": "double",
-      "default": 255.0
+      "default": 255.0,
+      "bindToSink": {
+        "type": "ThresholdSink",
+        "property": "upperThreshold"
+      }
     }
   ],
   "inputType": "ImageData",

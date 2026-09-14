@@ -265,6 +265,7 @@ double ThresholdSink::upperThreshold() const
 
 void ThresholdSink::setThresholdRange(double lower, double upper)
 {
+  bool changed = lower != m_lower || upper != m_upper;
   m_lower = lower;
   m_upper = upper;
   m_rangeSet = true;
@@ -277,6 +278,9 @@ void ThresholdSink::setThresholdRange(double lower, double upper)
     QSignalBlocker blocker(m_controllers);
     m_controllers->setMinimum(lower);
     m_controllers->setMaximum(upper);
+  }
+  if (changed) {
+    emit thresholdRangeChanged(m_lower, m_upper);
   }
   emit renderNeeded();
 }

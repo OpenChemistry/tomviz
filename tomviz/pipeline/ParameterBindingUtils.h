@@ -34,8 +34,9 @@ QMap<QString, ParameterBinding> parseParameterBindings(
 /// For each binding, find a matching sink reachable through @a node's
 /// port topology and wire two-way connections between the named
 /// parameter's control under @a widget and the sink's property.
-/// Connections are parented to @a widget — Qt auto-disconnects when
-/// the widget is destroyed.
+/// Connections are parented to the control — Qt auto-disconnects when
+/// it is destroyed, so calling again after the controls are rebuilt
+/// is safe. Controls that do not exist yet are skipped.
 void wireParameterBindings(Node* node, QWidget* widget,
                            const QMap<QString, ParameterBinding>& bindings);
 

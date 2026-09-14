@@ -204,7 +204,15 @@ EditNodeWidget* PythonTransform::createPropertiesWidget(Pipeline* pipeline,
             }
           });
 
+  // Controls may be built late (once upstream data is in memory) or
+  // rebuilt on Apply; bindings live on the controls, so re-wiring after
+  // each build is safe. Same as LegacyPythonTransform.
   wireParameterBindings(this, widget, m_backend.parameterBindings());
+  connect(widget, &PythonNodeEditorWidget::parameterWidgetInstalled, this,
+          [this, widget]() {
+            wireParameterBindings(this, widget,
+                                  m_backend.parameterBindings());
+          });
 
   return widget;
 }

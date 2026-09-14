@@ -14,9 +14,9 @@ namespace tomviz {
 class DoubleSliderWidget;
 
 /// Lower/upper threshold sliders that span the input's actual scalar
-/// range, for the Binary Threshold operator. Fresh nodes start from the
-/// first visible Threshold visualization on the same data, if there is
-/// one, so the segmentation matches what the user has been looking at.
+/// range, for the Binary Threshold operator. The sliders are named after
+/// their parameters so the operator's "bindToSink" declarations can link
+/// them live to a Threshold visualization on the same data.
 class ThresholdRangeWidget : public pipeline::CustomPythonNodeWidget
 {
   Q_OBJECT
@@ -27,8 +27,6 @@ public:
 
   void getValues(QMap<QString, QVariant>& map) override;
   void setValues(const QMap<QString, QVariant>& map) override;
-  void setNodeContext(pipeline::Node* node,
-                      pipeline::Pipeline* pipeline) override;
   void setJSONDescription(const QString& json) override;
 
 private:
@@ -37,9 +35,6 @@ private:
   DoubleSliderWidget* m_lower = nullptr;
   DoubleSliderWidget* m_upper = nullptr;
   double m_dataRange[2] = { 0.0, 1.0 };
-  // Range of a visible Threshold visualization on the same data
-  bool m_haveSuggestion = false;
-  double m_suggested[2] = { 0.0, 1.0 };
   // Defaults declared in the JSON, to recognise a never-edited node
   QMap<QString, double> m_jsonDefaults;
 };

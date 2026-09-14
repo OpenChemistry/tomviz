@@ -131,6 +131,11 @@ signals:
   /// should adopt.
   void applied(const PythonNodeEdits& edits);
 
+  /// Emitted whenever the parameter controls are (re)built, including
+  /// the deferred build once upstream data arrives, so callers can
+  /// re-wire anything attached to individual controls.
+  void parameterWidgetInstalled();
+
 private:
   void onRunRequested();
   void onExecutionFinished();

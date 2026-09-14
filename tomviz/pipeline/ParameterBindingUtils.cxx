@@ -9,6 +9,9 @@
 #include "OutputPort.h"
 #include "SinkGroupNode.h"
 #include "sinks/SliceSink.h"
+#include "sinks/ThresholdSink.h"
+
+#include "DoubleSliderWidget.h"
 
 #include <QJsonArray>
 #include <QJsonObject>
@@ -83,8 +86,9 @@ SinkT* findBindableSink(const Node* node, Pred ok)
 
 /// Live link a QSpinBox to a SliceSink::slice property. Cycle is
 /// broken by the value-equality guard; QSignalBlocker is belt-and-
-/// suspenders for the seed and any signal interleavings.
-void wireSliceSinkBinding(QWidget* widget, QSpinBox* spin, SliceSink* sink)
+/// suspenders for the seed and any signal interleavings. Connections
+/// are owned by the control, so they die with it.
+void wireSliceSinkBinding(QSpinBox* spin, SliceSink* sink)
 {
   {
     QSignalBlocker b(spin);
@@ -92,7 +96,7 @@ void wireSliceSinkBinding(QWidget* widget, QSpinBox* spin, SliceSink* sink)
   }
 
   QPointer<SliceSink> sinkPtr(sink);
-  QObject::connect(sink, &SliceSink::sliceChanged, widget,
+  QObject::connect(sink, &SliceSink::sliceChanged, spin,
                    [spin, sinkPtr](int value) {
                      if (!sinkPtr || spin->value() == value) {
                        return;
@@ -100,12 +104,51 @@ void wireSliceSinkBinding(QWidget* widget, QSpinBox* spin, SliceSink* sink)
                      QSignalBlocker b(spin);
                      spin->setValue(value);
                    });
-  QObject::connect(spin, qOverload<int>(&QSpinBox::valueChanged), widget,
+  QObject::connect(spin, qOverload<int>(&QSpinBox::valueChanged), spin,
                    [sinkPtr](int value) {
                      if (!sinkPtr || sinkPtr->slice() == value) {
                        return;
                      }
                      sinkPtr->setSlice(value);
+                   });
+}
+
+/// Live link a DoubleSliderWidget to one end of a ThresholdSink's
+/// range (@a lower picks which end). Same cycle guard as the slice
+/// binding; the other end is left as the sink currently has it.
+void wireThresholdSinkBinding(DoubleSliderWidget* slider, ThresholdSink* sink,
+                              bool lower)
+{
+  auto end = [lower](ThresholdSink* s) {
+    return lower ? s->lowerThreshold() : s->upperThreshold();
+  };
+  {
+    QSignalBlocker b(slider);
+    slider->setValue(end(sink));
+  }
+
+  QPointer<ThresholdSink> sinkPtr(sink);
+  QObject::connect(sink, &ThresholdSink::thresholdRangeChanged, slider,
+                   [slider, lower](double lo, double hi) {
+                     double value = lower ? lo : hi;
+                     if (slider->value() == value) {
+                       return;
+                     }
+                     QSignalBlocker b(slider);
+                     slider->setValue(value);
+                   });
+  QObject::connect(slider, &DoubleSliderWidget::valueChanged, slider,
+                   [sinkPtr, lower, end](double value) {
+                     if (!sinkPtr || end(sinkPtr) == value) {
+                       return;
+                     }
+                     if (lower) {
+                       sinkPtr->setThresholdRange(value,
+                                                  sinkPtr->upperThreshold());
+                     } else {
+                       sinkPtr->setThresholdRange(sinkPtr->lowerThreshold(),
+                                                  value);
+                     }
                    });
 }
 
@@ -162,7 +205,28 @@ void wireParameterBindings(Node* node, QWidget* widget,
       if (!spin) {
         continue;
       }
-      wireSliceSinkBinding(widget, spin, sink);
+      wireSliceSinkBinding(spin, sink);
+    } else if (binding.sinkType == QStringLiteral("ThresholdSink") &&
+               (binding.sinkProperty == QStringLiteral("lowerThreshold") ||
+                binding.sinkProperty == QStringLiteral("upperThreshold"))) {
+      // A visible Threshold visualization is the one the user has been
+      // looking at; failing that, drive a hidden one.
+      auto* sink = findBindableSink<ThresholdSink>(
+        node, [](ThresholdSink* s) { return s->visibility(); });
+      if (!sink) {
+        sink = findBindableSink<ThresholdSink>(node,
+                                               [](ThresholdSink*) { return true; });
+      }
+      if (!sink) {
+        continue;
+      }
+      auto* slider = widget->findChild<DoubleSliderWidget*>(paramName);
+      if (!slider) {
+        continue;
+      }
+      wireThresholdSinkBinding(
+        slider, sink,
+        binding.sinkProperty == QStringLiteral("lowerThreshold"));
     }
     // Future sink types: add another dispatch arm here.
   }

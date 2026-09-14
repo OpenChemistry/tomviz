@@ -264,7 +264,14 @@ EditNodeWidget* LegacyPythonTransform::createPropertiesWidget(
             }
           });
 
+  // The controls may not exist yet (built once upstream data is in
+  // memory) and are rebuilt on Apply; the connections live on the
+  // controls themselves, so re-wiring after each build is safe.
   wireParameterBindings(this, widget, m_parameterBindings);
+  connect(widget, &PythonNodeEditorWidget::parameterWidgetInstalled, this,
+          [this, widget]() {
+            wireParameterBindings(this, widget, m_parameterBindings);
+          });
 
   return widget;
 }
