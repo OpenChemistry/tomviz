@@ -10,6 +10,7 @@
 #include <QSignalBlocker>
 #include <QVBoxLayout>
 
+#include <vtkCellData.h>
 #include <vtkCompositeRepresentation.h>
 #include <vtkDataArray.h>
 #include <vtkDataObject.h>
@@ -36,6 +37,40 @@ ThresholdSink::ThresholdSink(QObject* parent) : LegacyModuleSink(parent)
   addInput("volume", PortType::ImageData);
   setLabel("Threshold");
 }
+
+namespace {
+
+/// A voxel is a cell, not a point. Thresholding the point-centred image
+/// keeps a hexahedron only when all eight voxels around it pass, which
+/// erases thin features and isolated voxels that Binary Threshold still
+/// segments. Rebuild the grid one cell per voxel, sharing the arrays,
+/// so the surface shows exactly the voxels in range.
+vtkSmartPointer<vtkImageData> cellCenteredCopy(vtkImageData* image)
+{
+  vtkNew<vtkImageData> cells;
+  int dims[3];
+  double origin[3];
+  image->GetDimensions(dims);
+  cells->SetDimensions(dims[0] + 1, dims[1] + 1, dims[2] + 1);
+  cells->SetSpacing(image->GetSpacing());
+  cells->SetDirectionMatrix(image->GetDirectionMatrix());
+  // Half a voxel back along each of the image's own axes, so the cell
+  // centres land on the voxel centres whatever the direction matrix.
+  image->TransformContinuousIndexToPhysicalPoint(-0.5, -0.5, -0.5, origin);
+  cells->SetOrigin(origin);
+
+  auto* pointData = image->GetPointData();
+  auto* cellData = cells->GetCellData();
+  for (int i = 0; i < pointData->GetNumberOfArrays(); ++i) {
+    cellData->AddArray(pointData->GetAbstractArray(i));
+  }
+  if (auto* scalars = pointData->GetScalars(); scalars && scalars->GetName()) {
+    cellData->SetActiveScalars(scalars->GetName());
+  }
+  return cells;
+}
+
+} // namespace
 
 ThresholdSink::~ThresholdSink()
 {
@@ -111,7 +146,7 @@ bool ThresholdSink::consume(const QMap<QString, PortData>& inputs)
   }
 
   // Cache image and scalar range for the main-thread pipeline setup.
-  m_pendingImage = volume->imageData();
+  m_pendingImage = cellCenteredCopy(volume->imageData());
 
   auto range = volume->scalarRange();
   m_scalarRange[0] = range[0];
@@ -573,7 +608,7 @@ void ThresholdSink::applyActiveScalars()
   }
   if (selected && selected->GetName()) {
     vtkSMPropertyHelper(m_thresholdFilter, "SelectInputScalars")
-      .SetInputArrayToProcess(vtkDataObject::FIELD_ASSOCIATION_POINTS,
+      .SetInputArrayToProcess(vtkDataObject::FIELD_ASSOCIATION_CELLS,
                               selected->GetName());
     m_thresholdFilter->UpdateVTKObjects();
   }
@@ -636,7 +671,7 @@ void ThresholdSink::updateColorArray()
 
   if (!name.isEmpty()) {
     vtkSMPropertyHelper(m_thresholdRepresentation, "ColorArrayName")
-      .SetInputArrayToProcess(vtkDataObject::FIELD_ASSOCIATION_POINTS,
+      .SetInputArrayToProcess(vtkDataObject::FIELD_ASSOCIATION_CELLS,
                               name.toUtf8().constData());
     m_thresholdRepresentation->UpdateVTKObjects();
   }
