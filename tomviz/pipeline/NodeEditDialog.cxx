@@ -51,6 +51,7 @@ NodeEditDialog::~NodeEditDialog()
   // mode).
   if (m_node && m_pipeline && m_pipeline->nodes().contains(m_node)) {
     m_node->setEditing(false);
+    m_node->setHeld(false);
     connect(m_node, &Node::parametersApplied, m_pipeline,
             [pip = m_pipeline]() { pip->execute(); });
   }
@@ -71,6 +72,13 @@ void NodeEditDialog::init()
 
   // Suppress the auto-execute wiring so the dialog controls execution.
   QObject::disconnect(m_node, &Node::parametersApplied, m_pipeline, nullptr);
+  // That only covers the node's own trigger. A node that has never run
+  // (an eagerly spliced insertion, or one the strip linked up and handed
+  // to this dialog) is New, so any global execute would still pick it
+  // up and run it with default parameters; hold it until Apply commits.
+  if (m_isNewInsertion || m_node->state() == NodeState::New) {
+    m_node->setHeld(true);
+  }
 
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(5, 5, 5, 5);
@@ -155,6 +163,7 @@ void NodeEditDialog::onApply()
     completeInsertion();
   }
 
+  m_node->setHeld(false);
   m_node->markStale();
   m_pipeline->execute();
 }
@@ -180,6 +189,7 @@ void NodeEditDialog::onOkay()
     completeInsertion();
   }
 
+  m_node->setHeld(false);
   m_node->markStale();
   m_pipeline->execute();
   accept();

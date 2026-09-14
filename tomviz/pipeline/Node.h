@@ -57,6 +57,17 @@ public:
   bool isEditing() const;
   void setEditing(bool editing);
 
+  /// A held node is skipped by the executors, and everything fed by it
+  /// waits, exactly as at a breakpoint but without the stop being
+  /// reported. NodeEditDialog holds a newly inserted node until its
+  /// first Apply: the insertion is spliced into the pipeline eagerly so
+  /// the strip can preview it, and without the hold any global execute
+  /// (adding a module, a periodic source, the histogram) would run the
+  /// node with its default parameters before the user finished. Not
+  /// serialized.
+  bool isHeld() const;
+  void setHeld(bool held);
+
   bool hasBreakpoint() const;
   void setBreakpoint(bool enabled);
 
@@ -307,6 +318,7 @@ private:
   NodeState m_state = NodeState::New;
   NodeExecState m_execState = NodeExecState::Idle;
   bool m_editing = false;
+  bool m_held = false;
   bool m_breakpoint = false;
   QList<InputPort*> m_inputPorts;
   QList<OutputPort*> m_outputPorts;

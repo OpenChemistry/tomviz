@@ -127,6 +127,16 @@ void Node::setEditing(bool editing)
   }
 }
 
+bool Node::isHeld() const
+{
+  return m_held;
+}
+
+void Node::setHeld(bool held)
+{
+  m_held = held;
+}
+
 bool Node::hasBreakpoint() const
 {
   return m_breakpoint;

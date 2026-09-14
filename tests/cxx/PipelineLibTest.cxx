@@ -477,6 +477,48 @@ TEST_F(PipelineLibTest, BreakpointStopsExecution)
   EXPECT_NE(t2->state(), NodeState::Current);
 }
 
+TEST_F(PipelineLibTest, HeldNodeWaitsForItsDialog)
+{
+  // source -> t1 (held, as a freshly inserted transform whose dialog is
+  // open) -> t2, plus t3 on the source directly
+  auto* source = new SourceNode();
+  source->addOutput("out", PortType::ImageData);
+  pipeline->addNode(source);
+  auto* t1 = new DoubleTransform();
+  auto* t2 = new DoubleTransform();
+  auto* t3 = new DoubleTransform();
+  pipeline->addNode(t1);
+  pipeline->addNode(t2);
+  pipeline->addNode(t3);
+  pipeline->createLink(source->outputPort("out"), t1->inputPort("in"));
+  pipeline->createLink(t1->outputPort("out"), t2->inputPort("in"));
+  pipeline->createLink(source->outputPort("out"), t3->inputPort("in"));
+  source->setOutputData("out", PortData(std::any(5), PortType::ImageData));
+
+  t1->setHeld(true);
+  Node* reachedNode = nullptr;
+  QObject::connect(pipeline, &Pipeline::breakpointReached,
+                   [&reachedNode](Node* n) { reachedNode = n; });
+
+  // A global execute, as adding a module anywhere triggers, runs the
+  // rest of the pipeline and leaves the held node and its subtree alone
+  auto* future = pipeline->execute();
+  EXPECT_TRUE(future->isFinished());
+  EXPECT_TRUE(future->succeeded());
+  EXPECT_EQ(reachedNode, nullptr);
+  EXPECT_EQ(t3->state(), NodeState::Current);
+  EXPECT_NE(t1->state(), NodeState::Current);
+  EXPECT_NE(t2->state(), NodeState::Current);
+
+  // Released (the dialog's Apply), it runs like any other node
+  t1->setHeld(false);
+  future = pipeline->execute();
+  EXPECT_TRUE(future->isFinished());
+  EXPECT_EQ(t1->state(), NodeState::Current);
+  EXPECT_EQ(t2->state(), NodeState::Current);
+  EXPECT_EQ(t2->outputPort("out")->data().value<int>(), 20);
+}
+
 TEST_F(PipelineLibTest, TransientDataRelease)
 {
   // A transient transform output is kept alive while any consumer
@@ -2574,6 +2616,42 @@ TEST_F(PipelineLibTest, ThreadedExecutorCancellation)
   EXPECT_FALSE(future->succeeded());
   // t3 should not have finished
   EXPECT_NE(t3->state(), NodeState::Current);
+}
+
+TEST_F(PipelineLibTest, ThreadedExecutorHeldNode)
+{
+  pipeline->setExecutor(new ThreadedExecutor(pipeline));
+
+  auto* source = new SourceNode();
+  source->addOutput("out", PortType::ImageData);
+  pipeline->addNode(source);
+  auto* t1 = new SlowTransform();
+  auto* t2 = new SlowTransform();
+  pipeline->addNode(t1);
+  pipeline->addNode(t2);
+  pipeline->createLink(source->outputPort("out"), t1->inputPort("in"));
+  pipeline->createLink(t1->outputPort("out"), t2->inputPort("in"));
+  source->setOutputData("out", PortData(std::any(5), PortType::ImageData));
+
+  t1->setHeld(true);
+  Node* reachedNode = nullptr;
+  QObject::connect(pipeline, &Pipeline::breakpointReached,
+                   [&reachedNode](Node* n) { reachedNode = n; });
+
+  auto* future = pipeline->execute();
+  QSignalSpy spy(future, &ExecutionFuture::finished);
+  ASSERT_TRUE(spy.wait(5000));
+  EXPECT_TRUE(future->succeeded());
+  EXPECT_EQ(reachedNode, nullptr);
+  EXPECT_NE(t1->state(), NodeState::Current);
+  EXPECT_NE(t2->state(), NodeState::Current);
+
+  t1->setHeld(false);
+  future = pipeline->execute();
+  QSignalSpy spy2(future, &ExecutionFuture::finished);
+  ASSERT_TRUE(spy2.wait(5000));
+  EXPECT_EQ(t1->state(), NodeState::Current);
+  EXPECT_EQ(t2->state(), NodeState::Current);
 }
 
 TEST_F(PipelineLibTest, ThreadedExecutorBreakpoint)
