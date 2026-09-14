@@ -7,7 +7,10 @@
 #include "CameraViewpoints.h"
 #include "ModuleAnimations.h"
 #include "pipeline/Pipeline.h"
+#include "pipeline/sinks/ClipSink.h"
+#include "pipeline/sinks/ContourSink.h"
 #include "pipeline/sinks/LegacyModuleSink.h"
+#include "pipeline/sinks/SliceSink.h"
 #include "pipeline/sinks/VolumeSink.h"
 
 #include <vtkPiecewiseFunction.h>
@@ -17,6 +20,8 @@
 
 namespace tomviz {
 
+using pipeline::ClipSink;
+using pipeline::ContourSink;
 using pipeline::LegacyModuleSink;
 using pipeline::Pipeline;
 using pipeline::VolumeSink;
@@ -108,6 +113,22 @@ ExplodedKey explodedKey(const SinkSnapshot& snapshot)
   return key;
 }
 
+PlaneKey planeKey(const SinkSnapshot& snapshot)
+{
+  PlaneKey key;
+  key.direction = snapshot.planeDirection.value_or(0);
+  key.slice = snapshot.sliceIndex.value_or(0);
+  key.center = snapshot.planeCenter.value_or(std::array<double, 3>{ 0, 0, 0 });
+  key.normal = snapshot.planeNormal.value_or(std::array<double, 3>{ 0, 0, 1 });
+  return key;
+}
+
+/// The authored animation type that can take a plane's leg over.
+QString planeType(LegacyModuleSink* sink)
+{
+  return qobject_cast<ClipSink*>(sink) ? "clip" : "slice";
+}
+
 /// The curve that stands for a snapshot: its own while shown, an
 /// all-zero copy of @a shape while hidden, or null when it has none.
 vtkSmartPointer<vtkPiecewiseFunction> curveOf(const SinkSnapshot& snapshot,
@@ -144,6 +165,9 @@ QString authoredTypeFor(const QString& property)
 {
   if (property == "curve") {
     return "scalarOpacity";
+  }
+  if (property == "iso") {
+    return "contour";
   }
   return property;
 }
@@ -338,6 +362,58 @@ void RecordedExplodedAnimation::applySpan(const AnchorSpan& span)
   volume->setExplodedEnabled(side.enabled);
 }
 
+// --- Slice and clip planes ---
+
+QString RecordedPlaneAnimation::type() const
+{
+  return planeType(qobject_cast<LegacyModuleSink*>(baseNode.data()));
+}
+
+void RecordedPlaneAnimation::applySpan(const AnchorSpan& span)
+{
+  auto* sink = qobject_cast<LegacyModuleSink*>(baseNode.data());
+  if (!sink || m_keys.isEmpty()) {
+    return;
+  }
+  const PlaneKey& a = m_keys[span.from];
+  const PlaneKey& b = m_keys[span.to];
+  if (a.direction == b.direction && !a.custom()) {
+    applyPlane(sink, a.direction,
+               static_cast<int>(std::lround(lerp(a.slice, b.slice, span.u))),
+               a.center, a.normal);
+  } else if (a.custom() && b.custom()) {
+    std::array<double, 3> center, normal;
+    double length = 0.0;
+    for (int i = 0; i < 3; ++i) {
+      center[i] = lerp(a.center[i], b.center[i], span.u);
+      normal[i] = lerp(a.normal[i], b.normal[i], span.u);
+      length += normal[i] * normal[i];
+    }
+    if (length < 1e-12) {
+      // Opposite normals pass through zero; hold the nearer one
+      normal = span.u < 0.5 ? a.normal : b.normal;
+    }
+    applyPlane(sink, 3, a.slice, center, normal);
+  } else {
+    const PlaneKey& side = span.u < 0.5 ? a : b;
+    applyPlane(sink, side.direction, side.slice, side.center, side.normal);
+  }
+}
+
+// --- Iso value ---
+
+void RecordedIsoAnimation::applySpan(const AnchorSpan& span)
+{
+  auto* contour = qobject_cast<ContourSink*>(baseNode.data());
+  if (!contour || m_keys.isEmpty()) {
+    return;
+  }
+  const double value = lerp(m_keys[span.from], m_keys[span.to], span.u);
+  if (contour->isoValue() != value) {
+    contour->setIsoValue(value);
+  }
+}
+
 // --- Curve ---
 
 bool RecordedCurveAnimation::legIsExcluded(double t) const
@@ -513,6 +589,33 @@ void RecordedAnimations::sync(Pipeline* pipeline)
           registry.add(animation);
         }
       }
+      if (sample.planeDirection) {
+        QMap<int, PlaneKey> keys;
+        bool differs = false;
+        for (int anchor : anchors) {
+          keys[anchor] = planeKey(snapshotAt(anchor, id, sample));
+          differs = differs || !(keys[anchor] == keys[anchors.first()]);
+        }
+        if (differs) {
+          auto* animation = new RecordedPlaneAnimation(sink, keys);
+          animation->excludedSegments = authoredSegments(sink, planeType(sink));
+          registry.add(animation);
+        }
+      }
+      if (sample.isoValue) {
+        QMap<int, double> keys;
+        bool differs = false;
+        for (int anchor : anchors) {
+          keys[anchor] = snapshotAt(anchor, id, sample).isoValue.value_or(
+            *sample.isoValue);
+          differs = differs || keys[anchor] != keys[anchors.first()];
+        }
+        if (differs) {
+          auto* animation = new RecordedIsoAnimation(sink, keys);
+          animation->excludedSegments = authoredSegments(sink, "contour");
+          registry.add(animation);
+        }
+      }
     }
   }
 
@@ -606,6 +709,31 @@ QList<RecordedChange> RecordedAnimations::changes(Pipeline* pipeline) const
                                  : "exploded view changes");
         }
       }
+      if (sample.planeDirection) {
+        const auto ka = planeKey(a);
+        const auto kb = planeKey(b);
+        if (!(ka == kb)) {
+          const QString property = planeType(sink);
+          if (ka.direction == kb.direction && !ka.custom()) {
+            row(property,
+                property + " " + QString::number(ka.slice) + " to " +
+                  QString::number(kb.slice),
+                ka.slice, kb.slice);
+          } else if (ka.custom() && kb.custom()) {
+            row(property, "plane moves");
+          } else {
+            row(property, "plane direction changes");
+          }
+        }
+      }
+      if (sample.isoValue) {
+        const double start = a.isoValue.value_or(*sample.isoValue);
+        const double stop = b.isoValue.value_or(*sample.isoValue);
+        if (start != stop) {
+          row("iso", "iso value " + number(start) + " to " + number(stop),
+              start, stop);
+        }
+      }
     }
   }
   return rows;
@@ -658,6 +786,13 @@ void RecordedAnimations::remove(const RecordedChange& change,
     later.explodedAxis = earlier.explodedAxis;
     later.explodedChunks = earlier.explodedChunks;
     later.explodedGap = earlier.explodedGap;
+  } else if (change.property == "slice" || change.property == "clip") {
+    later.planeDirection = earlier.planeDirection;
+    later.sliceIndex = earlier.sliceIndex;
+    later.planeCenter = earlier.planeCenter;
+    later.planeNormal = earlier.planeNormal;
+  } else if (change.property == "iso") {
+    later.isoValue = earlier.isoValue;
   } else {
     return;
   }

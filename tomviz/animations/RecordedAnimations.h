@@ -43,15 +43,17 @@ class VolumeSink;
 struct RecordedChange
 {
   int nodeId = -1;
-  /// "opacity", "visibility", "curve", "cutOut" or "exploded".
+  /// "opacity", "visibility", "curve", "cutOut", "exploded", "slice",
+  /// "clip" or "iso".
   QString property;
   /// Viewpoint indices. Viewpoints between them recorded nothing.
   int fromAnchor = 0;
   int toAnchor = 1;
   /// e.g. "fades in to 0.6" or "cut-out moves".
   QString description;
-  /// For an opacity change, the effective opacity at each end (zero
-  /// while hidden), so the Animation Helper can show it in its controls.
+  /// For a change with two plain numbers behind it (opacity, slice
+  /// index, iso value), the value at each end, so the Animation Helper
+  /// can show it in its controls.
   std::optional<double> startValue;
   std::optional<double> stopValue;
 };
@@ -94,6 +96,25 @@ struct ExplodedKey
   {
     return enabled == o.enabled && axis == o.axis && chunks == o.chunks &&
            gap == o.gap;
+  }
+};
+
+/// Where a slice or clip plane sits: the slice index while axis
+/// aligned, the plane itself while custom (direction 3).
+struct PlaneKey
+{
+  int direction = 0;
+  int slice = 0;
+  std::array<double, 3> center = { 0.0, 0.0, 0.0 };
+  std::array<double, 3> normal = { 0.0, 0.0, 1.0 };
+  bool custom() const { return direction == 3; }
+  bool operator==(const PlaneKey& o) const
+  {
+    if (direction != o.direction) {
+      return false;
+    }
+    return custom() ? (center == o.center && normal == o.normal)
+                    : slice == o.slice;
   }
 };
 
@@ -209,6 +230,51 @@ protected:
 
 private:
   QMap<int, ExplodedKey> m_keys;
+};
+
+/// A slice or clip plane moving between recorded positions: the index
+/// slides while both ends share an axis, a custom plane slides and
+/// turns, and anything else switches halfway.
+class RecordedPlaneAnimation : public RecordedAnimation
+{
+  Q_OBJECT
+
+public:
+  RecordedPlaneAnimation(pipeline::Node* node, const QMap<int, PlaneKey>& keys)
+    : RecordedAnimation(node), m_keys(keys)
+  {
+  }
+  /// "slice" for a slice, "clip" for a clip: the authored types that
+  /// take a leg over.
+  QString type() const override;
+  QString describeParameters() const override { return "recorded plane"; }
+
+protected:
+  void applySpan(const AnchorSpan& span) override;
+  QList<int> anchors() const override { return m_keys.keys(); }
+
+private:
+  QMap<int, PlaneKey> m_keys;
+};
+
+class RecordedIsoAnimation : public RecordedAnimation
+{
+  Q_OBJECT
+
+public:
+  RecordedIsoAnimation(pipeline::Node* node, const QMap<int, double>& keys)
+    : RecordedAnimation(node), m_keys(keys)
+  {
+  }
+  QString type() const override { return "contour"; }
+  QString describeParameters() const override { return "recorded iso value"; }
+
+protected:
+  void applySpan(const AnchorSpan& span) override;
+  QList<int> anchors() const override { return m_keys.keys(); }
+
+private:
+  QMap<int, double> m_keys;
 };
 
 /// The recorded opacity curves of a volume. A viewpoint where the

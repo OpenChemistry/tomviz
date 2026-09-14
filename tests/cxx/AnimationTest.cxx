@@ -544,6 +544,56 @@ TEST_F(AnimationTest, RecordedChangesListWhatDiffersBetweenViewpoints)
   EXPECT_FALSE(viewpoints().at(2).scene.sinks[pipeline.nodeId(added)].visible);
 }
 
+TEST_F(AnimationTest, RecordedChangesIncludeSlicePositionsAndIsoValues)
+{
+  tomviz::pipeline::Pipeline pipeline;
+  auto* slice = new tomviz::pipeline::SliceSink();
+  auto* contour = new tomviz::pipeline::ContourSink();
+  pipeline.addNode(slice);
+  pipeline.addNode(contour);
+  slice->setSlice(10);
+  contour->setIsoValue(100.0);
+  Viewpoint first;
+  first.name = "A";
+  first.scene = SceneSnapshot::capture(&pipeline);
+  viewpoints().append(first);
+
+  slice->setSlice(30);
+  contour->setIsoValue(250.0);
+  Viewpoint second;
+  second.name = "B";
+  second.scene = SceneSnapshot::capture(&pipeline);
+  viewpoints().append(second);
+
+  auto& recorded = RecordedAnimations::instance();
+  auto changes = recorded.changes(&pipeline);
+  ASSERT_EQ(changes.size(), 2);
+  EXPECT_EQ(changes[0].property, "slice");
+  EXPECT_EQ(changes[0].description, "slice 10 to 30");
+  ASSERT_TRUE(changes[0].startValue && changes[0].stopValue);
+  EXPECT_DOUBLE_EQ(*changes[0].startValue, 10.0);
+  EXPECT_DOUBLE_EQ(*changes[0].stopValue, 30.0);
+  EXPECT_EQ(changes[1].property, "iso");
+  EXPECT_EQ(changes[1].description, "iso value 100 to 250");
+
+  // The positions survive a state file round trip and Go To restores
+  // them
+  auto restored = Viewpoint::deserialize(second.serialize());
+  slice->setSlice(0);
+  contour->setIsoValue(0.0);
+  restored.scene.apply(&pipeline);
+  EXPECT_EQ(slice->slice(), 30);
+  EXPECT_DOUBLE_EQ(contour->isoValue(), 250.0);
+
+  // Removing the slice row pins B's slice to A's
+  recorded.remove(changes[0], &pipeline);
+  changes = recorded.changes(&pipeline);
+  ASSERT_EQ(changes.size(), 1);
+  EXPECT_EQ(changes[0].property, "iso");
+  EXPECT_EQ(*viewpoints().at(1).scene.sinks[pipeline.nodeId(slice)].sliceIndex,
+            10);
+}
+
 TEST_F(AnimationTest, AnchorSpansFollowThePathStops)
 {
   viewpoints().append(viewpointAt(0, 1.0, false));

@@ -24,8 +24,9 @@ class LegacyModuleSink;
 
 /// The whitelisted state of one visualization module that a viewpoint
 /// records: visibility, the flat opacity of surface/plane modules, the
-/// scalar opacity curve of a volume, and the volume cut-out. Fields a
-/// module does not have stay unset.
+/// scalar opacity curve of a volume, the volume cut-out and exploded
+/// view, where a slice or clip plane sits, and a contour's iso value.
+/// Fields a module does not have stay unset.
 struct SinkSnapshot
 {
   bool visible = true;
@@ -38,6 +39,14 @@ struct SinkSnapshot
   std::optional<int> explodedAxis;
   std::optional<int> explodedChunks;
   std::optional<double> explodedGap;
+  /// Slice and clip planes: the direction (0..2 axis aligned, 3 custom),
+  /// the slice index while axis aligned, and the plane while custom.
+  std::optional<int> planeDirection;
+  std::optional<int> sliceIndex;
+  std::optional<std::array<double, 3>> planeCenter;
+  std::optional<std::array<double, 3>> planeNormal;
+  /// Contours: the iso value.
+  std::optional<double> isoValue;
 
   static SinkSnapshot capture(pipeline::LegacyModuleSink* sink);
   QJsonObject serialize() const;
@@ -78,6 +87,12 @@ bool opacityCurvesEqual(vtkPiecewiseFunction* a, vtkPiecewiseFunction* b);
 
 /// The same curve with every opacity at zero: the hidden end of a fade.
 vtkSmartPointer<vtkPiecewiseFunction> zeroedCurve(vtkPiecewiseFunction* curve);
+
+/// Put a slice or clip plane where a snapshot recorded it: the slice
+/// index while axis aligned, the plane itself while custom.
+void applyPlane(pipeline::LegacyModuleSink* sink, int direction,
+                int sliceIndex, const std::array<double, 3>& center,
+                const std::array<double, 3>& normal);
 
 } // namespace tomviz
 

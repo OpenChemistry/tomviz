@@ -133,7 +133,54 @@ SinkSnapshot SinkSnapshot::capture(LegacyModuleSink* sink)
     snapshot.explodedChunks = volume->explodedChunks();
     snapshot.explodedGap = volume->explodedGap();
   }
+  double center[3], normal[3];
+  if (auto* slice = qobject_cast<SliceSink*>(sink)) {
+    snapshot.planeDirection = static_cast<int>(slice->direction());
+    snapshot.sliceIndex = slice->slice();
+    slice->planeCenter(center);
+    slice->planeNormal(normal);
+    snapshot.planeCenter = { { center[0], center[1], center[2] } };
+    snapshot.planeNormal = { { normal[0], normal[1], normal[2] } };
+  } else if (auto* clip = qobject_cast<ClipSink*>(sink)) {
+    snapshot.planeDirection = static_cast<int>(clip->direction());
+    snapshot.sliceIndex = clip->slice();
+    clip->planeCenter(center);
+    clip->planeNormal(normal);
+    snapshot.planeCenter = { { center[0], center[1], center[2] } };
+    snapshot.planeNormal = { { normal[0], normal[1], normal[2] } };
+  } else if (auto* contour = qobject_cast<ContourSink*>(sink)) {
+    snapshot.isoValue = contour->isoValue();
+  }
   return snapshot;
+}
+
+void applyPlane(LegacyModuleSink* sink, int direction, int sliceIndex,
+                const std::array<double, 3>& center,
+                const std::array<double, 3>& normal)
+{
+  if (auto* slice = qobject_cast<SliceSink*>(sink)) {
+    auto dir = static_cast<SliceSink::Direction>(direction);
+    if (slice->direction() != dir) {
+      slice->setDirection(dir);
+    }
+    if (dir == SliceSink::Custom) {
+      slice->setPlaneCenter(center[0], center[1], center[2]);
+      slice->setPlaneNormal(normal[0], normal[1], normal[2]);
+    } else if (slice->slice() != sliceIndex) {
+      slice->setSlice(sliceIndex);
+    }
+  } else if (auto* clip = qobject_cast<ClipSink*>(sink)) {
+    auto dir = static_cast<ClipSink::Direction>(direction);
+    if (clip->direction() != dir) {
+      clip->setDirection(dir);
+    }
+    if (dir == ClipSink::Custom) {
+      clip->setPlaneOrigin(center[0], center[1], center[2]);
+      clip->setPlaneNormal(normal[0], normal[1], normal[2]);
+    } else if (clip->slice() != sliceIndex) {
+      clip->setSlice(sliceIndex);
+    }
+  }
 }
 
 QJsonObject SinkSnapshot::serialize() const
@@ -162,6 +209,19 @@ QJsonObject SinkSnapshot::serialize() const
     exploded["gap"] = explodedGap.value_or(0.25);
     json["exploded"] = exploded;
   }
+  if (planeDirection) {
+    QJsonObject plane;
+    plane["direction"] = *planeDirection;
+    plane["slice"] = sliceIndex.value_or(0);
+    auto c = planeCenter.value_or(std::array<double, 3>{ 0.0, 0.0, 0.0 });
+    auto n = planeNormal.value_or(std::array<double, 3>{ 0.0, 0.0, 1.0 });
+    plane["center"] = QJsonArray{ c[0], c[1], c[2] };
+    plane["normal"] = QJsonArray{ n[0], n[1], n[2] };
+    json["plane"] = plane;
+  }
+  if (isoValue) {
+    json["iso"] = *isoValue;
+  }
   return json;
 }
 
@@ -183,6 +243,22 @@ SinkSnapshot SinkSnapshot::deserialize(const QJsonObject& json)
     snapshot.explodedAxis = exploded["axis"].toInt(2);
     snapshot.explodedChunks = exploded["chunks"].toInt(4);
     snapshot.explodedGap = exploded["gap"].toDouble(0.25);
+  }
+  if (json.contains("plane")) {
+    auto plane = json["plane"].toObject();
+    snapshot.planeDirection = plane["direction"].toInt();
+    snapshot.sliceIndex = plane["slice"].toInt();
+    auto center = plane["center"].toArray();
+    auto normal = plane["normal"].toArray();
+    if (center.size() == 3 && normal.size() == 3) {
+      snapshot.planeCenter = { { center[0].toDouble(), center[1].toDouble(),
+                                 center[2].toDouble() } };
+      snapshot.planeNormal = { { normal[0].toDouble(), normal[1].toDouble(),
+                                 normal[2].toDouble() } };
+    }
+  }
+  if (json.contains("iso")) {
+    snapshot.isoValue = json["iso"].toDouble();
   }
   if (json.contains("cutOut")) {
     auto cutOut = json["cutOut"].toObject();
@@ -266,6 +342,18 @@ void SceneSnapshot::apply(Pipeline* pipeline, const QSet<int>* known) const
         volume->setExplodedChunks(snapshot.explodedChunks.value_or(4));
         volume->setExplodedGap(snapshot.explodedGap.value_or(0.25));
         volume->setExplodedEnabled(*snapshot.explodedEnabled);
+      }
+    }
+    if (snapshot.planeDirection && snapshot.planeCenter &&
+        snapshot.planeNormal) {
+      applyPlane(sink, *snapshot.planeDirection, snapshot.sliceIndex.value_or(0),
+                 *snapshot.planeCenter, *snapshot.planeNormal);
+    }
+    if (snapshot.isoValue) {
+      if (auto* contour = qobject_cast<ContourSink*>(sink)) {
+        if (contour->isoValue() != *snapshot.isoValue) {
+          contour->setIsoValue(*snapshot.isoValue);
+        }
       }
     }
     if (sink->visibility() != snapshot.visible) {

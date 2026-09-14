@@ -237,6 +237,35 @@ private slots:
     QCOMPARE(slice->opacity(), 0.9);
     QVERIFY(recorded.changes(&pipeline).isEmpty());
 
+    // A slice moved between viewpoints slides its index along the leg
+    // (recorded alongside the fade, since both changed)
+    slice->setSlice(10);
+    Viewpoint moved = viewpointAt(20.0);
+    moved.scene = SceneSnapshot::capture(&pipeline);
+    slice->setSlice(50);
+    CameraViewpoints::instance().replace(1, moved);
+    Viewpoint third = viewpointAt(30.0);
+    third.scene = SceneSnapshot::capture(&pipeline);
+    CameraViewpoints::instance().append(third);
+    recorded.sync(&pipeline);
+    RecordedAnimation* plane = nullptr;
+    for (auto* animation : ModuleAnimations::instance().animations()) {
+      if (animation->recorded() && animation->type() == "slice") {
+        plane = qobject_cast<RecordedAnimation*>(animation);
+      }
+    }
+    QVERIFY(plane);
+    // Stops: 0, 0.5, 1 with equal legs; the slice changes on the second
+    plane->applyPathTime(0.5);
+    QCOMPARE(slice->slice(), 10);
+    plane->applyPathTime(0.75);
+    QCOMPARE(slice->slice(), 30);
+    plane->applyPathTime(1.0);
+    QCOMPARE(slice->slice(), 50);
+    CameraViewpoints::instance().removeAt(2);
+    slice->setSlice(10);
+    recorded.sync(&pipeline);
+
     // Not saved: rebuilt from the viewpoints instead
     auto json = ModuleAnimations::instance().serialize(&pipeline);
     QCOMPARE(json["modules"].toArray().size(), 1);
