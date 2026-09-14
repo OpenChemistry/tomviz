@@ -233,6 +233,18 @@ void SceneSnapshot::apply(Pipeline* pipeline) const
   if (!pipeline) {
     return;
   }
+  // Modules this viewpoint never saw were not on screen when it was
+  // saved. A viewpoint that recorded nothing at all leaves them alone.
+  if (!sinks.isEmpty()) {
+    for (auto* node : pipeline->nodes()) {
+      auto* sink = qobject_cast<LegacyModuleSink*>(node);
+      if (sink && !sinks.contains(pipeline->nodeId(sink)) &&
+          sink->visibility()) {
+        sink->setVisibility(false);
+      }
+    }
+  }
+
   for (auto it = sinks.cbegin(); it != sinks.cend(); ++it) {
     auto* sink = qobject_cast<LegacyModuleSink*>(pipeline->nodeById(it.key()));
     if (!sink) {
@@ -307,14 +319,42 @@ void applySceneTransition(Pipeline* pipeline, const SceneSnapshot& from,
 
   auto ids = QSet<int>(from.sinks.keyBegin(), from.sinks.keyEnd());
   ids.unite(QSet<int>(to.sinks.keyBegin(), to.sinks.keyEnd()));
+  // A module neither viewpoint saw was added after both were saved, so
+  // it is off screen for the whole leg, the same as Go To would leave
+  // it. Only when both ends recorded something, though: a blank end
+  // holds everything.
+  if (!from.isEmpty() && !to.isEmpty()) {
+    for (auto* node : pipeline->nodes()) {
+      auto* sink = qobject_cast<LegacyModuleSink*>(node);
+      if (sink && !ids.contains(pipeline->nodeId(sink)) &&
+          sink->visibility()) {
+        sink->setVisibility(false);
+      }
+    }
+  }
+
   for (int id : ids) {
     auto* sink = qobject_cast<LegacyModuleSink*>(pipeline->nodeById(id));
     if (!sink) {
       continue;
     }
-    // A module recorded at only one end holds that state
-    const SinkSnapshot& a = from.sinks.contains(id) ? from.sinks[id] : to.sinks[id];
-    const SinkSnapshot& b = to.sinks.contains(id) ? to.sinks[id] : from.sinks[id];
+    // A viewpoint saved with recording off knows nothing about the
+    // modules and holds them all. A recorded viewpoint that lacks a
+    // module was saved before that module existed, so the module was
+    // not on screen there: it counts as hidden at that end and fades in
+    // or out across the leg like any other appearing module.
+    auto endpoint = [id](const SceneSnapshot& end, const SceneSnapshot& other) {
+      if (end.sinks.contains(id)) {
+        return end.sinks[id];
+      }
+      SinkSnapshot snapshot = other.sinks[id];
+      if (!end.isEmpty()) {
+        snapshot.visible = false;
+      }
+      return snapshot;
+    };
+    const SinkSnapshot a = endpoint(from, to);
+    const SinkSnapshot b = endpoint(to, from);
 
     bool visibilityChanges = a.visible != b.visible;
     bool fades = false;

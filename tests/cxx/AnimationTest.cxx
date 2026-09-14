@@ -475,6 +475,62 @@ TEST_F(AnimationTest, RecordedModuleStateSurvivesAStateFileRoundTrip)
   EXPECT_DOUBLE_EQ(*restored.scene.sinks[id].opacity, 0.3);
 }
 
+TEST_F(AnimationTest, ModulesAddedAfterAViewpointAppearOnTheLegThatHasThem)
+{
+  tomviz::pipeline::Pipeline pipeline;
+  auto* older = new tomviz::pipeline::SliceSink();
+  pipeline.addNode(older);
+  older->setOpacity(1.0);
+  auto from = SceneSnapshot::capture(&pipeline);
+
+  auto* added = new tomviz::pipeline::SliceSink();
+  pipeline.addNode(added);
+  added->setOpacity(0.6);
+  auto to = SceneSnapshot::capture(&pipeline);
+
+  // Not on screen at the older viewpoint, so it fades in along the leg
+  QSet<int> overridden;
+  applySceneTransition(&pipeline, from, to, 0.0, overridden);
+  EXPECT_DOUBLE_EQ(added->opacity(), 0.0);
+  applySceneTransition(&pipeline, from, to, 0.5, overridden);
+  EXPECT_TRUE(added->visibility());
+  EXPECT_DOUBLE_EQ(added->opacity(), 0.3);
+  applySceneTransition(&pipeline, from, to, 1.0, overridden);
+  EXPECT_TRUE(added->visibility());
+  EXPECT_DOUBLE_EQ(added->opacity(), 0.6);
+  EXPECT_TRUE(older->visibility());
+
+  // And out again flying back
+  applySceneTransition(&pipeline, to, from, 1.0, overridden);
+  EXPECT_FALSE(added->visibility());
+  EXPECT_DOUBLE_EQ(added->opacity(), 0.0);
+
+  // A viewpoint saved with recording off knows nothing and holds it
+  added->setVisibility(true);
+  added->setOpacity(0.6);
+  SceneSnapshot blank;
+  applySceneTransition(&pipeline, blank, to, 0.5, overridden);
+  EXPECT_TRUE(added->visibility());
+  EXPECT_DOUBLE_EQ(added->opacity(), 0.6);
+
+  // Go To hides what the viewpoint never saw, unless it saw nothing
+  // Added after both viewpoints: off screen for the whole leg
+  auto* newest = new tomviz::pipeline::SliceSink();
+  pipeline.addNode(newest);
+  applySceneTransition(&pipeline, from, to, 0.5, overridden);
+  EXPECT_FALSE(newest->visibility());
+  newest->setVisibility(true);
+  applySceneTransition(&pipeline, blank, to, 0.5, overridden);
+  EXPECT_TRUE(newest->visibility());
+
+  from.apply(&pipeline);
+  EXPECT_FALSE(added->visibility());
+  EXPECT_TRUE(older->visibility());
+  added->setVisibility(true);
+  blank.apply(&pipeline);
+  EXPECT_TRUE(added->visibility());
+}
+
 TEST_F(AnimationTest, SceneTransitionsFadeWhatChangedAndHoldTheRest)
 {
   tomviz::pipeline::Pipeline pipeline;

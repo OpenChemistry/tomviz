@@ -202,8 +202,9 @@ public:
     recordScene = new QCheckBox("Record module state with viewpoints", parent);
     recordScene->setToolTip(
       "Also save which modules are visible, their opacity, and any volume "
-      "cut-out with each viewpoint, and move between those states while "
-      "flying the path.");
+      "cut-out or exploded view with each viewpoint, and move between those "
+      "states while flying the path. A module added after a viewpoint was "
+      "saved counts as hidden there until that viewpoint is updated.");
     recordScene->setChecked(true);
     ui.cameraLayout->addWidget(recordScene);
 

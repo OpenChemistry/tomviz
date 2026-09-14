@@ -31,7 +31,15 @@ public:
 
   ~SceneAnimation() override { releaseVolumes(); }
 
-  void onTimeChanged() override
+  void onTimeChanged() override { applyProgress(progress()); }
+
+  // Frame 0 is not announced when the clock already sits there
+  void onPlaybackStarted() override { applyProgress(0.0); }
+
+  void onPlaybackEnded() override { releaseVolumes(); }
+
+private:
+  void applyProgress(double p)
   {
     if (!timeKeeper() || !m_pipeline) {
       return;
@@ -40,7 +48,7 @@ public:
     if (viewpoints.size() < 2) {
       return;
     }
-    const double t = viewpoints.remapProgress(progress());
+    const double t = viewpoints.remapProgress(p);
     auto stops = viewpoints.stops();
     int leg = 0;
     while (leg + 2 < stops.size() && stops[leg + 1] <= t) {
@@ -53,9 +61,6 @@ public:
                          viewpoints.at(leg + 1).scene, u, m_overriddenVolumes);
   }
 
-  void onPlaybackEnded() override { releaseVolumes(); }
-
-private:
   // Blended curves override the editor's only while playing
   void releaseVolumes()
   {

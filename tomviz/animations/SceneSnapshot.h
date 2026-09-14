@@ -53,6 +53,9 @@ struct SceneSnapshot
 
   static SceneSnapshot capture(pipeline::Pipeline* pipeline);
   /// Put every recorded module back the way it was, as "Go To" does.
+  /// Modules the snapshot never saw are hidden, since they were not on
+  /// screen when it was taken; an empty snapshot (recording was off)
+  /// touches nothing.
   void apply(pipeline::Pipeline* pipeline) const;
 
   QJsonObject serialize() const;
@@ -65,8 +68,11 @@ struct SceneSnapshot
 /// their control; a module with an explicit ModuleAnimation for a
 /// property keeps that animation. Modules that appear or disappear fade
 /// through their opacity where they have one and otherwise switch
-/// halfway. Volumes whose curve was touched are added to
-/// @a overriddenVolumes so the caller can hand them back afterwards.
+/// halfway. A module missing from one end's snapshot was added after
+/// that viewpoint was saved and counts as hidden there; a snapshot that
+/// is empty altogether (recording was off) holds every module as it is.
+/// Volumes whose curve was touched are added to @a overriddenVolumes so
+/// the caller can hand them back afterwards.
 void applySceneTransition(pipeline::Pipeline* pipeline,
                           const SceneSnapshot& from, const SceneSnapshot& to,
                           double u, QSet<int>& overriddenVolumes);

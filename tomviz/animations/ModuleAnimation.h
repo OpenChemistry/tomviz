@@ -61,6 +61,13 @@ public:
     bindToScene();
   }
 
+  /// Called when animation playback starts, before the first frame. The
+  /// time keeper only announces changes, so a playback that begins where
+  /// the clock already sits never ticks its first frame; an animation
+  /// that must show its starting state overrides this. Default does
+  /// nothing.
+  virtual void onPlaybackStarted() {}
+
   /// Called when animation playback finishes. Default does nothing.
   virtual void onPlaybackEnded() {}
 
@@ -141,6 +148,8 @@ private:
     }
     m_boundScene = scene;
     if (scene) {
+      connect(scene, &pqAnimationScene::beginPlay, this,
+              [this]() { onPlaybackStarted(); });
       connect(scene, &pqAnimationScene::endPlay, this,
               [this]() { onPlaybackEnded(); });
     }

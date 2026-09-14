@@ -66,7 +66,13 @@ public:
     }
   }
 
-  void onTimeChanged() override
+  void onTimeChanged() override { applyProgress(progress()); }
+
+  // Frame 0 is not announced when the clock already sits there
+  void onPlaybackStarted() override { applyProgress(0.0); }
+
+private:
+  void applyProgress(double p)
   {
     if (!timeKeeper() || !m_view) {
       return;
@@ -84,7 +90,7 @@ public:
       return;
     }
 
-    const double t = viewpoints.remapProgress(progress());
+    const double t = viewpoints.remapProgress(p);
     viewpoints.interpolate(t, camera);
     updateCaption(t);
 
@@ -97,7 +103,6 @@ public:
     m_view->render();
   }
 
-private:
   vtkRenderer* renderer() const
   {
     auto* proxy = m_view ? m_view->getRenderViewProxy() : nullptr;
