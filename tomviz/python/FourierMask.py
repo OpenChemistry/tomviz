@@ -5,7 +5,7 @@ def transform(dataset, mask, edge_softness=2.0, include_friedel_mates=True,
     The mask is any volume of the same shape as this dataset whose
     non-zero voxels mark the reciprocal-space regions to keep, typically
     a Binary Threshold or Connected Components result computed on an
-    "FFT (abs log)" clone of the data. The mask edges are softened with
+    "FFT (abs log)" branch of the data. The mask edges are softened with
     a Gaussian so the sharp cut does not ring in real space, the
     dataset's spectrum is multiplied by it, and the real part of the
     inverse transform replaces the data.
@@ -24,7 +24,7 @@ def transform(dataset, mask, edge_softness=2.0, include_friedel_mates=True,
         raise RuntimeError(
             f'The mask shape {tuple(window.shape)} does not match the data '
             f'shape {tuple(array.shape)}. Compute the mask on an '
-            '"FFT (abs log)" clone of this dataset.')
+            '"FFT (abs log)" branch of this dataset.')
     if not window.any():
         raise RuntimeError('The mask has no non-zero voxels')
 
