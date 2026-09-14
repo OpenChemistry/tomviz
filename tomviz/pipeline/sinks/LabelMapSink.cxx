@@ -53,6 +53,11 @@ LabelMapSink::LabelMapSink(QObject* parent) : VolumeSink(parent)
     emit labelsChanged();
   });
 
+  // The volume representation has no shading normal past the one-voxel
+  // boundary shell of a label, so keep the ray step fine enough that the
+  // first hit usually lands in it.
+  setFineSampling(true);
+
   // The surface representation. Colors are written per face by
   // colorLabelSurface, so the mapper takes them as they are.
   m_surfaceMapper->SetScalarModeToUseCellData();
@@ -303,6 +308,16 @@ bool LabelMapSink::consume(const QMap<QString, PortData>& inputs)
   // file or a base-class default left behind.
   setInterpolationType(VTK_NEAREST_INTERPOLATION);
 
+  // Samples that miss the boundary shell are lit by ambient alone, so a
+  // floor keeps them a dimmer shade of their label rather than black.
+  // Once, so a user's own lighting survives later executions.
+  if (!m_volumeLookApplied) {
+    if (ambient() < 0.3) {
+      setAmbient(0.3);
+    }
+    m_volumeLookApplied = true;
+  }
+
   // The producing node normally refreshes the table before publishing
   // (see inheritOutputMetadata), but a payload can reach us without
   // having gone through that - a source node's own output, or a state
@@ -325,6 +340,7 @@ QJsonObject LabelMapSink::serialize() const
     m_representation == Representation::Surface ? "Surface" : "Volume";
   json["surfaceSmoothing"] = m_surfaceSmoothing;
   json["surfaceOpacity"] = surfaceOpacity();
+  json["volumeLookApplied"] = m_volumeLookApplied;
   // A real label map carries its table in its own payload. An adopted
   // one has nowhere else to put it: the port's payload is a plain
   // volume shared with other sinks, so the colors and names the user
@@ -355,6 +371,8 @@ bool LabelMapSink::deserialize(const QJsonObject& json)
   if (json.contains("surfaceOpacity")) {
     setSurfaceOpacity(json.value("surfaceOpacity").toDouble(1.0));
   }
+  // Older files carry lighting the user saw and may have tuned
+  m_volumeLookApplied = json.value("volumeLookApplied").toBool(true);
   return true;
 }
 

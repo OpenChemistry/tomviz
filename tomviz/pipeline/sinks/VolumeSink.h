@@ -217,6 +217,16 @@ protected:
   /// without touching the sink's own visibility flag.
   virtual bool volumeRenderingEnabled() const { return true; }
 
+  /// Step rays at half a voxel instead of VTK's heuristic (a voxel or
+  /// more). Costs render time; meant for label maps, whose shading
+  /// normal exists only in a one-voxel shell that coarser steps skip.
+  void setFineSampling(bool enabled);
+
+public:
+  bool fineSampling() const;
+
+protected:
+
 private:
   void applyActiveScalars();
   void populateScalarsCombo();

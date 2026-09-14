@@ -4229,6 +4229,7 @@ TEST_F(PipelineLibTest, LabelMapSinkSurfaceFollowsLabelsAndRepresentation)
   auto* sink = new OpenLabelMapSink();
   pipeline->addNode(sink);
   EXPECT_EQ(sink->representation(), LabelMapSink::Representation::Surface);
+  EXPECT_TRUE(sink->fineSampling());
 
   // The trio SinkNode::runConsume runs; the payload in `inputs` is what
   // the sink's volumeData() weakly refers to afterwards.
@@ -4239,6 +4240,8 @@ TEST_F(PipelineLibTest, LabelMapSinkSurfaceFollowsLabelsAndRepresentation)
   ASSERT_TRUE(sink->surface());
   const auto cells = sink->surface()->GetNumberOfCells();
   EXPECT_GT(cells, 0);
+  // Ambient floor for the volume representation, applied once
+  EXPECT_GE(sink->ambient(), 0.3);
 
   // Hiding a label re-extracts; a color edit only recolors
   auto labels = sink->labelMap();

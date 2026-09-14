@@ -443,6 +443,13 @@ public:
     return drawn;
   }
 
+  // Step every ray at half a voxel instead of letting VTK pick a voxel or
+  // more. For a label map the shading normal exists only in the one-voxel
+  // boundary shell, so a coarser step lands most first hits past it and
+  // draws them unlit; see LabelMapSink.
+  void SetFineSampling(bool on) { FineSampling = on; }
+  bool GetFineSampling() const { return FineSampling; }
+
   void Render(vtkRenderer* ren, vtkVolume* vol) override
   {
     const bool guarded = applyRenderGuard(ren, vol);
@@ -634,19 +641,45 @@ protected:
     }
   }
 
-  /// Hand sampling back to VTK, undoing whatever applyRenderGuard() set.
+  /// Hand sampling back to VTK (or to the fine-sampling policy), undoing
+  /// whatever applyRenderGuard() set.
   void releaseSampleDistances()
   {
-    if (BaseSampleDistance < 0.0f) {
+    if (BaseSampleDistance >= 0.0f) {
+      auto* gpu = GetGPUMapper();
+      gpu->SetImageSampleDistance(1.0f); // one ray per pixel
+      gpu->SetSampleDistance(BaseSampleDistance);
+      SetInteractiveAdjustSampleDistances(1);
+      SetAutoAdjustSampleDistances(1);
+      BaseSampleDistance = -1.0f;
+    }
+    applySamplingPolicy();
+  }
+
+  /// Outside the scattering guard, sampling is VTK's own heuristic unless
+  /// fine sampling is on, which pins a half-voxel step for stills and
+  /// camera moves alike. Every setter here is a no-op when nothing
+  /// changes, so this is safe to run per frame.
+  void applySamplingPolicy()
+  {
+    auto* image = vtkImageData::SafeDownCast(GetDataObjectInput());
+    if (!FineSampling || !image) {
+      SetInteractiveAdjustSampleDistances(1);
+      SetAutoAdjustSampleDistances(1);
       return;
     }
+    // Both flags off, or vtkSmartVolumeMapper::Render re-derives the GPU
+    // mapper's setting from the update rate (see applyRenderGuard).
+    SetInteractiveAdjustSampleDistances(0);
+    SetAutoAdjustSampleDistances(0);
+    const float step = static_cast<float>(0.5 * smallestSpacing(image));
+    SetSampleDistance(step);
     auto* gpu = GetGPUMapper();
-    gpu->SetImageSampleDistance(1.0f); // one ray per pixel
-    gpu->SetSampleDistance(BaseSampleDistance);
-    SetInteractiveAdjustSampleDistances(1);
-    SetAutoAdjustSampleDistances(1);
-    BaseSampleDistance = -1.0f;
+    gpu->SetImageSampleDistance(1.0f);
+    gpu->SetSampleDistance(step);
   }
+
+  bool FineSampling = false;
 
   double RequestedVolumetricScattering = 0.0;
   // The mapper's own SampleDistance, stashed while we are overriding it.
@@ -735,6 +768,19 @@ VolumeSink::~VolumeSink()
 QIcon VolumeSink::icon() const
 {
   return QIcon(QStringLiteral(":/icons/pqVolumeData.png"));
+}
+
+void VolumeSink::setFineSampling(bool enabled)
+{
+  for (auto* mapper : allMappers()) {
+    mapper->SetFineSampling(enabled);
+  }
+  emit renderNeeded();
+}
+
+bool VolumeSink::fineSampling() const
+{
+  return m_volumeMapper->GetFineSampling();
 }
 
 void VolumeSink::setVisibility(bool visible)
@@ -1713,6 +1759,7 @@ void VolumeSink::applyExploded()
       m_volumeMapper->GetGlobalIlluminationReach());
     mapper->SetComputeNormalFromOpacity(
       m_volumeMapper->GetComputeNormalFromOpacity());
+    mapper->SetFineSampling(m_volumeMapper->GetFineSampling());
     if (auto* planes = m_volumeMapper->GetClippingPlanes()) {
       planes->InitTraversal();
       while (auto* plane = planes->GetNextItem()) {

@@ -125,6 +125,8 @@ private:
 
   Representation m_representation = Representation::Surface;
   int m_surfaceSmoothing = 16;
+  /// The ambient floor for the volume representation has been applied.
+  bool m_volumeLookApplied = false;
 
   vtkSmartPointer<vtkPolyData> m_surface;
   vtkNew<vtkPolyDataMapper> m_surfaceMapper;
