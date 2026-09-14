@@ -1,21 +1,83 @@
 {
+  "schemaVersion": 2,
   "name": "FourierPeakMask",
   "label": "Fourier Peak Mask",
-  "description": "Keep only the reciprocal-space volumes around the given peaks and transform back to real space, the equivalent of selected-area electron diffraction. Run 'FFT (abs log)' on a copy of the data first, read off each peak's (x, y, z) voxel index, and enter the peaks below. Soft spherical windows (erf edges) are applied around each peak and, optionally, its Friedel mate mirrored through the spectrum center.",
+  "description": "Keep only the reciprocal-space volumes around selected peaks and transform back to real space, the equivalent of selected-area electron diffraction. With Auto-detect Peaks on, the peaks are found by thresholding the spectrum's normalized log magnitude (what 'FFT (abs log)' shows) and taking the strongest voxel of each region above the threshold, skipping the center; the peaks found are written into Peak Centers, so uncheck Auto-detect to review or edit them. Otherwise enter peaks by hand or from a CSV, reading their (x, y, z) voxel indices off an 'FFT (abs log)' branch. Soft spherical windows (erf edges) are applied around each peak and, optionally, its Friedel mate mirrored through the spectrum center.",
+  "help": {
+    "url": "analysis.html#fourier-peak-mask"
+  },
+  "inputs": [
+    {
+      "name": "volume",
+      "type": "ImageData"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "volume",
+      "type": "ImageData"
+    }
+  ],
   "parameters": [
+    {
+      "name": "auto_detect",
+      "label": "Auto-detect Peaks",
+      "description": "Find the peaks automatically instead of using the typed or CSV centers below.",
+      "type": "bool",
+      "default": true
+    },
+    {
+      "name": "threshold",
+      "label": "Threshold",
+      "description": "Fraction of the maximum normalized log magnitude, as displayed by 'FFT (abs log)', above which voxels belong to a peak. Preview it with a Threshold visualization on an 'FFT (abs log)' branch.",
+      "type": "double",
+      "default": 0.65,
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "visible_if": "auto_detect == true"
+    },
+    {
+      "name": "exclude_center_radius",
+      "label": "Exclude Center Radius (bins)",
+      "description": "Peaks within this distance of the spectrum center (the DC term and low frequencies) are ignored.",
+      "type": "double",
+      "default": 8.0,
+      "minimum": 0.0,
+      "visible_if": "auto_detect == true"
+    },
+    {
+      "name": "min_peak_size",
+      "label": "Min Peak Size (voxels)",
+      "description": "Regions above the threshold with fewer voxels than this are treated as noise.",
+      "type": "int",
+      "default": 3,
+      "minimum": 1,
+      "visible_if": "auto_detect == true"
+    },
+    {
+      "name": "max_peaks",
+      "label": "Max Peaks",
+      "description": "Keep at most this many of the strongest peaks (each with its Friedel mate). 0 keeps all.",
+      "type": "int",
+      "default": 20,
+      "minimum": 0,
+      "visible_if": "auto_detect == true"
+    },
     {
       "name": "centers",
       "label": "Peak Centers",
-      "description": "One peak per line (or semicolon-separated) as 'x, y, z' voxel indices into the centered spectrum, as shown by the 'FFT (abs log)' operator.",
+      "description": "Peaks as 'x, y, z' voxel indices into the centered spectrum, separated by semicolons, as shown by the 'FFT (abs log)' operator. Auto-detect fills this in.",
       "type": "string",
-      "default": ""
+      "default": "",
+      "visible_if": "auto_detect == false"
     },
     {
       "name": "centers_file",
       "label": "Peak Centers CSV",
       "description": "Optional CSV file with one x,y,z row per peak. Header lines and extra columns are ignored. Used in addition to any peaks typed above.",
       "type": "file",
-      "default": ""
+      "default": "",
+      "visible_if": "auto_detect == false"
     },
     {
       "name": "radius",
@@ -28,7 +90,7 @@
     {
       "name": "sigma",
       "label": "Edge Softness (bins)",
-      "description": "Softness of the window edge (erf transition width), in frequency bins.",
+      "description": "Width of the erf edge of each window, in frequency bins. Larger values ring less in real space.",
       "type": "double",
       "default": 5.0,
       "minimum": 0.001
@@ -36,11 +98,10 @@
     {
       "name": "include_friedel_mates",
       "label": "Include Friedel Mates",
-      "description": "Also keep each peak's mirror through the spectrum center. The spectrum of real data is symmetric, so this is almost always wanted; peaks whose own window already covers the center are not mirrored twice.",
+      "description": "Also keep each peak's mirror through the spectrum center, which the symmetric spectrum of real data requires.",
       "type": "bool",
       "default": true
     }
   ],
-  "inputType": "ImageData",
-  "outputType": "ImageData"
+  "supportsCancel": true
 }

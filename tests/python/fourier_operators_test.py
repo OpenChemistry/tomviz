@@ -6,12 +6,19 @@ from tomviz_pipeline.dataset import Dataset
 from tomviz_pipeline.nodes.transforms.legacy_python import (
     LegacyPythonTransform,
 )
+from tomviz_pipeline.nodes.transforms.python_transform import (
+    PythonTransform,
+)
 
 from utils import OPERATOR_PATH
 
 
+# Schema-v2 operators (kernel classes) run through PythonTransform
+V2_OPERATORS = {'FourierPeakMask'}
+
+
 def _run_operator_raw(name, inputs, **arguments):
-    t = LegacyPythonTransform()
+    t = PythonTransform() if name in V2_OPERATORS else LegacyPythonTransform()
     t.deserialize({
         'description': (OPERATOR_PATH / f'{name}.json').read_text(),
         'script': (OPERATOR_PATH / f'{name}.py').read_text(),
@@ -36,6 +43,8 @@ def _run_filter(arr, **arguments):
 
 
 def _run_peak_mask(arr, **arguments):
+    # Typed centers unless a test opts into auto-detection
+    arguments.setdefault('auto_detect', False)
     return _run_operator('FourierPeakMask', {'volume': arr}, **arguments)
 
 
@@ -139,11 +148,45 @@ def test_peak_mask_centers_from_csv(tmp_path):
 def test_peak_mask_rejects_bad_centers():
     # A raising operator surfaces as an empty (failed) result
     _, result = _run_operator_raw('FourierPeakMask',
-                                  {'volume': _wave((5, 0, 0))})
+                                  {'volume': _wave((5, 0, 0))},
+                                  auto_detect=False)
     assert result == {}
     _, result = _run_operator_raw('FourierPeakMask',
                                   {'volume': _wave((5, 0, 0))},
-                                  centers='999, 0, 0')
+                                  auto_detect=False, centers='999, 0, 0')
+    assert result == {}
+
+
+def test_peak_mask_auto_detects_peaks_and_writes_them_back():
+    k1, k2 = (5, 0, 0), (0, 9, 3)
+    strong, weak = 2.0 * _wave(k1), 0.5 * _wave(k2)
+    data = strong + weak + 1.0  # the DC term must be skipped
+    t, result = _run_operator_raw('FourierPeakMask', {'volume': data},
+                                  auto_detect=True, threshold=0.8,
+                                  exclude_center_radius=3.0,
+                                  min_peak_size=1, radius=2.0, sigma=0.5)
+    out = result[t.output_ports()[0].name].payload.active_scalars
+    # Both components survive, the DC offset does not
+    assert _corr(out, strong + weak) > 0.99
+    assert abs(out.mean()) < 1e-3
+    # The peaks found land in the centers parameter, strongest first,
+    # one per Friedel pair
+    centers = t.parameters['centers']
+    found = [tuple(int(v) for v in c.split(',')) for c in centers.split(';')]
+    assert len(found) == 2
+    assert found[0] in (_peak_index(k1), _peak_index((-5, 0, 0)))
+    assert found[1] in (_peak_index(k2), _peak_index((0, -9, -3)))
+
+    # Max Peaks keeps only the strongest pair
+    out = _run_peak_mask(data, auto_detect=True, threshold=0.8,
+                         exclude_center_radius=3.0, min_peak_size=1,
+                         max_peaks=1, radius=2.0, sigma=0.5)
+    assert _corr(out, strong) > 0.99
+    assert abs(_corr(out, weak)) < 0.05
+
+    # Nothing above the threshold fails the run instead of returning zeros
+    _, result = _run_operator_raw('FourierPeakMask', {'volume': data},
+                                  auto_detect=True, threshold=1.0)
     assert result == {}
 
 
