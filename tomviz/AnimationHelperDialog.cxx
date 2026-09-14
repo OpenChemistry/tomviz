@@ -27,6 +27,7 @@
 #include "pipeline/sinks/VolumeSink.h"
 
 #include <functional>
+#include <optional>
 
 #include <pqAnimationCue.h>
 #include <pqImageUtil.h>
@@ -178,6 +179,9 @@ public:
   // executions only rebuild it (and clobber user-entered values) when the
   // data-derived bounds actually moved.
   QPointer<pipeline::Node> configuredNode;
+  // What each row of the animation list puts into the controls above
+  // when it is selected, in row order.
+  QList<std::function<void()>> animationRowSelectors;
   QString configuredProperty;
   double configuredLo = 0.0;
   double configuredHi = 0.0;
@@ -333,6 +337,14 @@ public:
             &Internal::addModuleAnimation);
     // The registry can change from outside the dialog too, e.g. when a
     // state file loads a whole set at once.
+    // Selecting a row shows that animation in the controls above, so it
+    // can be read off and, with Add, adjusted
+    connect(ui.animationList, &QListWidget::currentRowChanged, this,
+            &Internal::selectAnimationRow);
+    connect(ui.animationList, &QListWidget::itemClicked, this,
+            [this](QListWidgetItem* item) {
+              selectAnimationRow(ui.animationList->row(item));
+            });
     connect(&ModuleAnimations::instance(), &ModuleAnimations::changed, this,
             [this]() {
               refreshAnimationList();
@@ -1532,8 +1544,10 @@ public:
   // is deferred because the button lives in the row it deletes.
   void addAnimationRow(const QString& text, const QString& tooltip,
                        const QString& removeTooltip,
-                       std::function<void()> remove)
+                       std::function<void()> remove,
+                       std::function<void()> select)
   {
+    animationRowSelectors.append(select);
     auto* row = new QWidget();
     auto* layout = new QHBoxLayout(row);
     layout->setContentsMargins(4, 1, 4, 1);
@@ -1568,7 +1582,9 @@ public:
   // change the camera viewpoints recorded.
   void refreshAnimationList()
   {
+    QSignalBlocker blocked(ui.animationList);
     ui.animationList->clear();
+    animationRowSelectors.clear();
 
     for (auto* animation : ModuleAnimations::instance().animations()) {
       if (animation->recorded()) {
@@ -1580,11 +1596,18 @@ public:
         text += ", during " + segmentLabel(animation->segment);
       }
       QPointer<ModuleAnimation> target(animation);
-      addAnimationRow(text, QString(), "Remove this animation", [target]() {
-        if (target) {
-          ModuleAnimations::instance().remove(target);
-        }
-      });
+      addAnimationRow(
+        text, QString(), "Remove this animation",
+        [target]() {
+          if (target) {
+            ModuleAnimations::instance().remove(target);
+          }
+        },
+        [this, target]() {
+          if (target) {
+            showAnimationInControls(target);
+          }
+        });
     }
 
     auto& viewpoints = CameraViewpoints::instance();
@@ -1601,10 +1624,106 @@ public:
         " from the view to change it.";
       QString removeTooltip = "Keep it as it is at " + from +
                               " on this leg (edits " + to + ")";
-      addAnimationRow(text, tooltip, removeTooltip, [change, pip]() {
-        RecordedAnimations::instance().remove(change, pip);
-      });
+      addAnimationRow(
+        text, tooltip, removeTooltip,
+        [change, pip]() { RecordedAnimations::instance().remove(change, pip); },
+        [this, change, node]() {
+          // A stretch over blank viewpoints is several legs; the combo
+          // takes one, so offer the first and let the user pick another
+          showInControls(node, change.property, change.startValue,
+                         change.stopValue, change.fromAnchor);
+        });
     }
+  }
+
+  void selectAnimationRow(int row)
+  {
+    if (row >= 0 && row < animationRowSelectors.size() &&
+        animationRowSelectors[row]) {
+      animationRowSelectors[row]();
+    }
+  }
+
+  // Put an authored animation into the controls: its visualization,
+  // property, values and leg. Adding again then replaces it.
+  void showAnimationInControls(ModuleAnimation* animation)
+  {
+    auto* node = animation ? animation->baseNode.data() : nullptr;
+    if (!node) {
+      return;
+    }
+    const QString type = animation->type();
+    std::optional<double> start;
+    std::optional<double> stop;
+    QString property = type;
+    if (auto* contour = qobject_cast<ContourAnimation*>(animation)) {
+      property = "iso";
+      start = contour->startValue;
+      stop = contour->stopValue;
+    } else if (auto* slice = qobject_cast<SliceAnimation*>(animation)) {
+      start = slice->startValue;
+      stop = slice->stopValue;
+    } else if (auto* clip = qobject_cast<ClipAnimation*>(animation)) {
+      start = clip->startValue;
+      stop = clip->stopValue;
+    } else if (auto* opacity = qobject_cast<OpacityAnimation*>(animation)) {
+      start = opacity->startValue;
+      stop = opacity->stopValue;
+    } else if (qobject_cast<ScalarOpacityAnimation*>(animation)) {
+      property = "curve";
+    }
+    showInControls(node, property, start, stop, animation->segment);
+  }
+
+  // Select @a node's data source, the node, and @a property in the
+  // authoring controls, then the values and the leg. Properties the
+  // controls cannot author (visibility, cut-out, exploded view) select
+  // the visualization and leave the property as it was.
+  void showInControls(pipeline::Node* node, const QString& property,
+                      std::optional<double> start, std::optional<double> stop,
+                      int segment)
+  {
+    if (!node) {
+      return;
+    }
+    auto* source = findUpstreamSource(node);
+    int sourceIndex = ui.selectedDataSource->findData(
+      QVariant::fromValue(static_cast<QObject*>(source)));
+    if (sourceIndex >= 0 && sourceIndex != ui.selectedDataSource->currentIndex()) {
+      QSignalBlocker blocked(ui.selectedDataSource);
+      ui.selectedDataSource->setCurrentIndex(sourceIndex);
+      updateModuleOptions();
+    }
+    int moduleIndex = ui.selectedModule->findData(
+      QVariant::fromValue(static_cast<QObject*>(node)));
+    if (moduleIndex < 0) {
+      return;
+    }
+    if (moduleIndex != ui.selectedModule->currentIndex()) {
+      QSignalBlocker blocked(ui.selectedModule);
+      ui.selectedModule->setCurrentIndex(moduleIndex);
+      selectedModuleChanged();
+    }
+    int propertyIndex = ui.animatedProperty->findData(property);
+    if (propertyIndex >= 0 &&
+        propertyIndex != ui.animatedProperty->currentIndex()) {
+      QSignalBlocker blocked(ui.animatedProperty);
+      ui.animatedProperty->setCurrentIndex(propertyIndex);
+      configurePropertyPage();
+    }
+    if (propertyIndex >= 0 && property != "curve") {
+      if (start) {
+        ui.rangeStart->setValue(*start);
+      }
+      if (stop) {
+        ui.rangeStop->setValue(*stop);
+      }
+      int segmentIndex = ui.animationSegment->findData(segment);
+      if (segmentIndex >= 0) {
+        ui.animationSegment->setCurrentIndex(segmentIndex);
+      }
+    }
+    updateEnableStates();
   }
 
   // All animations

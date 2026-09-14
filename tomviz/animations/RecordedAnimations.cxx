@@ -552,12 +552,14 @@ QList<RecordedChange> RecordedAnimations::changes(Pipeline* pipeline) const
       const auto a = snapshotAt(from, id, sample);
       const auto b = snapshotAt(to, id, sample);
       auto* volume = qobject_cast<VolumeSink*>(sink);
-      auto row = [&](const QString& property, const QString& description) {
+      auto row = [&](const QString& property, const QString& description,
+                     std::optional<double> start = std::nullopt,
+                     std::optional<double> stop = std::nullopt) {
         if (stretchIsAuthored(authoredSegments(sink, authoredTypeFor(property)),
                               from, to)) {
           return;
         }
-        rows.append({ id, property, from, to, description });
+        rows.append({ id, property, from, to, description, start, stop });
       };
 
       const Family family = familyOf(sink, sample);
@@ -573,10 +575,11 @@ QList<RecordedChange> RecordedAnimations::changes(Pipeline* pipeline) const
         const double start = effectiveOpacity(opacityKey(a));
         const double stop = effectiveOpacity(opacityKey(b));
         if (start != stop) {
-          row("opacity", start == 0.0 ? "fades in to " + number(stop)
-                         : stop == 0.0 ? "fades out from " + number(start)
-                                       : "opacity " + number(start) + " to " +
-                                           number(stop));
+          row("opacity",
+              start == 0.0 ? "fades in to " + number(stop)
+              : stop == 0.0 ? "fades out from " + number(start)
+                            : "opacity " + number(start) + " to " + number(stop),
+              start, stop);
         }
       } else if (a.visible != b.visible) {
         row("visibility", b.visible ? "shown" : "hidden");

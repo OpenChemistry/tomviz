@@ -15,6 +15,7 @@
 #include <QString>
 
 #include <array>
+#include <optional>
 
 namespace tomviz {
 
@@ -49,6 +50,10 @@ struct RecordedChange
   int toAnchor = 1;
   /// e.g. "fades in to 0.6" or "cut-out moves".
   QString description;
+  /// For an opacity change, the effective opacity at each end (zero
+  /// while hidden), so the Animation Helper can show it in its controls.
+  std::optional<double> startValue;
+  std::optional<double> stopValue;
 };
 
 /// Where @a t (path time in [0, 1]) falls among the recorded anchors:
