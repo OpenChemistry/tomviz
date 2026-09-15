@@ -2304,7 +2304,19 @@ QWidget* VolumeSink::createSinkPropertiesWidget(QWidget* parent)
   connect(widget, &VolumeSinkWidget::specularPowerChanged, this,
           &VolumeSink::setSpecularPower);
   connect(widget, &VolumeSinkWidget::volumetricScatteringChanged, this,
-          &VolumeSink::setVolumetricScattering);
+          [this, widget](double value) {
+            // Raising the strength from zero is the third way to switch
+            // shadows on, so it gets the same warning as the presets and
+            // the Shadows box. Only when the box would let them render.
+            if (value > 0.0 && shadowsEnabled() &&
+                effectiveScattering() <= 0.0 &&
+                !confirmVolumetricShadows(widget)) {
+              QSignalBlocker blocker(widget);
+              widget->setVolumetricScattering(volumetricScattering());
+              return;
+            }
+            setVolumetricScattering(value);
+          });
   connect(widget, &VolumeSinkWidget::shadowReachChanged, this,
           &VolumeSink::setShadowReach);
   connect(widget, &VolumeSinkWidget::anisotropyChanged, this,

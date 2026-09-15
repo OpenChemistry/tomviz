@@ -105,19 +105,6 @@
        </layout>
       </item>
       <item>
-       <widget class="QCheckBox" name="cbShadows">
-        <property name="text">
-         <string>Shadows</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-        <property name="toolTip">
-         <string>Cast volumetric shadows. Turning this off keeps the selected preset but renders it without shadows, which is much faster.</string>
-        </property>
-       </widget>
-      </item>
-      <item>
        <widget class="QLabel" name="laOverBudget">
         <property name="text">
          <string>Shadows were too slow to draw here, so this volume is rendering without them. Cropping the volume or narrowing the opacity map brings them back. Gentle is soft without needing them.</string>
@@ -206,49 +193,62 @@
          <item row="4" column="1">
           <widget class="tomviz::DoubleSliderWidget" name="sliSpecularPower" native="true"/>
          </item>
-         <item row="5" column="0">
+         <item row="5" column="0" colspan="2">
+          <widget class="QCheckBox" name="cbShadows">
+           <property name="text">
+            <string>Shadows</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+           <property name="toolTip">
+            <string>Cast volumetric shadows. Turning this off keeps the selected preset but renders it without shadows, which is much faster.</string>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="0">
           <widget class="QLabel" name="laShadows">
            <property name="text">
             <string>Shadow Strength</string>
            </property>
           </widget>
          </item>
-         <item row="5" column="1">
+         <item row="6" column="1">
           <widget class="tomviz::DoubleSliderWidget" name="sliShadows" native="true">
            <property name="toolTip">
             <string>Blend between plain surface shading (0) and volumetric scattering with shadows (2). Values above 0 enable volumetric shadows and cost render time.</string>
            </property>
           </widget>
          </item>
-         <item row="6" column="0">
+         <item row="7" column="0">
           <widget class="QLabel" name="laShadowReach">
            <property name="text">
             <string>Shadow Reach</string>
            </property>
           </widget>
          </item>
-         <item row="6" column="1">
+         <item row="7" column="1">
           <widget class="tomviz::DoubleSliderWidget" name="sliShadowReach" native="true">
            <property name="toolTip">
             <string>How far shadows travel through the volume: 0 captures only local shadows (faster), 1 captures shadows across the whole volume (slower).</string>
            </property>
           </widget>
          </item>
-         <item row="7" column="0">
+         <item row="8" column="0">
           <widget class="QLabel" name="laAnisotropy">
            <property name="text">
             <string>Anisotropy</string>
            </property>
           </widget>
          </item>
-         <item row="7" column="1">
+         <item row="8" column="1">
           <widget class="tomviz::DoubleSliderWidget" name="sliAnisotropy" native="true">
            <property name="toolTip">
             <string>Direction light scatters in: 0 scatters evenly. Because the scene is lit from the camera, negative (backward) values send more light back to the viewer and brighten the volume, while positive values scatter it away and darken it - beyond about +0.5 the volume goes nearly black. Only used when Shadow Strength is above 0.</string>
            </property>
           </widget>
          </item>
-         <item row="8" column="0" colspan="2">
+         <item row="9" column="0" colspan="2">
           <widget class="QCheckBox" name="cbSmoothNormals">
            <property name="text">
             <string>Smooth Normals</string>

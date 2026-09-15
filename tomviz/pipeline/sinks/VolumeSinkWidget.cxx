@@ -52,6 +52,9 @@ VolumeSinkWidget::VolumeSinkWidget(QWidget* parent_)
 
   m_uiLighting->sliShadows->setMaximum(2.0);
   m_uiLighting->sliShadows->setResolution(200);
+  // Commit on release: leaving zero asks for confirmation, and a dialog
+  // popping up on the first tick of a drag would cut the drag short.
+  m_uiLighting->sliShadows->setSliderTracking(false);
   m_uiLighting->sliAnisotropy->setMinimum(-1.0);
   m_uiLighting->sliAnisotropy->setMaximum(1.0);
   m_uiLighting->sliAnisotropy->setResolution(200);
