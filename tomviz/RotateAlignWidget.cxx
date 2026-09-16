@@ -342,6 +342,11 @@ public:
     auto settings = pqApplicationCore::instance()->settings();
     m_orientation = settings->value("RotateAlignWidget.orientation",
                                     0).toInt();
+    // Only 0 (horizontal) and 1 (vertical) are valid; anything else in the
+    // settings file would index dims[] out of range.
+    if (m_orientation != 0 && m_orientation != 1) {
+      m_orientation = 0;
+    }
   }
 
   void writeSettings()
@@ -565,9 +570,14 @@ void RotateAlignWidget::initUI(vtkSMProxy* sourceColorMap)
   int dims[3];
   imageData->GetDimensions(dims);
 
-  d->m_slice0 = vtkMath::Round(0.25 * dims[0]);
-  d->m_slice1 = vtkMath::Round(0.50 * dims[0]);
-  d->m_slice2 = vtkMath::Round(0.75 * dims[0]);
+  // The preview slices index the axis selected by the (persisted)
+  // orientation, exactly as onOrientationChanged() does. Seeding them
+  // from dims[0] regardless read past the end of the tilt series when a
+  // vertical tilt axis was restored for a wider-than-tall stack (#2308).
+  const int sliceAxis = d->m_orientation;
+  d->m_slice0 = vtkMath::Round(0.25 * dims[sliceAxis]);
+  d->m_slice1 = vtkMath::Round(0.50 * dims[sliceAxis]);
+  d->m_slice2 = vtkMath::Round(0.75 * dims[sliceAxis]);
 
   int projectionNum = dims[2] / 2;
   d->m_projectionNum = projectionNum;
