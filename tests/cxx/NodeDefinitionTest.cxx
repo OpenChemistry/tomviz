@@ -8,6 +8,8 @@
 #include "NodeDefinitionValidator.h"
 #include "NodeDefinitionWidget.h"
 #include "OutputPort.h"
+#include "EnumOptions.h"
+#include "NodePropertiesWidget.h"
 #include "Pipeline.h"
 #include "PythonNodeEditorWidget.h"
 #include "SourceNode.h"
@@ -491,6 +493,50 @@ TEST(NodeDefinitionTest, ParameterEditRoundTripsEveryShippedDescriptor)
     }
   }
   EXPECT_GT(parametersChecked, 200);
+}
+
+TEST(NodeDefinitionTest, EnumerationValuesAndDefaultsResolveByValueAndIndex)
+{
+  // Values that are not their own indices, as Connected Components'
+  // connectivity has them
+  QJsonArray options{ QJsonObject{ { "Faces", 1 } },
+                      QJsonObject{ { "Edges", 2 } },
+                      QJsonObject{ { "Corners", 3 } } };
+  using tomviz::pipeline::PythonNodeUtils::enumOptionIndex;
+  using tomviz::pipeline::PythonNodeUtils::resolveEnumDefault;
+  using tomviz::pipeline::PythonNodeUtils::resolveEnumValue;
+
+  // A stored value is the value, whether it is written as int or double
+  EXPECT_EQ(resolveEnumValue(QJsonValue(1), options), QVariant(1));
+  EXPECT_EQ(resolveEnumValue(QJsonValue(3.0), options), QVariant(3));
+  // A number matching no value is an index, from files that saved one
+  EXPECT_EQ(resolveEnumValue(QJsonValue(0), options), QVariant(1));
+  EXPECT_FALSE(resolveEnumValue(QJsonValue(7), options).isValid());
+  // The declared default is an index first
+  EXPECT_EQ(resolveEnumDefault(QJsonValue(0), options), QVariant(1));
+  EXPECT_EQ(resolveEnumDefault(QJsonValue(2), options), QVariant(3));
+  EXPECT_EQ(enumOptionIndex(QVariant(2.0), options), 1);
+  EXPECT_EQ(enumOptionIndex(QVariant(9), options), -1);
+
+  QJsonArray named{ QJsonObject{ { "Bicubic", "bicubic" } },
+                    QJsonObject{ { "Nearest", "nearest" } } };
+  EXPECT_EQ(resolveEnumValue(QJsonValue("nearest"), named),
+            QVariant("nearest"));
+  EXPECT_EQ(resolveEnumDefault(QJsonValue(1), named), QVariant("nearest"));
+  EXPECT_EQ(enumOptionIndex(QVariant("bicubic"), named), 0);
+
+  // The generated form opens on the stored value's option and reads it
+  // back as the value. No "label" on purpose: the builder used to lose a
+  // parameter's name when the optional key was missing.
+  tomviz_test::ensureQApp();
+  QString json = withParameters(
+    kV2Transform,
+    R"([{"name": "connectivity", "type": "enumeration", "default": 0,
+         "options": [{"Faces": 1}, {"Edges": 2}, {"Corners": 3}]}])");
+  tomviz::pipeline::NodePropertiesWidget form(json, { { "connectivity", 2 } });
+  EXPECT_EQ(form.values().value("connectivity"), QVariant(2));
+  tomviz::pipeline::NodePropertiesWidget fresh(json, {});
+  EXPECT_EQ(fresh.values().value("connectivity"), QVariant(1));
 }
 
 TEST(NodeDefinitionTest, MalformedEnumerationOptionsAreAnError)

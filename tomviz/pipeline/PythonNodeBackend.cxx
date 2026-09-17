@@ -385,7 +385,7 @@ void PythonNodeBackend::parseDescriptionLocked()
       QJsonArray options = param.value(QStringLiteral("options")).toArray();
       m_enumOptions[name] = options;
       QVariant resolved =
-        PythonNodeUtils::resolveEnumValue(defaultVal, options);
+        PythonNodeUtils::resolveEnumDefault(defaultVal, options);
       if (resolved.isValid()) {
         m_parameters[name] = resolved;
         continue;

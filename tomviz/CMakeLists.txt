@@ -281,6 +281,8 @@ set(SOURCES
   pipeline/ProgressReader.h
   pipeline/PythonNodeWrapper.cxx
   pipeline/PythonNodeWrapper.h
+  pipeline/EnumOptions.cxx
+  pipeline/EnumOptions.h
   pipeline/PythonNodeUtils.cxx
   pipeline/PythonNodeUtils.h
   pipeline/PythonNodeBackend.cxx

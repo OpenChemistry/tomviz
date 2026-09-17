@@ -12,6 +12,7 @@
 #include <pybind11/pybind11.h>
 #pragma pop_macro("slots")
 
+#include "EnumOptions.h"
 #include "PortData.h"
 
 #include <QJsonArray>
@@ -43,14 +44,6 @@ namespace PythonNodeUtils {
 QVariant coerceJsonByDeclaredType(const QJsonValue& value,
                                   const QString& type);
 
-/// Resolve an enumeration parameter's stored form to the option value
-/// the operator actually receives. The state-file convention is to
-/// persist the option value (so a saved file is self-describing); this
-/// helper accepts either form so older files that persisted the index
-/// also load. Returns an invalid QVariant when no resolution is
-/// possible — the caller falls back to its usual coercion path.
-QVariant resolveEnumValue(const QJsonValue& value,
-                          const QJsonArray& options);
 
 /// Convert a QVariant to a Python object. Preserves int/double/bool
 /// distinctions that QJsonValue::toVariant collapses (a JSON ``2``

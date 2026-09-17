@@ -5,6 +5,8 @@
 
 #include <QAbstractItemView>
 #include <QCheckBox>
+#include "EnumOptions.h"
+
 #include <QComboBox>
 #include <QDebug>
 #include <QDir>
@@ -167,8 +169,8 @@ auto widgetValue(const T* w)
 
 void addBoolWidget(QGridLayout* layout, int row, QJsonObject& parameterNode)
 {
-  QJsonValueRef nameValue = parameterNode["name"];
-  QJsonValueRef labelValue = parameterNode["label"];
+  QJsonValue nameValue = parameterNode.value("name");
+  QJsonValue labelValue = parameterNode.value("label");
 
   if (nameValue.isUndefined()) {
     return;
@@ -182,7 +184,7 @@ void addBoolWidget(QGridLayout* layout, int row, QJsonObject& parameterNode)
 
   bool defaultValue = false;
   if (parameterNode.contains("default")) {
-    QJsonValueRef defaultNode = parameterNode["default"];
+    QJsonValue defaultNode = parameterNode.value("default");
     if (defaultNode.isBool()) {
       defaultValue = defaultNode.toBool();
     }
@@ -198,8 +200,8 @@ template <typename T>
 void addNumericWidget(QGridLayout* layout, int row,
                       QJsonObject& parameterNode)
 {
-  QJsonValueRef nameValue = parameterNode["name"];
-  QJsonValueRef labelValue = parameterNode["label"];
+  QJsonValue nameValue = parameterNode.value("name");
+  QJsonValue labelValue = parameterNode.value("label");
 
   if (nameValue.isUndefined()) {
     return;
@@ -213,7 +215,7 @@ void addNumericWidget(QGridLayout* layout, int row,
 
   std::vector<T> defaultValues;
   if (parameterNode.contains("default")) {
-    QJsonValueRef defaultNode = parameterNode["default"];
+    QJsonValue defaultNode = parameterNode.value("default");
     if (isType<T>(defaultNode)) {
       defaultValues.push_back(getAs<T>(defaultNode));
     } else if (defaultNode.isArray()) {
@@ -232,7 +234,7 @@ void addNumericWidget(QGridLayout* layout, int row,
   std::vector<T> minValues(defaultValues.size(),
                            std::numeric_limits<T>::lowest());
   if (parameterNode.contains("minimum")) {
-    QJsonValueRef minNode = parameterNode["minimum"];
+    QJsonValue minNode = parameterNode.value("minimum");
     if (isType<T>(minNode)) {
       minValues[0] = getAs<T>(minNode);
     } else if (minNode.isArray()) {
@@ -247,7 +249,7 @@ void addNumericWidget(QGridLayout* layout, int row,
   std::vector<T> maxValues(defaultValues.size(),
                            std::numeric_limits<T>::max());
   if (parameterNode.contains("maximum")) {
-    QJsonValueRef maxNode = parameterNode["maximum"];
+    QJsonValue maxNode = parameterNode.value("maximum");
     if (isType<T>(maxNode)) {
       maxValues[0] = getAs<T>(maxNode);
     } else if (maxNode.isArray()) {
@@ -261,14 +263,14 @@ void addNumericWidget(QGridLayout* layout, int row,
 
   int precision = -1;
   if (parameterNode.contains("precision")) {
-    QJsonValueRef precNode = parameterNode["precision"];
+    QJsonValue precNode = parameterNode.value("precision");
     if (isType<int>(precNode)) {
       precision = getAs<int>(precNode);
     }
   }
   T step = -1;
   if (parameterNode.contains("step")) {
-    QJsonValueRef stepNode = parameterNode["step"];
+    QJsonValue stepNode = parameterNode.value("step");
     if (isType<T>(stepNode)) {
       step = getAs<T>(stepNode);
     }
@@ -298,8 +300,11 @@ void addNumericWidget(QGridLayout* layout, int row,
 void addEnumerationWidget(QGridLayout* layout, int row,
                           QJsonObject& parameterNode)
 {
-  QJsonValueRef nameValue = parameterNode["name"];
-  QJsonValueRef labelValue = parameterNode["label"];
+  // Copies, not QJsonValueRefs: operator[] on a missing key ("label" is
+  // optional) inserts it, which invalidates every ref taken earlier and
+  // left the widget's objectName empty.
+  QJsonValue nameValue = parameterNode.value("name");
+  QJsonValue labelValue = parameterNode.value("label");
 
   if (nameValue.isUndefined()) {
     return;
@@ -314,7 +319,7 @@ void addEnumerationWidget(QGridLayout* layout, int row,
   auto* comboBox = new QComboBox();
   comboBox->setObjectName(nameValue.toString());
   label->setBuddy(comboBox);
-  QJsonValueRef optionsNode = parameterNode["options"];
+  QJsonValue optionsNode = parameterNode.value("options");
   if (!optionsNode.isUndefined()) {
     QJsonArray optionsArray = optionsNode.toArray();
     for (QJsonObject::size_type i = 0; i < optionsArray.size(); ++i) {
@@ -339,7 +344,7 @@ void addEnumerationWidget(QGridLayout* layout, int row,
     }
   }
 
-  QJsonValueRef defaultNode = parameterNode["default"];
+  QJsonValue defaultNode = parameterNode.value("default");
   if (!defaultNode.isUndefined()) {
     if (isType<int>(defaultNode)) {
       comboBox->setCurrentIndex(getAs<int>(defaultNode));
@@ -488,8 +493,8 @@ void addSelectScalarsWidget(QGridLayout* layout, int row,
                             QJsonObject& parameterNode,
                             const QList<PortScalars>& portScalars)
 {
-  QJsonValueRef nameValue = parameterNode["name"];
-  QJsonValueRef labelValue = parameterNode["label"];
+  QJsonValue nameValue = parameterNode.value("name");
+  QJsonValue labelValue = parameterNode.value("label");
 
   if (nameValue.isUndefined()) {
     QJsonDocument document(parameterNode);
@@ -587,7 +592,7 @@ void addSelectScalarsWidget(QGridLayout* layout, int row,
   }
 
   // Restore previous selection from "default" if present
-  QJsonValueRef defaultNode = parameterNode["default"];
+  QJsonValue defaultNode = parameterNode.value("default");
   if (!defaultNode.isUndefined() && defaultNode.isArray()) {
     QJsonArray defaultArray = defaultNode.toArray();
     QSet<QString> selected;
@@ -1038,6 +1043,15 @@ void ParameterInterfaceBuilder::buildParameterInterface(
       QString parameterName = nameValue.toString();
       if (m_parameterValues.contains(parameterName)) {
         QVariant parameterValue = m_parameterValues[parameterName];
+        if (typeString == "enumeration") {
+          // Stored values are option values; the widget reads a numeric
+          // default as an option index, so translate
+          int index = PythonNodeUtils::enumOptionIndex(
+            parameterValue, parameterObject["options"].toArray());
+          if (index >= 0) {
+            parameterValue = index;
+          }
+        }
         parameterObject["default"] =
           QJsonValue::fromVariant(parameterValue);
       }

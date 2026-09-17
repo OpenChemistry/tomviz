@@ -68,22 +68,6 @@ QVariant coerceJsonByDeclaredType(const QJsonValue& value,
   return QVariant();
 }
 
-QVariant resolveEnumValue(const QJsonValue& value, const QJsonArray& options)
-{
-  if (value.isString()) {
-    return value.toVariant();
-  }
-  if (value.isDouble() && !options.isEmpty()) {
-    int idx = value.toInt();
-    if (idx >= 0 && idx < options.size()) {
-      QJsonObject opt = options.at(idx).toObject();
-      if (!opt.isEmpty()) {
-        return opt.constBegin().value().toVariant();
-      }
-    }
-  }
-  return QVariant();
-}
 
 py::object qvariantToPython(const QVariant& value)
 {
