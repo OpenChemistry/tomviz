@@ -412,7 +412,9 @@ void MultiVolumeCoordinator::refreshSettings()
     }
     planes->InitTraversal();
     while (auto* plane = planes->GetNextItem()) {
-      if (!seen.contains(plane)) {
+      // A member's exploded-view slab planes cut its own slabs, which
+      // the shared path does not draw; they must not cut the set.
+      if (!seen.contains(plane) && !member->isExplodedSlabPlane(plane)) {
         seen.insert(plane);
         m_mapper->AddClippingPlane(plane);
       }

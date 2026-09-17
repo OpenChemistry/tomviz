@@ -241,6 +241,10 @@ public:
   vtkImageData* renderedImage() const;
   QString renderedArrayName() const;
   vtkPlaneCollection* clippingPlanes() const;
+  /// True for one of the planes that bound a slab of a custom-direction
+  /// exploded view. They sit among clippingPlanes() but belong to this
+  /// sink's own slabs, not to the volume as the coordinator draws it.
+  bool isExplodedSlabPlane(vtkPlane* plane) const;
   ///@}
 
   void onMetadataChanged() override;
@@ -302,7 +306,6 @@ private:
   /// direction on that slab's mapper, and off it for an axis direction,
   /// where the mapper's own cropping does the cutting.
   void syncExplodedSlabPlanes(bool custom);
-  bool isExplodedSlabPlane(vtkPlane* plane) const;
   /// Create the direction arrow the first time it is needed and show or
   /// hide it as the axis, the switch and the sink's visibility require.
   void updateExplodedWidget();

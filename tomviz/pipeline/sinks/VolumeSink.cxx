@@ -1053,9 +1053,12 @@ bool VolumeSink::finalize()
 void VolumeSink::updateExplodedWidget()
 {
   auto vol = volumeData();
+  // Not while the view's multi-volume draws this sink either: the
+  // exploded view has no effect there.
   const bool show = m_explodedEnabled && m_explodedShowArrow &&
                     m_explodedAxis == kExplodedCustomAxis && visibility() &&
-                    !m_usingMultiBlock && vol && vol->isValid() &&
+                    !m_usingMultiBlock && !m_composited && vol &&
+                    vol->isValid() &&
                     renderView() && renderView()->GetRenderWindow() &&
                     renderView()->GetRenderWindow()->GetInteractor();
   if (!show) {
@@ -2483,6 +2486,7 @@ void VolumeSink::applyMultiVolumeState()
     changed = true;
   }
   if (changed) {
+    updateExplodedWidget();
     emit multiVolumeStateChanged();
     // Scattering availability is part of the lighting state shown.
     emit lightingStateChanged();
