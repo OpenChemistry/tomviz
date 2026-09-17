@@ -317,7 +317,7 @@ double VolumeData::thresholdSeed() const
   }
   constexpr double kBudget = 250000.0;
   const double count = static_cast<double>(s->GetNumberOfTuples());
-  const double fraction = std::max(0.8, 1.0 - kBudget / count);
+  const double fraction = std::max(0.95, 1.0 - kBudget / count);
   auto range = scalarRange();
   double result = range[0];
   switch (s->GetDataType()) {
