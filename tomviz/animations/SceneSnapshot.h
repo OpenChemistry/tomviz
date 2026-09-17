@@ -39,6 +39,9 @@ struct SinkSnapshot
   std::optional<std::array<double, 3>> cutOutPosition;
   std::optional<bool> explodedEnabled;
   std::optional<int> explodedAxis;
+  /// The custom direction, kept even while an axis is selected so
+  /// switching back finds it.
+  std::optional<std::array<double, 3>> explodedDirection;
   std::optional<int> explodedChunks;
   std::optional<double> explodedGap;
   /// Slice and clip planes: the direction (0..2 axis aligned, 3 custom),

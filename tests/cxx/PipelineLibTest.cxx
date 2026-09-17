@@ -29,6 +29,7 @@
 #include "sinks/VolumeStatsSink.h"
 #include "sinks/LegacyModuleSink.h"
 #include "sinks/LightingPresetStore.h"
+#include "sinks/ExplodedGeometry.h"
 #include "sinks/VolumeSink.h"
 #include "sinks/LabelMapSink.h"
 #include "sinks/LabelMapSurface.h"
@@ -4196,7 +4197,9 @@ TEST_F(PipelineLibTest, VolumeSinkExplodedViewExcludesCutOut)
   sink->setExplodedGap(3.0);
   EXPECT_DOUBLE_EQ(sink->explodedGap(), 1.0);
   sink->setExplodedAxis(7);
-  EXPECT_EQ(sink->explodedAxis(), 2);
+  EXPECT_EQ(sink->explodedAxis(), kExplodedCustomAxis);
+  sink->setExplodedAxis(-1);
+  EXPECT_EQ(sink->explodedAxis(), 0);
 }
 
 // A 12^3 label map: label 1 fills a 4^3 block, label 2 a 2^3 block

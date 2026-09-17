@@ -7,6 +7,7 @@
 #include "ModuleAnimation.h"
 #include "ScalarOpacityAnimation.h"
 #include "SceneSnapshot.h"
+#include "pipeline/sinks/ExplodedGeometry.h"
 
 #include <QList>
 #include <QMap>
@@ -107,12 +108,16 @@ struct ExplodedKey
 {
   bool enabled = false;
   int axis = 2;
+  std::array<double, 3> direction = { 1.0, 1.0, 1.0 };
   int chunks = 4;
   double gap = 0.25;
   bool operator==(const ExplodedKey& o) const
   {
-    return enabled == o.enabled && axis == o.axis && chunks == o.chunks &&
-           gap == o.gap;
+    // The direction only shows while the axis is custom
+    return enabled == o.enabled && axis == o.axis &&
+           (axis != pipeline::kExplodedCustomAxis ||
+            direction == o.direction) &&
+           chunks == o.chunks && gap == o.gap;
   }
 };
 

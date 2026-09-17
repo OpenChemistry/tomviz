@@ -12,7 +12,11 @@
 #include <vtkNew.h>
 #include <vtkSmartPointer.h>
 
+#include <array>
 #include <vector>
+
+class vtkNonOrthoImagePlaneWidget;
+class vtkPlane;
 
 class QComboBox;
 
@@ -191,8 +195,18 @@ public:
   /// Animations pass @a refitCamera false: they run while a camera path
   /// may own the camera, and a refit mid-flight would yank it.
   void setExplodedEnabled(bool enabled, bool refitCamera = true);
+  /// 0-2 for X, Y, Z; kExplodedCustomAxis (3) to cut along
+  /// explodedDirection() instead.
   int explodedAxis() const;
   void setExplodedAxis(int axis);
+  /// The custom direction, in the data's coordinates. Stored as given;
+  /// the slabs use it normalized.
+  std::array<double, 3> explodedDirection() const;
+  void setExplodedDirection(double x, double y, double z);
+  /// Whether the draggable arrow that edits the custom direction is
+  /// drawn. It only appears while the axis is custom.
+  bool explodedShowArrow() const;
+  void setExplodedShowArrow(bool show);
   int explodedChunks() const;
   void setExplodedChunks(int chunks);
   /// Gap between slabs as a fraction (0-1) of the axis length.
@@ -274,6 +288,18 @@ private:
   /// share of the axis.
   void applyExploded();
   void teardownExplodedSlabs();
+  /// The unit direction the slabs are cut along, in data coordinates.
+  std::array<double, 3> explodedUnitDirection() const;
+  /// Keep the two clipping planes that bound each slab of a custom
+  /// direction on that slab's mapper, and off it for an axis direction,
+  /// where the mapper's own cropping does the cutting.
+  void syncExplodedSlabPlanes(bool custom);
+  bool isExplodedSlabPlane(vtkPlane* plane) const;
+  /// Create the direction arrow the first time it is needed and show or
+  /// hide it as the axis, the switch and the sink's visibility require.
+  void updateExplodedWidget();
+  void onExplodedWidgetInteraction();
+  void onExplodedWidgetInteractionEnded();
   /// Switch the exploded view on or off; the camera is only refit for a
   /// user request, not when the cut-out displaces it.
   void setExplodedEnabledInternal(bool enabled, bool refitCamera);
@@ -336,10 +362,23 @@ private:
   // and m_volumeMapper; these hold slabs 1..chunks-1.
   bool m_explodedEnabled = false;
   int m_explodedAxis = 2;
+  std::array<double, 3> m_explodedDirection = { 1.0, 1.0, 1.0 };
+  bool m_explodedShowArrow = true;
   int m_explodedChunks = 4;
   double m_explodedGap = 0.25;
   std::vector<vtkSmartPointer<vtkVolume>> m_explodedVolumes;
   std::vector<vtkSmartPointer<SmartVolumeMapper>> m_explodedMappers;
+  // One (lower, upper) pair per slab, slab 0 first, used only while the
+  // direction is custom; applyDisplayTransform places them.
+  std::vector<std::pair<vtkSmartPointer<vtkPlane>, vtkSmartPointer<vtkPlane>>>
+    m_explodedSlabPlanes;
+  vtkSmartPointer<vtkNonOrthoImagePlaneWidget> m_explodedWidget;
+  // The image the arrow widget was last given, so a re-execution that
+  // swaps the image re-feeds it and anything else does not.
+  vtkImageData* m_explodedWidgetImage = nullptr;
+  unsigned long m_explodedWidgetTag = 0;
+  unsigned long m_explodedWidgetEndTag = 0;
+  bool m_explodedWidgetDragging = false;
   bool m_explodedOrderReversed = false;
   // Slabs were added or re-added in natural order; re-sort regardless
   bool m_explodedOrderDirty = true;

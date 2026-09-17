@@ -150,6 +150,7 @@ SinkSnapshot SinkSnapshot::capture(LegacyModuleSink* sink)
                                   volume->cutOutPosition(2) } };
     snapshot.explodedEnabled = volume->explodedEnabled();
     snapshot.explodedAxis = volume->explodedAxis();
+    snapshot.explodedDirection = volume->explodedDirection();
     snapshot.explodedChunks = volume->explodedChunks();
     snapshot.explodedGap = volume->explodedGap();
   }
@@ -231,6 +232,10 @@ QJsonObject SinkSnapshot::serialize() const
     QJsonObject exploded;
     exploded["enabled"] = *explodedEnabled;
     exploded["axis"] = explodedAxis.value_or(2);
+    if (explodedDirection) {
+      const auto& d = *explodedDirection;
+      exploded["direction"] = QJsonArray{ d[0], d[1], d[2] };
+    }
     exploded["chunks"] = explodedChunks.value_or(4);
     exploded["gap"] = explodedGap.value_or(0.25);
     json["exploded"] = exploded;
@@ -278,6 +283,12 @@ SinkSnapshot SinkSnapshot::deserialize(const QJsonObject& json)
     auto exploded = json["exploded"].toObject();
     snapshot.explodedEnabled = exploded["enabled"].toBool();
     snapshot.explodedAxis = exploded["axis"].toInt(2);
+    auto direction = exploded["direction"].toArray();
+    if (direction.size() == 3) {
+      snapshot.explodedDirection = { { direction[0].toDouble(),
+                                       direction[1].toDouble(),
+                                       direction[2].toDouble() } };
+    }
     snapshot.explodedChunks = exploded["chunks"].toInt(4);
     snapshot.explodedGap = exploded["gap"].toDouble(0.25);
   }
@@ -387,6 +398,10 @@ void SceneSnapshot::apply(Pipeline* pipeline, const QSet<int>* known) const
         volume->setCutOutEnabled(*snapshot.cutOutEnabled);
       }
       if (snapshot.explodedEnabled) {
+        if (snapshot.explodedDirection) {
+          const auto& d = *snapshot.explodedDirection;
+          volume->setExplodedDirection(d[0], d[1], d[2]);
+        }
         volume->setExplodedAxis(snapshot.explodedAxis.value_or(2));
         volume->setExplodedChunks(snapshot.explodedChunks.value_or(4));
         volume->setExplodedGap(snapshot.explodedGap.value_or(0.25));

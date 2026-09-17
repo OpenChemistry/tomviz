@@ -177,9 +177,9 @@ void wireLabelMapSinkBinding(LabelSelectionWidget* selection,
                      if (!sinkPtr) {
                        return;
                      }
-                     auto hidden = sinkPtr->hiddenLabels();
-                     if (selection->selectedLabels() != hidden) {
-                       selection->setSelectedLabels(hidden);
+                     auto nowHidden = sinkPtr->hiddenLabels();
+                     if (selection->selectedLabels() != nowHidden) {
+                       selection->setSelectedLabels(nowHidden);
                      }
                    });
   QObject::connect(selection, &LabelSelectionWidget::selectionChanged,

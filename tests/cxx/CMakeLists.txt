@@ -62,6 +62,7 @@ add_cxx_test(AutoExecute)
 add_cxx_test(NodeDefinition)
 add_cxx_test(TiltSeriesSinogram)
 add_cxx_test(LabelSelection)
+add_cxx_test(ExplodedGeometry)
 add_cxx_test(LightingPresetStore)
 # AcquisitionClient needs the `bottle` Python package (acquisition/requirements-dev.txt)
 # to start its test server; not part of the conda build env, so disabled here.

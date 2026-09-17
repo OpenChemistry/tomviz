@@ -331,6 +331,8 @@ set(SOURCES
   pipeline/sinks/VolumeStatsSink.h
   pipeline/sinks/LegacyModuleSink.cxx
   pipeline/sinks/LegacyModuleSink.h
+  pipeline/sinks/ExplodedGeometry.cxx
+  pipeline/sinks/ExplodedGeometry.h
   pipeline/sinks/VolumeSink.cxx
   pipeline/sinks/VolumeSink.h
   pipeline/sinks/LabelMapSink.cxx

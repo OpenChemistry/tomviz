@@ -112,6 +112,8 @@ ExplodedKey explodedKey(const SinkSnapshot& snapshot)
   ExplodedKey key;
   key.enabled = snapshot.explodedEnabled.value_or(false);
   key.axis = snapshot.explodedAxis.value_or(2);
+  key.direction = snapshot.explodedDirection.value_or(
+    std::array<double, 3>{ 1.0, 1.0, 1.0 });
   key.chunks = snapshot.explodedChunks.value_or(4);
   key.gap = snapshot.explodedGap.value_or(0.25);
   return key;
@@ -380,6 +382,8 @@ void RecordedExplodedAnimation::applySpan(const AnchorSpan& span)
   const auto& a = m_keys[span.from];
   const auto& b = m_keys[span.to];
   const auto& side = span.u < 0.5 ? a : b;
+  volume->setExplodedDirection(side.direction[0], side.direction[1],
+                               side.direction[2]);
   volume->setExplodedAxis(side.axis);
   volume->setExplodedChunks(side.chunks);
   volume->setExplodedGap(lerp(a.gap, b.gap, span.u));
@@ -805,11 +809,13 @@ QList<RecordedChange> RecordedAnimations::changes(Pipeline* pipeline) const
           if (ka.enabled != kb.enabled) {
             row("exploded",
                 kb.enabled ? "exploded view on" : "exploded view off");
-          } else if (ka.axis == kb.axis && ka.chunks == kb.chunks) {
+          } else if (ka.axis == kb.axis && ka.direction == kb.direction &&
+                     ka.chunks == kb.chunks) {
             row("exploded",
                 "exploded gap " + number(ka.gap) + " to " + number(kb.gap),
                 ka.gap, kb.gap, "explodedGap");
-          } else if (ka.axis == kb.axis && ka.gap == kb.gap) {
+          } else if (ka.axis == kb.axis && ka.direction == kb.direction &&
+                     ka.gap == kb.gap) {
             row("exploded",
                 QString("exploded chunks %1 to %2")
                   .arg(ka.chunks)
@@ -931,6 +937,7 @@ void RecordedAnimations::remove(const RecordedChange& change,
   } else if (change.property == "exploded") {
     later.explodedEnabled = earlier.explodedEnabled;
     later.explodedAxis = earlier.explodedAxis;
+    later.explodedDirection = earlier.explodedDirection;
     later.explodedChunks = earlier.explodedChunks;
     later.explodedGap = earlier.explodedGap;
   } else if (change.property == "slice" || change.property == "clip") {

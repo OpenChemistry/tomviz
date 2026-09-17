@@ -4,10 +4,12 @@
 #include "VolumeSink.h"
 
 #include "DoubleSliderWidget.h"
+#include "ExplodedGeometry.h"
 #include "MultiVolumeCoordinator.h"
 #include "ThreadUtils.h"
 #include "VolumeBricking.h"
 #include "VolumeSinkWidget.h"
+#include "vtkNonOrthoImagePlaneWidget.h"
 
 #include "data/VolumeData.h"
 
@@ -17,7 +19,9 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDebug>
+#include <QDoubleSpinBox>
 #include <QFormLayout>
+#include <QHBoxLayout>
 #include <QGroupBox>
 #include <QStyle>
 #include <QStyleOptionGroupBox>
@@ -59,7 +63,9 @@
 #include <vtkRenderWindow.h>
 #include <vtkRenderer.h>
 #include <vtkSMRenderViewProxy.h>
+#include <vtkProperty.h>
 #include <vtkTransform.h>
+#include <vtkTrivialProducer.h>
 #include <vtkSmartVolumeMapper.h>
 #include <vtkTextureObject.h>
 #include <vtkVolume.h>
@@ -882,6 +888,7 @@ void VolumeSink::setVisibility(bool visible)
   // VTK ignores the visibility of the volumes inside a vtkMultiVolume, so
   // a hidden sink has to leave the set rather than sit in it invisibly.
   syncMultiVolumeMembership();
+  updateExplodedWidget();
 }
 
 bool VolumeSink::isColorMapNeeded() const
@@ -1004,13 +1011,131 @@ bool VolumeSink::finalize()
       renderView()->RemovePropFromRenderer(slab);
     }
   }
+  if (m_explodedWidget) {
+    if (m_explodedWidgetTag) {
+      m_explodedWidget->RemoveObserver(m_explodedWidgetTag);
+      m_explodedWidgetTag = 0;
+    }
+    if (m_explodedWidgetEndTag) {
+      m_explodedWidget->RemoveObserver(m_explodedWidgetEndTag);
+      m_explodedWidgetEndTag = 0;
+    }
+    // InteractionOff/Off need the interactor, so before it is cleared
+    if (m_explodedWidget->GetInteractor() && m_explodedWidget->GetEnabled()) {
+      m_explodedWidget->InteractionOff();
+      m_explodedWidget->Off();
+    }
+    m_explodedWidget->SetInteractor(nullptr);
+    m_explodedWidget = nullptr;
+    m_explodedWidgetImage = nullptr;
+  }
   return LegacyModuleSink::finalize();
+}
+
+void VolumeSink::updateExplodedWidget()
+{
+  auto vol = volumeData();
+  const bool show = m_explodedEnabled && m_explodedShowArrow &&
+                    m_explodedAxis == kExplodedCustomAxis && visibility() &&
+                    !m_usingMultiBlock && vol && vol->isValid() &&
+                    renderView() && renderView()->GetRenderWindow() &&
+                    renderView()->GetRenderWindow()->GetInteractor();
+  if (!show) {
+    if (m_explodedWidget && m_explodedWidget->GetInteractor() &&
+        m_explodedWidget->GetEnabled()) {
+      m_explodedWidget->Off();
+    }
+    return;
+  }
+
+  if (!m_explodedWidget) {
+    // The clip's plane widget with its plane hidden: only the arrow is
+    // left, and dragging its tip turns the normal, which is the
+    // direction. The plane's outline is kept at zero opacity so it is
+    // still there to grab, which slides the widget; the end of a drag
+    // puts it back at the centre.
+    m_explodedWidget = vtkSmartPointer<vtkNonOrthoImagePlaneWidget>::New();
+    m_explodedWidget->SetInteractor(
+      renderView()->GetRenderWindow()->GetInteractor());
+    m_explodedWidget->TextureVisibilityOff();
+    m_explodedWidget->GetPlaneProperty()->SetOpacity(0.0);
+    m_explodedWidget->GetSelectedPlaneProperty()->SetOpacity(0.0);
+    vtkNew<vtkCallbackCommand> callback;
+    callback->SetClientData(this);
+    callback->SetCallback(
+      [](vtkObject*, unsigned long, void* clientData, void*) {
+        static_cast<VolumeSink*>(clientData)->onExplodedWidgetInteraction();
+      });
+    m_explodedWidgetTag =
+      m_explodedWidget->AddObserver(vtkCommand::InteractionEvent, callback);
+    vtkNew<vtkCallbackCommand> ended;
+    ended->SetClientData(this);
+    ended->SetCallback([](vtkObject*, unsigned long, void* clientData,
+                          void*) {
+      static_cast<VolumeSink*>(clientData)->onExplodedWidgetInteractionEnded();
+    });
+    m_explodedWidgetEndTag = m_explodedWidget->AddObserver(
+      vtkCommand::EndInteractionEvent, ended);
+  }
+
+  if (m_explodedWidgetDragging) {
+    return;
+  }
+  auto* image = vol->imageData();
+  if (m_explodedWidgetImage != image) {
+    vtkNew<vtkTrivialProducer> producer;
+    producer->SetOutput(image);
+    m_explodedWidget->SetInputConnection(producer->GetOutputPort());
+    m_explodedWidgetImage = image;
+  }
+  double bounds[6];
+  image->GetBounds(bounds);
+  double center[3] = { (bounds[0] + bounds[1]) / 2.0,
+                       (bounds[2] + bounds[3]) / 2.0,
+                       (bounds[4] + bounds[5]) / 2.0 };
+  const auto dir = explodedUnitDirection();
+  double normal[3] = { dir[0], dir[1], dir[2] };
+  m_explodedWidget->SetPlaneOrientation(-1);
+  m_explodedWidget->SetCenter(center);
+  m_explodedWidget->SetNormal(normal);
+  m_explodedWidget->UpdatePlacement();
+  if (!m_explodedWidget->GetEnabled()) {
+    m_explodedWidget->On();
+    m_explodedWidget->InteractionOn();
+  }
+  m_explodedWidget->SetArrowVisibility(1);
+}
+
+void VolumeSink::onExplodedWidgetInteraction()
+{
+  if (!m_explodedWidget) {
+    return;
+  }
+  double normal[3];
+  m_explodedWidget->GetNormal(normal);
+  // The widget is being dragged: it must not be re-placed from under the
+  // drag by the update the new direction triggers
+  m_explodedWidgetDragging = true;
+  setExplodedDirection(normal[0], normal[1], normal[2]);
+  m_explodedWidgetDragging = false;
+}
+
+void VolumeSink::onExplodedWidgetInteractionEnded()
+{
+  // Dragging the (invisible) plane slides the widget; only its
+  // direction means anything, so put it back at the centre.
+  updateExplodedWidget();
+  emit renderNeeded();
 }
 
 void VolumeSink::clearVisualization()
 {
   for (auto* slab : allVolumes()) {
     slab->SetVisibility(0);
+  }
+  if (m_explodedWidget && m_explodedWidget->GetInteractor() &&
+      m_explodedWidget->GetEnabled()) {
+    m_explodedWidget->Off();
   }
   syncMultiVolumeMembership();
 }
@@ -1775,7 +1900,7 @@ int VolumeSink::explodedAxis() const
 
 void VolumeSink::setExplodedAxis(int axis)
 {
-  axis = qBound(0, axis, 2);
+  axis = qBound(0, axis, kExplodedCustomAxis);
   if (m_explodedAxis == axis) {
     return;
   }
@@ -1784,6 +1909,89 @@ void VolumeSink::setExplodedAxis(int axis)
   emit explodedChanged();
   resetCameraQueued();
   emit renderNeeded();
+}
+
+std::array<double, 3> VolumeSink::explodedDirection() const
+{
+  return m_explodedDirection;
+}
+
+void VolumeSink::setExplodedDirection(double x, double y, double z)
+{
+  const std::array<double, 3> direction = { x, y, z };
+  if (direction == m_explodedDirection) {
+    return;
+  }
+  if (x == 0.0 && y == 0.0 && z == 0.0) {
+    // No direction to speak of; tell the panel so it shows the old one
+    emit explodedChanged();
+    return;
+  }
+  m_explodedDirection = direction;
+  if (m_explodedAxis == kExplodedCustomAxis) {
+    applyExploded();
+    emit renderNeeded();
+  }
+  emit explodedChanged();
+}
+
+bool VolumeSink::explodedShowArrow() const
+{
+  return m_explodedShowArrow;
+}
+
+void VolumeSink::setExplodedShowArrow(bool show)
+{
+  if (m_explodedShowArrow == show) {
+    return;
+  }
+  m_explodedShowArrow = show;
+  updateExplodedWidget();
+  emit explodedChanged();
+  emit renderNeeded();
+}
+
+std::array<double, 3> VolumeSink::explodedUnitDirection() const
+{
+  return pipeline::explodedDirection(m_explodedAxis, m_explodedDirection);
+}
+
+bool VolumeSink::isExplodedSlabPlane(vtkPlane* plane) const
+{
+  for (const auto& pair : m_explodedSlabPlanes) {
+    if (pair.first == plane || pair.second == plane) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void VolumeSink::syncExplodedSlabPlanes(bool custom)
+{
+  auto mappers = allMappers();
+  // One pair per slab. A spare pair's mapper is already gone (slabs are
+  // removed before this runs), so the pair simply goes too.
+  while (m_explodedSlabPlanes.size() > mappers.size()) {
+    m_explodedSlabPlanes.pop_back();
+  }
+  while (m_explodedSlabPlanes.size() < mappers.size()) {
+    m_explodedSlabPlanes.push_back({ vtkSmartPointer<vtkPlane>::New(),
+                                     vtkSmartPointer<vtkPlane>::New() });
+  }
+  for (size_t k = 0; k < mappers.size(); ++k) {
+    auto* mapper = mappers[k];
+    auto* planes = mapper->GetClippingPlanes();
+    for (vtkPlane* plane : { m_explodedSlabPlanes[k].first.Get(),
+                             m_explodedSlabPlanes[k].second.Get() }) {
+      const bool present =
+        planes && planes->IndexOfFirstOccurence(plane) >= 0;
+      if (custom && !present) {
+        mapper->AddClippingPlane(plane);
+      } else if (!custom && present) {
+        mapper->RemoveClippingPlane(plane);
+      }
+    }
+  }
 }
 
 int VolumeSink::explodedChunks() const
@@ -1822,6 +2030,8 @@ void VolumeSink::setExplodedGap(double fraction)
 
 void VolumeSink::teardownExplodedSlabs()
 {
+  // Slab 0's planes would otherwise keep cutting the whole volume
+  syncExplodedSlabPlanes(/*custom=*/false);
   if (renderView()) {
     for (auto& slab : m_explodedVolumes) {
       renderView()->RemovePropFromRenderer(slab);
@@ -1829,6 +2039,7 @@ void VolumeSink::teardownExplodedSlabs()
   }
   m_explodedVolumes.clear();
   m_explodedMappers.clear();
+  m_explodedSlabPlanes.clear();
   m_explodedOrderDirty = true;
 }
 
@@ -1853,6 +2064,7 @@ void VolumeSink::applyExploded()
       m_volumeMapper->SetCroppingState(0, none, VTK_CROP_SUBVOLUME);
       applyDisplayTransform();
     }
+    updateExplodedWidget();
     return;
   }
 
@@ -1871,10 +2083,13 @@ void VolumeSink::applyExploded()
     mapper->SetComputeNormalFromOpacity(
       m_volumeMapper->GetComputeNormalFromOpacity());
     mapper->SetFineSampling(m_volumeMapper->GetFineSampling());
+    // The user's clipping planes, not the ones bounding slab 0
     if (auto* planes = m_volumeMapper->GetClippingPlanes()) {
       planes->InitTraversal();
       while (auto* plane = planes->GetNextItem()) {
-        mapper->AddClippingPlane(plane);
+        if (!isExplodedSlabPlane(plane)) {
+          mapper->AddClippingPlane(plane);
+        }
       }
     }
     auto slab = vtkSmartPointer<vtkVolume>::New();
@@ -1901,7 +2116,8 @@ void VolumeSink::applyExploded()
 
   double bounds[6];
   image->GetBounds(bounds);
-  const int axis = m_explodedAxis;
+  const bool custom = m_explodedAxis == kExplodedCustomAxis;
+  const int axis = custom ? 0 : m_explodedAxis;
   const double lo = bounds[2 * axis];
   const double length = bounds[2 * axis + 1] - lo;
   auto mappers = allMappers();
@@ -1913,6 +2129,13 @@ void VolumeSink::applyExploded()
     if (auto* name = m_volumeMapper->GetArrayName()) {
       mapper->SelectScalarArray(name);
     }
+    if (custom) {
+      // Slabs at an angle are cut by a pair of clipping planes each,
+      // placed with the slabs in applyDisplayTransform
+      double none[6] = { 0, 0, 0, 0, 0, 0 };
+      mapper->SetCroppingState(0, none, VTK_CROP_SUBVOLUME);
+      continue;
+    }
     double planes[6];
     for (int a = 0; a < 3; ++a) {
       planes[2 * a] = bounds[2 * a];
@@ -1922,7 +2145,9 @@ void VolumeSink::applyExploded()
     planes[2 * axis + 1] = lo + length * (k + 1) / chunks;
     mapper->SetCroppingState(1, planes, VTK_CROP_SUBVOLUME);
   }
+  syncExplodedSlabPlanes(custom);
   applyDisplayTransform();
+  updateExplodedWidget();
 }
 
 void VolumeSink::applyDisplayTransform()
@@ -1939,26 +2164,60 @@ void VolumeSink::applyDisplayTransform()
     return;
   }
 
-  // Each slab k sits gap * length further along the axis in data space;
-  // rotate that offset the way vtkProp3D applies the orientation so the
-  // slabs still line up after a display rotation.
+  // Each slab k sits gap * length further along the direction in data
+  // space; rotate that offset the way vtkProp3D applies the orientation
+  // so the slabs still line up after a display rotation.
   double bounds[6];
   vol->imageData()->GetBounds(bounds);
-  const int axis = m_explodedAxis;
-  const double length = bounds[2 * axis + 1] - bounds[2 * axis];
+  const auto dir = explodedUnitDirection();
+  double lo = 0.0;
+  double length = 0.0;
+  explodedExtent(bounds, dir, lo, length);
   vtkNew<vtkTransform> rotation;
   rotation->PostMultiply();
   rotation->RotateY(orient[1]);
   rotation->RotateX(orient[0]);
   rotation->RotateZ(orient[2]);
-  for (size_t i = 0; i < m_explodedVolumes.size(); ++i) {
-    double offset[3] = { 0, 0, 0 };
-    offset[axis] = (static_cast<double>(i) + 1) * m_explodedGap * length;
+  const bool custom = m_explodedAxis == kExplodedCustomAxis;
+  const double center[3] = { (bounds[0] + bounds[1]) / 2.0,
+                             (bounds[2] + bounds[3]) / 2.0,
+                             (bounds[4] + bounds[5]) / 2.0 };
+  const int chunks = static_cast<int>(m_explodedVolumes.size()) + 1;
+  auto volumes = allVolumes();
+  for (int k = 0; k < chunks; ++k) {
+    double offset[3] = { dir[0] * k * m_explodedGap * length,
+                         dir[1] * k * m_explodedGap * length,
+                         dir[2] * k * m_explodedGap * length };
     rotation->TransformVector(offset, offset);
     double slabPos[3] = { pos[0] + offset[0], pos[1] + offset[1],
                           pos[2] + offset[2] };
-    m_explodedVolumes[i]->SetPosition(slabPos);
-    m_explodedVolumes[i]->SetOrientation(orient.data());
+    if (k > 0) {
+      volumes[k]->SetPosition(slabPos);
+      volumes[k]->SetOrientation(orient.data());
+    }
+    if (!custom || k >= static_cast<int>(m_explodedSlabPlanes.size())) {
+      continue;
+    }
+    // The mappers read clipping planes in world coordinates and map
+    // them back through their own prop's matrix, so each slab's pair is
+    // written where that slab sits: the cut stays put in the data while
+    // the slab moves.
+    double normal[3] = { dir[0], dir[1], dir[2] };
+    rotation->TransformVector(normal, normal);
+    for (int side = 0; side < 2; ++side) {
+      const double d = lo + length * (k + side) / chunks;
+      double origin[3] = { center[0] + dir[0] * d, center[1] + dir[1] * d,
+                           center[2] + dir[2] * d };
+      rotation->TransformVector(origin, origin);
+      auto& plane = side == 0 ? m_explodedSlabPlanes[k].first
+                              : m_explodedSlabPlanes[k].second;
+      plane->SetOrigin(origin[0] + slabPos[0], origin[1] + slabPos[1],
+                       origin[2] + slabPos[2]);
+      // Lower plane keeps what is beyond it; upper keeps what is before
+      const double sign = side == 0 ? 1.0 : -1.0;
+      plane->SetNormal(sign * normal[0], sign * normal[1],
+                       sign * normal[2]);
+    }
   }
 }
 
@@ -1977,8 +2236,8 @@ void VolumeSink::sortExplodedProps()
   // Slab k lies further along the axis the larger k is. With the camera
   // looking along +axis the high slabs are the far ones and must draw
   // first; otherwise slab 0 is farthest.
-  double axisDir[3] = { 0, 0, 0 };
-  axisDir[m_explodedAxis] = 1.0;
+  const auto dir = explodedUnitDirection();
+  double axisDir[3] = { dir[0], dir[1], dir[2] };
   auto vol = volumeData();
   auto orient = vol && vol->isValid() ? vol->displayOrientation()
                                       : std::array<double, 3>{ 0, 0, 0 };
@@ -2348,7 +2607,7 @@ QWidget* VolumeSink::createSinkPropertiesWidget(QWidget* parent)
           [this](bool on) { setExplodedEnabled(on); });
 
   auto* axisCombo = new QComboBox(explodedBody);
-  axisCombo->addItems({ "X", "Y", "Z" });
+  axisCombo->addItems({ "X", "Y", "Z", "Custom" });
   {
     QSignalBlocker blocker(axisCombo);
     axisCombo->setCurrentIndex(explodedAxis());
@@ -2356,6 +2615,47 @@ QWidget* VolumeSink::createSinkPropertiesWidget(QWidget* parent)
   explodedForm->addRow("Axis", axisCombo);
   connect(axisCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
           this, [this](int idx) { setExplodedAxis(idx); });
+
+  // A custom direction: three components, normalized when used, and the
+  // arrow that edits it by dragging. Both rows only exist while the axis
+  // is Custom.
+  auto* directionRow = new QWidget(explodedBody);
+  auto* directionLayout = new QHBoxLayout(directionRow);
+  directionLayout->setContentsMargins(0, 0, 0, 0);
+  std::array<QDoubleSpinBox*, 3> directionSpins;
+  for (int i = 0; i < 3; ++i) {
+    auto* spin = new QDoubleSpinBox(directionRow);
+    spin->setRange(-1000.0, 1000.0);
+    spin->setDecimals(3);
+    spin->setSingleStep(0.1);
+    // Commit on Enter or focus loss: every change re-cuts the slabs
+    spin->setKeyboardTracking(false);
+    spin->setToolTip(QString("%1 component of the direction the slabs are "
+                             "cut and pulled apart along, in data "
+                             "coordinates. The length does not matter.")
+                       .arg(QChar('X' + i)));
+    directionLayout->addWidget(spin);
+    directionSpins[i] = spin;
+  }
+  const int directionRowIndex = explodedForm->rowCount();
+  explodedForm->addRow("Direction", directionRow);
+  auto readDirection = [this, directionSpins]() {
+    setExplodedDirection(directionSpins[0]->value(),
+                         directionSpins[1]->value(),
+                         directionSpins[2]->value());
+  };
+  for (auto* spin : directionSpins) {
+    connect(spin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+            [readDirection](double) { readDirection(); });
+  }
+  auto* arrowCheck = new QCheckBox("Show Arrow", explodedBody);
+  arrowCheck->setToolTip(
+    "Draw an arrow along the direction at the centre of the volume; drag "
+    "its tip to turn it.");
+  const int arrowRowIndex = explodedForm->rowCount();
+  explodedForm->addRow(QString(), arrowCheck);
+  connect(arrowCheck, &QCheckBox::toggled, this,
+          [this](bool on) { setExplodedShowArrow(on); });
 
   auto* chunksSpin = new QSpinBox(explodedBody);
   chunksSpin->setRange(2, 16);
@@ -2379,13 +2679,24 @@ QWidget* VolumeSink::createSinkPropertiesWidget(QWidget* parent)
   connect(gapSlider, &DoubleSliderWidget::valueChanged, this,
           [this](double v) { setExplodedGap(v); });
 
-  auto syncExploded = [this, explodedBox, explodedBody, axisCombo,
-                       chunksSpin, gapSlider, collapseUnless]() {
+  auto syncExploded = [this, explodedBox, explodedBody, explodedForm,
+                       axisCombo, directionSpins, directionRowIndex,
+                       arrowCheck, arrowRowIndex, chunksSpin, gapSlider,
+                       collapseUnless]() {
     QSignalBlocker b1(explodedBox), b2(axisCombo), b3(chunksSpin),
-      b4(gapSlider);
+      b4(gapSlider), b5(arrowCheck);
     explodedBox->setChecked(explodedEnabled());
     collapseUnless(explodedBox, explodedBody, explodedEnabled());
     axisCombo->setCurrentIndex(explodedAxis());
+    const bool custom = explodedAxis() == kExplodedCustomAxis;
+    explodedForm->setRowVisible(directionRowIndex, custom);
+    explodedForm->setRowVisible(arrowRowIndex, custom);
+    const auto direction = explodedDirection();
+    for (int i = 0; i < 3; ++i) {
+      QSignalBlocker blocker(directionSpins[i]);
+      directionSpins[i]->setValue(direction[i]);
+    }
+    arrowCheck->setChecked(explodedShowArrow());
     chunksSpin->setValue(explodedChunks());
     gapSlider->setValue(explodedGap());
   };
@@ -2635,6 +2946,10 @@ QJsonObject VolumeSink::serialize() const
   QJsonObject exploded;
   exploded["enabled"] = m_explodedEnabled;
   exploded["axis"] = m_explodedAxis;
+  exploded["direction"] = QJsonArray{ m_explodedDirection[0],
+                                      m_explodedDirection[1],
+                                      m_explodedDirection[2] };
+  exploded["showArrow"] = m_explodedShowArrow;
   exploded["chunks"] = m_explodedChunks;
   exploded["gap"] = m_explodedGap;
   json["exploded"] = exploded;
@@ -2678,7 +2993,15 @@ bool VolumeSink::deserialize(const QJsonObject& json)
   }
   if (json.contains("exploded")) {
     auto exploded = json["exploded"].toObject();
-    m_explodedAxis = qBound(0, exploded["axis"].toInt(2), 2);
+    m_explodedAxis =
+      qBound(0, exploded["axis"].toInt(2), kExplodedCustomAxis);
+    auto direction = exploded["direction"].toArray();
+    if (direction.size() == 3) {
+      m_explodedDirection = { direction[0].toDouble(),
+                              direction[1].toDouble(),
+                              direction[2].toDouble() };
+    }
+    m_explodedShowArrow = exploded["showArrow"].toBool(true);
     m_explodedChunks = qBound(2, exploded["chunks"].toInt(4), 16);
     m_explodedGap = qBound(0.0, exploded["gap"].toDouble(0.25), 1.0);
     m_explodedEnabled = exploded["enabled"].toBool();
