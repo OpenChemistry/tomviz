@@ -114,6 +114,15 @@ public:
   void setPlaneNormal(double x, double y, double z);
   void planeNormal(double xyz[3]) const;
 
+  /// Where a Custom plane sits along its own normal, as a signed
+  /// distance from the centre of the data; the unit the Animation
+  /// Helper sweeps a custom slice in, as it does a custom clip.
+  double planeDistance() const;
+  void setPlaneDistance(double distance);
+  /// The range planeDistance() can cover while the plane still crosses
+  /// the data.
+  void planeDistanceRange(double& minDistance, double& maxDistance) const;
+
   void addClippingPlane(vtkPlane* plane) override;
   void removeClippingPlane(vtkPlane* plane) override;
 

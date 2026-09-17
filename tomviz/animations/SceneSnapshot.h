@@ -9,6 +9,7 @@
 #include <QHash>
 #include <QJsonObject>
 #include <QSet>
+#include <QVector>
 
 #include <array>
 #include <optional>
@@ -23,10 +24,11 @@ class LegacyModuleSink;
 } // namespace pipeline
 
 /// The whitelisted state of one visualization module that a viewpoint
-/// records: visibility, the flat opacity of surface/plane modules, the
-/// scalar opacity curve of a volume, the volume cut-out and exploded
-/// view, where a slice or clip plane sits, and a contour's iso value.
-/// Fields a module does not have stay unset.
+/// records: visibility, the flat opacity of surface/plane modules (and
+/// a label map's surface), the scalar opacity curve of a volume, the
+/// volume cut-out and exploded view, where a slice or clip plane sits,
+/// a contour's iso value, a threshold's range, and which labels of a
+/// label map are hidden. Fields a module does not have stay unset.
 struct SinkSnapshot
 {
   bool visible = true;
@@ -47,6 +49,11 @@ struct SinkSnapshot
   std::optional<std::array<double, 3>> planeNormal;
   /// Contours: the iso value.
   std::optional<double> isoValue;
+  /// Threshold visualizations: the range shown.
+  std::optional<double> thresholdLower;
+  std::optional<double> thresholdUpper;
+  /// Label maps: the labels the user hid, ascending.
+  std::optional<QVector<double>> hiddenLabels;
 
   static SinkSnapshot capture(pipeline::LegacyModuleSink* sink);
   QJsonObject serialize() const;

@@ -162,13 +162,17 @@ private slots:
   }
 };
 
+#include "AnimatableProperties.h"
+#include "CutOutAnimation.h"
 #include "ExplodedAnimation.h"
 #include "ModuleAnimations.h"
+#include "ThresholdAnimation.h"
 #include "OpacityAnimation.h"
 #include "RecordedAnimations.h"
 #include "SceneSnapshot.h"
 #include "pipeline/Pipeline.h"
 #include "pipeline/sinks/SliceSink.h"
+#include "pipeline/sinks/ThresholdSink.h"
 #include "pipeline/sinks/VolumeSink.h"
 
 // The animations built from recorded viewpoint state: they need a
@@ -342,6 +346,57 @@ private slots:
         { "unit", "gap" } }) };
     animations.deserialize(wrong, &pipeline);
     QVERIFY(animations.animations().isEmpty());
+  }
+
+  // A threshold range end and a cut-out position sweep during playback
+  // and come back from a state file, built through the property table
+  // the Animation Helper authors with.
+  void thresholdAndCutOutSweepsPlayAndSurviveAStateFile()
+  {
+    pipeline::Pipeline pipeline;
+    auto* threshold = new pipeline::ThresholdSink();
+    pipeline.addNode(threshold);
+    threshold->setThresholdRange(10.0, 90.0);
+    auto* volume = new pipeline::VolumeSink();
+    pipeline.addNode(volume);
+    QVERIFY(!volume->cutOutEnabled());
+
+    const auto* lower = animatableProperty("thresholdLower");
+    const auto* cutOutY = animatableProperty("cutOutY");
+    QVERIFY(lower && cutOutY);
+    QVERIFY(lower->applies(threshold) && !lower->applies(volume));
+    QVERIFY(cutOutY->applies(volume) && !cutOutY->applies(threshold));
+    // The lower end's default sweep grows the segmentation from where
+    // the panel has it
+    QCOMPARE(lower->range(threshold).start, 10.0);
+
+    auto& animations = ModuleAnimations::instance();
+    animations.add(lower->make(threshold, 10.0, 40.0));
+    animations.add(cutOutY->make(volume, 0.0, 1.0));
+
+    play(10);
+    QVERIFY2(std::abs(threshold->lowerThreshold() - 40.0) < 3.0,
+             qPrintable(QString("lower %1").arg(threshold->lowerThreshold())));
+    QCOMPARE(threshold->upperThreshold(), 90.0);
+    QVERIFY(volume->cutOutEnabled());
+    QVERIFY(std::abs(volume->cutOutPosition(1) - 1.0) < 0.1);
+    QCOMPARE(volume->cutOutPosition(0), 0.5);
+
+    auto json = animations.serialize(&pipeline);
+    animations.deserialize(json, &pipeline);
+    auto restored = animations.animations();
+    QCOMPARE(restored.size(), 2);
+    double start = 0.0;
+    double stop = 0.0;
+    const auto* first = animatablePropertyOf(restored[0], start, stop);
+    QVERIFY(first);
+    QCOMPARE(first->id, QString("thresholdLower"));
+    QCOMPARE(start, 10.0);
+    QCOMPARE(stop, 40.0);
+    const auto* second = animatablePropertyOf(restored[1], start, stop);
+    QVERIFY(second);
+    QCOMPARE(second->id, QString("cutOutY"));
+    QCOMPARE(stop, 1.0);
   }
 };
 

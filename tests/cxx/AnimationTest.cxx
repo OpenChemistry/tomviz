@@ -15,6 +15,7 @@
 #include "sinks/ClipSink.h"
 #include "sinks/ContourSink.h"
 #include "sinks/SliceSink.h"
+#include "sinks/ThresholdSink.h"
 
 #include <vtkCamera.h>
 #include <vtkPiecewiseFunction.h>
@@ -32,6 +33,7 @@ using tomviz::OpacityAnimation;
 using tomviz::SceneSnapshot;
 using tomviz::RecordedAnimations;
 using tomviz::SliceAnimation;
+using tomviz::SinkSnapshot;
 using tomviz::Viewpoint;
 using tomviz::pipeline::planeTravelRange;
 
@@ -253,6 +255,68 @@ TEST_F(AnimationTest, ViewpointsSurviveAStateFileRoundTrip)
 // base class reaches ActiveObjects for the time keeper), so what is
 // checked here is the half that does not: an entry is only rebuilt if
 // the state file still describes something that can carry it.
+TEST_F(AnimationTest, SnapshotsKeepThresholdsAndHiddenLabelsThroughJson)
+{
+  SinkSnapshot snapshot;
+  snapshot.visible = false;
+  snapshot.thresholdLower = 12.5;
+  snapshot.thresholdUpper = 80.0;
+  snapshot.hiddenLabels = QVector<double>{ 2, 5, 9 };
+
+  auto restored = SinkSnapshot::deserialize(snapshot.serialize());
+  EXPECT_FALSE(restored.visible);
+  ASSERT_TRUE(restored.thresholdLower && restored.thresholdUpper);
+  EXPECT_DOUBLE_EQ(*restored.thresholdLower, 12.5);
+  EXPECT_DOUBLE_EQ(*restored.thresholdUpper, 80.0);
+  ASSERT_TRUE(restored.hiddenLabels);
+  EXPECT_EQ(*restored.hiddenLabels, (QVector<double>{ 2, 5, 9 }));
+
+  // Fields a module does not have stay unset
+  SinkSnapshot plain;
+  auto plainRestored = SinkSnapshot::deserialize(plain.serialize());
+  EXPECT_FALSE(plainRestored.thresholdLower);
+  EXPECT_FALSE(plainRestored.hiddenLabels);
+}
+
+TEST_F(AnimationTest, RecordedThresholdChangesNameTheEndThatMoved)
+{
+  tomviz::pipeline::Pipeline pipeline;
+  auto* threshold = new tomviz::pipeline::ThresholdSink();
+  pipeline.addNode(threshold);
+  const int id = pipeline.nodeId(threshold);
+
+  auto record = [&](double lower, double upper) {
+    Viewpoint viewpoint = viewpointAt(0.0, 1.0, false);
+    SinkSnapshot snapshot;
+    snapshot.thresholdLower = lower;
+    snapshot.thresholdUpper = upper;
+    viewpoint.scene.sinks.insert(id, snapshot);
+    viewpoint.scene.recorded = true;
+    viewpoints().append(viewpoint);
+  };
+  record(10.0, 90.0);
+  record(40.0, 90.0);
+  record(40.0, 60.0);
+  record(20.0, 70.0);
+
+  auto rows = RecordedAnimations::instance().changes(&pipeline);
+  ASSERT_EQ(rows.size(), 3);
+  EXPECT_EQ(rows[0].property, "threshold");
+  EXPECT_EQ(rows[0].controlProperty, "thresholdLower");
+  EXPECT_DOUBLE_EQ(*rows[0].startValue, 10.0);
+  EXPECT_DOUBLE_EQ(*rows[0].stopValue, 40.0);
+  EXPECT_EQ(rows[1].controlProperty, "thresholdUpper");
+  EXPECT_DOUBLE_EQ(*rows[1].stopValue, 60.0);
+  // Both ends moved: nothing a single control can show
+  EXPECT_EQ(rows[2].controlProperty, "");
+  EXPECT_FALSE(rows[2].startValue);
+
+  // Removing the row gives the later viewpoint the earlier range
+  RecordedAnimations::instance().remove(rows[0], &pipeline);
+  const auto& later = viewpoints().at(1).scene.sinks[id];
+  EXPECT_DOUBLE_EQ(*later.thresholdLower, 10.0);
+}
+
 TEST_F(AnimationTest, SavedAnimationsWithoutTheirVisualizationAreDropped)
 {
   tomviz::pipeline::Pipeline pipeline;

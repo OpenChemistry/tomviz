@@ -7,11 +7,13 @@
 #include "CameraViewpoints.h"
 #include "ClipAnimation.h"
 #include "ContourAnimation.h"
+#include "CutOutAnimation.h"
 #include "ExplodedAnimation.h"
 #include "ModuleAnimation.h"
 #include "OpacityAnimation.h"
 #include "ScalarOpacityAnimation.h"
 #include "SliceAnimation.h"
+#include "ThresholdAnimation.h"
 
 #include "pipeline/Pipeline.h"
 
@@ -37,7 +39,16 @@ ModuleAnimation* buildAnimation(const QString& type, pipeline::Node* node,
     }
   } else if (type == "slice") {
     if (auto* sink = qobject_cast<pipeline::SliceSink*>(node)) {
-      return new SliceAnimation(sink, start, stop);
+      // Files from before custom slices could be swept carry no unit
+      auto unit = json["unit"].toString() == "distance"
+                    ? SliceAnimation::Distance
+                    : SliceAnimation::Slice;
+      if ((unit == SliceAnimation::Slice) != sink->isOrtho()) {
+        qWarning() << "Dropping slice animation: the slice changed"
+                   << "orientation since it was saved.";
+        return nullptr;
+      }
+      return new SliceAnimation(sink, start, stop, unit);
     }
   } else if (type == "clip") {
     if (auto* sink = qobject_cast<pipeline::ClipSink*>(node)) {
@@ -81,6 +92,16 @@ ModuleAnimation* buildAnimation(const QString& type, pipeline::Node* node,
                     ? ExplodedAnimation::Chunks
                     : ExplodedAnimation::Gap;
       return new ExplodedAnimation(sink, start, stop, unit);
+    }
+  } else if (type == "cutOut") {
+    if (auto* sink = qobject_cast<pipeline::VolumeSink*>(node)) {
+      return new CutOutAnimation(sink, start, stop, json["axis"].toInt(0));
+    }
+  } else if (type == "threshold") {
+    if (auto* sink = qobject_cast<pipeline::ThresholdSink*>(node)) {
+      auto end = json["end"].toString() == "upper" ? ThresholdAnimation::Upper
+                                                   : ThresholdAnimation::Lower;
+      return new ThresholdAnimation(sink, start, stop, end);
     }
   }
 

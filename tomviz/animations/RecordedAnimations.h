@@ -13,6 +13,7 @@
 #include <QObject>
 #include <QSet>
 #include <QString>
+#include <QVector>
 
 #include <array>
 #include <optional>
@@ -44,8 +45,13 @@ struct RecordedChange
 {
   int nodeId = -1;
   /// "opacity", "visibility", "curve", "cutOut", "exploded", "slice",
-  /// "clip" or "iso".
+  /// "clip", "iso", "threshold" or "labels".
   QString property;
+  /// The Animation Helper property that authors this kind of change,
+  /// when the change is one the controls can show: "explodedGap",
+  /// "cutOutX", "thresholdLower" and so on. Empty means the property
+  /// itself, or nothing authorable (visibility, labels).
+  QString controlProperty;
   /// Viewpoint indices. Viewpoints between them recorded nothing.
   int fromAnchor = 0;
   int toAnchor = 1;
@@ -86,6 +92,17 @@ struct CutOutKey
     return enabled == o.enabled && corner == o.corner && position == o.position;
   }
 };
+/// A Threshold visualization's range at one viewpoint.
+struct ThresholdKey
+{
+  double lower = 0.0;
+  double upper = 1.0;
+  bool operator==(const ThresholdKey& o) const
+  {
+    return lower == o.lower && upper == o.upper;
+  }
+};
+
 struct ExplodedKey
 {
   bool enabled = false;
@@ -275,6 +292,56 @@ protected:
 
 private:
   QMap<int, double> m_keys;
+};
+
+class RecordedThresholdAnimation : public RecordedAnimation
+{
+  Q_OBJECT
+
+public:
+  RecordedThresholdAnimation(pipeline::Node* node,
+                             const QMap<int, ThresholdKey>& keys)
+    : RecordedAnimation(node), m_keys(keys)
+  {
+  }
+  QString type() const override { return "threshold"; }
+  QString describeParameters() const override
+  {
+    return "recorded threshold range";
+  }
+
+protected:
+  void applySpan(const AnchorSpan& span) override;
+  QList<int> anchors() const override { return m_keys.keys(); }
+
+private:
+  QMap<int, ThresholdKey> m_keys;
+};
+
+/// The labels of a label map hidden at each viewpoint. There is nothing
+/// to fade through, so the set switches halfway along the leg.
+class RecordedLabelsAnimation : public RecordedAnimation
+{
+  Q_OBJECT
+
+public:
+  RecordedLabelsAnimation(pipeline::Node* node,
+                          const QMap<int, QVector<double>>& keys)
+    : RecordedAnimation(node), m_keys(keys)
+  {
+  }
+  QString type() const override { return "labels"; }
+  QString describeParameters() const override
+  {
+    return "recorded label visibility";
+  }
+
+protected:
+  void applySpan(const AnchorSpan& span) override;
+  QList<int> anchors() const override { return m_keys.keys(); }
+
+private:
+  QMap<int, QVector<double>> m_keys;
 };
 
 /// The recorded opacity curves of a volume. A viewpoint where the

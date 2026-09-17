@@ -8,7 +8,10 @@
 
 #include "pipeline/sinks/ClipSink.h"
 #include "pipeline/sinks/ContourSink.h"
+#include "pipeline/sinks/LabelMapSink.h"
+#include "pipeline/sinks/SegmentSink.h"
 #include "pipeline/sinks/SliceSink.h"
+#include "pipeline/sinks/ThresholdSink.h"
 
 namespace tomviz {
 
@@ -31,12 +34,16 @@ public:
   {
   }
 
-  /// True if `node` has an opacity this animation can drive.
+  /// True if `node` has an opacity this animation can drive: the flat
+  /// opacity of the surface and plane modules, and a label map's surface.
   static bool supports(pipeline::Node* node)
   {
     return qobject_cast<pipeline::ContourSink*>(node) ||
            qobject_cast<pipeline::SliceSink*>(node) ||
-           qobject_cast<pipeline::ClipSink*>(node);
+           qobject_cast<pipeline::ClipSink*>(node) ||
+           qobject_cast<pipeline::ThresholdSink*>(node) ||
+           qobject_cast<pipeline::SegmentSink*>(node) ||
+           qobject_cast<pipeline::LabelMapSink*>(node);
   }
 
   /// The current opacity of `node`, or 1 if it has none.
@@ -50,6 +57,15 @@ public:
     }
     if (auto* clip = qobject_cast<pipeline::ClipSink*>(node)) {
       return clip->opacity();
+    }
+    if (auto* threshold = qobject_cast<pipeline::ThresholdSink*>(node)) {
+      return threshold->opacity();
+    }
+    if (auto* segment = qobject_cast<pipeline::SegmentSink*>(node)) {
+      return segment->opacity();
+    }
+    if (auto* labels = qobject_cast<pipeline::LabelMapSink*>(node)) {
+      return labels->surfaceOpacity();
     }
     return 1;
   }
@@ -85,6 +101,12 @@ private:
       slice->setOpacity(value);
     } else if (auto* clip = qobject_cast<pipeline::ClipSink*>(node)) {
       clip->setOpacity(value);
+    } else if (auto* threshold = qobject_cast<pipeline::ThresholdSink*>(node)) {
+      threshold->setOpacity(value);
+    } else if (auto* segment = qobject_cast<pipeline::SegmentSink*>(node)) {
+      segment->setOpacity(value);
+    } else if (auto* labels = qobject_cast<pipeline::LabelMapSink*>(node)) {
+      labels->setSurfaceOpacity(value);
     }
   }
 };

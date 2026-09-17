@@ -504,11 +504,15 @@ list(APPEND SOURCES
   animations/RecordedAnimations.h
   animations/SceneSnapshot.cxx
   animations/SceneSnapshot.h
+  animations/AnimatableProperties.cxx
+  animations/AnimatableProperties.h
   animations/ClipAnimation.h
   animations/ContourAnimation.h
+  animations/CutOutAnimation.h
   animations/ExplodedAnimation.h
   animations/OpacityAnimation.h
   animations/SliceAnimation.h
+  animations/ThresholdAnimation.h
   animations/TimeSeriesAnimation.h
 )
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/animations)

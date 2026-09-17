@@ -7,16 +7,12 @@
 #include "ActiveObjects.h"
 #include "CameraAnimation.h"
 #include "CameraViewpoints.h"
-#include "ClipAnimation.h"
-#include "ContourAnimation.h"
-#include "ExplodedAnimation.h"
+#include "AnimatableProperties.h"
 #include "ModuleAnimations.h"
 #include "MovieExportDialog.h"
-#include "OpacityAnimation.h"
 #include "RecordedAnimations.h"
 #include "ScalarOpacityAnimation.h"
 #include "SceneSnapshot.h"
-#include "SliceAnimation.h"
 #include "Utilities.h"
 
 #include "pipeline/Pipeline.h"
@@ -186,7 +182,9 @@ public:
   QString configuredProperty;
   double configuredLo = 0.0;
   double configuredHi = 0.0;
-  bool configuredClipOrtho = true;
+  // The range caption: a slice or clip that turns custom is measured in
+  // a different unit and offers a differently named property.
+  QString configuredLabel;
 
   Internal(AnimationHelperDialog* p) : QObject(p), parent(p)
   {
@@ -209,11 +207,13 @@ public:
 
     recordScene = new QCheckBox("Record module state with viewpoints", parent);
     recordScene->setToolTip(
-      "Also save which modules are visible, their opacity, and any volume "
-      "cut-out or exploded view with each viewpoint. Whatever differs "
-      "between two viewpoints is listed under Visualizations, marked "
-      "recorded, and plays between them. A module added after a viewpoint "
-      "was saved counts as hidden there until that viewpoint is updated.");
+      "Also save the state of every visualization with each viewpoint: "
+      "which are visible, their opacity or opacity curve, where slice and "
+      "clip planes sit, iso values, threshold ranges, hidden labels, and "
+      "any volume cut-out or exploded view. Whatever differs between two "
+      "viewpoints is listed under Visualizations, marked recorded, and "
+      "plays between them. A module added after a viewpoint was saved "
+      "counts as hidden there until that viewpoint is updated.");
     recordScene->setChecked(true);
     ui.cameraLayout->addWidget(recordScene);
 
@@ -924,9 +924,7 @@ public:
 
     QList<pipeline::Node*> sinks;
     for (auto* node : pip->nodes()) {
-      if (qobject_cast<pipeline::ContourSink*>(node) ||
-          qobject_cast<pipeline::SliceSink*>(node) ||
-          qobject_cast<pipeline::ClipSink*>(node) ||
+      if (hasAnimatableProperties(node) ||
           ScalarOpacityAnimation::supports(node)) {
         if (findUpstreamSource(node) == source) {
           sinks.append(node);
@@ -1000,23 +998,15 @@ public:
     ui.animatedProperty->clear();
 
     auto* node = selectedSink();
-    if (qobject_cast<pipeline::ContourSink*>(node)) {
-      ui.animatedProperty->addItem("Iso value", "iso");
-      ui.animatedProperty->addItem("Opacity", "opacity");
-    } else if (auto* slice = qobject_cast<pipeline::SliceSink*>(node)) {
-      // A Custom plane has no index to sweep
-      if (slice->isOrtho()) {
-        ui.animatedProperty->addItem("Slice index", "slice");
-      }
-      ui.animatedProperty->addItem("Opacity", "opacity");
-    } else if (auto* clip = qobject_cast<pipeline::ClipSink*>(node)) {
-      ui.animatedProperty->addItem(
-        clip->isOrtho() ? "Slice index" : "Position", "clip");
-      ui.animatedProperty->addItem("Opacity", "opacity");
-    } else if (ScalarOpacityAnimation::supports(node)) {
+    // The curve morph has its own page; every swept property comes from
+    // the table
+    if (ScalarOpacityAnimation::supports(node)) {
       ui.animatedProperty->addItem("Opacity curve", "curve");
-      ui.animatedProperty->addItem("Exploded gap", "explodedGap");
-      ui.animatedProperty->addItem("Exploded chunks", "explodedChunks");
+    }
+    for (const auto& property : animatableProperties()) {
+      if (node && property.applies(node)) {
+        ui.animatedProperty->addItem(property.label(node), property.id);
+      }
     }
 
     int index = ui.animatedProperty->findData(previous);
@@ -1055,86 +1045,38 @@ public:
     configuredNode = node;
     configuredProperty = property;
 
-    QString label = "Range:";
-    int decimals = 2;
-    double lo = 0.0;
-    double hi = 1.0;
-    double startDefault = 0.0;
-    double stopDefault = 1.0;
+    PropertyRange range;
+    if (const auto* animatable = animatableProperty(property)) {
+      range = animatable->range(node);
+    }
+    const QString label = range.label;
+    const int decimals = range.decimals;
+    const double lo = range.lo;
+    const double hi = range.hi;
+    const double startDefault = range.start;
+    const double stopDefault = range.stop;
+    configuredLabel = label;
 
-    if (property == "iso") {
-      auto* contour = qobject_cast<pipeline::ContourSink*>(node);
-      double range[2] = { 0.0, 1.0 };
-      if (contour) {
-        contour->scalarRange(range);
-      }
-      label = "Iso value:";
-      lo = range[0];
-      hi = range[1];
-      startDefault = (hi - lo) / 3 + lo;
-      stopDefault = (hi - lo) * 2 / 3 + lo;
-    } else if (property == "slice") {
-      auto* slice = qobject_cast<pipeline::SliceSink*>(node);
-      label = "Slice:";
-      decimals = 0;
-      hi = slice ? slice->maxSlice() : 0;
-      stopDefault = hi;
-
-      // This reconfigures on every reselection and data update, so drop
-      // the previous connection first or they accumulate.
-      if (slice) {
-        disconnect(slice, &pipeline::SliceSink::directionChanged, this,
-                   nullptr);
-        connect(slice, &pipeline::SliceSink::directionChanged, this,
-                [this, slice]() {
-                  if (slice != this->selectedSink()) {
-                    disconnect(slice, nullptr, this, nullptr);
-                    return;
-                  }
-                  this->populateProperties();
-                  this->configurePropertyPage();
-                });
-      }
-    } else if (property == "clip") {
-      auto* clip = qobject_cast<pipeline::ClipSink*>(node);
-      configuredClipOrtho = clip ? clip->isOrtho() : true;
-      if (configuredClipOrtho) {
-        label = "Slice:";
-        decimals = 0;
-        hi = clip ? clip->maxSlice() : 0;
-        stopDefault = hi;
-      } else {
-        // A plane at an arbitrary angle has no slices to count, so it is
-        // positioned by how far it sits from the centre of the data along
-        // its own normal.
-        label = "Position:";
-        if (clip) {
-          clip->planeDistanceRange(lo, hi);
+    // A slice or clip that turns custom, or back, is measured in a
+    // different unit and offers a differently named property. This
+    // reconfigures on every reselection and data update, so drop the
+    // previous connection first or they accumulate.
+    auto follow = [this](auto* sink) {
+      using SinkT = std::remove_pointer_t<decltype(sink)>;
+      disconnect(sink, &SinkT::directionChanged, this, nullptr);
+      connect(sink, &SinkT::directionChanged, this, [this, sink]() {
+        if (sink != this->selectedSink()) {
+          disconnect(sink, nullptr, this, nullptr);
+          return;
         }
-        startDefault = lo;
-        stopDefault = hi;
-      }
-    } else if (property == "opacity") {
-      label = "Opacity:";
-      // Fading out from wherever the module sits now is the useful
-      // default; the user can invert it by swapping the two values.
-      startDefault = OpacityAnimation::opacityOf(node);
-      stopDefault = 0.0;
-    } else if (property == "explodedGap") {
-      auto* volume = qobject_cast<pipeline::VolumeSink*>(node);
-      label = "Gap:";
-      // Pulling the slabs apart from closed to wherever the panel has
-      // the gap set is the useful default.
-      startDefault = 0.0;
-      stopDefault = volume ? volume->explodedGap() : 0.25;
-    } else if (property == "explodedChunks") {
-      auto* volume = qobject_cast<pipeline::VolumeSink*>(node);
-      label = "Chunks:";
-      decimals = 0;
-      lo = 2;
-      hi = 16;
-      startDefault = 2;
-      stopDefault = volume ? volume->explodedChunks() : 4;
+        this->populateProperties();
+        this->configurePropertyPage();
+      });
+    };
+    if (auto* slice = qobject_cast<pipeline::SliceSink*>(node)) {
+      follow(slice);
+    } else if (auto* clip = qobject_cast<pipeline::ClipSink*>(node)) {
+      follow(clip);
     }
 
     configuredLo = lo;
@@ -1167,36 +1109,19 @@ public:
       return;
     }
 
-    double lo = configuredLo;
-    double hi = configuredHi;
-    if (property == "iso") {
-      auto* contour = qobject_cast<pipeline::ContourSink*>(node);
-      double range[2] = { lo, hi };
-      if (contour) {
-        contour->scalarRange(range);
-      }
-      lo = range[0];
-      hi = range[1];
-    } else if (property == "slice") {
-      auto* slice = qobject_cast<pipeline::SliceSink*>(node);
-      hi = slice ? slice->maxSlice() : hi;
-    } else if (property == "clip") {
-      auto* clip = qobject_cast<pipeline::ClipSink*>(node);
-      if (clip && clip->isOrtho() != configuredClipOrtho) {
-        // A clip that changed orientation is measured in a different unit
-        // entirely, and offers a differently named property.
-        populateProperties();
-        configurePropertyPage();
-        return;
-      }
-      if (clip && clip->isOrtho()) {
-        hi = clip->maxSlice();
-      } else if (clip) {
-        clip->planeDistanceRange(lo, hi);
-      }
+    const auto* animatable = animatableProperty(property);
+    if (!animatable) {
+      return;
     }
-
-    if (lo != configuredLo || hi != configuredHi) {
+    const PropertyRange range = animatable->range(node);
+    if (range.label != configuredLabel) {
+      // A plane that changed orientation is measured in a different unit
+      // entirely, and offers a differently named property.
+      populateProperties();
+      configurePropertyPage();
+      return;
+    }
+    if (range.lo != configuredLo || range.hi != configuredHi) {
       configureRange(node, property);
     }
   }
@@ -1513,31 +1438,10 @@ public:
     double start = ui.rangeStart->value();
     double stop = ui.rangeStop->value();
 
-    if (property == "iso") {
-      if (auto* contour = qobject_cast<pipeline::ContourSink*>(node)) {
-        return new ContourAnimation(contour, start, stop);
-      }
-    } else if (property == "slice") {
-      if (auto* slice = qobject_cast<pipeline::SliceSink*>(node)) {
-        return new SliceAnimation(slice, start, stop);
-      }
-    } else if (property == "clip") {
-      if (auto* clip = qobject_cast<pipeline::ClipSink*>(node)) {
-        auto unit =
-          clip->isOrtho() ? ClipAnimation::Slice : ClipAnimation::Distance;
-        return new ClipAnimation(clip, start, stop, unit);
-      }
-    } else if (property == "opacity") {
-      if (OpacityAnimation::supports(node)) {
-        return new OpacityAnimation(node, start, stop);
-      }
-    } else if (property == "explodedGap" || property == "explodedChunks") {
-      if (auto* volume = qobject_cast<pipeline::VolumeSink*>(node)) {
-        auto unit = property == "explodedGap" ? ExplodedAnimation::Gap
-                                              : ExplodedAnimation::Chunks;
-        return new ExplodedAnimation(volume, start, stop, unit);
-      }
-    } else if (property == "curve") {
+    if (const auto* animatable = animatableProperty(property)) {
+      return animatable->make(node, start, stop);
+    }
+    if (property == "curve") {
       auto* volume = qobject_cast<pipeline::VolumeSink*>(node);
       if (volume && ScalarOpacityAnimation::supports(node)) {
         QList<OpacityKeyframe> keyframes;
@@ -1654,8 +1558,12 @@ public:
         [this, change, node]() {
           // A stretch over blank viewpoints is several legs; the combo
           // takes one, so offer the first and let the user pick another
-          showInControls(node, change.property, change.startValue,
-                         change.stopValue, change.fromAnchor);
+          showInControls(node,
+                         change.controlProperty.isEmpty()
+                           ? change.property
+                           : change.controlProperty,
+                         change.startValue, change.stopValue,
+                         change.fromAnchor);
         });
     }
   }
@@ -1676,28 +1584,15 @@ public:
     if (!node) {
       return;
     }
-    const QString type = animation->type();
     std::optional<double> start;
     std::optional<double> stop;
-    QString property = type;
-    if (auto* contour = qobject_cast<ContourAnimation*>(animation)) {
-      property = "iso";
-      start = contour->startValue;
-      stop = contour->stopValue;
-    } else if (auto* slice = qobject_cast<SliceAnimation*>(animation)) {
-      start = slice->startValue;
-      stop = slice->stopValue;
-    } else if (auto* clip = qobject_cast<ClipAnimation*>(animation)) {
-      start = clip->startValue;
-      stop = clip->stopValue;
-    } else if (auto* opacity = qobject_cast<OpacityAnimation*>(animation)) {
-      start = opacity->startValue;
-      stop = opacity->stopValue;
-    } else if (auto* exploded = qobject_cast<ExplodedAnimation*>(animation)) {
-      property = exploded->unit == ExplodedAnimation::Gap ? "explodedGap"
-                                                          : "explodedChunks";
-      start = exploded->startValue;
-      stop = exploded->stopValue;
+    QString property = animation->type();
+    double from = 0.0;
+    double to = 0.0;
+    if (const auto* animatable = animatablePropertyOf(animation, from, to)) {
+      property = animatable->id;
+      start = from;
+      stop = to;
     } else if (qobject_cast<ScalarOpacityAnimation*>(animation)) {
       property = "curve";
     }
@@ -1706,8 +1601,8 @@ public:
 
   // Select @a node's data source, the node, and @a property in the
   // authoring controls, then the values and the leg. Properties the
-  // controls cannot author (visibility, cut-out, exploded view) select
-  // the visualization and leave the property as it was.
+  // controls cannot author (visibility, hidden labels) select the
+  // visualization and leave the property as it was.
   void showInControls(pipeline::Node* node, const QString& property,
                       std::optional<double> start, std::optional<double> stop,
                       int segment)

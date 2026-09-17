@@ -9,8 +9,10 @@
 #include "pipeline/Pipeline.h"
 #include "pipeline/sinks/ClipSink.h"
 #include "pipeline/sinks/ContourSink.h"
+#include "pipeline/sinks/LabelMapSink.h"
 #include "pipeline/sinks/LegacyModuleSink.h"
 #include "pipeline/sinks/SliceSink.h"
+#include "pipeline/sinks/ThresholdSink.h"
 #include "pipeline/sinks/VolumeSink.h"
 
 #include <vtkPiecewiseFunction.h>
@@ -22,7 +24,9 @@ namespace tomviz {
 
 using pipeline::ClipSink;
 using pipeline::ContourSink;
+using pipeline::LabelMapSink;
 using pipeline::LegacyModuleSink;
+using pipeline::ThresholdSink;
 using pipeline::Pipeline;
 using pipeline::VolumeSink;
 
@@ -111,6 +115,26 @@ ExplodedKey explodedKey(const SinkSnapshot& snapshot)
   key.chunks = snapshot.explodedChunks.value_or(4);
   key.gap = snapshot.explodedGap.value_or(0.25);
   return key;
+}
+
+ThresholdKey thresholdKey(const SinkSnapshot& snapshot)
+{
+  ThresholdKey key;
+  key.lower = snapshot.thresholdLower.value_or(0.0);
+  key.upper = snapshot.thresholdUpper.value_or(1.0);
+  return key;
+}
+
+/// The labels named in @a b but not in @a a, as "3, 5, 10".
+QString labelsOnlyIn(const QVector<double>& b, const QVector<double>& a)
+{
+  QStringList names;
+  for (double value : b) {
+    if (!a.contains(value)) {
+      names.append(QString::number(value));
+    }
+  }
+  return names.join(", ");
 }
 
 PlaneKey planeKey(const SinkSnapshot& snapshot)
@@ -400,6 +424,37 @@ void RecordedPlaneAnimation::applySpan(const AnchorSpan& span)
   }
 }
 
+// --- Threshold range ---
+
+void RecordedThresholdAnimation::applySpan(const AnchorSpan& span)
+{
+  auto* threshold = qobject_cast<ThresholdSink*>(baseNode.data());
+  if (!threshold || m_keys.isEmpty()) {
+    return;
+  }
+  const ThresholdKey& a = m_keys[span.from];
+  const ThresholdKey& b = m_keys[span.to];
+  const double lower = lerp(a.lower, b.lower, span.u);
+  const double upper = lerp(a.upper, b.upper, span.u);
+  if (threshold->lowerThreshold() != lower ||
+      threshold->upperThreshold() != upper) {
+    threshold->setThresholdRange(lower, upper);
+  }
+}
+
+// --- Hidden labels ---
+
+void RecordedLabelsAnimation::applySpan(const AnchorSpan& span)
+{
+  auto* labels = qobject_cast<LabelMapSink*>(baseNode.data());
+  if (!labels || m_keys.isEmpty()) {
+    return;
+  }
+  // Nothing to fade through, so switch halfway along the leg. The sink
+  // compares before changing anything.
+  labels->setHiddenLabels(span.u < 0.5 ? m_keys[span.from] : m_keys[span.to]);
+}
+
 // --- Iso value ---
 
 void RecordedIsoAnimation::applySpan(const AnchorSpan& span)
@@ -616,6 +671,31 @@ void RecordedAnimations::sync(Pipeline* pipeline)
           registry.add(animation);
         }
       }
+      if (sample.thresholdLower) {
+        QMap<int, ThresholdKey> keys;
+        bool differs = false;
+        for (int anchor : anchors) {
+          keys[anchor] = thresholdKey(snapshotAt(anchor, id, sample));
+          differs = differs || !(keys[anchor] == keys[anchors.first()]);
+        }
+        if (differs) {
+          auto* animation = new RecordedThresholdAnimation(sink, keys);
+          animation->excludedSegments = authoredSegments(sink, "threshold");
+          registry.add(animation);
+        }
+      }
+      if (sample.hiddenLabels) {
+        QMap<int, QVector<double>> keys;
+        bool differs = false;
+        for (int anchor : anchors) {
+          keys[anchor] = snapshotAt(anchor, id, sample)
+                           .hiddenLabels.value_or(*sample.hiddenLabels);
+          differs = differs || keys[anchor] != keys[anchors.first()];
+        }
+        if (differs) {
+          registry.add(new RecordedLabelsAnimation(sink, keys));
+        }
+      }
     }
   }
 
@@ -657,12 +737,14 @@ QList<RecordedChange> RecordedAnimations::changes(Pipeline* pipeline) const
       auto* volume = qobject_cast<VolumeSink*>(sink);
       auto row = [&](const QString& property, const QString& description,
                      std::optional<double> start = std::nullopt,
-                     std::optional<double> stop = std::nullopt) {
+                     std::optional<double> stop = std::nullopt,
+                     const QString& controlProperty = QString()) {
         if (stretchIsAuthored(authoredSegments(sink, authoredTypeFor(property)),
                               from, to)) {
           return;
         }
-        rows.append({ id, property, from, to, description, start, stop });
+        rows.append({ id, property, controlProperty, from, to, description,
+                      start, stop });
       };
 
       const Family family = familyOf(sink, sample);
@@ -692,21 +774,50 @@ QList<RecordedChange> RecordedAnimations::changes(Pipeline* pipeline) const
         const auto ka = cutOutKey(a);
         const auto kb = cutOutKey(b);
         if (!(ka == kb)) {
-          row("cutOut", ka.enabled != kb.enabled
-                          ? (kb.enabled ? "cut-out on" : "cut-out off")
-                          : "cut-out moves");
+          // A move along one axis is something the controls can show
+          int moved = -1;
+          int movedCount = 0;
+          for (int axis = 0; axis < 3; ++axis) {
+            if (ka.position[axis] != kb.position[axis]) {
+              moved = axis;
+              ++movedCount;
+            }
+          }
+          if (ka.enabled != kb.enabled) {
+            row("cutOut", kb.enabled ? "cut-out on" : "cut-out off");
+          } else if (movedCount == 1 && ka.corner == kb.corner) {
+            row("cutOut",
+                QString("cut-out %1 %2 to %3")
+                  .arg(QChar('X' + moved))
+                  .arg(number(ka.position[moved]))
+                  .arg(number(kb.position[moved])),
+                ka.position[moved], kb.position[moved],
+                QString("cutOut") + QChar('X' + moved));
+          } else {
+            row("cutOut", "cut-out moves");
+          }
         }
       }
       if (volume && sample.explodedEnabled) {
         const auto ka = explodedKey(a);
         const auto kb = explodedKey(b);
         if (!(ka == kb)) {
-          row("exploded",
-              ka.enabled != kb.enabled
-                ? (kb.enabled ? "exploded view on" : "exploded view off")
-              : ka.gap != kb.gap ? "exploded gap " + number(ka.gap) + " to " +
-                                     number(kb.gap)
-                                 : "exploded view changes");
+          if (ka.enabled != kb.enabled) {
+            row("exploded",
+                kb.enabled ? "exploded view on" : "exploded view off");
+          } else if (ka.axis == kb.axis && ka.chunks == kb.chunks) {
+            row("exploded",
+                "exploded gap " + number(ka.gap) + " to " + number(kb.gap),
+                ka.gap, kb.gap, "explodedGap");
+          } else if (ka.axis == kb.axis && ka.gap == kb.gap) {
+            row("exploded",
+                QString("exploded chunks %1 to %2")
+                  .arg(ka.chunks)
+                  .arg(kb.chunks),
+                ka.chunks, kb.chunks, "explodedChunks");
+          } else {
+            row("exploded", "exploded view changes");
+          }
         }
       }
       if (sample.planeDirection) {
@@ -732,6 +843,42 @@ QList<RecordedChange> RecordedAnimations::changes(Pipeline* pipeline) const
         if (start != stop) {
           row("iso", "iso value " + number(start) + " to " + number(stop),
               start, stop);
+        }
+      }
+      if (sample.thresholdLower) {
+        const auto ka = thresholdKey(a);
+        const auto kb = thresholdKey(b);
+        if (!(ka == kb)) {
+          if (ka.upper == kb.upper) {
+            row("threshold",
+                "lower threshold " + number(ka.lower) + " to " +
+                  number(kb.lower),
+                ka.lower, kb.lower, "thresholdLower");
+          } else if (ka.lower == kb.lower) {
+            row("threshold",
+                "upper threshold " + number(ka.upper) + " to " +
+                  number(kb.upper),
+                ka.upper, kb.upper, "thresholdUpper");
+          } else {
+            row("threshold", "threshold range changes");
+          }
+        }
+      }
+      if (sample.hiddenLabels) {
+        const auto la = a.hiddenLabels.value_or(*sample.hiddenLabels);
+        const auto lb = b.hiddenLabels.value_or(*sample.hiddenLabels);
+        if (la != lb) {
+          const QString hidden = labelsOnlyIn(lb, la);
+          const QString shown = labelsOnlyIn(la, lb);
+          QString description;
+          if (!hidden.isEmpty()) {
+            description = "labels " + hidden + " hidden";
+          }
+          if (!shown.isEmpty()) {
+            description += (description.isEmpty() ? "labels " : ", ") +
+                           shown + " shown";
+          }
+          row("labels", description);
         }
       }
     }
@@ -793,6 +940,11 @@ void RecordedAnimations::remove(const RecordedChange& change,
     later.planeNormal = earlier.planeNormal;
   } else if (change.property == "iso") {
     later.isoValue = earlier.isoValue;
+  } else if (change.property == "threshold") {
+    later.thresholdLower = earlier.thresholdLower;
+    later.thresholdUpper = earlier.thresholdUpper;
+  } else if (change.property == "labels") {
+    later.hiddenLabels = earlier.hiddenLabels;
   } else {
     return;
   }

@@ -4,6 +4,7 @@
 #include "SliceSink.h"
 
 #include "ActiveObjects.h"
+#include "ClipSink.h"
 #include "DoubleSliderWidget.h"
 #include "IntSliderWidget.h"
 #include "Node.h"
@@ -707,6 +708,44 @@ void SliceSink::planeNormal(double xyz[3]) const
     xyz[1] = m_planeNormal[1];
     xyz[2] = m_planeNormal[2];
   }
+}
+
+double SliceSink::planeDistance() const
+{
+  double n[3], c[3];
+  planeNormal(n);
+  planeCenter(c);
+  double length = std::sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
+  if (length == 0.0) {
+    return 0.0;
+  }
+  double distance = 0.0;
+  for (int i = 0; i < 3; ++i) {
+    double mid = (m_bounds[2 * i] + m_bounds[2 * i + 1]) / 2.0;
+    distance += (c[i] - mid) * n[i] / length;
+  }
+  return distance;
+}
+
+void SliceSink::setPlaneDistance(double distance)
+{
+  double n[3];
+  planeNormal(n);
+  double length = std::sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
+  if (length == 0.0) {
+    return;
+  }
+  setPlaneCenter((m_bounds[0] + m_bounds[1]) / 2.0 + distance * n[0] / length,
+                 (m_bounds[2] + m_bounds[3]) / 2.0 + distance * n[1] / length,
+                 (m_bounds[4] + m_bounds[5]) / 2.0 + distance * n[2] / length);
+}
+
+void SliceSink::planeDistanceRange(double& minDistance,
+                                   double& maxDistance) const
+{
+  double n[3];
+  planeNormal(n);
+  planeTravelRange(m_bounds, n, minDistance, maxDistance);
 }
 
 QWidget* SliceSink::createSinkPropertiesWidget(QWidget* parent)

@@ -10,8 +10,11 @@
 #include "pipeline/data/VolumeData.h"
 #include "pipeline/sinks/ClipSink.h"
 #include "pipeline/sinks/ContourSink.h"
+#include "pipeline/sinks/LabelMapSink.h"
 #include "pipeline/sinks/LegacyModuleSink.h"
+#include "pipeline/sinks/SegmentSink.h"
 #include "pipeline/sinks/SliceSink.h"
+#include "pipeline/sinks/ThresholdSink.h"
 #include "pipeline/sinks/VolumeSink.h"
 
 #include <vtkNew.h>
@@ -27,9 +30,12 @@ namespace tomviz {
 
 using pipeline::ClipSink;
 using pipeline::ContourSink;
+using pipeline::LabelMapSink;
 using pipeline::LegacyModuleSink;
 using pipeline::Pipeline;
+using pipeline::SegmentSink;
 using pipeline::SliceSink;
+using pipeline::ThresholdSink;
 using pipeline::VolumeSink;
 
 namespace {
@@ -43,6 +49,14 @@ std::optional<double> flatOpacity(LegacyModuleSink* sink)
     return slice->opacity();
   } else if (auto* clip = qobject_cast<ClipSink*>(sink)) {
     return clip->opacity();
+  } else if (auto* threshold = qobject_cast<ThresholdSink*>(sink)) {
+    return threshold->opacity();
+  } else if (auto* segment = qobject_cast<SegmentSink*>(sink)) {
+    return segment->opacity();
+  } else if (auto* labels = qobject_cast<LabelMapSink*>(sink)) {
+    // A label map's volume representation has no flat opacity; the
+    // surface one is what fades
+    return labels->surfaceOpacity();
   }
   return std::nullopt;
 }
@@ -55,6 +69,12 @@ void setFlatOpacity(LegacyModuleSink* sink, double value)
     slice->setOpacity(value);
   } else if (auto* clip = qobject_cast<ClipSink*>(sink)) {
     clip->setOpacity(value);
+  } else if (auto* threshold = qobject_cast<ThresholdSink*>(sink)) {
+    threshold->setOpacity(value);
+  } else if (auto* segment = qobject_cast<SegmentSink*>(sink)) {
+    segment->setOpacity(value);
+  } else if (auto* labels = qobject_cast<LabelMapSink*>(sink)) {
+    labels->setSurfaceOpacity(value);
   }
 }
 
@@ -150,6 +170,12 @@ SinkSnapshot SinkSnapshot::capture(LegacyModuleSink* sink)
     snapshot.planeNormal = { { normal[0], normal[1], normal[2] } };
   } else if (auto* contour = qobject_cast<ContourSink*>(sink)) {
     snapshot.isoValue = contour->isoValue();
+  } else if (auto* threshold = qobject_cast<ThresholdSink*>(sink)) {
+    snapshot.thresholdLower = threshold->lowerThreshold();
+    snapshot.thresholdUpper = threshold->upperThreshold();
+  }
+  if (auto* labels = qobject_cast<LabelMapSink*>(sink)) {
+    snapshot.hiddenLabels = labels->hiddenLabels();
   }
   return snapshot;
 }
@@ -222,6 +248,17 @@ QJsonObject SinkSnapshot::serialize() const
   if (isoValue) {
     json["iso"] = *isoValue;
   }
+  if (thresholdLower && thresholdUpper) {
+    json["threshold"] =
+      QJsonObject{ { "lower", *thresholdLower }, { "upper", *thresholdUpper } };
+  }
+  if (hiddenLabels) {
+    QJsonArray labels;
+    for (double value : *hiddenLabels) {
+      labels.append(value);
+    }
+    json["hiddenLabels"] = labels;
+  }
   return json;
 }
 
@@ -259,6 +296,18 @@ SinkSnapshot SinkSnapshot::deserialize(const QJsonObject& json)
   }
   if (json.contains("iso")) {
     snapshot.isoValue = json["iso"].toDouble();
+  }
+  if (json.contains("threshold")) {
+    auto threshold = json["threshold"].toObject();
+    snapshot.thresholdLower = threshold["lower"].toDouble();
+    snapshot.thresholdUpper = threshold["upper"].toDouble();
+  }
+  if (json.contains("hiddenLabels")) {
+    QVector<double> labels;
+    for (const auto& value : json["hiddenLabels"].toArray()) {
+      labels.append(value.toDouble());
+    }
+    snapshot.hiddenLabels = labels;
   }
   if (json.contains("cutOut")) {
     auto cutOut = json["cutOut"].toObject();
@@ -354,6 +403,20 @@ void SceneSnapshot::apply(Pipeline* pipeline, const QSet<int>* known) const
         if (contour->isoValue() != *snapshot.isoValue) {
           contour->setIsoValue(*snapshot.isoValue);
         }
+      }
+    }
+    if (snapshot.thresholdLower && snapshot.thresholdUpper) {
+      if (auto* threshold = qobject_cast<ThresholdSink*>(sink)) {
+        if (threshold->lowerThreshold() != *snapshot.thresholdLower ||
+            threshold->upperThreshold() != *snapshot.thresholdUpper) {
+          threshold->setThresholdRange(*snapshot.thresholdLower,
+                                       *snapshot.thresholdUpper);
+        }
+      }
+    }
+    if (snapshot.hiddenLabels) {
+      if (auto* labels = qobject_cast<LabelMapSink*>(sink)) {
+        labels->setHiddenLabels(*snapshot.hiddenLabels);
       }
     }
     if (sink->visibility() != snapshot.visible) {
