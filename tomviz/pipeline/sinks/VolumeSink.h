@@ -188,7 +188,9 @@ public:
   /// axis, pulled apart by a gap, without touching the data. Mutually
   /// exclusive with the cut-out, and unsupported on bricked volumes.
   bool explodedEnabled() const;
-  void setExplodedEnabled(bool enabled);
+  /// Animations pass @a refitCamera false: they run while a camera path
+  /// may own the camera, and a refit mid-flight would yank it.
+  void setExplodedEnabled(bool enabled, bool refitCamera = true);
   int explodedAxis() const;
   void setExplodedAxis(int axis);
   int explodedChunks() const;

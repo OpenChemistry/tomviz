@@ -62,7 +62,8 @@ def _renumbered(array):
     import numpy as np
 
     largest = int(array.max()) if array.size else 0
-    if largest < 2**24:
+    smallest = int(array.min()) if array.size else 0
+    if smallest >= 0 and largest < 2**24:
         # A lookup table is far cheaper than sorting the volume
         present = np.bincount(array.ravel(), minlength=largest + 1) > 0
         present[0] = False

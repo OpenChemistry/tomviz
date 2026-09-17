@@ -56,6 +56,8 @@ public:
              { "unit", unit == Gap ? "gap" : "chunks" } };
   }
 
+  void onPlaybackStarted() override { m_switchedOn = false; }
+
   void onTimeChanged() override
   {
     if (!timeKeeper() || !sink()) {
@@ -68,11 +70,17 @@ public:
     } else {
       sink()->setExplodedChunks(qRound(value));
     }
-    // A no-op once it is on, so the camera is refit at most once.
-    if (!sink()->explodedEnabled()) {
-      sink()->setExplodedEnabled(true);
+    // Once per playback: a volume that cannot be exploded (rendered in
+    // bricks) refuses with a warning, which need not repeat every tick.
+    // No camera refit, since a camera path may be flying.
+    if (!m_switchedOn && !sink()->explodedEnabled()) {
+      sink()->setExplodedEnabled(true, /*refitCamera=*/false);
     }
+    m_switchedOn = true;
   }
+
+private:
+  bool m_switchedOn = false;
 };
 
 } // namespace tomviz

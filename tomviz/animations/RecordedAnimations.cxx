@@ -383,7 +383,7 @@ void RecordedExplodedAnimation::applySpan(const AnchorSpan& span)
   volume->setExplodedAxis(side.axis);
   volume->setExplodedChunks(side.chunks);
   volume->setExplodedGap(lerp(a.gap, b.gap, span.u));
-  volume->setExplodedEnabled(side.enabled);
+  volume->setExplodedEnabled(side.enabled, /*refitCamera=*/false);
 }
 
 // --- Slice and clip planes ---

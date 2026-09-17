@@ -1735,9 +1735,9 @@ bool VolumeSink::explodedEnabled() const
   return m_explodedEnabled;
 }
 
-void VolumeSink::setExplodedEnabled(bool enabled)
+void VolumeSink::setExplodedEnabled(bool enabled, bool refitCamera)
 {
-  setExplodedEnabledInternal(enabled, /*refitCamera=*/true);
+  setExplodedEnabledInternal(enabled, refitCamera);
 }
 
 void VolumeSink::setExplodedEnabledInternal(bool enabled, bool refitCamera)

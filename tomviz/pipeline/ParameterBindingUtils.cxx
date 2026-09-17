@@ -161,7 +161,15 @@ void wireThresholdSinkBinding(DoubleSliderWidget* slider, ThresholdSink* sink,
 void wireLabelMapSinkBinding(LabelSelectionWidget* selection,
                              LabelMapSink* sink)
 {
-  selection->setSelectedLabels(sink->hiddenLabels());
+  // The visualization is what the user has been looking at, so it seeds
+  // the ticks; unless it hides nothing and the operator already has a
+  // selection, in which case the visualization shows that selection.
+  const auto hidden = sink->hiddenLabels();
+  if (hidden.isEmpty() && !selection->selectedLabels().isEmpty()) {
+    sink->setHiddenLabels(selection->selectedLabels());
+  } else {
+    selection->setSelectedLabels(hidden);
+  }
 
   QPointer<LabelMapSink> sinkPtr(sink);
   QObject::connect(sink, &LabelMapSink::labelVisibilityChanged, selection,

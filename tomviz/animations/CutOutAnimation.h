@@ -49,6 +49,8 @@ public:
     return { { "start", startValue }, { "stop", stopValue }, { "axis", axis } };
   }
 
+  void onPlaybackStarted() override { m_switchedOn = false; }
+
   void onTimeChanged() override
   {
     if (!timeKeeper() || !sink()) {
@@ -57,11 +59,16 @@ public:
 
     double value = (stopValue - startValue) * progress() + startValue;
     sink()->setCutOutPosition(axis, value);
-    // A no-op once it is on
-    if (!sink()->cutOutEnabled()) {
+    // Once per playback, so a volume that cannot be cut (rendered in
+    // bricks) does not warn on every tick
+    if (!m_switchedOn && !sink()->cutOutEnabled()) {
       sink()->setCutOutEnabled(true);
     }
+    m_switchedOn = true;
   }
+
+private:
+  bool m_switchedOn = false;
 };
 
 } // namespace tomviz

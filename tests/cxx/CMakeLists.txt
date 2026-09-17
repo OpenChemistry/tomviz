@@ -74,9 +74,14 @@ add_cxx_qtest(SegmentationColorMap)
 add_cxx_qtest(ImageViewerMode)
 add_cxx_qtest(MultiVolume)
 add_cxx_qtest(PtychoWorkflow PYTHONPATH ${_pythonpath})
-set_tests_properties(PtychoWorkflow PROPERTIES TIMEOUT 1800)
+# initTestCase downloads the test data; QtTest aborts any test function
+# after five minutes unless told otherwise, and a slow mirror can take
+# longer than that.
+set_tests_properties(PtychoWorkflow PROPERTIES TIMEOUT 1800
+  ENVIRONMENT "QTEST_FUNCTION_TIMEOUT=1800000")
 add_cxx_qtest(PyXRFWorkflow PYTHONPATH ${_pythonpath})
-set_tests_properties(PyXRFWorkflow PROPERTIES TIMEOUT 1800)
+set_tests_properties(PyXRFWorkflow PROPERTIES TIMEOUT 1800
+  ENVIRONMENT "QTEST_FUNCTION_TIMEOUT=1800000")
 
 # Generate the executable
 create_test_executable(tomvizTests)
