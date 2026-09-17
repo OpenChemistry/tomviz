@@ -25,6 +25,30 @@ TEST(ExplodedGeometryTest, AxesAreUnitVectorsAndCustomIsNormalized)
             (std::array<double, 3>{ 0, 0, 1 }));
 }
 
+TEST(ExplodedGeometryTest, OffsetIsInVoxelsAndKeepsEverySlabAVoxelThick)
+{
+  using tomviz::pipeline::explodedOffsetLimit;
+  using tomviz::pipeline::explodedShift;
+  using tomviz::pipeline::explodedVoxelStep;
+
+  const double spacing[3] = { 1.0, 2.0, 4.0 };
+  EXPECT_DOUBLE_EQ(explodedVoxelStep({ 1, 0, 0 }, spacing), 1.0);
+  EXPECT_DOUBLE_EQ(explodedVoxelStep({ 0, 0, 1 }, spacing), 4.0);
+  const double s = 1.0 / std::sqrt(2.0);
+  EXPECT_NEAR(explodedVoxelStep({ s, s, 0 }, spacing),
+              std::sqrt(0.5 + 2.0), 1e-12);
+
+  // 100 long, 4 slabs of 25, voxels of 2: 24 voxels of room per slab
+  // minus the one that must stay, so 11
+  EXPECT_EQ(explodedOffsetLimit(100.0, 4, 2.0), 11);
+  EXPECT_EQ(explodedOffsetLimit(100.0, 4, 30.0), 0);
+  EXPECT_EQ(explodedOffsetLimit(100.0, 4, 0.0), 0);
+  EXPECT_DOUBLE_EQ(explodedShift(3, 100.0, 4, 2.0), 6.0);
+  EXPECT_DOUBLE_EQ(explodedShift(-3, 100.0, 4, 2.0), -6.0);
+  EXPECT_DOUBLE_EQ(explodedShift(50, 100.0, 4, 2.0), 22.0);
+  EXPECT_DOUBLE_EQ(explodedShift(-50, 100.0, 4, 2.0), -22.0);
+}
+
 TEST(ExplodedGeometryTest, ExtentMatchesTheBoxAlongAnAxisAndItsDiagonal)
 {
   const double bounds[6] = { 0.0, 10.0, -5.0, 5.0, 2.0, 6.0 };

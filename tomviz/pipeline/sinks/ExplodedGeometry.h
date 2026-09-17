@@ -27,6 +27,20 @@ std::array<double, 3> explodedDirection(int axis,
 void explodedExtent(const double bounds[6], const std::array<double, 3>& dir,
                     double& lo, double& length);
 
+/// The length of one voxel along @a dir: the spacing on an axis, and
+/// otherwise the length of the spacing scaled component-wise by the unit
+/// direction, which is what one voxel step measures along it.
+double explodedVoxelStep(const std::array<double, 3>& dir,
+                         const double spacing[3]);
+
+/// The largest offset, in voxels, that leaves every slab at least one
+/// voxel thick: the slab width minus one voxel. Never negative.
+int explodedOffsetLimit(double length, int chunks, double step);
+
+/// The shift of the cut planes in data units for an offset of
+/// @a voxels, clamped to +/- the limit above.
+double explodedShift(int voxels, double length, int chunks, double step);
+
 } // namespace pipeline
 } // namespace tomviz
 

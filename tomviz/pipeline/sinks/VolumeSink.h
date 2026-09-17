@@ -212,6 +212,14 @@ public:
   /// Gap between slabs as a fraction (0-1) of the axis length.
   double explodedGap() const;
   void setExplodedGap(double fraction);
+  /// Shift of every cut plane along the direction, in voxels, so the
+  /// gaps can be placed where they are wanted; the volume's own two
+  /// faces stay put. Signed. Clamped when used so no slab is thinner
+  /// than a voxel; explodedOffsetLimit() is that bound for the current
+  /// data and slab count (0 without data).
+  int explodedOffset() const;
+  void setExplodedOffset(int voxels);
+  int explodedOffsetLimit() const;
 
   /// Volumes sharing a view are rendered together from the second one on
   /// (see MultiVolumeCoordinator). While that is on for this sink, its own
@@ -366,6 +374,7 @@ private:
   bool m_explodedShowArrow = true;
   int m_explodedChunks = 4;
   double m_explodedGap = 0.25;
+  int m_explodedOffset = 0;
   std::vector<vtkSmartPointer<vtkVolume>> m_explodedVolumes;
   std::vector<vtkSmartPointer<SmartVolumeMapper>> m_explodedMappers;
   // One (lower, upper) pair per slab, slab 0 first, used only while the

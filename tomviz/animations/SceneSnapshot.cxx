@@ -153,6 +153,7 @@ SinkSnapshot SinkSnapshot::capture(LegacyModuleSink* sink)
     snapshot.explodedDirection = volume->explodedDirection();
     snapshot.explodedChunks = volume->explodedChunks();
     snapshot.explodedGap = volume->explodedGap();
+    snapshot.explodedOffset = volume->explodedOffset();
   }
   double center[3], normal[3];
   if (auto* slice = qobject_cast<SliceSink*>(sink)) {
@@ -238,6 +239,7 @@ QJsonObject SinkSnapshot::serialize() const
     }
     exploded["chunks"] = explodedChunks.value_or(4);
     exploded["gap"] = explodedGap.value_or(0.25);
+    exploded["offset"] = explodedOffset.value_or(0);
     json["exploded"] = exploded;
   }
   if (planeDirection) {
@@ -291,6 +293,7 @@ SinkSnapshot SinkSnapshot::deserialize(const QJsonObject& json)
     }
     snapshot.explodedChunks = exploded["chunks"].toInt(4);
     snapshot.explodedGap = exploded["gap"].toDouble(0.25);
+    snapshot.explodedOffset = exploded["offset"].toInt(0);
   }
   if (json.contains("plane")) {
     auto plane = json["plane"].toObject();
@@ -405,6 +408,7 @@ void SceneSnapshot::apply(Pipeline* pipeline, const QSet<int>* known) const
         volume->setExplodedAxis(snapshot.explodedAxis.value_or(2));
         volume->setExplodedChunks(snapshot.explodedChunks.value_or(4));
         volume->setExplodedGap(snapshot.explodedGap.value_or(0.25));
+        volume->setExplodedOffset(snapshot.explodedOffset.value_or(0));
         volume->setExplodedEnabled(*snapshot.explodedEnabled);
       }
     }

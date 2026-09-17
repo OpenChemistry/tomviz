@@ -111,13 +111,14 @@ struct ExplodedKey
   std::array<double, 3> direction = { 1.0, 1.0, 1.0 };
   int chunks = 4;
   double gap = 0.25;
+  int offset = 0;
   bool operator==(const ExplodedKey& o) const
   {
     // The direction only shows while the axis is custom
     return enabled == o.enabled && axis == o.axis &&
            (axis != pipeline::kExplodedCustomAxis ||
             direction == o.direction) &&
-           chunks == o.chunks && gap == o.gap;
+           chunks == o.chunks && gap == o.gap && offset == o.offset;
   }
 };
 

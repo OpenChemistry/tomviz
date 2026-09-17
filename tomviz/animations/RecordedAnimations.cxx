@@ -116,6 +116,7 @@ ExplodedKey explodedKey(const SinkSnapshot& snapshot)
     std::array<double, 3>{ 1.0, 1.0, 1.0 });
   key.chunks = snapshot.explodedChunks.value_or(4);
   key.gap = snapshot.explodedGap.value_or(0.25);
+  key.offset = snapshot.explodedOffset.value_or(0);
   return key;
 }
 
@@ -387,6 +388,8 @@ void RecordedExplodedAnimation::applySpan(const AnchorSpan& span)
   volume->setExplodedAxis(side.axis);
   volume->setExplodedChunks(side.chunks);
   volume->setExplodedGap(lerp(a.gap, b.gap, span.u));
+  volume->setExplodedOffset(
+    static_cast<int>(std::lround(lerp(a.offset, b.offset, span.u))));
   volume->setExplodedEnabled(side.enabled, /*refitCamera=*/false);
 }
 
@@ -810,17 +813,24 @@ QList<RecordedChange> RecordedAnimations::changes(Pipeline* pipeline) const
             row("exploded",
                 kb.enabled ? "exploded view on" : "exploded view off");
           } else if (ka.axis == kb.axis && ka.direction == kb.direction &&
-                     ka.chunks == kb.chunks) {
+                     ka.chunks == kb.chunks && ka.offset == kb.offset) {
             row("exploded",
                 "exploded gap " + number(ka.gap) + " to " + number(kb.gap),
                 ka.gap, kb.gap, "explodedGap");
           } else if (ka.axis == kb.axis && ka.direction == kb.direction &&
-                     ka.gap == kb.gap) {
+                     ka.gap == kb.gap && ka.offset == kb.offset) {
             row("exploded",
                 QString("exploded chunks %1 to %2")
                   .arg(ka.chunks)
                   .arg(kb.chunks),
                 ka.chunks, kb.chunks, "explodedChunks");
+          } else if (ka.axis == kb.axis && ka.direction == kb.direction &&
+                     ka.gap == kb.gap && ka.chunks == kb.chunks) {
+            row("exploded",
+                QString("exploded offset %1 to %2 voxels")
+                  .arg(ka.offset)
+                  .arg(kb.offset),
+                ka.offset, kb.offset, "explodedOffset");
           } else {
             row("exploded", "exploded view changes");
           }
@@ -940,6 +950,7 @@ void RecordedAnimations::remove(const RecordedChange& change,
     later.explodedDirection = earlier.explodedDirection;
     later.explodedChunks = earlier.explodedChunks;
     later.explodedGap = earlier.explodedGap;
+    later.explodedOffset = earlier.explodedOffset;
   } else if (change.property == "slice" || change.property == "clip") {
     later.planeDirection = earlier.planeDirection;
     later.sliceIndex = earlier.sliceIndex;

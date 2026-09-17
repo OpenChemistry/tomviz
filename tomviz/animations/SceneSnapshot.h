@@ -44,6 +44,7 @@ struct SinkSnapshot
   std::optional<std::array<double, 3>> explodedDirection;
   std::optional<int> explodedChunks;
   std::optional<double> explodedGap;
+  std::optional<int> explodedOffset;
   /// Slice and clip planes: the direction (0..2 axis aligned, 3 custom),
   /// the slice index while axis aligned, and the plane while custom.
   std::optional<int> planeDirection;

@@ -3,6 +3,7 @@
 
 #include "ExplodedGeometry.h"
 
+#include <algorithm>
 #include <cmath>
 
 namespace tomviz {
@@ -37,6 +38,32 @@ void explodedExtent(const double bounds[6], const std::array<double, 3>& dir,
   }
   lo = -half;
   length = 2.0 * half;
+}
+
+double explodedVoxelStep(const std::array<double, 3>& dir,
+                         const double spacing[3])
+{
+  double step = 0.0;
+  for (int a = 0; a < 3; ++a) {
+    step += dir[a] * spacing[a] * dir[a] * spacing[a];
+  }
+  return std::sqrt(step);
+}
+
+int explodedOffsetLimit(double length, int chunks, double step)
+{
+  if (chunks < 1 || step <= 0.0) {
+    return 0;
+  }
+  const double width = length / chunks;
+  return std::max(0, static_cast<int>(std::floor((width - step) / step)));
+}
+
+double explodedShift(int voxels, double length, int chunks, double step)
+{
+  const int limit = explodedOffsetLimit(length, chunks, step);
+  const int clamped = std::max(-limit, std::min(limit, voxels));
+  return clamped * step;
 }
 
 } // namespace pipeline

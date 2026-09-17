@@ -88,9 +88,10 @@ ModuleAnimation* buildAnimation(const QString& type, pipeline::Node* node,
     }
   } else if (type == "exploded") {
     if (auto* sink = qobject_cast<pipeline::VolumeSink*>(node)) {
-      auto unit = json["unit"].toString() == "chunks"
-                    ? ExplodedAnimation::Chunks
-                    : ExplodedAnimation::Gap;
+      const QString name = json["unit"].toString();
+      auto unit = name == "chunks"   ? ExplodedAnimation::Chunks
+                  : name == "offset" ? ExplodedAnimation::Offset
+                                     : ExplodedAnimation::Gap;
       return new ExplodedAnimation(sink, start, stop, unit);
     }
   } else if (type == "cutOut") {

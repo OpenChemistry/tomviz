@@ -27,6 +27,8 @@
 #include <QStyleOptionGroupBox>
 #include <QStylePainter>
 #include <QJsonArray>
+#include <QEvent>
+#include <QKeyEvent>
 #include <QInputDialog>
 #include <QLineEdit>
 #include <QMessageBox>
@@ -418,6 +420,22 @@ public:
   }
 
 protected:
+  // Enter in one of the group's spin boxes commits the value and is then
+  // passed up the widget tree, and QGroupBox::event() takes it as a click
+  // on the check box, switching the whole feature off. It has to be
+  // stopped in event(): the key handlers run after that.
+  bool event(QEvent* e) override
+  {
+    if (e->type() == QEvent::KeyPress || e->type() == QEvent::KeyRelease) {
+      const int key = static_cast<QKeyEvent*>(e)->key();
+      if (key == Qt::Key_Return || key == Qt::Key_Enter) {
+        e->accept();
+        return true;
+      }
+    }
+    return QGroupBox::event(e);
+  }
+
   void paintEvent(QPaintEvent* event) override
   {
     if (!m_collapsed) {
@@ -2028,6 +2046,39 @@ void VolumeSink::setExplodedGap(double fraction)
   emit renderNeeded();
 }
 
+int VolumeSink::explodedOffset() const
+{
+  return m_explodedOffset;
+}
+
+void VolumeSink::setExplodedOffset(int voxels)
+{
+  if (m_explodedOffset == voxels) {
+    return;
+  }
+  m_explodedOffset = voxels;
+  applyExploded();
+  emit explodedChanged();
+  emit renderNeeded();
+}
+
+int VolumeSink::explodedOffsetLimit() const
+{
+  auto vol = volumeData();
+  if (!vol || !vol->isValid()) {
+    return 0;
+  }
+  double bounds[6];
+  vol->imageData()->GetBounds(bounds);
+  const auto dir = explodedUnitDirection();
+  double lo = 0.0;
+  double length = 0.0;
+  explodedExtent(bounds, dir, lo, length);
+  return pipeline::explodedOffsetLimit(
+    length, m_explodedChunks,
+    explodedVoxelStep(dir, vol->imageData()->GetSpacing()));
+}
+
 void VolumeSink::teardownExplodedSlabs()
 {
   // Slab 0's planes would otherwise keep cutting the whole volume
@@ -2120,6 +2171,11 @@ void VolumeSink::applyExploded()
   const int axis = custom ? 0 : m_explodedAxis;
   const double lo = bounds[2 * axis];
   const double length = bounds[2 * axis + 1] - lo;
+  // The cut planes all move by the offset; the volume's own faces do not
+  const double shift =
+    custom ? 0.0
+           : explodedShift(m_explodedOffset, length, chunks,
+                           image->GetSpacing()[axis]);
   auto mappers = allMappers();
   for (int k = 0; k < chunks; ++k) {
     auto* mapper = mappers[k];
@@ -2141,8 +2197,9 @@ void VolumeSink::applyExploded()
       planes[2 * a] = bounds[2 * a];
       planes[2 * a + 1] = bounds[2 * a + 1];
     }
-    planes[2 * axis] = lo + length * k / chunks;
-    planes[2 * axis + 1] = lo + length * (k + 1) / chunks;
+    planes[2 * axis] = k == 0 ? lo : lo + shift + length * k / chunks;
+    planes[2 * axis + 1] =
+      k == chunks - 1 ? lo + length : lo + shift + length * (k + 1) / chunks;
     mapper->SetCroppingState(1, planes, VTK_CROP_SUBVOLUME);
   }
   syncExplodedSlabPlanes(custom);
@@ -2183,6 +2240,9 @@ void VolumeSink::applyDisplayTransform()
                              (bounds[2] + bounds[3]) / 2.0,
                              (bounds[4] + bounds[5]) / 2.0 };
   const int chunks = static_cast<int>(m_explodedVolumes.size()) + 1;
+  const double shift = explodedShift(
+    m_explodedOffset, length, chunks,
+    explodedVoxelStep(dir, vol->imageData()->GetSpacing()));
   auto volumes = allVolumes();
   for (int k = 0; k < chunks; ++k) {
     double offset[3] = { dir[0] * k * m_explodedGap * length,
@@ -2205,7 +2265,11 @@ void VolumeSink::applyDisplayTransform()
     double normal[3] = { dir[0], dir[1], dir[2] };
     rotation->TransformVector(normal, normal);
     for (int side = 0; side < 2; ++side) {
-      const double d = lo + length * (k + side) / chunks;
+      // Every cut plane moves by the offset; the volume's own two faces
+      // (below slab 0, above the last) stay where they are
+      const bool face = (k == 0 && side == 0) || (k == chunks - 1 && side == 1);
+      const double d =
+        lo + length * (k + side) / chunks + (face ? 0.0 : shift);
       double origin[3] = { center[0] + dir[0] * d, center[1] + dir[1] * d,
                            center[2] + dir[2] * d };
       rotation->TransformVector(origin, origin);
@@ -2679,12 +2743,24 @@ QWidget* VolumeSink::createSinkPropertiesWidget(QWidget* parent)
   connect(gapSlider, &DoubleSliderWidget::valueChanged, this,
           [this](double v) { setExplodedGap(v); });
 
+  auto* offsetSpin = new QSpinBox(explodedBody);
+  offsetSpin->setSuffix(" voxels");
+  offsetSpin->setKeyboardTracking(false);
+  offsetSpin->setToolTip(
+    "Slide every cut along the direction by this many voxels, to put the "
+    "gaps where you want them. The first slab grows by the offset and the "
+    "last shrinks (or the other way round for a negative offset); the "
+    "range keeps every slab at least one voxel thick.");
+  explodedForm->addRow("Offset", offsetSpin);
+  connect(offsetSpin, QOverload<int>::of(&QSpinBox::valueChanged), this,
+          [this](int v) { setExplodedOffset(v); });
+
   auto syncExploded = [this, explodedBox, explodedBody, explodedForm,
                        axisCombo, directionSpins, directionRowIndex,
                        arrowCheck, arrowRowIndex, chunksSpin, gapSlider,
-                       collapseUnless]() {
+                       offsetSpin, collapseUnless]() {
     QSignalBlocker b1(explodedBox), b2(axisCombo), b3(chunksSpin),
-      b4(gapSlider), b5(arrowCheck);
+      b4(gapSlider), b5(arrowCheck), b6(offsetSpin);
     explodedBox->setChecked(explodedEnabled());
     collapseUnless(explodedBox, explodedBody, explodedEnabled());
     axisCombo->setCurrentIndex(explodedAxis());
@@ -2699,6 +2775,11 @@ QWidget* VolumeSink::createSinkPropertiesWidget(QWidget* parent)
     arrowCheck->setChecked(explodedShowArrow());
     chunksSpin->setValue(explodedChunks());
     gapSlider->setValue(explodedGap());
+    // The bound follows the data and the slab count; the stored value
+    // is shown clamped, as it is used
+    const int limit = explodedOffsetLimit();
+    offsetSpin->setRange(-limit, limit);
+    offsetSpin->setValue(qBound(-limit, explodedOffset(), limit));
   };
   syncExploded();
   connect(this, &VolumeSink::explodedChanged, widget,
@@ -2952,6 +3033,7 @@ QJsonObject VolumeSink::serialize() const
   exploded["showArrow"] = m_explodedShowArrow;
   exploded["chunks"] = m_explodedChunks;
   exploded["gap"] = m_explodedGap;
+  exploded["offset"] = m_explodedOffset;
   json["exploded"] = exploded;
 
   QJsonObject light;
@@ -3004,6 +3086,7 @@ bool VolumeSink::deserialize(const QJsonObject& json)
     m_explodedShowArrow = exploded["showArrow"].toBool(true);
     m_explodedChunks = qBound(2, exploded["chunks"].toInt(4), 16);
     m_explodedGap = qBound(0.0, exploded["gap"].toDouble(0.25), 1.0);
+    m_explodedOffset = exploded["offset"].toInt(0);
     m_explodedEnabled = exploded["enabled"].toBool();
     if (m_explodedEnabled) {
       m_cutOutEnabled = false;

@@ -201,28 +201,40 @@ AnimatableProperty opacity()
 AnimatableProperty exploded(ExplodedAnimation::Unit unit)
 {
   AnimatableProperty p;
-  const bool gap = unit == ExplodedAnimation::Gap;
-  p.id = gap ? "explodedGap" : "explodedChunks";
-  p.label = [gap](Node*) {
-    return QString(gap ? "Exploded gap" : "Exploded chunks");
+  p.id = unit == ExplodedAnimation::Gap      ? "explodedGap"
+         : unit == ExplodedAnimation::Chunks ? "explodedChunks"
+                                             : "explodedOffset";
+  p.label = [unit](Node*) {
+    return QString(unit == ExplodedAnimation::Gap      ? "Exploded gap"
+                   : unit == ExplodedAnimation::Chunks ? "Exploded chunks"
+                                                       : "Exploded offset");
   };
   p.applies = isA<VolumeSink>;
-  p.range = [gap](Node* node) {
+  p.range = [unit](Node* node) {
     PropertyRange r;
     auto* volume = qobject_cast<VolumeSink*>(node);
-    if (gap) {
+    if (unit == ExplodedAnimation::Gap) {
       // Pulling the slabs apart from closed to wherever the panel has
       // the gap set is the useful default.
       r.label = "Gap:";
       r.start = 0.0;
       r.stop = volume ? volume->explodedGap() : 0.25;
-    } else {
+    } else if (unit == ExplodedAnimation::Chunks) {
       r.label = "Chunks:";
       r.decimals = 0;
       r.lo = 2;
       r.hi = 16;
       r.start = 2;
       r.stop = volume ? volume->explodedChunks() : 4;
+    } else {
+      // Sliding the cuts from one end of their travel to the other
+      r.label = "Offset:";
+      r.decimals = 0;
+      const int limit = volume ? volume->explodedOffsetLimit() : 0;
+      r.lo = -limit;
+      r.hi = limit;
+      r.start = -limit;
+      r.stop = limit;
     }
     return r;
   };
@@ -287,6 +299,7 @@ const QList<AnimatableProperty>& animatableProperties()
     opacity(),
     exploded(ExplodedAnimation::Gap),
     exploded(ExplodedAnimation::Chunks),
+    exploded(ExplodedAnimation::Offset),
     cutOut(0),
     cutOut(1),
     cutOut(2),

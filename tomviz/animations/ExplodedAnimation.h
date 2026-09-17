@@ -11,8 +11,9 @@
 namespace tomviz {
 
 /// Sweeps one setting of a volume's exploded view: the gap between the
-/// slabs, or how many slabs the volume is cut into. Switches the exploded
-/// view on if it is off, since the sweep would otherwise show nothing.
+/// slabs, how many slabs the volume is cut into, or the offset of the
+/// cuts. Switches the exploded view on if it is off, since the sweep
+/// would otherwise show nothing.
 class ExplodedAnimation : public ModuleAnimation
 {
   Q_OBJECT
@@ -21,7 +22,8 @@ public:
   enum Unit
   {
     Gap,
-    Chunks
+    Chunks,
+    Offset
   };
 
   double startValue = 0;
@@ -44,7 +46,9 @@ public:
   QString describeParameters() const override
   {
     return QString("%1 %2 to %3")
-      .arg(unit == Gap ? "exploded gap" : "exploded chunks")
+      .arg(unit == Gap      ? "exploded gap"
+           : unit == Chunks ? "exploded chunks"
+                            : "exploded offset")
       .arg(startValue)
       .arg(stopValue);
   }
@@ -53,7 +57,9 @@ public:
   {
     return { { "start", startValue },
              { "stop", stopValue },
-             { "unit", unit == Gap ? "gap" : "chunks" } };
+             { "unit", unit == Gap      ? "gap"
+                       : unit == Chunks ? "chunks"
+                                        : "offset" } };
   }
 
   void onPlaybackStarted() override { m_switchedOn = false; }
@@ -67,8 +73,10 @@ public:
     double value = (stopValue - startValue) * progress() + startValue;
     if (unit == Gap) {
       sink()->setExplodedGap(value);
-    } else {
+    } else if (unit == Chunks) {
       sink()->setExplodedChunks(qRound(value));
+    } else {
+      sink()->setExplodedOffset(qRound(value));
     }
     // Once per playback: a volume that cannot be exploded (rendered in
     // bricks) refuses with a warning, which need not repeat every tick.
