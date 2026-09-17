@@ -31,7 +31,6 @@ public:
   void processFiles(const QStringList& fileNames);
   QList<ImageInfo> getStackSummary() const;
   pipeline::PortType getStackType() const;
-  bool getImageViewerMode() const;
 
 public slots:
   void onOpenFileClick();

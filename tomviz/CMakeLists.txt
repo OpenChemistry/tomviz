@@ -106,6 +106,8 @@ set(SOURCES
   Histogram2DWidget.cxx
   ImageStackDialog.h
   ImageStackDialog.cxx
+  ImageViewerModeBehavior.cxx
+  ImageViewerModeBehavior.h
   ImageStackModel.h
   ImageStackModel.cxx
   IntSliderWidget.cxx
@@ -327,6 +329,8 @@ set(SOURCES
   pipeline/sinks/VolumeSink.h
   pipeline/sinks/LabelMapSink.cxx
   pipeline/sinks/LabelMapSink.h
+  pipeline/sinks/MultiVolumeCoordinator.cxx
+  pipeline/sinks/MultiVolumeCoordinator.h
   pipeline/sinks/LabelMapSurface.cxx
   pipeline/sinks/LabelMapSurface.h
   pipeline/sinks/LabelTableWidget.cxx

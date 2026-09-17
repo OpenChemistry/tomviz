@@ -8,6 +8,7 @@
 
 #include "pipeline/Link.h"
 #include "pipeline/Pipeline.h"
+#include "pipeline/PipelineUtils.h"
 #include "pipeline/OutputPort.h"
 #include "pipeline/InputPort.h"
 #include "pipeline/SinkGroupNode.h"
@@ -352,44 +353,10 @@ void PipelineModuleMenu::triggered(QAction* maction)
       return;
     }
 
-    // Resolve which output port to connect the new sink to:
-    //   1. If the tip port already belongs to a SinkGroupNode (the group
-    //      is explicitly selected), connect directly to that port.
-    //   2. Else if a compatible SinkGroupNode is already linked to the
-    //      tip port, connect to its matching passthrough output.
-    //   3. Else create a new SinkGroupNode on the tip port.
-    pipeline::OutputPort* connectTo = nullptr;
-    if (qobject_cast<pipeline::SinkGroupNode*>(targetPort->node())) {
-      connectTo = targetPort;
-    }
-    if (!connectTo) {
-      for (auto* link : targetPort->links()) {
-        auto* sg = qobject_cast<pipeline::SinkGroupNode*>(
-          link->to()->node());
-        if (sg) {
-          // Find the group's output port corresponding to this input.
-          int idx = sg->inputPorts().indexOf(link->to());
-          if (idx >= 0 && idx < sg->outputPorts().size() &&
-              pipeline::isPortTypeCompatible(
-                sg->outputPorts()[idx]->type(), input->acceptedTypes())) {
-            connectTo = sg->outputPorts()[idx];
-            break;
-          }
-        }
-      }
-    }
-    if (!connectTo) {
-      auto* group = new pipeline::SinkGroupNode();
-      pipeline::PortType groupType =
-        pipeline::isVolumeType(targetPort->type())
-          ? pipeline::PortType::ImageData
-          : targetPort->type();
-      group->addPassthrough(targetPort->name(), groupType);
-      pip->addNode(group);
-      pip->createLink(targetPort, group->inputPorts()[0]);
-      connectTo = group->outputPorts()[0];
-    }
-    pip->createLink(connectTo, input);
+    // Hang the sink off the tip port's SinkGroupNode, creating one when
+    // the port has none yet.
+    pip->createLink(pipeline::sinkAttachPort(pip, targetPort, input),
+                    input);
   }
   pip->executeWhenIdle();
 }

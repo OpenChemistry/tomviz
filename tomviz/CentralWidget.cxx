@@ -164,8 +164,6 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
           &CentralWidget::refreshHistogram);
   layout()->setContentsMargins(0, 0, 0, 0);
   layout()->setSpacing(0);
-
-  m_ui->imageViewerSlider->setVisible(false);
 }
 
 CentralWidget::~CentralWidget()
@@ -193,27 +191,6 @@ void CentralWidget::onColorLegendToggled(bool visibility)
     sbProxy->UpdateVTKObjects();
     ActiveObjects::instance().renderAllViews();
   }
-}
-
-void CentralWidget::setImageViewerMode(bool enabled)
-{
-  // Reset the state of the slider. Deliberately no disconnect() here:
-  // a wildcard disconnect on the slider also tears down the internal
-  // slider/line-edit wiring IntSliderWidget set up in its own
-  // constructor, which leaves the widget permanently broken (and warns
-  // about disconnecting a destroyed signal). Nothing external is
-  // connected to it while the migration below is outstanding.
-  m_ui->imageViewerSlider->setVisible(false);
-  m_ui->imageViewerSlider->setValue(0);
-  m_ui->imageViewerSlider->setMaximum(0);
-
-  if (!enabled) {
-    return;
-  }
-
-  // TODO: migrate to new pipeline — find a SliceSink from the active node
-  // and connect its slice index to the slider. Until then the slice is
-  // stepped from the Slice visualization's own properties panel.
 }
 
 void CentralWidget::onColorMapDataSourceChanged()

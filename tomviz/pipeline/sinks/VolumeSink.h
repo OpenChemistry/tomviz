@@ -23,6 +23,7 @@ class vtkMultiBlockDataSet;
 class vtkMultiBlockVolumeMapper;
 class vtkPiecewiseFunction;
 class vtkPlane;
+class vtkPlaneCollection;
 class vtkVolume;
 class vtkVolumeProperty;
 
@@ -196,12 +197,37 @@ public:
   double explodedGap() const;
   void setExplodedGap(double fraction);
 
+  /// Volumes sharing a view are rendered together from the second one on
+  /// (see MultiVolumeCoordinator). While that is on for this sink, its own
+  /// props are out of the renderer and its blending, jittering, cut-out,
+  /// exploded view and shadows have no say; lighting follows the lead
+  /// volume's.
+  bool multiVolumeActive() const;
+  /// True when this sink's lighting is the one applied to the set.
+  bool multiVolumeLead() const;
+  /// Called by the coordinator whenever this sink's place in it changes:
+  /// swaps the sink's own props for the shared multi-volume or back, and
+  /// refreshes the panel.
+  void applyMultiVolumeState();
+
+  ///@{
+  /// What the coordinator draws on this sink's behalf.
+  vtkVolume* volumeProp() const;
+  /// The image the sink's own mapper renders, and the array it selected.
+  vtkImageData* renderedImage() const;
+  QString renderedArrayName() const;
+  vtkPlaneCollection* clippingPlanes() const;
+  ///@}
+
   void onMetadataChanged() override;
 
 signals:
   void interpolationTypeChanged(int type);
   void cutOutChanged();
   void explodedChanged();
+  /// Emitted when the sink starts or stops being rendered as part of the
+  /// view's multi-volume, or when it becomes or stops being its lead.
+  void multiVolumeStateChanged();
   void lightingChanged(bool enabled);
   /// Emitted whenever any lighting parameter changes; the properties widget
   /// uses this to refresh its sliders and the active preset highlight.
@@ -262,9 +288,22 @@ private:
   void resetCameraQueued();
   // Log why scatteringSupported() is false.
   void warnScatteringUnsupported() const;
+  // Whether the panel should offer scattering right now: supported by the
+  // sink's own mapper, and that mapper is the one drawing. The requested
+  // level is kept either way, so the look comes back when it applies again.
+  bool scatteringAvailable() const;
   // User-facing version of the above, for the properties widget. Empty when
-  // scattering is supported.
+  // scattering is available.
   QString scatteringUnavailableReason() const;
+  // Whether this sink has a volume on screen that the view's coordinator
+  // could take over: shown, drawn as a volume, and small enough for one
+  // texture (a bricked volume cannot join a vtkMultiVolume).
+  bool multiVolumeEligible() const;
+  // Join or leave the view's coordinator to match multiVolumeEligible().
+  void syncMultiVolumeMembership();
+  // Put the sink's own props into the renderer, or take them out while
+  // the coordinator draws the sink.
+  void showStandaloneProps(bool shown);
   // Ask before anything starts casting volumetric shadows, unless the user
   // has opted out. Returns false if they declined.
   bool confirmVolumetricShadows(QWidget* parent) const;
@@ -306,7 +345,6 @@ private:
   unsigned long m_sortObserverId = 0;
   vtkNew<vtkVolume> m_volume;
   vtkNew<vtkVolumeProperty> m_volumeProperty;
-  vtkNew<vtkPiecewiseFunction> m_gradientOpacity;
   vtkSmartPointer<vtkPiecewiseFunction> m_animatedScalarOpacity;
 
   // Watches render completion for onRenderFinished().
@@ -323,6 +361,11 @@ private:
   bool m_shadowsEnabled = true;
   // Mirrors the mapper's verdict, so a change can be noticed and shown.
   bool m_scatteringOverBudget = false;
+
+  // True while the view's coordinator draws this sink, i.e. its own props
+  // are out of the renderer; and whether it was the lead when last told.
+  bool m_composited = false;
+  bool m_leadApplied = false;
 
   QPointer<QComboBox> m_scalarsCombo;
   int m_activeScalars = -1;

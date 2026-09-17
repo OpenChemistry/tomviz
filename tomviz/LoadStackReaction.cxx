@@ -3,7 +3,6 @@
 
 #include "LoadStackReaction.h"
 
-#include "ActiveObjects.h"
 #include "ImageStackDialog.h"
 #include "LoadDataReaction.h"
 #include "Utilities.h"
@@ -71,7 +70,6 @@ pipeline::SourceNode* LoadStackReaction::execStackDialog(
     }
 
     pipeline::PortType stackType = dialog.getStackType();
-    bool imageViewerMode = dialog.getImageViewerMode();
     if (stackType == pipeline::PortType::TiltSeries) {
       // Build tilt angles from the stack summary
       QMap<size_t, double> angles;
@@ -96,10 +94,6 @@ pipeline::SourceNode* LoadStackReaction::execStackDialog(
         vol->setTiltAngles(tiltAngles);
         source->setProperty("dataType", "tiltSeries");
       }
-
-      ActiveObjects::instance().setImageViewerMode(imageViewerMode);
-    } else {
-      ActiveObjects::instance().setImageViewerMode(imageViewerMode);
     }
 
     return source;

@@ -69,6 +69,8 @@ add_cxx_test(TiltSeriesSinogram)
 add_cxx_qtest(LabelMap)
 add_cxx_qtest(AnimationPlayback)
 add_cxx_qtest(SegmentationColorMap)
+add_cxx_qtest(ImageViewerMode)
+add_cxx_qtest(MultiVolume)
 add_cxx_qtest(PtychoWorkflow PYTHONPATH ${_pythonpath})
 set_tests_properties(PtychoWorkflow PROPERTIES TIMEOUT 1800)
 add_cxx_qtest(PyXRFWorkflow PYTHONPATH ${_pythonpath})
@@ -114,3 +116,6 @@ add_executable(pipelineDemo PipelineDemo.cxx ${PIPELINE_ICONS_QRC})
 target_compile_definitions(pipelineDemo PRIVATE
   "TOMVIZ_PYTHON_DIR=\"${PROJECT_SOURCE_DIR}/tomviz/python\"")
 target_link_libraries(pipelineDemo tomvizlib)
+
+
+

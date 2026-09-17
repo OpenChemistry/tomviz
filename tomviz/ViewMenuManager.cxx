@@ -4,21 +4,15 @@
 #include "ViewMenuManager.h"
 
 #include <pqCoreUtilities.h>
-#include <pqRenderView.h>
 #include <pqView.h>
-#include <vtkPVRenderView.h>
 #include <vtkSMPropertyHelper.h>
-#include <vtkSMRenderViewProxy.h>
 #include <vtkSMSessionProxyManager.h>
 #include <vtkSMViewProxy.h>
 
-#include <vtkCamera.h>
 #include <vtkColorTransferFunction.h>
 #include <vtkCommand.h>
 #include <vtkGridAxesActor3D.h>
-#include <vtkImageData.h>
 #include <vtkProperty.h>
-#include <vtkRenderWindow.h>
 #include <vtkTextProperty.h>
 
 #include <QAction>
@@ -27,45 +21,13 @@
 #include <QDialog>
 #include <QDockWidget>
 #include <QHBoxLayout>
-#include <QJsonObject>
 #include <QMainWindow>
 #include <QMenu>
 
 #include "ActiveObjects.h"
-#include "CameraReaction.h"
-#include "pipeline/InputPort.h"
-#include "pipeline/Link.h"
-#include "pipeline/OutputPort.h"
-#include "pipeline/Pipeline.h"
-#include "pipeline/PortType.h"
-#include "pipeline/SinkGroupNode.h"
-#include "pipeline/SinkNode.h"
-#include "pipeline/data/VolumeData.h"
-#include "pipeline/sinks/LegacyModuleSink.h"
-#include "pipeline/sinks/SliceSink.h"
 #include "Utilities.h"
 
 namespace tomviz {
-
-class PreviousImageViewerSettings
-{
-public:
-  vtkNew<vtkCamera> camera;
-  QString projection;
-  bool newSliceSink = false;
-  QPointer<pipeline::SliceSink> sliceSink;
-  QJsonObject sliceSinkSettings;
-  QList<QPointer<pipeline::LegacyModuleSink>> visibleSinks;
-  int interactionMode = 0;
-
-  void clear()
-  {
-    visibleSinks.clear();
-    newSliceSink = false;
-    sliceSink = nullptr;
-    sliceSinkSettings = QJsonObject();
-  };
-};
 
 ViewMenuManager::ViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
   : pqViewMenuManager(mainWindow, menu), m_perspectiveProjectionAction(nullptr),
@@ -81,9 +43,6 @@ ViewMenuManager::ViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
           static_cast<void (ActiveObjects::*)(vtkSMViewProxy*)>(
             &ActiveObjects::viewChanged),
           this, &ViewMenuManager::onViewChanged);
-
-  connect(&ActiveObjects::instance(), &ActiveObjects::setImageViewerMode, this,
-          &ViewMenuManager::setImageViewerMode);
 
   Menu->addSeparator();
   // Projection modes
@@ -114,16 +73,6 @@ ViewMenuManager::ViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
   m_showOrientationAxesAction->setChecked(true);
   connect(m_showOrientationAxesAction, &QAction::triggered, this,
           &ViewMenuManager::setShowOrientationAxes);
-
-  Menu->addSeparator();
-
-  m_imageViewerModeAction = Menu->addAction("Image Viewer Mode");
-  m_imageViewerModeAction->setCheckable(true);
-  m_imageViewerModeAction->setChecked(false);
-  connect(m_imageViewerModeAction, &QAction::triggered, this,
-          &ViewMenuManager::setImageViewerMode);
-
-  m_previousImageViewerSettings.reset(new PreviousImageViewerSettings);
 
   if (hasLookingGlassPlugin()) {
     setupLookingGlassPlaceholder(mainWindow);
@@ -234,10 +183,6 @@ void ViewMenuManager::onViewChanged()
     m_view && m_view->GetProperty("OrientationAxesVisibility");
   m_showCenterAxesAction->setEnabled(enableCenterAxes);
   m_showOrientationAxesAction->setEnabled(enableOrientationAxes);
-  // Image viewer mode drives the camera, projection and interaction
-  // mode of a render view; without one there is nothing to switch.
-  m_imageViewerModeAction->setEnabled(
-    m_view && ActiveObjects::instance().activePqRenderView());
   if (enableCenterAxes) {
     vtkSMPropertyHelper showCenterAxes(m_view, "CenterAxesVisibility");
     m_showCenterAxesAction->setChecked(showCenterAxes.GetAsInt() == 1);
@@ -272,26 +217,6 @@ void ViewMenuManager::setShowOrientationAxes(bool show)
   render();
 }
 
-int ViewMenuManager::interactionMode() const
-{
-  auto* renderView = ActiveObjects::instance().activePqRenderView();
-  if (!renderView) {
-    return vtkPVRenderView::INTERACTION_MODE_3D;
-  }
-  return vtkSMPropertyHelper(renderView->getProxy(), "InteractionMode")
-    .GetAsInt();
-}
-
-void ViewMenuManager::setInteractionMode(int mode)
-{
-  auto* renderView = ActiveObjects::instance().activePqRenderView();
-  if (!renderView) {
-    return;
-  }
-  vtkSMPropertyHelper(renderView->getProxy(), "InteractionMode").Set(mode);
-  renderView->getProxy()->UpdateProperty("InteractionMode", 1);
-}
-
 void ViewMenuManager::render()
 {
   auto* view = tomviz::convert<pqView*>(m_view);
@@ -299,255 +224,6 @@ void ViewMenuManager::render()
     view->render();
   }
 }
-
-static void resize2DCameraToFit(vtkSMRenderViewProxy* view, double bounds[6],
-                                int axis)
-{
-  double lengths[3] = {
-    bounds[1] - bounds[0], bounds[3] - bounds[2], bounds[5] - bounds[4],
-  };
-
-  int* size = view->GetRenderWindow()->GetSize();
-  double w = size[0];
-  double h = size[1];
-
-  double bw, bh;
-  if (axis == 0 || axis == 2) {
-    bw = lengths[(axis + 1) % 3];
-    bh = lengths[(axis + 2) % 3];
-  } else {
-    bw = lengths[(axis + 2) % 3];
-    bh = lengths[(axis + 1) % 3];
-  }
-  double viewAspect = w / h;
-  double boundsAspect = bw / bh;
-
-  double scale = 0;
-  if (viewAspect >= boundsAspect) {
-    scale = bh / 2;
-  } else {
-    scale = bw / 2 / viewAspect;
-  }
-
-  auto* camera = view->GetActiveCamera();
-  camera->SetParallelScale(scale);
-}
-
-void ViewMenuManager::setImageViewerMode(bool enable)
-{
-  if (m_imageViewerModeAction->isChecked() != enable) {
-    QSignalBlocker blocked(m_imageViewerModeAction);
-    m_imageViewerModeAction->setChecked(enable);
-  }
-
-  if (!enable) {
-    if (!m_imageViewerMode) {
-      return;
-    }
-    m_imageViewerMode = false;
-    emit imageViewerModeToggled(false);
-    restoreImageViewerSettings();
-    return;
-  }
-
-  // Entering while already in the mode (loading a second image stack
-  // does exactly that) must not save the mode's own camera, projection
-  // and interaction as if they were the user's: put the original view
-  // back first, then set up again from a clean slate.
-  if (m_imageViewerMode) {
-    m_imageViewerMode = false;
-    restoreImageViewerSettings();
-  }
-
-  // Nothing to show, or nowhere to show it: leave the mode off rather
-  // than leaving the menu item checked over an unchanged view.
-  auto* pip = ActiveObjects::instance().pipeline();
-  auto* tipPort = ActiveObjects::instance().activeTipOutputPort();
-  auto* view =
-    vtkSMRenderViewProxy::SafeDownCast(ActiveObjects::instance().activeView());
-  if (!pip || !tipPort || !view) {
-    QSignalBlocker blocked(m_imageViewerModeAction);
-    m_imageViewerModeAction->setChecked(false);
-    return;
-  }
-  m_imageViewerMode = true;
-
-  auto* camera = view->GetActiveCamera();
-
-  auto& oldSettings = m_previousImageViewerSettings;
-  oldSettings->clear();
-  // DeepCopy: a snapshot must not share matrices with the live camera
-  oldSettings->camera->DeepCopy(camera);
-  oldSettings->projection = projectionMode();
-  oldSettings->interactionMode = interactionMode();
-
-  setProjectionModeToOrthographic();
-  setInteractionMode(vtkPVRenderView::INTERACTION_MODE_2D);
-
-  // Find an existing SliceSink connected to the tip port
-  pipeline::SliceSink* sliceSink = nullptr;
-  for (auto* link : tipPort->links()) {
-    auto* sg =
-      qobject_cast<pipeline::SinkGroupNode*>(link->to()->node());
-    if (!sg) {
-      continue;
-    }
-    for (auto* sinkNode : sg->sinks()) {
-      auto* candidate = qobject_cast<pipeline::SliceSink*>(sinkNode);
-      if (candidate) {
-        sliceSink = candidate;
-        break;
-      }
-    }
-    if (sliceSink) {
-      break;
-    }
-  }
-
-  oldSettings->newSliceSink = !sliceSink;
-  if (sliceSink) {
-    oldSettings->sliceSinkSettings = sliceSink->serialize();
-    sliceSink->setVisibility(true);
-  } else {
-    sliceSink = new pipeline::SliceSink();
-    sliceSink->setLabel("Slice");
-    if (!sliceSink->initialize(view)) {
-      delete sliceSink;
-      m_imageViewerMode = false;
-      QSignalBlocker blocked(m_imageViewerModeAction);
-      m_imageViewerModeAction->setChecked(false);
-      return;
-    }
-    pip->addNode(sliceSink);
-
-    auto* input = sliceSink->inputPorts()[0];
-    pipeline::OutputPort* connectTo = nullptr;
-    for (auto* link : tipPort->links()) {
-      auto* sg =
-        qobject_cast<pipeline::SinkGroupNode*>(link->to()->node());
-      if (sg) {
-        int idx = sg->inputPorts().indexOf(link->to());
-        if (idx >= 0 && idx < sg->outputPorts().size() &&
-            pipeline::isPortTypeCompatible(sg->outputPorts()[idx]->type(),
-                                           input->acceptedTypes())) {
-          connectTo = sg->outputPorts()[idx];
-          break;
-        }
-      }
-    }
-    if (!connectTo) {
-      auto* group = new pipeline::SinkGroupNode();
-      pipeline::PortType groupType =
-        pipeline::isVolumeType(tipPort->type())
-          ? pipeline::PortType::ImageData
-          : tipPort->type();
-      group->addPassthrough(tipPort->name(), groupType);
-      pip->addNode(group);
-      pip->createLink(tipPort, group->inputPorts()[0]);
-      connectTo = group->outputPorts()[0];
-    }
-    pip->createLink(connectTo, input);
-    pip->executeWhenIdle();
-  }
-  oldSettings->sliceSink = sliceSink;
-
-  // Hide every other visible sink rendering into this view, not just
-  // the ones hanging off this port: with several datasets loaded (e.g.
-  // an XRF and a ptycho volume) the others would otherwise keep
-  // rendering their 3D geometry into what is supposed to be a 2D image
-  // view. Sinks in other views (a split layout, plots) are left alone.
-  // restoreImageViewerSettings() re-shows exactly what is recorded
-  // here, so widening the search needs no matching change there.
-  for (auto* node : pip->nodes()) {
-    auto* legacySink = qobject_cast<pipeline::LegacyModuleSink*>(node);
-    if (legacySink && legacySink != sliceSink &&
-        legacySink->view() == view && legacySink->visibility()) {
-      oldSettings->visibleSinks.append(legacySink);
-      legacySink->setVisibility(false);
-    }
-  }
-
-  if (oldSettings->newSliceSink) {
-    sliceSink->setDirection(pipeline::SliceSink::XY);
-    sliceSink->setSlice(0);
-  }
-  sliceSink->setShowArrow(false);
-
-  int axis = 2;
-  switch (sliceSink->direction()) {
-    case pipeline::SliceSink::YZ: axis = 0; break;
-    case pipeline::SliceSink::XZ: axis = 1; break;
-    default: axis = 2; break;
-  }
-
-  double bounds[6] = { 0, 0, 0, 0, 0, 0 };
-  auto vol = sliceSink->volumeData();
-  if (vol && vol->isValid()) {
-    vol->imageData()->GetBounds(bounds);
-  } else {
-    auto portData = tipPort->data();
-    if (portData.isValid() && pipeline::isVolumeType(portData.type())) {
-      auto tipVol = portData.value<pipeline::VolumeDataPtr>();
-      if (tipVol && tipVol->isValid()) {
-        tipVol->imageData()->GetBounds(bounds);
-      }
-    }
-  }
-
-  switch (axis) {
-    case 0: CameraReaction::resetPositiveX(); break;
-    case 1: CameraReaction::resetPositiveY(); break;
-    default: CameraReaction::resetNegativeZ(); break;
-  }
-  resize2DCameraToFit(view, bounds, axis);
-
-  double depth = bounds[2 * axis + 1] - bounds[2 * axis];
-  if (depth < 1.0) {
-    depth = 1.0;
-  }
-  double dist = camera->GetDistance();
-  camera->SetClippingRange(0.01, dist + depth);
-
-  emit imageViewerModeToggled(enable);
-  view->GetRenderWindow()->Render();
-}
-
-void ViewMenuManager::restoreImageViewerSettings()
-{
-  auto& settings = m_previousImageViewerSettings;
-
-  auto* view =
-    vtkSMRenderViewProxy::SafeDownCast(ActiveObjects::instance().activeView());
-  if (!view) {
-    return;
-  }
-  auto* camera = view->GetActiveCamera();
-
-  setInteractionMode(settings->interactionMode);
-  setProjectionMode(settings->projection);
-  camera->DeepCopy(settings->camera);
-
-  if (settings->sliceSink) {
-    if (settings->newSliceSink) {
-      auto* pip = ActiveObjects::instance().pipeline();
-      if (pip) {
-        pip->removeNode(settings->sliceSink);
-      }
-    } else {
-      settings->sliceSink->deserialize(settings->sliceSinkSettings);
-    }
-  }
-
-  for (auto sink : settings->visibleSinks) {
-    if (sink) {
-      sink->setVisibility(true);
-    }
-  }
-
-  view->ResetCamera();
-  view->StillRender();
-}
-
 
 void ViewMenuManager::setupLookingGlassPlaceholder(QMainWindow* mainWindow)
 {
