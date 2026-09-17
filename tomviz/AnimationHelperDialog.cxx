@@ -1077,6 +1077,20 @@ public:
       follow(slice);
     } else if (auto* clip = qobject_cast<pipeline::ClipSink*>(node)) {
       follow(clip);
+    } else if (auto* volume = qobject_cast<pipeline::VolumeSink*>(node)) {
+      // The exploded offset's bound follows the slab count and the
+      // direction, which the panel can change while this is showing
+      disconnect(volume, &pipeline::VolumeSink::explodedChanged, this,
+                 nullptr);
+      connect(volume, &pipeline::VolumeSink::explodedChanged, this,
+              [this, volume]() {
+                if (volume != this->selectedSink()) {
+                  disconnect(volume, &pipeline::VolumeSink::explodedChanged,
+                             this, nullptr);
+                  return;
+                }
+                this->refreshModuleRanges();
+              });
     }
 
     configuredLo = lo;

@@ -305,6 +305,10 @@ private slots:
       new ExplodedAnimation(volume, 0.0, 0.5, ExplodedAnimation::Gap));
     animations.add(
       new ExplodedAnimation(volume, 2, 8, ExplodedAnimation::Chunks));
+    // The offset is stored as swept and clamped when the slabs are cut,
+    // so it reads back as the sweep's end even without data
+    animations.add(
+      new ExplodedAnimation(volume, -3, 3, ExplodedAnimation::Offset));
 
     play(10);
     QVERIFY(volume->explodedEnabled());
@@ -313,16 +317,19 @@ private slots:
              qPrintable(QString("gap %1").arg(volume->explodedGap())));
     QCOMPARE(volume->explodedChunks(), 8);
 
+    QCOMPARE(volume->explodedOffset(), 3);
+
     auto json = animations.serialize(&pipeline);
     auto entries = json["modules"].toArray();
-    QCOMPARE(entries.size(), 2);
+    QCOMPARE(entries.size(), 3);
     QCOMPARE(entries[0].toObject()["type"].toString(), QString("exploded"));
     QCOMPARE(entries[0].toObject()["unit"].toString(), QString("gap"));
     QCOMPARE(entries[1].toObject()["unit"].toString(), QString("chunks"));
+    QCOMPARE(entries[2].toObject()["unit"].toString(), QString("offset"));
 
     animations.deserialize(json, &pipeline);
     auto restored = animations.animations();
-    QCOMPARE(restored.size(), 2);
+    QCOMPARE(restored.size(), 3);
     auto* gap = qobject_cast<ExplodedAnimation*>(restored[0]);
     QVERIFY(gap);
     QCOMPARE(gap->unit, ExplodedAnimation::Gap);
@@ -333,6 +340,10 @@ private slots:
     QVERIFY(chunks);
     QCOMPARE(chunks->unit, ExplodedAnimation::Chunks);
     QCOMPARE(chunks->stopValue, 8.0);
+    auto* offset = qobject_cast<ExplodedAnimation*>(restored[2]);
+    QVERIFY(offset);
+    QCOMPARE(offset->unit, ExplodedAnimation::Offset);
+    QCOMPARE(offset->startValue, -3.0);
 
     // Only a volume can be exploded
     auto* slice = new pipeline::SliceSink();
