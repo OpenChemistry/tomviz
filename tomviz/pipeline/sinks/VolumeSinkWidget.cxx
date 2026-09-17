@@ -105,10 +105,13 @@ VolumeSinkWidget::VolumeSinkWidget(QWidget* parent_)
   m_userPresets->setToolTip("Lighting settings you saved earlier.");
   auto* saveUserPreset = new QPushButton("Save...", this);
   saveUserPreset->setToolTip("Save the current lighting settings under a name.");
+  m_renameUserPreset = new QPushButton("Rename...", this);
+  m_renameUserPreset->setToolTip("Give the selected saved preset a new name.");
   m_deleteUserPreset = new QPushButton("Delete", this);
   m_deleteUserPreset->setToolTip("Remove the selected saved preset.");
   userRow->addWidget(m_userPresets, 1);
   userRow->addWidget(saveUserPreset);
+  userRow->addWidget(m_renameUserPreset);
   userRow->addWidget(m_deleteUserPreset);
   m_uiLighting->lightingLayout->insertLayout(1, userRow);
   refreshUserLightingPresets();
@@ -116,6 +119,7 @@ VolumeSinkWidget::VolumeSinkWidget(QWidget* parent_)
           this, &VolumeSinkWidget::refreshUserLightingPresets);
   connect(m_userPresets, QOverload<int>::of(&QComboBox::currentIndexChanged),
           this, [this](int idx) {
+            m_renameUserPreset->setEnabled(idx > 0);
             m_deleteUserPreset->setEnabled(idx > 0);
             if (idx > 0) {
               emit userLightingPresetSelected(m_userPresets->itemText(idx));
@@ -123,6 +127,11 @@ VolumeSinkWidget::VolumeSinkWidget(QWidget* parent_)
           });
   connect(saveUserPreset, &QPushButton::clicked, this,
           &VolumeSinkWidget::saveUserLightingPresetRequested);
+  connect(m_renameUserPreset, &QPushButton::clicked, this, [this]() {
+    if (m_userPresets->currentIndex() > 0) {
+      emit renameUserLightingPresetRequested(m_userPresets->currentText());
+    }
+  });
   connect(m_deleteUserPreset, &QPushButton::clicked, this, [this]() {
     if (m_userPresets->currentIndex() > 0) {
       emit deleteUserLightingPresetRequested(m_userPresets->currentText());
@@ -314,6 +323,7 @@ void VolumeSinkWidget::refreshUserLightingPresets()
   }
   int idx = current.isEmpty() ? -1 : m_userPresets->findText(current);
   m_userPresets->setCurrentIndex(idx < 0 ? 0 : idx);
+  m_renameUserPreset->setEnabled(m_userPresets->currentIndex() > 0);
   m_deleteUserPreset->setEnabled(m_userPresets->currentIndex() > 0);
 }
 
@@ -322,6 +332,7 @@ void VolumeSinkWidget::setActiveUserLightingPreset(const QString& name)
   QSignalBlocker blocker(m_userPresets);
   int idx = name.isEmpty() ? -1 : m_userPresets->findText(name);
   m_userPresets->setCurrentIndex(idx < 0 ? 0 : idx);
+  m_renameUserPreset->setEnabled(m_userPresets->currentIndex() > 0);
   m_deleteUserPreset->setEnabled(m_userPresets->currentIndex() > 0);
 }
 

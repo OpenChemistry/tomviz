@@ -50,6 +50,10 @@ public:
 
   void save(const UserLightingPreset& preset);
   void remove(const QString& name);
+  /// Give the preset called @a name the name @a newName. Fails, leaving
+  /// everything as it was, when there is no such preset, the new name
+  /// is blank, or another preset already has it.
+  bool rename(const QString& name, const QString& newName);
 
 signals:
   void changed();

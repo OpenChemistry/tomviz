@@ -2568,6 +2568,29 @@ QWidget* VolumeSink::createSinkPropertiesWidget(QWidget* parent)
             store.save(preset);
             widget->setActiveUserLightingPreset(name);
           });
+  connect(widget, &VolumeSinkWidget::renameUserLightingPresetRequested, this,
+          [widget](const QString& name) {
+            auto& store = LightingPresetStore::instance();
+            bool ok = false;
+            auto newName =
+              QInputDialog::getText(widget, "Rename Lighting Preset",
+                                    "Preset name:", QLineEdit::Normal, name,
+                                    &ok)
+                .trimmed();
+            if (!ok || newName.isEmpty() || newName == name) {
+              return;
+            }
+            if (store.contains(newName)) {
+              QMessageBox::warning(widget, "Rename Lighting Preset",
+                                   QString("A saved preset called \"%1\" "
+                                           "already exists.")
+                                     .arg(newName));
+              return;
+            }
+            if (store.rename(name, newName)) {
+              widget->setActiveUserLightingPreset(newName);
+            }
+          });
   connect(widget, &VolumeSinkWidget::deleteUserLightingPresetRequested, this,
           [](const QString& name) {
             LightingPresetStore::instance().remove(name);

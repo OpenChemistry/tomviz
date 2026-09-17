@@ -123,6 +123,25 @@ void LightingPresetStore::remove(const QString& name)
   }
 }
 
+bool LightingPresetStore::rename(const QString& name, const QString& newName)
+{
+  const QString trimmed = newName.trimmed();
+  if (trimmed.isEmpty() || (trimmed != name && contains(trimmed))) {
+    return false;
+  }
+  for (auto& preset : m_presets) {
+    if (preset.name == name) {
+      if (preset.name != trimmed) {
+        preset.name = trimmed;
+        store();
+        emit changed();
+      }
+      return true;
+    }
+  }
+  return false;
+}
+
 void LightingPresetStore::load()
 {
   // Headless (tests) has no application core: the store is memory-only

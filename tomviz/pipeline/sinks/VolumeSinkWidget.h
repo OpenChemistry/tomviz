@@ -115,6 +115,7 @@ signals:
   void lightingPresetClicked(const int preset);
   void userLightingPresetSelected(const QString& name);
   void saveUserLightingPresetRequested();
+  void renameUserLightingPresetRequested(const QString& name);
   void deleteUserLightingPresetRequested(const QString& name);
   void transferModeChanged(const int mode);
   void solidityChanged(const double value);
@@ -154,6 +155,7 @@ private:
 
   QComboBox* m_userPresets = nullptr;
 
+  QPushButton* m_renameUserPreset = nullptr;
   QPushButton* m_deleteUserPreset = nullptr;
 
   QScopedPointer<Ui::VolumeSinkWidget> m_ui;
