@@ -274,6 +274,7 @@ void DataTransformMenu::buildSegmentation()
     thresholding->addAction("Otsu Multiple Threshold");
   auto connectedComponentsAction =
     thresholding->addAction("Connected Components");
+  auto removeLabelsAction = thresholding->addAction("Remove Labels");
 
   // === Morphology submenu ===
   QMenu* morphology = menu->addMenu("Morphology");
@@ -319,6 +320,9 @@ void DataTransformMenu::buildSegmentation()
     connectedComponentsAction, "Connected Components",
     readInPythonScript("ConnectedComponents"),
     readInJSONDescription("ConnectedComponents"));
+  new AddPythonTransformReaction(removeLabelsAction, "Remove Labels",
+                                 readInPythonScript("RemoveLabels"),
+                                 readInJSONDescription("RemoveLabels"));
   new AddPythonTransformReaction(
     binaryDilateAction, "Binary Dilate", readInPythonScript("BinaryDilate"),
     readInJSONDescription("BinaryDilate"));

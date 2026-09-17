@@ -8,10 +8,12 @@
 #include "Node.h"
 #include "OutputPort.h"
 #include "SinkGroupNode.h"
+#include "sinks/LabelMapSink.h"
 #include "sinks/SliceSink.h"
 #include "sinks/ThresholdSink.h"
 
 #include "DoubleSliderWidget.h"
+#include "LabelSelectionWidget.h"
 
 #include <QJsonArray>
 #include <QJsonObject>
@@ -152,6 +154,35 @@ void wireThresholdSinkBinding(DoubleSliderWidget* slider, ThresholdSink* sink,
                    });
 }
 
+/// Live link a LabelSelectionWidget's ticks to the labels hidden in a
+/// LabelMapSink: a label hidden in the visualization is ticked for
+/// removal, and ticking one hides it. Both setters compare before
+/// changing anything, which is what breaks the cycle.
+void wireLabelMapSinkBinding(LabelSelectionWidget* selection,
+                             LabelMapSink* sink)
+{
+  selection->setSelectedLabels(sink->hiddenLabels());
+
+  QPointer<LabelMapSink> sinkPtr(sink);
+  QObject::connect(sink, &LabelMapSink::labelVisibilityChanged, selection,
+                   [selection, sinkPtr]() {
+                     if (!sinkPtr) {
+                       return;
+                     }
+                     auto hidden = sinkPtr->hiddenLabels();
+                     if (selection->selectedLabels() != hidden) {
+                       selection->setSelectedLabels(hidden);
+                     }
+                   });
+  QObject::connect(selection, &LabelSelectionWidget::selectionChanged,
+                   selection, [selection, sinkPtr]() {
+                     if (sinkPtr) {
+                       sinkPtr->setHiddenLabels(
+                         selection->selectedLabels());
+                     }
+                   });
+}
+
 } // namespace
 
 QMap<QString, ParameterBinding> parseParameterBindings(
@@ -227,6 +258,22 @@ void wireParameterBindings(Node* node, QWidget* widget,
       wireThresholdSinkBinding(
         slider, sink,
         binding.sinkProperty == QStringLiteral("lowerThreshold"));
+    } else if (binding.sinkType == QStringLiteral("LabelMapSink") &&
+               binding.sinkProperty == QStringLiteral("hiddenLabels")) {
+      auto* sink = findBindableSink<LabelMapSink>(
+        node, [](LabelMapSink* s) { return s->visibility(); });
+      if (!sink) {
+        sink = findBindableSink<LabelMapSink>(
+          node, [](LabelMapSink*) { return true; });
+      }
+      if (!sink) {
+        continue;
+      }
+      auto* selection = widget->findChild<LabelSelectionWidget*>(paramName);
+      if (!selection) {
+        continue;
+      }
+      wireLabelMapSinkBinding(selection, sink);
     }
     // Future sink types: add another dispatch arm here.
   }

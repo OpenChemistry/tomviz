@@ -60,6 +60,10 @@ set(SOURCES
   SelectVolumeRangeWidget.h
   ThresholdRangeWidget.cxx
   ThresholdRangeWidget.h
+  LabelSelection.cxx
+  LabelSelection.h
+  LabelSelectionWidget.cxx
+  LabelSelectionWidget.h
   SelectVolumeWidget.cxx
   SelectVolumeWidget.h
   DataBroker.cxx
@@ -535,6 +539,7 @@ set(python_files
   FourierMask.py
   ImageMath.py
   ConnectedComponents.py
+  RemoveLabels.py
   ClipEdges.py
   OtsuMultipleThreshold.py
   BinaryDilate.py
@@ -633,6 +638,7 @@ set(json_files
   FourierMask.json
   ImageMath.json
   ConnectedComponents.json
+  RemoveLabels.json
   ClipEdges.json
   ClearVolume.json
   OtsuMultipleThreshold.json

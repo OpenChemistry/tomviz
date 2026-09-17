@@ -395,6 +395,54 @@ void LabelMapSink::applyLabels()
   emit renderNeeded();
 }
 
+void LabelMapSink::labelTableEdited()
+{
+  applyLabels();
+  emit labelVisibilityChanged();
+}
+
+QVector<double> LabelMapSink::hiddenLabels() const
+{
+  QVector<double> hidden;
+  auto labels = labelMap();
+  if (!labels) {
+    return hidden;
+  }
+  for (const auto& entry : labels->labels().entries()) {
+    if (!entry.visible && entry.value != 0.0) {
+      hidden.append(entry.value);
+    }
+  }
+  std::sort(hidden.begin(), hidden.end());
+  return hidden;
+}
+
+void LabelMapSink::setHiddenLabels(const QVector<double>& hidden)
+{
+  auto labels = labelMap();
+  if (!labels) {
+    return;
+  }
+  auto& table = labels->labels();
+  bool changed = false;
+  for (int i = 0; i < table.count(); ++i) {
+    const auto& entry = table.at(i);
+    if (entry.value == 0.0) {
+      continue;
+    }
+    const bool visible = !hidden.contains(entry.value);
+    if (entry.visible != visible) {
+      table.setVisible(i, visible);
+      changed = true;
+    }
+  }
+  if (!changed) {
+    return;
+  }
+  applyLabels();
+  emit labelVisibilityChanged();
+}
+
 QWidget* LabelMapSink::createSinkPropertiesWidget(QWidget* parent)
 {
   auto* widget = VolumeSink::createSinkPropertiesWidget(parent);

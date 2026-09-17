@@ -61,6 +61,7 @@ add_cxx_test(PythonEnvironmentCheck)
 add_cxx_test(AutoExecute)
 add_cxx_test(NodeDefinition)
 add_cxx_test(TiltSeriesSinogram)
+add_cxx_test(LabelSelection)
 # AcquisitionClient needs the `bottle` Python package (acquisition/requirements-dev.txt)
 # to start its test server; not part of the conda build env, so disabled here.
 # if(NOT WIN32)

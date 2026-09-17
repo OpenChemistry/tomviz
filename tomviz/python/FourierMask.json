@@ -1,7 +1,7 @@
 {
   "name": "FourierMask",
   "label": "Fourier Mask",
-  "description": "Keep only the parts of the spectrum selected by a mask volume and transform back to real space. Build the mask on an 'FFT (abs log)' branch of the data: Binary Threshold (and optionally Connected Components) to pick out the peaks. Non-zero mask voxels are kept, their Friedel mates are added, and the edges are softened so the cut does not ring.",
+  "description": "Keep only the parts of the spectrum selected by a mask volume and transform back to real space. Build the mask on an 'FFT (abs log)' branch of the data: Binary Threshold to pick out the peaks, then optionally Connected Components and Remove Labels to drop the ones you do not want. Non-zero mask voxels are kept, their Friedel mates are added, and the edges are softened so the cut does not ring.",
   "externalCompatible": false,
   "parameters": [
     {

@@ -101,7 +101,23 @@ public:
   /// request a redraw.
   void applyLabels();
 
+  /// The label table was edited through this sink's panel: re-project
+  /// it and tell anything bound to the labels (a Remove Labels editor).
+  void labelTableEdited();
+
+  /// The labels the user has hidden, ascending; the background is never
+  /// among them.
+  QVector<double> hiddenLabels() const;
+  /// Hide exactly @a labels and show every other label. The background
+  /// keeps whatever visibility it has. Re-projects and emits
+  /// labelVisibilityChanged() only if something changed.
+  void setHiddenLabels(const QVector<double>& labels);
+
 signals:
+  /// Emitted when the visibility of one or more labels changed, whether
+  /// through this sink's panel or setHiddenLabels().
+  void labelVisibilityChanged();
+
   /// Emitted when the set of labels may have changed: after each
   /// execution, and after the color map this sink uses is swapped.
   void labelsChanged();

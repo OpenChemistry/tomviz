@@ -11,6 +11,7 @@
 #include "SAM2SeedWidget.h"
 #include "SelectCylinderWidget.h"
 #include "SelectVolumeRangeWidget.h"
+#include "LabelSelectionWidget.h"
 #include "ThresholdRangeWidget.h"
 #include "ShiftRotationCenterWidget.h"
 #include "RotateAlignWidget.h"
@@ -132,6 +133,8 @@ void Behaviors::registerCustomOperatorUIs()
     "CylindricalCropWidget", /*needsData=*/true);
   registerCustomNodeWidget<ThresholdRangeWidget>(
     "ThresholdRangeWidget", /*needsData=*/true);
+  registerCustomNodeWidget<LabelSelectionWidget>(
+    "LabelSelectionWidget", /*needsData=*/true);
   registerCustomNodeWidget<SelectVolumeRangeWidget>(
     "SelectVolumeRangeWidget", /*needsData=*/true);
   registerCustomNodeWidget<SAM2SeedWidget>(

@@ -203,6 +203,17 @@ void LabelTableModel::setColor(int row, const QColor& color)
   emit labelsEdited();
 }
 
+void LabelTableModel::refreshVisibility()
+{
+  auto labelMap = lock();
+  if (!labelMap || labelMap->labels().isEmpty()) {
+    return;
+  }
+  emit dataChanged(index(0, VisibleColumn),
+                   index(labelMap->labels().count() - 1, VisibleColumn),
+                   { Qt::CheckStateRole });
+}
+
 LabelTableWidget::LabelTableWidget(LabelMapSink* sink, QWidget* parent)
   : QWidget(parent), m_sink(sink)
 {
@@ -279,6 +290,10 @@ LabelTableWidget::LabelTableWidget(LabelMapSink* sink, QWidget* parent)
   if (m_sink) {
     connect(m_sink, &LabelMapSink::labelsChanged, this,
             &LabelTableWidget::refresh);
+    // A Remove Labels editor bound to this sink can flip visibility
+    // from outside the panel
+    connect(m_sink, &LabelMapSink::labelVisibilityChanged, m_model,
+            &LabelTableModel::refreshVisibility);
   }
 
   refresh();
@@ -329,7 +344,7 @@ void LabelTableWidget::onDoubleClicked(const QModelIndex& proxyIndex)
 void LabelTableWidget::applyEdits()
 {
   if (m_sink) {
-    m_sink->applyLabels();
+    m_sink->labelTableEdited();
   }
 }
 

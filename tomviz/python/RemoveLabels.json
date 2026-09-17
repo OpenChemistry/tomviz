@@ -1,0 +1,29 @@
+{
+  "name": "RemoveLabels",
+  "label": "Remove Labels",
+  "description": "Send the ticked labels of a label map to the background. While a Label Map visualization of the same data is open, the labels hidden there are the ones ticked here, and ticking a label here hides it there, so the visualization shows what will be kept.",
+  "externalCompatible": true,
+  "widget": "LabelSelectionWidget",
+  "parameters": [
+    {
+      "name": "labels",
+      "label": "Labels to Remove",
+      "description": "Label values to send to the background, separated by commas, with runs written as first-last: \"3, 5, 10-14\".",
+      "type": "string",
+      "default": "",
+      "bindToSink": {
+        "type": "LabelMapSink",
+        "property": "hiddenLabels"
+      }
+    },
+    {
+      "name": "renumber",
+      "label": "Renumber Remaining Labels",
+      "description": "Number the labels that remain 1, 2, 3... in ascending order of their old values. Off, they keep their values so names and colors in a Label Map visualization still line up.",
+      "type": "bool",
+      "default": false
+    }
+  ],
+  "inputType": "LabelMap",
+  "outputType": "LabelMap"
+}

@@ -61,6 +61,9 @@ public:
   void invertVisibility();
   /// Assign the color of one row, addressed in source-model terms.
   void setColor(int row, const QColor& color);
+  /// The table's visibility flags were changed from outside the model
+  /// (setHiddenLabels); refresh the check boxes without a reset.
+  void refreshVisibility();
 
 signals:
   /// Emitted after any change to the underlying label table, so the
