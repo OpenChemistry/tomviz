@@ -506,6 +506,7 @@ list(APPEND SOURCES
   animations/SceneSnapshot.h
   animations/ClipAnimation.h
   animations/ContourAnimation.h
+  animations/ExplodedAnimation.h
   animations/OpacityAnimation.h
   animations/SliceAnimation.h
   animations/TimeSeriesAnimation.h

@@ -7,6 +7,7 @@
 #include "CameraViewpoints.h"
 #include "ClipAnimation.h"
 #include "ContourAnimation.h"
+#include "ExplodedAnimation.h"
 #include "ModuleAnimation.h"
 #include "OpacityAnimation.h"
 #include "ScalarOpacityAnimation.h"
@@ -73,6 +74,13 @@ ModuleAnimation* buildAnimation(const QString& type, pipeline::Node* node,
   } else if (type == "opacity") {
     if (OpacityAnimation::supports(node)) {
       return new OpacityAnimation(node, start, stop);
+    }
+  } else if (type == "exploded") {
+    if (auto* sink = qobject_cast<pipeline::VolumeSink*>(node)) {
+      auto unit = json["unit"].toString() == "chunks"
+                    ? ExplodedAnimation::Chunks
+                    : ExplodedAnimation::Gap;
+      return new ExplodedAnimation(sink, start, stop, unit);
     }
   }
 

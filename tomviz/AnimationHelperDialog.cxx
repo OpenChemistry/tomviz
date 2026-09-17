@@ -9,6 +9,7 @@
 #include "CameraViewpoints.h"
 #include "ClipAnimation.h"
 #include "ContourAnimation.h"
+#include "ExplodedAnimation.h"
 #include "ModuleAnimations.h"
 #include "MovieExportDialog.h"
 #include "OpacityAnimation.h"
@@ -1014,6 +1015,8 @@ public:
       ui.animatedProperty->addItem("Opacity", "opacity");
     } else if (ScalarOpacityAnimation::supports(node)) {
       ui.animatedProperty->addItem("Opacity curve", "curve");
+      ui.animatedProperty->addItem("Exploded gap", "explodedGap");
+      ui.animatedProperty->addItem("Exploded chunks", "explodedChunks");
     }
 
     int index = ui.animatedProperty->findData(previous);
@@ -1117,6 +1120,21 @@ public:
       // default; the user can invert it by swapping the two values.
       startDefault = OpacityAnimation::opacityOf(node);
       stopDefault = 0.0;
+    } else if (property == "explodedGap") {
+      auto* volume = qobject_cast<pipeline::VolumeSink*>(node);
+      label = "Gap:";
+      // Pulling the slabs apart from closed to wherever the panel has
+      // the gap set is the useful default.
+      startDefault = 0.0;
+      stopDefault = volume ? volume->explodedGap() : 0.25;
+    } else if (property == "explodedChunks") {
+      auto* volume = qobject_cast<pipeline::VolumeSink*>(node);
+      label = "Chunks:";
+      decimals = 0;
+      lo = 2;
+      hi = 16;
+      startDefault = 2;
+      stopDefault = volume ? volume->explodedChunks() : 4;
     }
 
     configuredLo = lo;
@@ -1513,6 +1531,12 @@ public:
       if (OpacityAnimation::supports(node)) {
         return new OpacityAnimation(node, start, stop);
       }
+    } else if (property == "explodedGap" || property == "explodedChunks") {
+      if (auto* volume = qobject_cast<pipeline::VolumeSink*>(node)) {
+        auto unit = property == "explodedGap" ? ExplodedAnimation::Gap
+                                              : ExplodedAnimation::Chunks;
+        return new ExplodedAnimation(volume, start, stop, unit);
+      }
     } else if (property == "curve") {
       auto* volume = qobject_cast<pipeline::VolumeSink*>(node);
       if (volume && ScalarOpacityAnimation::supports(node)) {
@@ -1669,6 +1693,11 @@ public:
     } else if (auto* opacity = qobject_cast<OpacityAnimation*>(animation)) {
       start = opacity->startValue;
       stop = opacity->stopValue;
+    } else if (auto* exploded = qobject_cast<ExplodedAnimation*>(animation)) {
+      property = exploded->unit == ExplodedAnimation::Gap ? "explodedGap"
+                                                          : "explodedChunks";
+      start = exploded->startValue;
+      stop = exploded->stopValue;
     } else if (qobject_cast<ScalarOpacityAnimation*>(animation)) {
       property = "curve";
     }

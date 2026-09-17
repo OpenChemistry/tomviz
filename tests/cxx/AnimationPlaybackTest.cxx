@@ -162,12 +162,14 @@ private slots:
   }
 };
 
+#include "ExplodedAnimation.h"
 #include "ModuleAnimations.h"
 #include "OpacityAnimation.h"
 #include "RecordedAnimations.h"
 #include "SceneSnapshot.h"
 #include "pipeline/Pipeline.h"
 #include "pipeline/sinks/SliceSink.h"
+#include "pipeline/sinks/VolumeSink.h"
 
 // The animations built from recorded viewpoint state: they need a
 // ParaView core to exist, so they are exercised here rather than in the
@@ -281,6 +283,65 @@ private slots:
     for (auto* animation : ModuleAnimations::instance().animations()) {
       QVERIFY(!animation->recorded());
     }
+  }
+
+  // An authored exploded-view animation sweeps the gap and the chunk
+  // count during playback, switching the exploded view on, and comes
+  // back from a state file with its unit.
+  void explodedAnimationSweepsTheViewAndSurvivesAStateFile()
+  {
+    pipeline::Pipeline pipeline;
+    auto* volume = new pipeline::VolumeSink();
+    pipeline.addNode(volume);
+    volume->setExplodedGap(0.0);
+    QVERIFY(!volume->explodedEnabled());
+
+    auto& animations = ModuleAnimations::instance();
+    animations.add(
+      new ExplodedAnimation(volume, 0.0, 0.5, ExplodedAnimation::Gap));
+    animations.add(
+      new ExplodedAnimation(volume, 2, 8, ExplodedAnimation::Chunks));
+
+    play(10);
+    QVERIFY(volume->explodedEnabled());
+    // The last tick lands at progress 1 or just short of it
+    QVERIFY2(std::abs(volume->explodedGap() - 0.5) < 0.06,
+             qPrintable(QString("gap %1").arg(volume->explodedGap())));
+    QCOMPARE(volume->explodedChunks(), 8);
+
+    auto json = animations.serialize(&pipeline);
+    auto entries = json["modules"].toArray();
+    QCOMPARE(entries.size(), 2);
+    QCOMPARE(entries[0].toObject()["type"].toString(), QString("exploded"));
+    QCOMPARE(entries[0].toObject()["unit"].toString(), QString("gap"));
+    QCOMPARE(entries[1].toObject()["unit"].toString(), QString("chunks"));
+
+    animations.deserialize(json, &pipeline);
+    auto restored = animations.animations();
+    QCOMPARE(restored.size(), 2);
+    auto* gap = qobject_cast<ExplodedAnimation*>(restored[0]);
+    QVERIFY(gap);
+    QCOMPARE(gap->unit, ExplodedAnimation::Gap);
+    QCOMPARE(gap->startValue, 0.0);
+    QCOMPARE(gap->stopValue, 0.5);
+    QCOMPARE(gap->baseNode.data(), volume);
+    auto* chunks = qobject_cast<ExplodedAnimation*>(restored[1]);
+    QVERIFY(chunks);
+    QCOMPARE(chunks->unit, ExplodedAnimation::Chunks);
+    QCOMPARE(chunks->stopValue, 8.0);
+
+    // Only a volume can be exploded
+    auto* slice = new pipeline::SliceSink();
+    pipeline.addNode(slice);
+    QJsonObject wrong;
+    wrong["modules"] = QJsonArray{ QJsonObject(
+      { { "type", "exploded" },
+        { "node", pipeline.nodeId(slice) },
+        { "start", 0 },
+        { "stop", 1 },
+        { "unit", "gap" } }) };
+    animations.deserialize(wrong, &pipeline);
+    QVERIFY(animations.animations().isEmpty());
   }
 };
 
