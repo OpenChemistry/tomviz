@@ -298,11 +298,17 @@ void Calculate2DHistogram(T* values, const int* dim, const int numComp,
  * magnitudes, for multi-component arrays) lie, from a fine histogram
  * over @a range. Linear interpolation inside the bin holding the
  * percentile keeps the estimate smooth for coarse integer data.
+ *
+ * With @a excludeMinimum the values equal to range[0] are left out of
+ * the count. A reconstruction is padded with its minimum (usually zero)
+ * wherever there is nothing, and that pile can be most of the volume,
+ * which drags every percentile down to the noise just above it.
  */
 template <typename T>
 double ComputePercentile(const T* values, const vtkIdType numTuples,
                          const vtkIdType numComponents, const double range[2],
-                         const double fraction)
+                         const double fraction,
+                         const bool excludeMinimum = false)
 {
   constexpr int bins = 4096;
   if (numTuples <= 0 || !(range[1] > range[0])) {
@@ -323,7 +329,7 @@ double ComputePercentile(const T* values, const vtkIdType numTuples,
       }
       value = std::sqrt(squaredSum);
     }
-    if (!vtkMath::IsFinite(value)) {
+    if (!vtkMath::IsFinite(value) || (excludeMinimum && value == range[0])) {
       continue;
     }
     int idx = static_cast<int>((value - range[0]) * inv);

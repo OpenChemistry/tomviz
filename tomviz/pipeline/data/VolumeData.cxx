@@ -309,6 +309,29 @@ double VolumeData::scalarPercentile(double fraction) const
   return result;
 }
 
+double VolumeData::thresholdSeed() const
+{
+  auto* s = scalars();
+  if (!s || s->GetNumberOfTuples() <= 0) {
+    return 0.0;
+  }
+  constexpr double kBudget = 250000.0;
+  const double count = static_cast<double>(s->GetNumberOfTuples());
+  const double fraction = std::max(0.8, 1.0 - kBudget / count);
+  auto range = scalarRange();
+  double result = range[0];
+  switch (s->GetDataType()) {
+    vtkTemplateMacro(
+      result = ComputePercentile(
+        reinterpret_cast<VTK_TT*>(s->GetVoidPointer(0)),
+        s->GetNumberOfTuples(), s->GetNumberOfComponents(), range.data(),
+        fraction, /*excludeMinimum=*/true));
+    default:
+      break;
+  }
+  return result;
+}
+
 std::array<double, 2> VolumeData::colorMapRange() const
 {
   if (m_timeSteps.isEmpty()) {

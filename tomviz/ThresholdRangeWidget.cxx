@@ -26,7 +26,7 @@ ThresholdRangeWidget::ThresholdRangeWidget(
       auto range = vol->scalarRange();
       m_dataRange[0] = range[0];
       m_dataRange[1] = range[1];
-      lowerGuess = vol->scalarPercentile(0.8);
+      lowerGuess = vol->thresholdSeed();
     }
   }
   if (!(m_dataRange[1] > m_dataRange[0])) {
@@ -67,7 +67,7 @@ ThresholdRangeWidget::ThresholdRangeWidget(
   });
 
   // Until told otherwise, mirror ThresholdSink's initial pick: the
-  // brightest 20% of the data
+  // brightest voxels of the data
   setThresholds(lowerGuess, m_dataRange[1]);
 }
 

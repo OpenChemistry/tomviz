@@ -170,11 +170,11 @@ bool ThresholdSink::consume(const QMap<QString, PortData>& inputs)
     }
   }
 
-  // Start at the brightest 20% of the data if not explicitly set. Most
-  // voxels of a reconstruction are dim background, and thresholding
-  // into that noise produces a huge surface that is slow to render.
+  // Start at the brightest voxels if not explicitly set. Most voxels of
+  // a reconstruction are dim background, and thresholding into that
+  // noise produces a huge surface that is slow to render.
   if (!m_rangeSet) {
-    m_lower = volume->scalarPercentile(0.8);
+    m_lower = volume->thresholdSeed();
     m_upper = range[1];
   }
 

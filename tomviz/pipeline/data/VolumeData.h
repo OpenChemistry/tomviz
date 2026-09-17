@@ -118,6 +118,15 @@ public:
   /// estimated from a histogram; the magnitude for multi-component data.
   double scalarPercentile(double fraction) const;
 
+  /// A starting lower threshold for showing this data: the value above
+  /// which only the brightest voxels lie. Chosen so that no more than
+  /// about 250,000 voxels (and never more than a fifth of them) pass,
+  /// which keeps the first render of a Threshold visualization quick
+  /// however large the volume, and leaves out the padding at the
+  /// minimum value, which would otherwise pull the estimate into the
+  /// background noise.
+  double thresholdSeed() const;
+
   /// The range the color map should span: scalarRange(), or the union of
   /// every step's range when this is a time series.
   ///
