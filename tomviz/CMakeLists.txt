@@ -329,6 +329,8 @@ set(SOURCES
   pipeline/sinks/VolumeSink.h
   pipeline/sinks/LabelMapSink.cxx
   pipeline/sinks/LabelMapSink.h
+  pipeline/sinks/MultiVolumeCoordinator.cxx
+  pipeline/sinks/MultiVolumeCoordinator.h
   pipeline/sinks/LabelMapSurface.cxx
   pipeline/sinks/LabelMapSurface.h
   pipeline/sinks/LabelTableWidget.cxx

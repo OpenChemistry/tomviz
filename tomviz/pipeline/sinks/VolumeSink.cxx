@@ -4,6 +4,7 @@
 #include "VolumeSink.h"
 
 #include "DoubleSliderWidget.h"
+#include "MultiVolumeCoordinator.h"
 #include "ThreadUtils.h"
 #include "VolumeBricking.h"
 #include "VolumeSinkWidget.h"
@@ -94,11 +95,13 @@ struct LightingPresetValues
 //    pretending to raise an "ambient" look.
 //
 //  - Scattering anisotropy must not be positive. The phase function is
-//    evaluated against the view direction, and tomviz lights the scene with
-//    a headlight, so light reaching the camera is backscattered: positive
-//    (forward) anisotropy throws it away from the viewer and renders the
-//    volume nearly black. Slightly negative reads brightest without the
-//    blown-out look that sets in below about -0.5.
+//    evaluated against the view direction, and the lights sit with the
+//    camera (ParaView's light kit is made of camera lights, and the
+//    headlight that replaces it while volumes render together is one too),
+//    so light reaching the camera is backscattered: positive (forward)
+//    anisotropy throws it away from the viewer and renders the volume
+//    nearly black. Slightly negative reads brightest without the blown-out
+//    look that sets in below about -0.5.
 //
 // Gentle needs its own note, because it gets its look without shadows at
 // all. It is for noisy experimental reconstructions, where Simple's specular
@@ -790,9 +793,11 @@ VolumeSink::VolumeSink(QObject* parent) : LegacyModuleSink(parent)
   addInput("volume", PortType::ImageData);
   setLabel("Volume");
 
-  // NOTE: Due to a bug in vtkMultiVolume, a gradient opacity function must be
-  // set or the shader will fail to compile.
-  m_gradientOpacity->AddPoint(0.0, 1.0);
+  // No gradient opacity function: the volume is classified by scalar value
+  // alone (see updateColorMap). A function that maps everything to 1 would
+  // look the same but cost a gradient per sample. Keep it that way for
+  // every VolumeSink: vtkMultiVolume refuses to render a set where some
+  // volumes carry a gradient opacity function and others do not.
 
   m_volumeMapper->SetScalarModeToUsePointFieldData();
   m_volumeMapper->SetBlendMode(vtkVolumeMapper::COMPOSITE_BLEND);
@@ -847,6 +852,9 @@ void VolumeSink::setFineSampling(bool enabled)
   for (auto* mapper : allMappers()) {
     mapper->SetFineSampling(enabled);
   }
+  if (auto* coordinator = MultiVolumeCoordinator::find(view())) {
+    coordinator->refreshSettings();
+  }
   emit renderNeeded();
 }
 
@@ -871,6 +879,9 @@ void VolumeSink::setVisibility(bool visible)
     slab->SetVisibility(shown ? 1 : 0);
   }
   LegacyModuleSink::setVisibility(visible);
+  // VTK ignores the visibility of the volumes inside a vtkMultiVolume, so
+  // a hidden sink has to leave the set rather than sit in it invisibly.
+  syncMultiVolumeMembership();
 }
 
 bool VolumeSink::isColorMapNeeded() const
@@ -884,6 +895,10 @@ bool VolumeSink::initialize(vtkSMViewProxy* view)
     return false;
   }
 
+  // A fresh view starts the sink on its own props; the view's coordinator
+  // takes them over below if it already draws another volume.
+  m_composited = false;
+  m_leadApplied = false;
   renderView()->AddPropToRenderer(m_volume);
   for (auto& slab : m_explodedVolumes) {
     renderView()->AddPropToRenderer(slab);
@@ -913,6 +928,7 @@ bool VolumeSink::initialize(vtkSMViewProxy* view)
     m_refinementObserverId =
       window->AddObserver(vtkCommand::EndEvent, m_refinementObserver);
   }
+  syncMultiVolumeMembership();
   return true;
 }
 
@@ -963,6 +979,13 @@ void VolumeSink::onRenderFinished()
 
 bool VolumeSink::finalize()
 {
+  // Leave the view's multi-volume first: that hands the sink its own props
+  // back, which the removal below then takes out of the renderer.
+  if (auto* coordinator = MultiVolumeCoordinator::find(view())) {
+    coordinator->removeMember(this);
+  }
+  m_composited = false;
+  m_leadApplied = false;
   if (renderView()) {
     if (m_refinementObserverId) {
       if (auto* window = renderView()->GetRenderWindow()) {
@@ -989,6 +1012,7 @@ void VolumeSink::clearVisualization()
   for (auto* slab : allVolumes()) {
     slab->SetVisibility(0);
   }
+  syncMultiVolumeMembership();
 }
 
 bool VolumeSink::consume(const QMap<QString, PortData>& inputs)
@@ -1023,6 +1047,9 @@ bool VolumeSink::consume(const QMap<QString, PortData>& inputs)
   for (auto* slab : allVolumes()) {
     slab->SetVisibility(shown ? 1 : 0);
   }
+  // Data is what makes the sink eligible for the view's multi-volume (and
+  // bricking, decided above, is what rules it out).
+  syncMultiVolumeMembership();
 
   onMetadataChanged();
   return true;
@@ -1123,22 +1150,12 @@ void VolumeSink::updateColorMap()
     m_volumeProperty->SetScalarOpacity(opacity);
   }
 
-  // Gradient opacity: legacy ModuleVolume only applied the stored
-  // gradient-opacity PWF in GRADIENT_1D / GRADIENT_2D transfer modes;
-  // SCALAR mode (the default) used a no-op fallback (constant 1.0 PWF)
-  // only as a workaround for a vtkMultiVolume shader-compile bug.
-  // VolumeSink doesn't expose transfer mode yet, so we always run in
-  // the SCALAR equivalent: ignore the shared/detached gradient PWF and
-  // use the no-op fallback. Otherwise state files that round-trip a
-  // GRADIENT_1D PWF with a range calibrated for some other data (and
-  // never applied at load time in legacy) would make the volume appear
-  // invisible here.  TODO: apply gradientOpacity() when a transfer
-  // mode selector is added to VolumeSink.
-  if (m_gradientOpacity->GetSize() > 0) {
-    m_volumeProperty->SetGradientOpacity(m_gradientOpacity);
-  } else {
-    m_volumeProperty->SetGradientOpacity(nullptr);
-  }
+  // The dataset's gradient-opacity curve (gradientOpacity()) is deliberately
+  // not applied. Legacy ModuleVolume only used it in its GRADIENT_1D and
+  // GRADIENT_2D transfer modes, which VolumeSink does not expose, and a
+  // state file can carry a curve whose range was calibrated for other data,
+  // which would make the volume appear invisible. TODO: apply
+  // gradientOpacity() when a transfer mode selector is added to VolumeSink.
 
   emit renderNeeded();
 }
@@ -1354,6 +1371,10 @@ void VolumeSink::setSmoothNormals(bool enabled)
     mapper->SetComputeNormalFromOpacity(enabled);
   }
   m_multiBlockMapper->SetComputeNormalFromOpacity(enabled);
+  // A mapper setting, so on the shared mapper it is the lead's that counts.
+  if (auto* coordinator = MultiVolumeCoordinator::find(view())) {
+    coordinator->refreshSettings();
+  }
   emit lightingStateChanged();
   emit renderNeeded();
 }
@@ -1561,6 +1582,10 @@ void VolumeSink::applyActiveScalars()
     }
     m_multiBlockMapper->SelectScalarArray(selected->GetName());
   }
+  // The shared mapper reads the selection off the input it is handed.
+  if (auto* coordinator = MultiVolumeCoordinator::find(view())) {
+    coordinator->refreshInput(this);
+  }
 }
 
 // --- Clipping ---
@@ -1589,6 +1614,9 @@ void VolumeSink::addClippingPlane(vtkPlane* plane)
     if (m_usingMultiBlock) {
       warnClippingUnsupported();
     }
+    if (auto* coordinator = MultiVolumeCoordinator::find(view())) {
+      coordinator->refreshSettings();
+    }
     emit renderNeeded();
   }
 }
@@ -1599,6 +1627,9 @@ void VolumeSink::removeClippingPlane(vtkPlane* plane)
     for (auto* mapper : allMappers()) {
       mapper->RemoveClippingPlane(plane);
     }
+    if (auto* coordinator = MultiVolumeCoordinator::find(view())) {
+      coordinator->refreshSettings();
+    }
     emit renderNeeded();
   }
 }
@@ -1608,7 +1639,15 @@ void VolumeSink::removeAllClippingPlanes()
   for (auto* mapper : allMappers()) {
     mapper->RemoveAllClippingPlanes();
   }
+  if (auto* coordinator = MultiVolumeCoordinator::find(view())) {
+    coordinator->refreshSettings();
+  }
   emit renderNeeded();
+}
+
+vtkPlaneCollection* VolumeSink::clippingPlanes() const
+{
+  return m_volumeMapper->GetClippingPlanes();
 }
 
 // --- Cut-out ---
@@ -1842,7 +1881,9 @@ void VolumeSink::applyExploded()
     slab->SetMapper(mapper);
     slab->SetProperty(m_volumeProperty);
     slab->SetVisibility(m_volume->GetVisibility());
-    if (renderView()) {
+    // While the view's multi-volume draws this sink, its props stay out
+    // of the renderer; they go in when the sink is handed back.
+    if (renderView() && !m_composited) {
       renderView()->AddPropToRenderer(slab);
     }
     m_explodedMappers.push_back(mapper);
@@ -1923,7 +1964,9 @@ void VolumeSink::applyDisplayTransform()
 
 void VolumeSink::sortExplodedProps()
 {
-  if (m_explodedVolumes.empty() || !renderView()) {
+  // Nothing of this sink's is in the renderer to sort while the view's
+  // multi-volume draws it, and AddItem below would put the slabs there.
+  if (m_explodedVolumes.empty() || !renderView() || m_composited) {
     return;
   }
   auto* renderer = renderView()->GetRenderer();
@@ -2028,12 +2071,118 @@ void VolumeSink::applyCutOut()
   }
 }
 
+// --- Multi-volume ---
+
+bool VolumeSink::multiVolumeActive() const
+{
+  return m_composited;
+}
+
+bool VolumeSink::multiVolumeLead() const
+{
+  return m_composited && m_leadApplied;
+}
+
+vtkVolume* VolumeSink::volumeProp() const
+{
+  return m_volume;
+}
+
+vtkImageData* VolumeSink::renderedImage() const
+{
+  return vtkImageData::SafeDownCast(m_volumeMapper->GetDataObjectInput());
+}
+
+QString VolumeSink::renderedArrayName() const
+{
+  const char* name = m_volumeMapper->GetArrayName();
+  return name ? QString::fromUtf8(name) : QString();
+}
+
+bool VolumeSink::multiVolumeEligible() const
+{
+  // The prop's own flag is the one source of truth for "on screen": it
+  // folds in the sink's visibility, whether there is data, and whether a
+  // subclass draws the data some other way (LabelMapSink's surface).
+  // Bricked volumes are out: a vtkMultiVolume takes one texture per input.
+  return renderView() && m_volume->GetVisibility() != 0 &&
+         !m_usingMultiBlock && renderedImage() != nullptr;
+}
+
+void VolumeSink::syncMultiVolumeMembership()
+{
+  auto* viewProxy = view();
+  if (!viewProxy) {
+    return;
+  }
+  if (multiVolumeEligible()) {
+    if (auto* coordinator = MultiVolumeCoordinator::forView(viewProxy)) {
+      coordinator->addMember(this);
+    }
+  } else if (auto* coordinator = MultiVolumeCoordinator::find(viewProxy)) {
+    coordinator->removeMember(this);
+  }
+}
+
+void VolumeSink::showStandaloneProps(bool shown)
+{
+  if (!renderView()) {
+    return;
+  }
+  if (shown) {
+    renderView()->AddPropToRenderer(m_volume);
+    for (auto& slab : m_explodedVolumes) {
+      renderView()->AddPropToRenderer(slab);
+    }
+    m_explodedOrderDirty = true;
+  } else {
+    renderView()->RemovePropFromRenderer(m_volume);
+    for (auto& slab : m_explodedVolumes) {
+      renderView()->RemovePropFromRenderer(slab);
+    }
+  }
+}
+
+void VolumeSink::applyMultiVolumeState()
+{
+  auto* coordinator = MultiVolumeCoordinator::find(view());
+  const bool composited =
+    coordinator && coordinator->active() && coordinator->isMember(this);
+  const bool lead = composited && coordinator->lead() == this;
+  bool changed = false;
+  if (composited != m_composited) {
+    m_composited = composited;
+    showStandaloneProps(!composited);
+    changed = true;
+  }
+  if (lead != m_leadApplied) {
+    m_leadApplied = lead;
+    changed = true;
+  }
+  if (changed) {
+    emit multiVolumeStateChanged();
+    // Scattering availability is part of the lighting state shown.
+    emit lightingStateChanged();
+    emit renderNeeded();
+  }
+}
+
 // --- Properties widget ---
+
+bool VolumeSink::scatteringAvailable() const
+{
+  return scatteringSupported() && !m_composited;
+}
 
 QString VolumeSink::scatteringUnavailableReason() const
 {
-  if (scatteringSupported()) {
+  if (scatteringAvailable()) {
     return QString();
+  }
+  if (m_composited) {
+    return tr("Volumetric shadows are unavailable while the volumes in this "
+              "view are rendered together, which VTK cannot shadow. They "
+              "come back once only one volume is shown.");
   }
   if (m_usingMultiBlock) {
     return tr("This volume is larger than the GPU's 3-D texture size limit, "
@@ -2266,10 +2415,45 @@ QWidget* VolumeSink::createSinkPropertiesWidget(QWidget* parent)
     widget->setSmoothNormals(smoothNormals());
     widget->setActiveLightingPreset(static_cast<int>(currentLightingPreset()));
     widget->setActiveUserLightingPreset(matchingUserLightingPreset());
-    widget->setScatteringAvailable(scatteringSupported(),
+    widget->setScatteringAvailable(scatteringAvailable(),
                                    scatteringUnavailableReason());
   };
   connect(this, &VolumeSink::lightingStateChanged, widget, syncLighting);
+
+  // While the view's multi-volume draws this sink, show what actually
+  // renders (composite, jittered) in the controls it takes away, and grey
+  // out what has no effect on that path. The sink's own settings are kept
+  // underneath and come back when it renders on its own again.
+  const QString cutOutToolTip = cutOutBox->toolTip();
+  const QString explodedToolTip = explodedBox->toolTip();
+  auto syncMultiVolume = [this, widget, cutOutBox, explodedBox, cutOutToolTip,
+                          explodedToolTip]() {
+    const bool active = multiVolumeActive();
+    const bool lead = multiVolumeLead();
+    QString leadLabel;
+    if (active && !lead) {
+      auto* coordinator = MultiVolumeCoordinator::find(view());
+      if (coordinator && coordinator->lead()) {
+        leadLabel = coordinator->lead()->label();
+      }
+    }
+    {
+      QSignalBlocker blocker(widget);
+      widget->setBlendingMode(active ? vtkVolumeMapper::COMPOSITE_BLEND
+                                     : blendingMode());
+      widget->setJittering(active ? true : jittering());
+    }
+    widget->setMultiVolumeMode(active, lead, leadLabel);
+    const QString reason =
+      tr("Not available while the volumes in this view are rendered "
+         "together, which VTK cannot crop.");
+    cutOutBox->setEnabled(!active);
+    cutOutBox->setToolTip(active ? reason : cutOutToolTip);
+    explodedBox->setEnabled(!active);
+    explodedBox->setToolTip(active ? reason : explodedToolTip);
+  };
+  connect(this, &VolumeSink::multiVolumeStateChanged, widget,
+          syncMultiVolume);
 
   // Push current state into the widget
   {
@@ -2280,6 +2464,7 @@ QWidget* VolumeSink::createSinkPropertiesWidget(QWidget* parent)
     widget->setSolidity(solidity());
   }
   syncLighting();
+  syncMultiVolume();
 
   // Connect widget signals to VolumeSink setters
   connect(widget, &VolumeSinkWidget::jitteringToggled, this,

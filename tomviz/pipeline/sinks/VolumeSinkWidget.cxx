@@ -11,11 +11,33 @@
 
 #include <QComboBox>
 #include <QHBoxLayout>
+#include <QLabel>
 #include <QPushButton>
 #include <QSignalBlocker>
 #include <QVBoxLayout>
 
 namespace tomviz {
+
+namespace {
+
+/// Enable or disable @a w, showing @a reason as its tool tip while it is
+/// disabled and putting the tool tip Designer set back afterwards.
+void setEnabledWithReason(QWidget* w, bool enabled, const QString& reason)
+{
+  static const char* kOriginalToolTip = "tomvizOriginalToolTip";
+  w->setEnabled(enabled);
+  if (!enabled) {
+    if (!w->property(kOriginalToolTip).isValid()) {
+      w->setProperty(kOriginalToolTip, w->toolTip());
+    }
+    w->setToolTip(reason);
+  } else if (w->property(kOriginalToolTip).isValid()) {
+    w->setToolTip(w->property(kOriginalToolTip).toString());
+    w->setProperty(kOriginalToolTip, QVariant());
+  }
+}
+
+} // namespace
 
 // If we make this bigger, such as 1000, and we make the max too
 // close to the data minimum or the min too close to the data maximum,
@@ -63,6 +85,13 @@ VolumeSinkWidget::VolumeSinkWidget(QWidget* parent_)
   m_uiLighting->advancedWidget->setVisible(false);
   connect(m_uiLighting->expAdvanced, &pqExpanderButton::toggled,
           m_uiLighting->advancedWidget, &QWidget::setVisible);
+
+  // Shown only while the view's volumes are rendered together; see
+  // setMultiVolumeMode.
+  m_multiVolumeNote = new QLabel(lightingWidget);
+  m_multiVolumeNote->setWordWrap(true);
+  m_multiVolumeNote->setVisible(false);
+  m_uiLighting->lightingLayout->insertWidget(0, m_multiVolumeNote);
 
   const auto presets = presetButtons();
   for (int i = 0; i < presets.size(); ++i) {
@@ -126,10 +155,6 @@ VolumeSinkWidget::VolumeSinkWidget(QWidget* parent_)
   connect(m_ui->cbTransferMode,
           QOverload<int>::of(&QComboBox::currentIndexChanged), this,
           &VolumeSinkWidget::transferModeChanged);
-  connect(m_ui->cbMultiVolume, &QCheckBox::toggled, this,
-          &VolumeSinkWidget::allowMultiVolumeToggled);
-  connect(m_ui->cbMultiVolume, &QCheckBox::toggled, this,
-          &VolumeSinkWidget::setAllowMultiVolume);
 
   connect(m_ui->useRgbaMapping, &QCheckBox::toggled, this,
           &VolumeSinkWidget::useRgbaMappingToggled);
@@ -168,17 +193,6 @@ VolumeSinkWidget::VolumeSinkWidget(QWidget* parent_)
   connect(m_ui->soliditySlider, &DoubleSliderWidget::valueEdited, this,
           &VolumeSinkWidget::solidityChanged);
 
-  // TODO: multi-volume rendering is not yet implemented for VolumeSink.
-  // The legacy VolumeManager only works with ModuleVolume. When re-enabling,
-  // the per-volume scalar array selection must be fixed: the shared
-  // vtkGPUVolumeRayCastMapper in VolumeManager doesn't propagate each
-  // volume's SelectScalarArray() call, so multiple volumes on the same
-  // dataset all render whichever scalar was last set as active on the
-  // shared vtkImageData. Fix by giving each volume port a shallow-copied
-  // vtkImageData with the correct active scalar, or by using per-port
-  // SetInputArrayToProcess() on the shared mapper.
-  m_ui->cbMultiVolume->setVisible(false);
-
   // FIXME: staged for removal
   m_ui->cbTransferMode->setVisible(false);
   m_ui->label->setVisible(false);
@@ -199,7 +213,8 @@ void VolumeSinkWidget::setJittering(const bool enable)
 
 void VolumeSinkWidget::setBlendingMode(const int mode)
 {
-  m_uiLighting->gbLighting->setEnabled(usesLighting(mode));
+  m_uiLighting->gbLighting->setEnabled(usesLighting(mode) &&
+                                       !m_lightingShared);
   m_ui->cbBlending->setCurrentIndex(static_cast<int>(mode));
 }
 
@@ -320,21 +335,9 @@ QList<QPushButton*> VolumeSinkWidget::presetButtons() const
 void VolumeSinkWidget::setScatteringAvailable(const bool available,
                                               const QString& reason)
 {
-  // Swap the tool tip for the reason while disabled, stashing the one
-  // Designer set so it can be put back.
   m_scatteringAvailable = available;
-  static const char* kOriginalToolTip = "tomvizOriginalToolTip";
   for (auto* w : scatteringWidgets()) {
-    w->setEnabled(available);
-    if (!available) {
-      if (!w->property(kOriginalToolTip).isValid()) {
-        w->setProperty(kOriginalToolTip, w->toolTip());
-      }
-      w->setToolTip(reason);
-    } else if (w->property(kOriginalToolTip).isValid()) {
-      w->setToolTip(w->property(kOriginalToolTip).toString());
-      w->setProperty(kOriginalToolTip, QVariant());
-    }
+    setEnabledWithReason(w, available, reason);
   }
   updateShadowControlsEnabled();
 }
@@ -350,7 +353,8 @@ QList<QWidget*> VolumeSinkWidget::scatteringWidgets() const
 
 void VolumeSinkWidget::onBlendingChanged(const int mode)
 {
-  m_uiLighting->gbLighting->setEnabled(usesLighting(mode));
+  m_uiLighting->gbLighting->setEnabled(usesLighting(mode) &&
+                                       !m_lightingShared);
   emit blendingChanged(mode);
 }
 
@@ -426,24 +430,27 @@ void VolumeSinkWidget::setRgbaMappingComponent(const QString& component)
   m_ui->rgbaMappingComponent->setCurrentText(component);
 }
 
-void VolumeSinkWidget::setAllowMultiVolume(const bool checked)
+void VolumeSinkWidget::setMultiVolumeMode(const bool active, const bool lead,
+                                          const QString& leadLabel)
 {
-  if (checked != m_ui->cbMultiVolume->isChecked()) {
-    m_ui->cbMultiVolume->setChecked(checked);
+  const QString reason =
+    tr("The volumes in this view are rendered together, which always "
+       "composites with ray jittering.");
+  setEnabledWithReason(m_ui->label_4, !active, reason);
+  setEnabledWithReason(m_ui->cbBlending, !active, reason);
+  setEnabledWithReason(m_ui->cbJittering, !active, reason);
+
+  m_lightingShared = active && !lead;
+  m_uiLighting->gbLighting->setEnabled(
+    usesLighting(m_ui->cbBlending->currentIndex()) && !m_lightingShared);
+  if (active) {
+    m_multiVolumeNote->setText(
+      lead ? tr("Applies to every volume rendered together in this view.")
+           : tr("Shared by the volumes rendered together in this view and "
+                "set on \"%1\".")
+               .arg(leadLabel));
   }
-
-  m_uiLighting->gbLighting->setEnabled(!checked ||
-                                       !m_ui->cbMultiVolume->isEnabled());
-}
-
-void VolumeSinkWidget::setEnableAllowMultiVolume(const bool enable)
-{
-  if (enable != m_ui->cbMultiVolume->isEnabled()) {
-    m_ui->cbMultiVolume->setEnabled(enable);
-  }
-
-  m_uiLighting->gbLighting->setEnabled(!enable ||
-                                       !m_ui->cbMultiVolume->isChecked());
+  m_multiVolumeNote->setVisible(active);
 }
 
 void VolumeSinkWidget::onRgbaMappingMinChanged(double v)

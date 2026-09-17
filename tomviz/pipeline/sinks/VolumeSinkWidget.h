@@ -9,6 +9,7 @@
 
 class QFormLayout;
 class QComboBox;
+class QLabel;
 class QPushButton;
 class QVBoxLayout;
 
@@ -75,8 +76,13 @@ public:
   void setRgbaMappingCombineComponents(const bool b);
   void setRgbaMappingComponentOptions(const QStringList& list);
   void setRgbaMappingComponent(const QString& component);
-  void setAllowMultiVolume(const bool allow);
-  void setEnableAllowMultiVolume(const bool enable);
+  /// Reflect the sink being drawn as part of its view's multi-volume.
+  /// That path always composites with ray jittering, so those controls
+  /// are greyed out while @a active; and it takes its lighting from one
+  /// member, so the lighting group is editable only for the @a lead, with
+  /// a note naming @a leadLabel on the others.
+  void setMultiVolumeMode(const bool active, const bool lead,
+                          const QString& leadLabel);
   QFormLayout* formLayout();
   /// The top-level vertical layout, so a sink can slot controls of its
   /// own in among the volume ones.
@@ -117,7 +123,6 @@ signals:
   void rgbaMappingMinChanged(const double value);
   void rgbaMappingMaxChanged(const double value);
   void rgbaMappingComponentChanged(const QString& component);
-  void allowMultiVolumeToggled(const bool state);
   //@}
 
 private:
@@ -139,6 +144,13 @@ private:
   // check box instead and a disabled parent (non-composite blending
   // greys the whole group) would latch the shadow controls off.
   bool m_scatteringAvailable = true;
+  // The sink is in its view's multi-volume without being its lead, so its
+  // lighting is not what renders. Kept here so a blending change does not
+  // re-enable the group.
+  bool m_lightingShared = false;
+  // Explains, at the top of the lighting group, whose lighting applies
+  // while the view's volumes are rendered together.
+  QLabel* m_multiVolumeNote = nullptr;
 
   QComboBox* m_userPresets = nullptr;
 
