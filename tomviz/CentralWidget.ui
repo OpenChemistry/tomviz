@@ -252,9 +252,6 @@
      </widget>
     </widget>
    </item>
-   <item>
-    <widget class="tomviz::IntSliderWidget" name="imageViewerSlider" native="true"/>
-   </item>
   </layout>
  </widget>
  <customwidgets>
@@ -280,12 +277,6 @@
    <class>tomviz::Histogram2DWidget</class>
    <extends>QWidget</extends>
    <header>Histogram2DWidget.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>tomviz::IntSliderWidget</class>
-   <extends>QWidget</extends>
-   <header>IntSliderWidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

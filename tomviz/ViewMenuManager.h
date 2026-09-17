@@ -7,7 +7,6 @@
 #include <pqViewMenuManager.h>
 
 #include <QPointer>
-#include <QScopedPointer>
 #include <QString>
 
 class QDialog;
@@ -16,13 +15,6 @@ class QAction;
 class vtkSMViewProxy;
 
 namespace tomviz {
-
-class PreviousImageViewerSettings;
-
-namespace pipeline {
-class SliceSink;
-class Pipeline;
-} // namespace pipeline
 
 enum class ScaleLegendStyle : unsigned int;
 
@@ -37,12 +29,6 @@ public:
   QString projectionMode() const;
   void setProjectionMode(QString mode);
 
-  int interactionMode() const;
-  void setInteractionMode(int mode);
-
-signals:
-  void imageViewerModeToggled(bool b);
-
 private slots:
   void setProjectionModeToPerspective();
   void setProjectionModeToOrthographic();
@@ -51,7 +37,6 @@ private slots:
 
   void setShowCenterAxes(bool show);
   void setShowOrientationAxes(bool show);
-  void setImageViewerMode(bool b);
 
 private:
   void setScaleLegendStyle(ScaleLegendStyle);
@@ -59,21 +44,15 @@ private:
 
   void render();
 
-  void restoreImageViewerSettings();
-
   void setupLookingGlassPlaceholder(QMainWindow* mainWindow);
 
   QPointer<QAction> m_perspectiveProjectionAction;
   QPointer<QAction> m_orthographicProjectionAction;
   QPointer<QAction> m_showCenterAxesAction;
   QPointer<QAction> m_showOrientationAxesAction;
-  QPointer<QAction> m_imageViewerModeAction;
-
-  QScopedPointer<PreviousImageViewerSettings> m_previousImageViewerSettings;
 
   vtkSMViewProxy* m_view;
   unsigned long m_viewObserverId;
-  bool m_imageViewerMode = false;
 };
 } // namespace tomviz
 

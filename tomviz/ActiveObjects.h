@@ -100,9 +100,6 @@ signals:
   /// Fired when time series label visibility changes
   void showTimeSeriesLabelChanged(bool b);
 
-  /// Fired to set image viewer mode
-  void setImageViewerMode(bool b);
-
   /// Fired as the mouse moves over a slice, with the voxel index and
   /// value under the cursor.
   void mouseOverVoxel(const vtkVector3i& ijk, double value);

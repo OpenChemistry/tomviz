@@ -106,6 +106,8 @@ set(SOURCES
   Histogram2DWidget.cxx
   ImageStackDialog.h
   ImageStackDialog.cxx
+  ImageViewerModeBehavior.cxx
+  ImageViewerModeBehavior.h
   ImageStackModel.h
   ImageStackModel.cxx
   IntSliderWidget.cxx

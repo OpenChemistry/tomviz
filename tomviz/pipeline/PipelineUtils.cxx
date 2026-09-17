@@ -3,9 +3,12 @@
 
 #include "PipelineUtils.h"
 
+#include "InputPort.h"
+#include "Link.h"
 #include "Node.h"
 #include "OutputPort.h"
 #include "Pipeline.h"
+#include "PortType.h"
 #include "SinkGroupNode.h"
 #include "SinkNode.h"
 #include "SourceNode.h"
@@ -83,6 +86,45 @@ OutputPort* findTipOutputPort(Pipeline* pipeline, Node* contextNode)
   }
 
   return nullptr;
+}
+
+OutputPort* sinkAttachPort(Pipeline* pipeline, OutputPort* targetPort,
+                           InputPort* input)
+{
+  if (!pipeline || !targetPort || !input ||
+      !isPortTypeCompatible(targetPort->type(), input->acceptedTypes())) {
+    return nullptr;
+  }
+
+  // The target port is a group's own passthrough (the group is what's
+  // selected): connect straight to it.
+  if (qobject_cast<SinkGroupNode*>(targetPort->node())) {
+    return targetPort;
+  }
+
+  // A compatible group already hangs off the target port: reuse its
+  // matching passthrough.
+  for (auto* link : targetPort->links()) {
+    auto* group = qobject_cast<SinkGroupNode*>(link->to()->node());
+    if (!group) {
+      continue;
+    }
+    int idx = group->inputPorts().indexOf(link->to());
+    if (idx >= 0 && idx < group->outputPorts().size() &&
+        isPortTypeCompatible(group->outputPorts()[idx]->type(),
+                             input->acceptedTypes())) {
+      return group->outputPorts()[idx];
+    }
+  }
+
+  auto* group = new SinkGroupNode();
+  PortType groupType = isVolumeType(targetPort->type())
+                         ? PortType::ImageData
+                         : targetPort->type();
+  group->addPassthrough(targetPort->name(), groupType);
+  pipeline->addNode(group);
+  pipeline->createLink(targetPort, group->inputPorts()[0]);
+  return group->outputPorts()[0];
 }
 
 } // namespace pipeline

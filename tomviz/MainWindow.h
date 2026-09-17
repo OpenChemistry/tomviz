@@ -97,8 +97,6 @@ private slots:
   /// Load a custom pipeline template
   void findPipelineTemplates();
 
-  void setImageViewerMode(bool enabled);
-
 private:
   Q_DISABLE_COPY(MainWindow)
 

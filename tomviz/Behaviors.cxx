@@ -15,6 +15,7 @@
 #include "ShiftRotationCenterWidget.h"
 #include "RotateAlignWidget.h"
 #include "CustomNodeWidgetRegistry.h"
+#include "ImageViewerModeBehavior.h"
 #include "TimeSeriesLabel.h"
 #include "TrackpadTouchFix.h"
 #include "ViewFrameActions.h"
@@ -95,6 +96,7 @@ Behaviors::Behaviors(QMainWindow* mainWindow) : QObject(mainWindow)
   new pqPersistentMainWindowStateBehavior(mainWindow);
 
   new tomviz::AddRenderViewContextMenuBehavior(this);
+  new tomviz::ImageViewerModeBehavior(this);
 
   // ParaView's view widgets are QVTKOpenGLNativeWidget on macOS, so they need
   // the same trackpad workaround our own 2D views get in QVTKGLWidget.
