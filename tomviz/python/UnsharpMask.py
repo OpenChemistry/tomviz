@@ -1,59 +1,37 @@
 import tomviz.operators
 
 
-class UnsharpMask(tomviz.operators.CancelableOperator):
+class UnsharpMask(tomviz.operators.Operator):
 
     def transform(self, dataset, amount=0.5, threshold=0.0, sigma=1.0):
-        """This filter performs anisotropic diffusion on an image using
-        the classic Perona-Malik, gradient magnitude-based equation.
-        """
+        """Sharpen the image with the unsharp mask technique: the image is
+        blurred with a Gaussian of the given sigma (in the data's physical
+        units), and the difference between the image and its blur is
+        scaled by the amount and added back. Where the difference is
+        smaller than the threshold the voxel is left as it is, so noise is
+        not amplified. The result is clamped to the range of the input's
+        data type."""
+        import numpy as np
+        from scipy import ndimage
 
-        # Initial progress
-        self.progress.value = 0
-        self.progress.maximum = 100
+        array = dataset.active_scalars
+        if array is None:
+            raise RuntimeError('No data array found!')
 
-        # Approximate percentage of work completed after each step in the
-        # transform
-        step_pct = iter([10, 20, 90, 100])
+        # Sigma is a physical length, as ITK's filter took it
+        spacing = dataset.spacing if dataset.spacing is not None else (1,) * 3
+        sigmas = [sigma / s if s > 0 else 0.0 for s in spacing]
 
-        try:
-            import itk
-            from tomviz import itkutils
-        except Exception as exc:
-            print("Could not import necessary module(s)")
-            raise exc
+        values = np.asarray(array, dtype=np.float64)
+        blurred = ndimage.gaussian_filter(values, sigmas)
+        detail = values - blurred
+        sharpened = values + amount * detail
+        if threshold > 0.0:
+            keep = np.abs(detail) < threshold
+            sharpened[keep] = values[keep]
 
-        try:
-            self.progress.message = "Converting data to ITK image"
-            self.progress.value = 0
-
-            # Get the ITK image.
-            itk_image = itkutils.dataset_to_itk_image(dataset)
-            self.progress.value = next(step_pct)
-
-            self.progress.message = "Running filter"
-            self.progress.value = next(step_pct)
-
-            unsharp_mask = \
-                itk.UnsharpMaskImageFilter.New(Input=itk_image)
-            unsharp_mask.SetAmount(amount)
-            unsharp_mask.SetThreshold(threshold)
-            unsharp_mask.SetSigma(sigma)
-            itkutils.observe_filter_progress(self, unsharp_mask,
-                                             self.progress.value,
-                                             next(step_pct))
-
-            try:
-                unsharp_mask.Update()
-            except RuntimeError:
-                return
-
-            self.progress.message = "Saving results"
-
-            itkutils.set_itk_image_on_dataset(unsharp_mask.GetOutput(), dataset)
-
-            self.progress.value = next(step_pct)
-        except Exception as exc:
-            print("Problem encountered while running %s" %
-                  self.__class__.__name__)
-            raise exc
+        if np.issubdtype(array.dtype, np.integer):
+            info = np.iinfo(array.dtype)
+            sharpened = np.rint(np.clip(sharpened, info.min, info.max))
+        result = sharpened.astype(array.dtype)
+        dataset.active_scalars = np.asfortranarray(result)

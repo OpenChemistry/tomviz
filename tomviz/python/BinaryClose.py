@@ -1,87 +1,51 @@
 import tomviz.operators
 
 
-class BinaryClose(tomviz.operators.CancelableOperator):
+class BinaryClose(tomviz.operators.Operator):
 
     def transform(self, dataset, structuring_element_id=0, radius=1,
                   object_label=1, background_label=0):
-        """Perform morphological closing on segmented objects with a given
-        label by a spherically symmetric structuring element with a given
-        radius.
-        """
+        """Perform morphological closing (a dilation followed by an
+        erosion) on segmented objects with a given label by a spherically
+        symmetric structuring element with a given radius. Fills holes and
+        gaps smaller than the element."""
+        import numpy as np
+        from scipy import ndimage
 
-        # Initial progress
-        self.progress.value = 0
-        self.progress.maximum = 100
+        array = dataset.active_scalars
+        if array is None:
+            raise RuntimeError('No data array found!')
 
-        # Approximate percentage of work completed after each step in the
-        # transform
-        STEP_PCT = [10, 30, 60, 90, 100]
+        structure = _structuring_element(structuring_element_id, radius)
+        # Dilate: everything reached takes the object label, as ITK does
+        grown = ndimage.binary_dilation(array == object_label,
+                                        structure=structure)
+        result = array.copy()
+        result[grown] = object_label
+        # Erode: object voxels that do not survive go to the background
+        kept = ndimage.binary_erosion(grown, structure=structure,
+                                      border_value=1)
+        result[grown & ~kept] = background_label
+        dataset.active_scalars = np.asfortranarray(result)
 
-        try:
-            import itk
-            from tomviz import itkutils
-        except Exception as exc:
-            print("Could not import necessary module(s)")
-            raise exc
 
-        # Add a try/except around the ITK portion. ITK exceptions are
-        # passed up to the Python layer, so we can at least report what
-        # went wrong with the script, e.g,, unsupported image type.
-        try:
-            self.progress.value = STEP_PCT[0]
-            self.progress.message = "Converting data to ITK image"
+def _structuring_element(shape_id, radius):
+    """The neighbourhood ITK's FlatStructuringElement would build: a box,
+    a ball (ellipsoid of the given radius) or a cross of axis lines."""
+    import numpy as np
 
-            # Get the ITK image
-            itk_image = itkutils.dataset_to_itk_image(dataset)
-            itk_input_image_type = type(itk_image)
-
-            itk_kernel_type = itk.FlatStructuringElement[3]
-            if (structuring_element_id == 0):
-                itk_kernel = itk_kernel_type.Box(radius)
-            elif (structuring_element_id == 1):
-                itk_kernel = itk_kernel_type.Ball(radius)
-            elif (structuring_element_id == 2):
-                itk_kernel = itk_kernel_type.Cross(radius)
-            else:
-                raise Exception('Invalid kernel shape id %d' %
-                                structuring_element_id)
-
-            self.progress.value = STEP_PCT[1]
-            self.progress.message = "Running filter"
-
-            dilate_filter = itk.BinaryDilateImageFilter[itk_input_image_type,
-                                                        itk_input_image_type,
-                                                        itk_kernel_type].New()
-            dilate_filter.SetDilateValue(object_label)
-            dilate_filter.SetBackgroundValue(background_label)
-            dilate_filter.SetKernel(itk_kernel)
-            dilate_filter.SetInput(itk_image)
-            itkutils.observe_filter_progress(self, dilate_filter,
-                                             STEP_PCT[1], STEP_PCT[2])
-
-            erode_filter = itk.BinaryErodeImageFilter[itk_input_image_type,
-                                                      itk_input_image_type,
-                                                      itk_kernel_type].New()
-            erode_filter.SetErodeValue(object_label)
-            erode_filter.SetBackgroundValue(background_label)
-            erode_filter.SetKernel(itk_kernel)
-            erode_filter.SetInput(dilate_filter.GetOutput())
-            itkutils.observe_filter_progress(self, erode_filter,
-                                             STEP_PCT[2], STEP_PCT[3])
-
-            try:
-                erode_filter.Update()
-            except RuntimeError:
-                return
-
-            self.progress.message = "Saving results"
-
-            itkutils.set_itk_image_on_dataset(erode_filter.GetOutput(),
-                                              dataset)
-
-            self.progress.value = STEP_PCT[4]
-        except Exception as exc:
-            print("Problem encountered while running %s" %
-                  self.__class__.__name__)
-            raise exc
+    radius = max(1, int(radius))
+    size = 2 * radius + 1
+    if shape_id == 0:
+        return np.ones((size, size, size), dtype=bool)
+    if shape_id == 1:
+        grid = np.ogrid[-radius:radius + 1, -radius:radius + 1,
+                        -radius:radius + 1]
+        return sum((g / radius) ** 2 for g in grid) <= 1.0
+    if shape_id == 2:
+        cross = np.zeros((size, size, size), dtype=bool)
+        cross[radius, radius, :] = True
+        cross[radius, :, radius] = True
+        cross[:, radius, radius] = True
+        return cross
+    raise RuntimeError('Invalid kernel shape id %d' % shape_id)
