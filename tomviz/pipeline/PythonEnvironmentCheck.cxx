@@ -324,6 +324,20 @@ PythonEnvironmentCheck::Info PythonEnvironmentCheck::classify(
     return info;
   }
   if (!run.normalExit || run.exitCode != 0) {
+    // tomviz-pipeline < 3.1 (the in-tree package that shipped with
+    // tomviz 3.0) has no --version option at all, so click rejects the
+    // flag with exit code 2. That is the common "environment predates
+    // this tomviz" case, not a broken install.
+    if (run.exitCode == 2 && run.stdErr.contains(QLatin1String("--version")) &&
+        run.stdErr.contains(QLatin1String("such option"), Qt::CaseInsensitive)) {
+      info.status = Status::VersionTooOld;
+      info.message =
+        withFix(tr("tomviz-pipeline in this environment predates %1 and "
+                   "is too old.")
+                  .arg(required),
+                installCommand(info.envPath, spec, true));
+      return info;
+    }
     info.status = Status::CliBroken;
     QString detail = lastLine(run.stdErr);
     if (!detail.isEmpty()) {

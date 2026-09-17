@@ -327,6 +327,27 @@ TEST(PythonEnvironmentCheckTest, AcceptsNextMinorRejectsNextMajor)
   EXPECT_TRUE(info.message.contains("newer"));
 }
 
+TEST(PythonEnvironmentCheckTest, TreatsMissingVersionOptionAsTooOld)
+{
+  // tomviz-pipeline < 3.1 has no --version option: click exits 2 with
+  // "No such option". Report that as an old install with the upgrade
+  // command, not as a broken one.
+  FakeEnv env;
+  env.create();
+  env.installCli("#!/bin/sh\necho \"Usage: tomviz-pipeline [OPTIONS]\" >&2\n"
+                 "echo \"Try 'tomviz-pipeline --help' for help.\" >&2\n"
+                 "echo >&2\necho \"Error: No such option '--version'.\" >&2\n"
+                 "exit 2\n");
+  PythonEnvironmentInfo info =
+    PythonEnvironmentCheck::check(env.root(), 10000, kRequired);
+  EXPECT_EQ(info.status, Status::VersionTooOld) << info.message.toStdString();
+  EXPECT_TRUE(info.version.isEmpty());
+  EXPECT_EQ(info.message,
+            "tomviz-pipeline in this environment predates 3.1.3 and is too "
+            "old.\n\nTo fix: activate the environment, then run:\n"
+            "pip install -U \"tomviz-pipeline>=3.1.3,<4\"");
+}
+
 TEST(PythonEnvironmentCheckTest, ReportsCliThatFails)
 {
   FakeEnv env;
