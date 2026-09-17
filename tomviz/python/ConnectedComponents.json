@@ -1,14 +1,41 @@
 {
   "name": "ConnectedComponents",
   "label": "Connected Components",
-  "description": "Compute label map of connected components. The components are relabeled in order of increasing volume in the output.",
-  "externalCompatible": false,
+  "externalCompatible": true,
+  "description": "Label the connected components of the foreground: every group of touching non-background voxels gets its own label, numbered by size so the largest component has the highest label. Components smaller than the minimum size are dropped.",
   "parameters": [
     {
       "name": "background_value",
       "label": "Background Value",
+      "description": "Voxels with this value are background; every other value is foreground.",
       "type": "int",
       "default": 0
+    },
+    {
+      "name": "connectivity",
+      "label": "Connectivity",
+      "description": "Which neighbouring voxels count as connected.",
+      "type": "enumeration",
+      "default": 0,
+      "options": [
+        {
+          "Faces (6)": 1
+        },
+        {
+          "Faces and edges (18)": 2
+        },
+        {
+          "Faces, edges and corners (26)": 3
+        }
+      ]
+    },
+    {
+      "name": "min_size",
+      "label": "Minimum Size (voxels)",
+      "description": "Components with fewer voxels than this are returned to the background.",
+      "type": "int",
+      "default": 1,
+      "minimum": 1
     }
   ],
   "inputType": "LabelMap",
