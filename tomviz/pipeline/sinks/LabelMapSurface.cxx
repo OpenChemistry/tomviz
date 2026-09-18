@@ -22,7 +22,6 @@
 #include <algorithm>
 #include <array>
 #include <unordered_map>
-#include <type_traits>
 #include <unordered_set>
 #include <vector>
 
@@ -150,46 +149,22 @@ vtkSmartPointer<vtkPolyData> selectLabelFaces(vtkPolyData* mesh,
 
   // Surface Nets writes polygons only, so a cell id is an index into
   // the polys, and the points (with their normals) can be shared as
-  // they are: unreferenced points cost the mapper nothing to skip.
+  // they are: unreferenced points cost the mapper nothing to skip. The
+  // cells go through the public cell API only; the storage-specific
+  // accessors changed meaning in VTK 9.6 and read garbage there.
   surface->SetPoints(mesh->GetPoints());
   surface->GetPointData()->PassData(mesh->GetPointData());
   auto* inPolys = mesh->GetPolys();
   const vtkIdType keptCount = static_cast<vtkIdType>(kept.size());
   vtkNew<vtkCellArray> polys;
-  // Every face has the same number of corners (quads, or triangles
-  // once smoothed), so the connectivity is a flat copy of the kept
-  // rows and the offsets are implied.
-  const vtkIdType cellSize = inPolys->IsHomogeneous();
-  if (cellSize > 0) {
-    auto copyRows = [&](auto* in) {
-      using ArrayT = std::remove_pointer_t<decltype(in)>;
-      vtkNew<ArrayT> out;
-      out->SetNumberOfValues(keptCount * cellSize);
-      auto* src = in->GetPointer(0);
-      auto* dst = out->GetPointer(0);
-      for (vtkIdType c : kept) {
-        std::copy_n(src + c * cellSize, cellSize, dst);
-        dst += cellSize;
-      }
-      polys->SetData(cellSize, out);
-    };
-    if (inPolys->IsStorage64Bit()) {
-      copyRows(inPolys->GetConnectivityArray64());
-    } else {
-      copyRows(inPolys->GetConnectivityArray32());
-    }
-  } else {
-    polys->AllocateExact(keptCount, keptCount * inPolys->GetMaxCellSize());
-    vtkNew<vtkIdList> pts;
-    for (vtkIdType c : kept) {
-      inPolys->GetCellAtId(c, pts);
-      polys->InsertNextCell(pts);
-    }
-  }
+  polys->AllocateExact(keptCount, keptCount * inPolys->GetMaxCellSize());
   auto* cellData = surface->GetCellData();
   cellData->CopyAllocate(mesh->GetCellData(), keptCount);
+  vtkNew<vtkIdList> pts;
   vtkIdType next = 0;
   for (vtkIdType c : kept) {
+    inPolys->GetCellAtId(c, pts);
+    polys->InsertNextCell(pts);
     cellData->CopyData(mesh->GetCellData(), c, next++);
   }
   surface->SetPolys(polys);

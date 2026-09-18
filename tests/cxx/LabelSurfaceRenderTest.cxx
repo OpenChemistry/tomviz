@@ -23,6 +23,7 @@
 #include <vtkWindowToImageFilter.h>
 #include <vtkActor.h>
 #include <vtkMapper.h>
+#include <vtkOpenGLRenderWindow.h>
 #include <vtkProperty.h>
 #include <vtkPropCollection.h>
 
@@ -162,6 +163,13 @@ private slots:
     vtkNew<vtkRenderer> renderer;
     vtkNew<vtkRenderWindow> window;
     window->SetOffScreenRendering(1);
+    // A CI runner has no GPU and no software GL; rendering there does
+    // not fail, it crashes. The coloring above was still checked.
+    if (auto* gl = vtkOpenGLRenderWindow::SafeDownCast(window.Get())) {
+      if (!gl->SupportsOpenGL()) {
+        QSKIP("no OpenGL available for an offscreen render");
+      }
+    }
     window->AddRenderer(renderer);
     renderer->AddActor(actor);
     renderer->SetBackground(0, 0, 0);

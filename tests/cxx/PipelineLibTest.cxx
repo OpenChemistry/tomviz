@@ -4288,6 +4288,20 @@ TEST_F(PipelineLibTest, LabelMapSurfaceExtractsOneClosedSurfacePerLabel)
   EXPECT_TRUE(smooth->GetPointData()->GetNormals());
   EXPECT_TRUE(smooth->GetCellData()->GetArray("BoundaryLabels"));
 
+  // Selecting from the smoothed (triangle) mesh keeps exactly the faces
+  // that bound the chosen label, with their tags, on the shared points
+  auto smoothOnly1 = selectLabelFaces(smooth, QVector<double>{ 1.0 });
+  EXPECT_GT(smoothOnly1->GetNumberOfCells(), 0);
+  EXPECT_LT(smoothOnly1->GetNumberOfCells(), smooth->GetNumberOfCells());
+  EXPECT_EQ(smoothOnly1->GetPoints(), smooth->GetPoints());
+  auto* tags = smoothOnly1->GetCellData()->GetArray("BoundaryLabels");
+  ASSERT_TRUE(tags);
+  ASSERT_EQ(tags->GetNumberOfTuples(), smoothOnly1->GetNumberOfCells());
+  for (vtkIdType c = 0; c < tags->GetNumberOfTuples(); ++c) {
+    EXPECT_TRUE(tags->GetComponent(c, 0) == 1.0 ||
+                tags->GetComponent(c, 1) == 1.0);
+  }
+
   // Nothing to draw: no visible labels, or a single slice
   EXPECT_EQ(extractLabelSurface(labels->imageData(), regions, {}, 0, 0.0)
               ->GetNumberOfCells(),
