@@ -358,6 +358,17 @@ bool CameraViewpoints::isFlying() const
   return !m_flight.isNull();
 }
 
+void CameraViewpoints::setCaptionPosition(double x, double y)
+{
+  x = std::clamp(x, 0.0, 1.0);
+  y = std::clamp(y, 0.0, 1.0);
+  if (x == m_captionPosition[0] && y == m_captionPosition[1]) {
+    return;
+  }
+  m_captionPosition = { x, y };
+  emit captionPositionChanged();
+}
+
 QJsonObject CameraViewpoints::serialize() const
 {
   QJsonArray array;
@@ -368,6 +379,8 @@ QJsonObject CameraViewpoints::serialize() const
   QJsonObject json;
   json["viewpoints"] = array;
   json["flying"] = isFlying();
+  json["captionPosition"] =
+    QJsonArray{ m_captionPosition[0], m_captionPosition[1] };
   return json;
 }
 
@@ -385,6 +398,14 @@ bool CameraViewpoints::deserialize(const QJsonObject& json)
       m_viewpoints.last().name =
         QString("Viewpoint %1").arg(m_viewpoints.size());
     }
+  }
+
+  // Files from before the caption could be moved keep the corner.
+  auto position = json["captionPosition"].toArray();
+  if (position.size() == 2) {
+    setCaptionPosition(position[0].toDouble(0.02), position[1].toDouble(0.03));
+  } else {
+    setCaptionPosition(0.02, 0.03);
   }
 
   m_interpolatorStale = true;

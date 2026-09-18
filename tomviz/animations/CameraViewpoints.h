@@ -140,12 +140,21 @@ public:
   void stopFlight();
   bool isFlying() const;
 
+  /// Where viewpoint captions are drawn, as fractions of the view's
+  /// width and height from its lower-left corner, so the placement
+  /// holds at whatever size a movie is exported. One position for the
+  /// whole path: captions that hop around the frame read as a mistake.
+  std::array<double, 2> captionPosition() const { return m_captionPosition; }
+  void setCaptionPosition(double x, double y);
+
   QJsonObject serialize() const;
   bool deserialize(const QJsonObject& json);
 
 signals:
   /// The list or its timing changed. The path has to be rebuilt.
   void changed();
+  /// The caption moved; a caption on screen should follow at once.
+  void captionPositionChanged();
 
 private:
   Q_DISABLE_COPY(CameraViewpoints)
@@ -155,6 +164,7 @@ private:
   void rebuildInterpolator();
 
   QList<Viewpoint> m_viewpoints;
+  std::array<double, 2> m_captionPosition = { 0.02, 0.03 };
   QPointer<QObject> m_flight;
   // Held by pointer rather than by value so the header does not have to
   // pull in the interpolator to destroy it.

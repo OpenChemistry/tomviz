@@ -226,11 +226,15 @@ TEST_F(AnimationTest, ViewpointsSurviveAStateFileRoundTrip)
 
   viewpoints().append(saved);
   viewpoints().append(viewpointAt(7, 1.0, true));
+  viewpoints().setCaptionPosition(0.6, 0.9);
   auto json = viewpoints().serialize();
 
   viewpoints().clear();
+  viewpoints().setCaptionPosition(0.02, 0.03);
   ASSERT_TRUE(viewpoints().deserialize(json));
   ASSERT_EQ(viewpoints().size(), 2);
+  EXPECT_DOUBLE_EQ(viewpoints().captionPosition()[0], 0.6);
+  EXPECT_DOUBLE_EQ(viewpoints().captionPosition()[1], 0.9);
 
   const auto& restored = viewpoints().at(0);
   EXPECT_EQ(restored.position, saved.position);
@@ -246,6 +250,16 @@ TEST_F(AnimationTest, ViewpointsSurviveAStateFileRoundTrip)
   // The second viewpoint was saved without a name, as older files were,
   // and gets a positional one rather than none.
   EXPECT_EQ(viewpoints().at(1).name, QString("Viewpoint 2"));
+
+  // A file from before captions could be moved puts them in the corner,
+  // and the position never leaves the view.
+  json.remove("captionPosition");
+  ASSERT_TRUE(viewpoints().deserialize(json));
+  EXPECT_DOUBLE_EQ(viewpoints().captionPosition()[0], 0.02);
+  EXPECT_DOUBLE_EQ(viewpoints().captionPosition()[1], 0.03);
+  viewpoints().setCaptionPosition(-1.0, 4.0);
+  EXPECT_DOUBLE_EQ(viewpoints().captionPosition()[0], 0.0);
+  EXPECT_DOUBLE_EQ(viewpoints().captionPosition()[1], 1.0);
 
   // A state file with no viewpoints in it is not a list of none.
   EXPECT_FALSE(viewpoints().deserialize(QJsonObject()));

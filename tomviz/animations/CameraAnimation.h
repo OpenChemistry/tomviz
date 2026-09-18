@@ -37,7 +37,8 @@ public:
     if (m_view) {
       connect(m_view.data(), &QObject::destroyed, this, &QObject::deleteLater);
     }
-    // Viewpoint captions: lower-left corner, readable on any background
+    // Viewpoint captions: readable on any background, placed where the
+    // path says (the lower-left corner unless the user moved them)
     auto* text = m_caption->GetTextProperty();
     text->SetFontSize(22);
     text->SetBold(true);
@@ -45,8 +46,17 @@ public:
     text->SetShadow(true);
     m_caption->GetPositionCoordinate()
       ->SetCoordinateSystemToNormalizedViewport();
-    m_caption->SetPosition(0.02, 0.03);
+    placeCaption();
     m_caption->SetVisibility(0);
+    // Nudging the position in the Animation Helper moves a caption that
+    // is already on screen, so the user sees where it lands.
+    connect(&CameraViewpoints::instance(),
+            &CameraViewpoints::captionPositionChanged, this, [this]() {
+              placeCaption();
+              if (m_caption->GetVisibility() && m_view) {
+                m_view->render();
+              }
+            });
   }
 
   void onPlaybackEnded() override
@@ -132,6 +142,12 @@ private:
     }
     m_caption->SetInput(label.toUtf8().constData());
     m_caption->SetVisibility(label.isEmpty() ? 0 : 1);
+  }
+
+  void placeCaption()
+  {
+    const auto position = CameraViewpoints::instance().captionPosition();
+    m_caption->SetPosition(position[0], position[1]);
   }
 
   // True when the caption was showing

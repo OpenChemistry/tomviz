@@ -49,6 +49,7 @@
 
 #include <QBuffer>
 #include <QCheckBox>
+#include <QDoubleSpinBox>
 #include <QLineEdit>
 #include <QHBoxLayout>
 #include <QIcon>
@@ -162,6 +163,10 @@ public:
   QCheckBox* recordScene = nullptr;
   // Caption shown in the view while the path is at the selected viewpoint
   QLineEdit* viewpointLabel = nullptr;
+  // Where every caption is drawn, as fractions of the view from its
+  // lower-left corner
+  QDoubleSpinBox* captionX = nullptr;
+  QDoubleSpinBox* captionY = nullptr;
   pqPropertyLinks pqLinks;
   QPointer<AnimationHelperDialog> parent;
   vtkWeakPointer<vtkSMProxy> linkedScene;
@@ -204,6 +209,45 @@ public:
       ui.cameraLayout->indexOf(ui.segmentLayout) + 1, labelRow);
     connect(viewpointLabel, &QLineEdit::editingFinished, this,
             &Internal::labelChanged);
+
+    auto* positionRow = new QHBoxLayout;
+    auto* positionTitle = new QLabel("Label position:", parent);
+    positionTitle->setToolTip(
+      "Where the captions sit in the 3D view and in exported movies, as "
+      "a fraction of the view's width and height measured from the "
+      "lower-left corner. 0, 0 is that corner; 0.5, 0.5 is the middle. "
+      "One position serves every viewpoint.");
+    positionRow->addWidget(positionTitle);
+    auto addAxis = [&](const QString& axis) {
+      auto* box = new QDoubleSpinBox(parent);
+      box->setRange(0.0, 1.0);
+      box->setSingleStep(0.01);
+      box->setDecimals(2);
+      box->setToolTip(positionTitle->toolTip());
+      auto* axisLabel = new QLabel(axis, parent);
+      axisLabel->setBuddy(box);
+      positionRow->addWidget(axisLabel);
+      positionRow->addWidget(box);
+      return box;
+    };
+    captionX = addAxis("x");
+    captionY = addAxis("y");
+    positionRow->addStretch(1);
+    ui.cameraLayout->insertLayout(ui.cameraLayout->indexOf(labelRow) + 1,
+                                  positionRow);
+    refreshCaptionPosition();
+    auto positionEdited = [this]() {
+      CameraViewpoints::instance().setCaptionPosition(captionX->value(),
+                                                      captionY->value());
+    };
+    connect(captionX, qOverload<double>(&QDoubleSpinBox::valueChanged), this,
+            positionEdited);
+    connect(captionY, qOverload<double>(&QDoubleSpinBox::valueChanged), this,
+            positionEdited);
+    // A loaded state file moves it from outside the dialog
+    connect(&CameraViewpoints::instance(),
+            &CameraViewpoints::captionPositionChanged, this,
+            &Internal::refreshCaptionPosition);
 
     recordScene = new QCheckBox("Record module state with viewpoints", parent);
     recordScene->setToolTip(
@@ -778,6 +822,15 @@ public:
   void removeViewpoint()
   {
     CameraViewpoints::instance().removeAt(ui.viewpointList->currentRow());
+  }
+
+  void refreshCaptionPosition()
+  {
+    const auto position = CameraViewpoints::instance().captionPosition();
+    QSignalBlocker blockX(captionX);
+    QSignalBlocker blockY(captionY);
+    captionX->setValue(position[0]);
+    captionY->setValue(position[1]);
   }
 
   void labelChanged()
