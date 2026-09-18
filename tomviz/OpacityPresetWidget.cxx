@@ -272,11 +272,11 @@ OpacityPresetWidget::OpacityPresetWidget(
   auto applyNow = [this]() { m_internals->apply(); };
   connect(in.preset, QOverload<int>::of(&QComboBox::currentIndexChanged),
           this, [this, applyNow]() {
-            auto& in = *m_internals;
-            in.relabel();
+            auto& internals = *m_internals;
+            internals.relabel();
             {
-              QSignalBlocker b1(in.center), b2(in.width);
-              in.setDefaults();
+              QSignalBlocker b1(internals.center), b2(internals.width);
+              internals.setDefaults();
             }
             applyNow();
           });
