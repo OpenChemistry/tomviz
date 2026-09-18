@@ -1020,6 +1020,12 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   connect(m_ui->actionAnimationHelper, &QAction::triggered, this, [this]() {
     openDialog<AnimationHelperDialog>(&m_animationHelperDialog);
   });
+  // The Animation menu gathers what the .ui spreads over File, View and
+  // a dock: the helper, the panel with the timeline, and the export.
+  auto* animationPanel = m_ui->dockWidgetAnimation->toggleViewAction();
+  animationPanel->setText(tr("Animation Panel"));
+  m_ui->menuAnimation->insertAction(m_ui->actionSaveMovie, animationPanel);
+  m_ui->menuAnimation->insertSeparator(m_ui->actionSaveMovie);
 
   // Prepopulate the previously seen python readers/writers
   // This operation is fast since it fetches the readers description
