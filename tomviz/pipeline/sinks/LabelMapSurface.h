@@ -32,12 +32,21 @@ QVector<double> regionLabels(const LabelTable& table, double background);
 /// The subset of regionLabels() the user has left visible.
 QVector<double> visibleLabels(const LabelTable& table, double background);
 
+/// Smoothing iterations beyond this buy nothing visible and the
+/// windowed sinc approximation starts to lose precision, so the sink
+/// clamps to it.
+constexpr int kMaxSurfaceSmoothing = 32;
+
 /// Extract every face bounding a region in @a regions, treating every
 /// label outside @a regions as @a background. With
-/// @a smoothingIterations above zero the mesh is relaxed and given point
-/// normals; at zero the voxel faces are returned as-is, and the mapper's
-/// per-face normals give them their crisp look. Returns an empty polydata
-/// when there is nothing to draw or the image is not a 3D volume.
+/// @a smoothingIterations above zero the mesh is relaxed with a
+/// shrink-free (windowed sinc) filter, every point is then held within
+/// half a voxel diagonal of the voxel face it came from, and point
+/// normals are added; so a particle a few voxels across keeps its size
+/// and the surface stays where the volume renderer draws it. At zero
+/// the voxel faces are returned as-is, and the mapper's per-face
+/// normals give them their crisp look. Returns an empty polydata when
+/// there is nothing to draw or the image is not a 3D volume.
 ///
 /// This is the expensive step (Surface Nets over the whole volume, then
 /// the smoothing), so it is separate from the selection below: it only

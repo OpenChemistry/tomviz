@@ -9,14 +9,20 @@
 #include <vtkCellData.h>
 #include <vtkDataArray.h>
 #include <vtkImageData.h>
+#include <vtkMassProperties.h>
+#include <vtkMath.h>
 #include <vtkNew.h>
 #include <vtkPointData.h>
+#include <vtkPoints.h>
 #include <vtkPolyData.h>
+#include <vtkPolyDataNormals.h>
 #include <vtkSmartPointer.h>
+#include <vtkTriangleFilter.h>
 #include <vtkUnsignedCharArray.h>
 
 #include <QColor>
 
+#include <cmath>
 #include <set>
 #include <tuple>
 
@@ -110,4 +116,83 @@ TEST(LabelMapSurfaceTest, ColorsEachLabelUnsmoothed)
 TEST(LabelMapSurfaceTest, ColorsEachLabelSmoothed)
 {
   checkColoring(20);
+}
+
+namespace {
+
+// A radius-4 sphere of label 1 centred in a 16^3 volume: 257 voxels, a
+// particle of the size a segmentation is full of.
+vtkSmartPointer<vtkImageData> smallSphere(const double spacing[3])
+{
+  auto image = vtkSmartPointer<vtkImageData>::New();
+  image->SetDimensions(16, 16, 16);
+  image->SetSpacing(spacing);
+  image->AllocateScalars(VTK_UNSIGNED_CHAR, 1);
+  for (int z = 0; z < 16; ++z) {
+    for (int y = 0; y < 16; ++y) {
+      for (int x = 0; x < 16; ++x) {
+        const int dx = x - 8, dy = y - 8, dz = z - 8;
+        *static_cast<unsigned char*>(image->GetScalarPointer(x, y, z)) =
+          dx * dx + dy * dy + dz * dz <= 16 ? 1 : 0;
+      }
+    }
+  }
+  return image;
+}
+
+double enclosedVolume(vtkPolyData* surface)
+{
+  vtkNew<vtkTriangleFilter> triangles;
+  triangles->SetInputData(surface);
+  vtkNew<vtkPolyDataNormals> normals;
+  normals->SetInputConnection(triangles->GetOutputPort());
+  normals->ConsistencyOn();
+  normals->AutoOrientNormalsOn();
+  normals->SplittingOff();
+  vtkNew<vtkMassProperties> mass;
+  mass->SetInputConnection(normals->GetOutputPort());
+  mass->Update();
+  return mass->GetVolume();
+}
+
+} // namespace
+
+// Surface Nets' own smoother rounded a particle this size down to 58% of
+// its voxels; the surface has to keep the volume the voxels have.
+TEST(LabelMapSurfaceTest, SmoothingKeepsTheVolume)
+{
+  const double unit[3] = { 1.0, 1.0, 1.0 };
+  auto image = smallSphere(unit);
+  const QVector<double> regions{ 1.0 };
+  auto raw = extractLabelMesh(image, regions, 0, 0.0);
+  EXPECT_NEAR(enclosedVolume(raw), 257.0, 1e-6);
+  for (int iterations : { 8, 16, kMaxSurfaceSmoothing }) {
+    auto smooth = extractLabelMesh(image, regions, iterations, 0.0);
+    const double volume = enclosedVolume(smooth);
+    EXPECT_GT(volume, 0.95 * 257.0) << "iterations=" << iterations;
+    EXPECT_LT(volume, 1.05 * 257.0) << "iterations=" << iterations;
+    EXPECT_TRUE(smooth->GetPointData()->GetNormals());
+  }
+}
+
+// Whatever the iteration count, no point leaves the voxel shell by more
+// than half a voxel diagonal, measured in world units.
+TEST(LabelMapSurfaceTest, SmoothingStaysWithinHalfAVoxel)
+{
+  const double spacing[3] = { 1.0, 1.0, 2.5 };
+  auto image = smallSphere(spacing);
+  const QVector<double> regions{ 1.0 };
+  auto raw = extractLabelMesh(image, regions, 0, 0.0);
+  auto smooth = extractLabelMesh(image, regions, 200, 0.0);
+  ASSERT_EQ(smooth->GetNumberOfPoints(), raw->GetNumberOfPoints());
+  const double limit = 0.5 * vtkMath::Norm(spacing);
+  double moved = 0.0;
+  for (vtkIdType i = 0; i < raw->GetNumberOfPoints(); ++i) {
+    double a[3], b[3];
+    raw->GetPoint(i, a);
+    smooth->GetPoint(i, b);
+    moved = std::max(moved, std::sqrt(vtkMath::Distance2BetweenPoints(a, b)));
+  }
+  EXPECT_GT(moved, 0.0) << "nothing was smoothed";
+  EXPECT_LE(moved, limit + 1e-6);
 }

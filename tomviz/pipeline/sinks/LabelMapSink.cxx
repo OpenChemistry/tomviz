@@ -106,7 +106,7 @@ int LabelMapSink::surfaceSmoothing() const
 
 void LabelMapSink::setSurfaceSmoothing(int iterations)
 {
-  iterations = std::max(0, iterations);
+  iterations = std::clamp(iterations, 0, kMaxSurfaceSmoothing);
   if (m_surfaceSmoothing == iterations) {
     return;
   }
@@ -481,9 +481,11 @@ QWidget* LabelMapSink::createSinkPropertiesWidget(QWidget* parent)
   auto* surfaceBox = new QGroupBox("Surface", volumeWidget);
   auto* surfaceForm = new QFormLayout(surfaceBox);
   auto* smoothingSpin = new QSpinBox(surfaceBox);
-  smoothingSpin->setRange(0, 200);
-  smoothingSpin->setToolTip("Surface Nets smoothing iterations. 0 shows the "
-                            "raw voxel faces.");
+  smoothingSpin->setRange(0, kMaxSurfaceSmoothing);
+  smoothingSpin->setToolTip(
+    "Smoothing iterations; 0 shows the raw voxel faces. The smoothing "
+    "is shrink-free and never moves the surface more than half a voxel, "
+    "so regions keep their size at any setting.");
   // Only commit a typed value once editing is done, since each change
   // re-extracts the surface.
   smoothingSpin->setKeyboardTracking(false);
