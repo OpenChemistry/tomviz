@@ -230,19 +230,26 @@ void LabelMapSink::updateSurface()
 
   // 0 is the conventional background label; it is never a region.
   const double background = 0.0;
-  SurfaceKey key;
+  MeshKey key;
   key.image = vol->imageData();
   key.imageTime = key.image->GetMTime();
   key.regions = regionLabels(labels->labels(), background);
-  key.visible = visibleLabels(labels->labels(), background);
   key.smoothing = m_surfaceSmoothing;
+  const auto visible = visibleLabels(labels->labels(), background);
 
-  if (!m_surface || !(key == m_surfaceKey)) {
-    m_surface = extractLabelSurface(key.image, key.regions, key.visible,
-                                    key.smoothing, background);
-    m_surfaceKey = key;
+  if (!m_mesh || !(key == m_meshKey)) {
+    m_mesh = extractLabelMesh(key.image, key.regions, key.smoothing,
+                              background);
+    m_meshKey = key;
     m_surfaceOrigin = vol->origin();
     m_surfaceSpacing = vol->spacing();
+    m_surface = nullptr;
+  }
+  // Showing or hiding a label only re-selects faces from the mesh, so a
+  // checkbox never costs another pass over the volume.
+  if (!m_surface || visible != m_surfaceVisible) {
+    m_surface = selectLabelFaces(m_mesh, visible);
+    m_surfaceVisible = visible;
     m_surfaceMapper->SetInputData(m_surface);
   }
   // Cheap, so a color edit never costs an extraction.

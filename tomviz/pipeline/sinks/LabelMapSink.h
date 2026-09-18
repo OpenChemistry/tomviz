@@ -144,26 +144,30 @@ private:
   /// The ambient floor for the volume representation has been applied.
   bool m_volumeLookApplied = false;
 
+  /// Every face of every region, from extractLabelMesh: the expensive
+  /// part, kept across visibility changes.
+  vtkSmartPointer<vtkPolyData> m_mesh;
+  /// The visible faces of m_mesh, what the mapper draws.
   vtkSmartPointer<vtkPolyData> m_surface;
   vtkNew<vtkPolyDataMapper> m_surfaceMapper;
   vtkNew<vtkActor> m_surfaceActor;
   vtkNew<vtkProperty> m_surfaceProperty;
-  /// What m_surface was extracted from, to skip a redundant extraction.
-  struct SurfaceKey
+  /// What m_mesh was extracted from, to skip a redundant extraction.
+  struct MeshKey
   {
     vtkImageData* image = nullptr;
     vtkMTimeType imageTime = 0;
     QVector<double> regions;
-    QVector<double> visible;
     int smoothing = -1;
-    bool operator==(const SurfaceKey& other) const
+    bool operator==(const MeshKey& other) const
     {
       return image == other.image && imageTime == other.imageTime &&
-             regions == other.regions && visible == other.visible &&
-             smoothing == other.smoothing;
+             regions == other.regions && smoothing == other.smoothing;
     }
   };
-  SurfaceKey m_surfaceKey;
+  MeshKey m_meshKey;
+  /// The labels m_surface was selected for.
+  QVector<double> m_surfaceVisible;
   /// Origin and spacing baked into m_surface's geometry.
   std::array<double, 3> m_surfaceOrigin = { 0.0, 0.0, 0.0 };
   std::array<double, 3> m_surfaceSpacing = { 0.0, 0.0, 0.0 };

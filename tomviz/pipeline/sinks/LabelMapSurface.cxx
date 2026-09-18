@@ -5,8 +5,10 @@
 
 #include "data/LabelMapData.h"
 
+#include <vtkCellArray.h>
 #include <vtkCellData.h>
 #include <vtkDataArray.h>
+#include <vtkIdList.h>
 #include <vtkImageData.h>
 #include <vtkNew.h>
 #include <vtkPointData.h>
@@ -20,6 +22,9 @@
 #include <algorithm>
 #include <array>
 #include <unordered_map>
+#include <type_traits>
+#include <unordered_set>
+#include <vector>
 
 namespace tomviz {
 namespace pipeline {
@@ -48,12 +53,13 @@ QVector<double> visibleLabels(const LabelTable& table, double background)
   return labels;
 }
 
-vtkSmartPointer<vtkPolyData> extractLabelSurface(
-  vtkImageData* image, const QVector<double>& regions,
-  const QVector<double>& visible, int smoothingIterations, double background)
+vtkSmartPointer<vtkPolyData> extractLabelMesh(vtkImageData* image,
+                                              const QVector<double>& regions,
+                                              int smoothingIterations,
+                                              double background)
 {
   auto surface = vtkSmartPointer<vtkPolyData>::New();
-  if (!image || regions.isEmpty() || visible.isEmpty()) {
+  if (!image || regions.isEmpty()) {
     return surface;
   }
   int dims[3];
@@ -82,18 +88,10 @@ vtkSmartPointer<vtkPolyData> extractLabelSurface(
     nets->SetLabel(i, regions[i]);
   }
   // Every region takes part in the extraction and the smoothing, and
-  // only the visible ones are output, so toggling a label's checkbox
-  // does not reshape its neighbours.
-  nets->SetOutputStyleToSelected();
-  nets->InitializeSelectedLabelsList();
-  for (double label : visible) {
-    if (regions.contains(label)) {
-      nets->AddSelectedLabel(label);
-    }
-  }
-  if (nets->GetNumberOfSelectedLabels() == 0) {
-    return surface;
-  }
+  // every face comes out; selectLabelFaces picks the visible ones, so
+  // toggling a label's checkbox does not reshape its neighbours or
+  // cost another pass over the volume.
+  nets->SetOutputStyleToDefault();
   nets->SetSmoothing(smoothingIterations > 0);
   nets->SetNumberOfIterations(std::max(0, smoothingIterations));
   nets->Update();
@@ -115,6 +113,96 @@ vtkSmartPointer<vtkPolyData> extractLabelSurface(
     surface->ShallowCopy(nets->GetOutput());
   }
   return surface;
+}
+
+vtkSmartPointer<vtkPolyData> selectLabelFaces(vtkPolyData* mesh,
+                                              const QVector<double>& visible)
+{
+  auto surface = vtkSmartPointer<vtkPolyData>::New();
+  if (!mesh || mesh->GetNumberOfCells() == 0 || visible.isEmpty()) {
+    return surface;
+  }
+  const vtkIdType count = mesh->GetNumberOfCells();
+  auto* boundary = mesh->GetCellData()->GetArray("BoundaryLabels");
+  if (!boundary || boundary->GetNumberOfComponents() != 2 ||
+      boundary->GetNumberOfTuples() != count) {
+    // Not a Surface Nets mesh; nothing to select by.
+    surface->ShallowCopy(mesh);
+    return surface;
+  }
+
+  const std::unordered_set<double> shown(visible.begin(), visible.end());
+  std::vector<vtkIdType> kept;
+  kept.reserve(count);
+  for (vtkIdType c = 0; c < count; ++c) {
+    if (shown.count(boundary->GetComponent(c, 0)) ||
+        shown.count(boundary->GetComponent(c, 1))) {
+      kept.push_back(c);
+    }
+  }
+  if (kept.empty()) {
+    return surface;
+  }
+  if (static_cast<vtkIdType>(kept.size()) == count) {
+    surface->ShallowCopy(mesh);
+    return surface;
+  }
+
+  // Surface Nets writes polygons only, so a cell id is an index into
+  // the polys, and the points (with their normals) can be shared as
+  // they are: unreferenced points cost the mapper nothing to skip.
+  surface->SetPoints(mesh->GetPoints());
+  surface->GetPointData()->PassData(mesh->GetPointData());
+  auto* inPolys = mesh->GetPolys();
+  const vtkIdType keptCount = static_cast<vtkIdType>(kept.size());
+  vtkNew<vtkCellArray> polys;
+  // Every face has the same number of corners (quads, or triangles
+  // once smoothed), so the connectivity is a flat copy of the kept
+  // rows and the offsets are implied.
+  const vtkIdType cellSize = inPolys->IsHomogeneous();
+  if (cellSize > 0) {
+    auto copyRows = [&](auto* in) {
+      using ArrayT = std::remove_pointer_t<decltype(in)>;
+      vtkNew<ArrayT> out;
+      out->SetNumberOfValues(keptCount * cellSize);
+      auto* src = in->GetPointer(0);
+      auto* dst = out->GetPointer(0);
+      for (vtkIdType c : kept) {
+        std::copy_n(src + c * cellSize, cellSize, dst);
+        dst += cellSize;
+      }
+      polys->SetData(cellSize, out);
+    };
+    if (inPolys->IsStorage64Bit()) {
+      copyRows(inPolys->GetConnectivityArray64());
+    } else {
+      copyRows(inPolys->GetConnectivityArray32());
+    }
+  } else {
+    polys->AllocateExact(keptCount, keptCount * inPolys->GetMaxCellSize());
+    vtkNew<vtkIdList> pts;
+    for (vtkIdType c : kept) {
+      inPolys->GetCellAtId(c, pts);
+      polys->InsertNextCell(pts);
+    }
+  }
+  auto* cellData = surface->GetCellData();
+  cellData->CopyAllocate(mesh->GetCellData(), keptCount);
+  vtkIdType next = 0;
+  for (vtkIdType c : kept) {
+    cellData->CopyData(mesh->GetCellData(), c, next++);
+  }
+  surface->SetPolys(polys);
+  return surface;
+}
+
+vtkSmartPointer<vtkPolyData> extractLabelSurface(
+  vtkImageData* image, const QVector<double>& regions,
+  const QVector<double>& visible, int smoothingIterations, double background)
+{
+  auto mesh =
+    extractLabelMesh(image, regions, smoothingIterations, background);
+  return selectLabelFaces(mesh, visible);
 }
 
 void colorLabelSurface(vtkPolyData* surface, const LabelTable& table,

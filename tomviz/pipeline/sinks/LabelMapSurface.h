@@ -32,13 +32,31 @@ QVector<double> regionLabels(const LabelTable& table, double background);
 /// The subset of regionLabels() the user has left visible.
 QVector<double> visibleLabels(const LabelTable& table, double background);
 
-/// Extract the faces bounding @a visible, treating every label outside
-/// @a regions as @a background. Faces between a visible region and a
-/// hidden one are kept, so a hidden neighbour reads as a cavity. With
+/// Extract every face bounding a region in @a regions, treating every
+/// label outside @a regions as @a background. With
 /// @a smoothingIterations above zero the mesh is relaxed and given point
 /// normals; at zero the voxel faces are returned as-is, and the mapper's
 /// per-face normals give them their crisp look. Returns an empty polydata
 /// when there is nothing to draw or the image is not a 3D volume.
+///
+/// This is the expensive step (Surface Nets over the whole volume, then
+/// the smoothing), so it is separate from the selection below: it only
+/// depends on the data, the label set and the smoothing, and a sink
+/// keeps its result while the user shows and hides labels.
+vtkSmartPointer<vtkPolyData> extractLabelMesh(vtkImageData* image,
+                                              const QVector<double>& regions,
+                                              int smoothingIterations,
+                                              double background);
+
+/// The faces of @a mesh (from extractLabelMesh) that bound a label in
+/// @a visible. Faces between a visible region and a hidden one are kept,
+/// so a hidden neighbour reads as a cavity. The points and their normals
+/// are shared with @a mesh, not copied; only the cells and their data
+/// are. Cheap enough to run on every checkbox.
+vtkSmartPointer<vtkPolyData> selectLabelFaces(vtkPolyData* mesh,
+                                              const QVector<double>& visible);
+
+/// extractLabelMesh followed by selectLabelFaces.
 vtkSmartPointer<vtkPolyData> extractLabelSurface(
   vtkImageData* image, const QVector<double>& regions,
   const QVector<double>& visible, int smoothingIterations,

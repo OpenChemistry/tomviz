@@ -4324,17 +4324,27 @@ TEST_F(PipelineLibTest, LabelMapSinkSurfaceFollowsLabelsAndRepresentation)
   // Ambient floor for the volume representation, applied once
   EXPECT_GE(sink->ambient(), 0.3);
 
-  // Hiding a label re-extracts; a color edit only recolors
+  // A color edit only recolors. Hiding a label re-selects faces from
+  // the extracted mesh, whose points it keeps sharing: no new pass over
+  // the volume, which is what made a checkbox slow on a large
+  // segmentation.
   auto labels = sink->labelMap();
   ASSERT_TRUE(labels);
   auto* before = sink->surface();
+  auto* meshPoints = before->GetPoints();
   labels->labels().setColor(labels->labels().indexOfValue(1.0), Qt::cyan);
   sink->applyLabels();
   EXPECT_EQ(sink->surface(), before);
   labels->labels().setVisible(labels->labels().indexOfValue(2.0), false);
   sink->applyLabels();
   EXPECT_NE(sink->surface(), before);
+  EXPECT_EQ(sink->surface()->GetPoints(), meshPoints);
   EXPECT_LT(sink->surface()->GetNumberOfCells(), cells);
+  // Showing it again restores every face
+  labels->labels().setVisible(labels->labels().indexOfValue(2.0), true);
+  sink->applyLabels();
+  EXPECT_EQ(sink->surface()->GetNumberOfCells(), cells);
+  EXPECT_EQ(sink->surface()->GetPoints(), meshPoints);
 
   // Switching to the volume representation keeps the mesh around, and
   // smoothing changes rebuild it
