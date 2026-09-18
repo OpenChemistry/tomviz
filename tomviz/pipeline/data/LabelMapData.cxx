@@ -9,7 +9,9 @@
 #include <vtkColorTransferFunction.h>
 #include <vtkDataArray.h>
 #include <vtkDataArrayRange.h>
+#include <vtkDoubleArray.h>
 #include <vtkImageData.h>
+#include <vtkNew.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkSMPropertyHelper.h>
 #include <vtkSMProxy.h>
@@ -156,10 +158,18 @@ void LabelTable::reconcile(
   QVector<LabelEntry> updated;
   updated.reserve(scanned.size());
 
+  // Tens of thousands of labels are routine, so index the old table
+  // once rather than scan it per scanned value.
+  std::unordered_map<double, int> existingIndex;
+  existingIndex.reserve(m_entries.size());
+  for (int i = 0; i < m_entries.size(); ++i) {
+    existingIndex.emplace(m_entries[i].value, i);
+  }
+
   for (const auto& pair : scanned) {
-    int existing = indexOfValue(pair.first);
-    if (existing >= 0) {
-      LabelEntry entry = m_entries[existing];
+    auto found = existingIndex.find(pair.first);
+    if (found != existingIndex.end()) {
+      LabelEntry entry = m_entries[found->second];
       entry.voxelCount = pair.second;
       updated.append(entry);
       continue;
@@ -305,16 +315,38 @@ void LabelMapData::applyLabels()
 
   const auto nodes = bandNodes(m_labels);
 
-  ctf->RemoveAllPoints();
-  opacity->RemoveAllPoints();
+  // In bulk, not a point at a time: every insert re-sorts the function
+  // and fires ModifiedEvent, and the histogram widget answers each one
+  // with a render of every view. Two points per label made that
+  // thousands of renders for a segmentation of a few thousand
+  // particles. AddRGBPoints refuses to check for duplicates, so the
+  // one case bandNodes produces them (a single-entry table, where both
+  // pins land on the value) is folded here.
+  vtkNew<vtkDoubleArray> xs;
+  vtkNew<vtkDoubleArray> rgb;
+  rgb->SetNumberOfComponents(3);
+  std::vector<double> opacityPoints;
+  opacityPoints.reserve(2 * nodes.size());
   for (const auto& node : nodes) {
+    if (xs->GetNumberOfValues() > 0 &&
+        xs->GetValue(xs->GetNumberOfValues() - 1) == node.first) {
+      continue;
+    }
     const auto& entry = m_labels.at(node.second);
-    ctf->AddRGBPoint(node.first, entry.color.redF(), entry.color.greenF(),
-                     entry.color.blueF());
-    opacity->AddPoint(node.first, entry.visible ? 1.0 : 0.0);
+    xs->InsertNextValue(node.first);
+    rgb->InsertNextTuple3(entry.color.redF(), entry.color.greenF(),
+                          entry.color.blueF());
+    opacityPoints.push_back(node.first);
+    opacityPoints.push_back(entry.visible ? 1.0 : 0.0);
   }
-  ctf->Modified();
-  opacity->Modified();
+
+  ctf->RemoveAllPoints();
+  const bool duplicates = ctf->GetAllowDuplicateScalars();
+  ctf->AllowDuplicateScalarsOn();
+  ctf->AddRGBPoints(xs, rgb);
+  ctf->SetAllowDuplicateScalars(duplicates);
+  opacity->FillFromDataPointer(static_cast<int>(opacityPoints.size() / 2),
+                               opacityPoints.data());
 
   // Without this the proxy keeps its stale default points, and the next
   // rescale (per-node post-execution, or the user's "Reset data range")
@@ -407,7 +439,7 @@ bool canInterpretAsLabelMap(const VolumeDataPtr& data)
   }
 
   auto range = data->scalarRange();
-  // Inclusive of both ends: 0..4095 is maxLabels distinct values.
+  // Inclusive of both ends: 0..maxLabels-1 is maxLabels distinct values.
   return range[1] - range[0] + 1 <= LabelTable::maxLabels;
 }
 

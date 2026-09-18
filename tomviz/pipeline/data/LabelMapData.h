@@ -47,11 +47,14 @@ class LabelTable
 {
 public:
   /// Upper bound on the number of distinct labels tracked. Beyond this
-  /// the scan stops and isTruncated() reports true: the per-label UI
-  /// stops being usable, and the GPU transfer-function lookup texture
-  /// (sized from the smallest node gap, 0.5 here) would grow past what
-  /// drivers accept.
-  static constexpr int maxLabels = 4096;
+  /// the scan stops and isTruncated() reports true. A particle
+  /// segmentation runs to tens of thousands of labels (a superlattice
+  /// at HXN started at 8k), so the bound is generous; past a few
+  /// thousand the volume representation's lookup texture, sized from
+  /// the 0.5 node gap, is clamped to what the driver allows and
+  /// neighbouring bands start to blend, but the surface representation
+  /// and the table are unaffected.
+  static constexpr int maxLabels = 65536;
 
   const QVector<LabelEntry>& entries() const { return m_entries; }
   int count() const { return m_entries.size(); }

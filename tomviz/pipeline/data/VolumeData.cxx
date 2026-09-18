@@ -429,23 +429,22 @@ void VolumeData::syncColorMapToProxy()
     return;
   }
 
-  // Push CTF control points to the proxy's RGBPoints property.
+  // The functions were edited directly, so the VTK objects already
+  // hold these points; the proxies only need to record them, for state
+  // files and for vtkSMTransferFunctionProxy::RescaleTransferFunction,
+  // which reads the property. Without that the proxy keeps its stale
+  // default points and the next rescale wipes what was just written.
+  // Recording rather than pushing matters: a push replays AddRGBPoint
+  // per point, quadratic in their number, and a label map carries two
+  // per label. Use a contiguous 4*N buffer for the opacity Points,
+  // matching what RGBPoints does on the CTF side; per-element Set()
+  // leaves the property out of sync.
   if (m_ctf && m_ctf->GetSize() > 0) {
-    if (auto* prop = m_colorMap->GetProperty("RGBPoints")) {
-      vtkSMPropertyHelper(prop).Set(m_ctf->GetDataPointer(),
-                                    m_ctf->GetSize() * 4);
-    }
+    recordProxyValues(m_colorMap, "RGBPoints", m_ctf->GetDataPointer(),
+                      m_ctf->GetSize() * 4);
   }
   m_colorMap->UpdateVTKObjects();
 
-  // Push opacity control points to the ScalarOpacityFunction sub-proxy's
-  // Points property. Use a bulk Set() with a contiguous 4*N buffer to
-  // match what RGBPoints does on the CTF side. Per-element Set() via
-  // SetNumberOfElements + individual Set(i, v) calls leaves the proxy's
-  // property out of sync, which means a subsequent
-  // vtkSMTransferFunctionProxy::RescaleTransferFunction(omap, ...)
-  // rescales stale/zero values and, on UpdateVTKObjects, wipes out the
-  // client-side PWF.
   auto* omap =
     vtkSMPropertyHelper(m_colorMap, "ScalarOpacityFunction").GetAsProxy();
   if (omap && m_opacity && m_opacity->GetSize() > 0) {
@@ -454,8 +453,8 @@ void VolumeData::syncColorMapToProxy()
     for (int i = 0; i < n; ++i) {
       m_opacity->GetNodeValue(i, buffer.data() + 4 * i);
     }
-    vtkSMPropertyHelper(omap, "Points")
-      .Set(buffer.data(), static_cast<unsigned int>(buffer.size()));
+    recordProxyValues(omap, "Points", buffer.data(),
+                      static_cast<unsigned int>(buffer.size()));
     omap->UpdateVTKObjects();
   }
 }

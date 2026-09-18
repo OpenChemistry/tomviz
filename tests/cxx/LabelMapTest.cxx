@@ -78,12 +78,12 @@ private slots:
 
     // So does integer data spanning more values than the table holds.
     auto wide = std::make_shared<VolumeData>(
-      rampImage(VTK_UNSIGNED_SHORT, 4.0 * LabelTable::maxLabels));
+      rampImage(VTK_INT, 4.0 * LabelTable::maxLabels));
     QVERIFY(!canInterpretAsLabelMap(wide));
 
     // Right at the limit it is still offered.
     auto atLimit = std::make_shared<VolumeData>(
-      rampImage(VTK_UNSIGNED_SHORT, LabelTable::maxLabels - 1));
+      rampImage(VTK_INT, LabelTable::maxLabels - 1));
     QVERIFY(canInterpretAsLabelMap(atLimit));
 
     // Nothing loaded is not something to offer it for.

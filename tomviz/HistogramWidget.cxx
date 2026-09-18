@@ -65,6 +65,8 @@
 #include <QSettings>
 #include <QSignalBlocker>
 #include <QTimer>
+
+#include <vector>
 #include <QToolButton>
 #include <QVBoxLayout>
 
@@ -368,6 +370,24 @@ void HistogramWidget::onColorFunctionChanged()
 
 void HistogramWidget::onScalarOpacityFunctionChanged()
 {
+  // One ModifiedEvent per inserted point is the norm (each AddPoint
+  // re-sorts and fires), and everything below is a render of every
+  // view plus a copy of the whole function into its proxy. Coalesce
+  // to one pass per event-loop turn, as onColorFunctionChanged does,
+  // so a function rebuilt from thousands of points (a label map's two
+  // per label) costs one render rather than thousands.
+  if (m_opacityFunctionUpdatePending) {
+    return;
+  }
+  m_opacityFunctionUpdatePending = true;
+  QTimer::singleShot(0, this, [this]() {
+    m_opacityFunctionUpdatePending = false;
+    syncScalarOpacityFunction();
+  });
+}
+
+void HistogramWidget::syncScalarOpacityFunction()
+{
   // Update rendered views of the data.
   ActiveObjects::instance().renderAllViews();
 
@@ -376,7 +396,7 @@ void HistogramWidget::onScalarOpacityFunctionChanged()
 
   // Update the scalar opacity function proxy as it does not update its
   // internal state when the VTK object changes.
-  if (!m_LUTProxy) {
+  if (!m_LUTProxy || !m_scalarOpacityFunction) {
     return;
   }
 
@@ -386,19 +406,17 @@ void HistogramWidget::onScalarOpacityFunctionChanged()
     return;
   }
 
-  vtkSMPropertyHelper pointsHelper(opacityMapProxy, "Points");
   auto opacityMapObject = opacityMapProxy->GetClientSideObject();
   auto pwf = vtkPiecewiseFunction::SafeDownCast(opacityMapObject);
   if (pwf) {
-    pointsHelper.SetNumberOfElements(4 * pwf->GetSize());
-    for (int i = 0; i < pwf->GetSize(); ++i) {
-      double value[4];
-      pwf->GetNodeValue(i, value);
-      pointsHelper.Set(4 * i + 0, value[0]);
-      pointsHelper.Set(4 * i + 1, value[1]);
-      pointsHelper.Set(4 * i + 2, value[2]);
-      pointsHelper.Set(4 * i + 3, value[3]);
+    const int n = pwf->GetSize();
+    std::vector<double> points(4 * n);
+    for (int i = 0; i < n; ++i) {
+      pwf->GetNodeValue(i, points.data() + 4 * i);
     }
+    // Recorded, not pushed: the function is the object we just read.
+    recordProxyValues(opacityMapProxy, "Points", points.data(),
+                      static_cast<unsigned int>(points.size()));
   }
 
   emit opacityChanged();

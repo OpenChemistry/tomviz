@@ -165,6 +165,16 @@ vtkPVArrayInformation* scalarArrayInformation(vtkSMSourceProxy* proxy);
 /// on the colorMap i.e. if user locked the scalar range, it won't be rescaled.
 bool rescaleColorMap(vtkSMProxy* colorMap, vtkSMSourceProxy* dataProxy);
 
+/// Record @a values on the proxy's vector property @a name without
+/// pushing them to the VTK object, for when that object already holds
+/// exactly these values (the caller set them on it directly). The
+/// property is left unmodified, so the next UpdateVTKObjects() skips
+/// it. A push would replay the property's command per element; for a
+/// transfer function's points that is AddPoint with a re-sort each
+/// time, quadratic in the number of points and minutes at 100k.
+void recordProxyValues(vtkSMProxy* proxy, const char* name,
+                       const double* values, unsigned int count);
+
 // Given the root of a file and an extension, reades the file fileName +
 // extension and returns the content in a QString.
 QString readInTextFile(const QString& fileName, const QString& extension);

@@ -588,6 +588,31 @@ vtkPVArrayInformation* scalarArrayInformation(vtkSMSourceProxy* proxy)
                : nullptr;
 }
 
+namespace {
+// vtkSMProxy keeps SetPropertyModifiedFlag protected; naming it through
+// a derived class yields an ordinary pointer to the base member, which
+// is the sanctioned way to reach it from outside.
+struct ProxyModifiedFlag : vtkSMProxy
+{
+  static void clear(vtkSMProxy* proxy, const char* name)
+  {
+    constexpr auto flag = &ProxyModifiedFlag::SetPropertyModifiedFlag;
+    (proxy->*flag)(name, 0);
+  }
+};
+} // namespace
+
+void recordProxyValues(vtkSMProxy* proxy, const char* name,
+                       const double* values, unsigned int count)
+{
+  auto* prop = proxy ? proxy->GetProperty(name) : nullptr;
+  if (!prop) {
+    return;
+  }
+  vtkSMPropertyHelper(prop).Set(values, count);
+  ProxyModifiedFlag::clear(proxy, name);
+}
+
 bool rescaleColorMap(vtkSMProxy* colorMap, vtkSMSourceProxy* dataProxy)
 {
   // rescale the color/opacity maps for the data source.

@@ -86,6 +86,9 @@ protected:
 
 private:
   void renderViews();
+  /// The deferred body of onScalarOpacityFunctionChanged: render, and
+  /// copy the function's points into its proxy.
+  void syncScalarOpacityFunction();
   void rescaleTransferFunction(vtkSMProxy* lutProxy, double min, double max);
   bool createContourDialog(double& isoValue);
   void showPresetDialog(const QJsonObject& newPreset);
@@ -147,6 +150,7 @@ private:
   // Coalesces the deferred color-function rebuild (see
   // onColorFunctionChanged) so reentrant ModifiedEvents don't pile up.
   bool m_colorFunctionUpdatePending = false;
+  bool m_opacityFunctionUpdatePending = false;
 
   // Matches ImageJ's ContrastAdjuster: AUTO_THRESHOLD is the starting
   // threshold divisor, and the current value must begin below 10 so the
