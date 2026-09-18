@@ -68,15 +68,15 @@ void applyColorMapJson(vtkSMProxy* cmap, const QJsonObject& json)
     tomviz::deserialize(pwf, json);
   }
 
-  // Push client-side edits back up to the proxy properties so proxy-
-  // level consumers see the same state. Use bulk Set for both CTF and
-  // PWF (SetNumberOfElements + per-element Set doesn't reliably survive
-  // UpdateVTKObjects on the opacity sub-proxy).
+  // Record the client-side edits on the proxy properties so proxy-
+  // level consumers (state files, rescales) see the same state. Recorded
+  // rather than pushed: the VTK objects already hold these points, and
+  // a push replays AddPoint per point, quadratic in their number. Bulk
+  // buffers for both CTF and PWF (per-element Set doesn't reliably
+  // survive UpdateVTKObjects on the opacity sub-proxy).
   if (disc && disc->GetSize() > 0) {
-    if (auto* prop = cmap->GetProperty("RGBPoints")) {
-      vtkSMPropertyHelper(prop).Set(disc->GetDataPointer(),
-                                    disc->GetSize() * 4);
-    }
+    recordProxyValues(cmap, "RGBPoints", disc->GetDataPointer(),
+                      static_cast<unsigned int>(disc->GetSize() * 4));
   }
   cmap->UpdateVTKObjects();
   if (omapProxy && pwf && pwf->GetSize() > 0) {
@@ -85,8 +85,8 @@ void applyColorMapJson(vtkSMProxy* cmap, const QJsonObject& json)
     for (int i = 0; i < n; ++i) {
       pwf->GetNodeValue(i, buffer.data() + 4 * i);
     }
-    vtkSMPropertyHelper(omapProxy, "Points")
-      .Set(buffer.data(), static_cast<unsigned int>(buffer.size()));
+    recordProxyValues(omapProxy, "Points", buffer.data(),
+                      static_cast<unsigned int>(buffer.size()));
     omapProxy->UpdateVTKObjects();
   }
 }

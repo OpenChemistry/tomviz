@@ -4,6 +4,7 @@
 #include "LabelMapData.h"
 
 #include "ColorMap.h"
+#include "Utilities.h"
 
 #include <vtkArrayDispatch.h>
 #include <vtkColorTransferFunction.h>
@@ -99,6 +100,48 @@ QVector<QPair<double, int>> bandNodes(const LabelTable& table)
     nodes.append({ value + high, i });
   }
   return nodes;
+}
+
+/// Rebuild @a ctf and @a opacity from the table's color bands.
+///
+/// In bulk, not a point at a time: every insert re-sorts the function
+/// and fires ModifiedEvent, and the histogram widget answers each one
+/// with a render and a copy into the proxy. Two points per label made
+/// that thousands of renders for a segmentation of a few thousand
+/// particles. AddRGBPoints refuses to check for duplicates, so the one
+/// case bandNodes produces them (a single-entry table, where both pins
+/// land on the value) is folded here.
+void fillLabelFunctions(const LabelTable& table,
+                        vtkColorTransferFunction* ctf,
+                        vtkPiecewiseFunction* opacity)
+{
+  const auto nodes = bandNodes(table);
+
+  vtkNew<vtkDoubleArray> xs;
+  vtkNew<vtkDoubleArray> rgb;
+  rgb->SetNumberOfComponents(3);
+  std::vector<double> opacityPoints;
+  opacityPoints.reserve(2 * nodes.size());
+  for (const auto& node : nodes) {
+    if (xs->GetNumberOfValues() > 0 &&
+        xs->GetValue(xs->GetNumberOfValues() - 1) == node.first) {
+      continue;
+    }
+    const auto& entry = table.at(node.second);
+    xs->InsertNextValue(node.first);
+    rgb->InsertNextTuple3(entry.color.redF(), entry.color.greenF(),
+                          entry.color.blueF());
+    opacityPoints.push_back(node.first);
+    opacityPoints.push_back(entry.visible ? 1.0 : 0.0);
+  }
+
+  ctf->RemoveAllPoints();
+  const bool duplicates = ctf->GetAllowDuplicateScalars();
+  ctf->AllowDuplicateScalarsOn();
+  ctf->AddRGBPoints(xs, rgb);
+  ctf->SetAllowDuplicateScalars(duplicates);
+  opacity->FillFromDataPointer(static_cast<int>(opacityPoints.size() / 2),
+                               opacityPoints.data());
 }
 
 } // namespace
@@ -313,40 +356,7 @@ void LabelMapData::applyLabels()
     return;
   }
 
-  const auto nodes = bandNodes(m_labels);
-
-  // In bulk, not a point at a time: every insert re-sorts the function
-  // and fires ModifiedEvent, and the histogram widget answers each one
-  // with a render of every view. Two points per label made that
-  // thousands of renders for a segmentation of a few thousand
-  // particles. AddRGBPoints refuses to check for duplicates, so the
-  // one case bandNodes produces them (a single-entry table, where both
-  // pins land on the value) is folded here.
-  vtkNew<vtkDoubleArray> xs;
-  vtkNew<vtkDoubleArray> rgb;
-  rgb->SetNumberOfComponents(3);
-  std::vector<double> opacityPoints;
-  opacityPoints.reserve(2 * nodes.size());
-  for (const auto& node : nodes) {
-    if (xs->GetNumberOfValues() > 0 &&
-        xs->GetValue(xs->GetNumberOfValues() - 1) == node.first) {
-      continue;
-    }
-    const auto& entry = m_labels.at(node.second);
-    xs->InsertNextValue(node.first);
-    rgb->InsertNextTuple3(entry.color.redF(), entry.color.greenF(),
-                          entry.color.blueF());
-    opacityPoints.push_back(node.first);
-    opacityPoints.push_back(entry.visible ? 1.0 : 0.0);
-  }
-
-  ctf->RemoveAllPoints();
-  const bool duplicates = ctf->GetAllowDuplicateScalars();
-  ctf->AllowDuplicateScalarsOn();
-  ctf->AddRGBPoints(xs, rgb);
-  ctf->SetAllowDuplicateScalars(duplicates);
-  opacity->FillFromDataPointer(static_cast<int>(opacityPoints.size() / 2),
-                               opacityPoints.data());
+  fillLabelFunctions(m_labels, ctf, opacity);
 
   // Without this the proxy keeps its stale default points, and the next
   // rescale (per-node post-execution, or the user's "Reset data range")
@@ -360,39 +370,32 @@ void LabelMapData::applyLabelsToProxy(const LabelTable& table,
   if (!colorMap || table.isEmpty()) {
     return;
   }
-
-  const auto nodes = bandNodes(table);
-
-  std::vector<double> rgbPoints;
-  std::vector<double> opacityPoints;
-  rgbPoints.reserve(4 * nodes.size());
-  opacityPoints.reserve(4 * nodes.size());
-  for (const auto& node : nodes) {
-    const auto& entry = table.at(node.second);
-    rgbPoints.push_back(node.first);
-    rgbPoints.push_back(entry.color.redF());
-    rgbPoints.push_back(entry.color.greenF());
-    rgbPoints.push_back(entry.color.blueF());
-    // Position, opacity, midpoint, sharpness -- the shape the
-    // ScalarOpacityFunction proxy's Points property expects.
-    opacityPoints.push_back(node.first);
-    opacityPoints.push_back(entry.visible ? 1.0 : 0.0);
-    opacityPoints.push_back(0.5);
-    opacityPoints.push_back(0.0);
-  }
-
-  vtkSMPropertyHelper(colorMap, "RGBPoints")
-    .Set(rgbPoints.data(), static_cast<unsigned int>(rgbPoints.size()));
-  colorMap->UpdateVTKObjects();
-
+  auto* ctf =
+    vtkColorTransferFunction::SafeDownCast(colorMap->GetClientSideObject());
   auto* omap =
     vtkSMPropertyHelper(colorMap, "ScalarOpacityFunction").GetAsProxy();
-  if (omap) {
-    vtkSMPropertyHelper(omap, "Points")
-      .Set(opacityPoints.data(),
-           static_cast<unsigned int>(opacityPoints.size()));
-    omap->UpdateVTKObjects();
+  auto* opacity =
+    omap ? vtkPiecewiseFunction::SafeDownCast(omap->GetClientSideObject())
+         : nullptr;
+  if (!ctf || !opacity) {
+    return;
   }
+
+  // Same as applyLabels, on a detached map: fill the VTK objects in
+  // bulk, then record the points on the proxies. Pushing them instead
+  // would replay AddPoint per point, quadratic in the label count.
+  fillLabelFunctions(table, ctf, opacity);
+  recordProxyValues(colorMap, "RGBPoints", ctf->GetDataPointer(),
+                    static_cast<unsigned int>(ctf->GetSize() * 4));
+  colorMap->UpdateVTKObjects();
+  const int n = opacity->GetSize();
+  std::vector<double> points(4 * n);
+  for (int i = 0; i < n; ++i) {
+    opacity->GetNodeValue(i, points.data() + 4 * i);
+  }
+  recordProxyValues(omap, "Points", points.data(),
+                    static_cast<unsigned int>(points.size()));
+  omap->UpdateVTKObjects();
 }
 
 QJsonObject LabelMapData::serialize() const
