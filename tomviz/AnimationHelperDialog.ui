@@ -142,6 +142,9 @@
          </item>
          <item>
           <widget class="QDoubleSpinBox" name="segmentDuration">
+           <property name="keyboardTracking">
+            <bool>false</bool>
+           </property>
            <property name="enabled">
             <bool>false</bool>
            </property>

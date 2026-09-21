@@ -233,6 +233,10 @@ public:
       box->setRange(0.0, 1.0);
       box->setSingleStep(0.01);
       box->setDecimals(2);
+      // Commit once editing is done: a value committed per keystroke is
+      // reflected straight back into the box, which reformats the text
+      // under the user and swallows the digit they were about to type
+      box->setKeyboardTracking(false);
       box->setToolTip(positionTitle->toolTip());
       auto* axisLabel = new QLabel(axis, parent);
       axisLabel->setBuddy(box);
