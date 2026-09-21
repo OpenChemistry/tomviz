@@ -6,7 +6,9 @@
 #include "ActiveObjects.h"
 #include "CameraViewpoints.h"
 #include "ModuleAnimations.h"
+#include "SceneSnapshot.h"
 #include "Utilities.h"
+#include "pipeline/Pipeline.h"
 
 #include <pqAnimationManager.h>
 #include <pqAnimationScene.h>
@@ -14,6 +16,10 @@
 #include <pqPVApplicationCore.h>
 #include <pqRenderView.h>
 #include <pqServerManagerModel.h>
+#include <pqTimeKeeper.h>
+
+#include <vtkCamera.h>
+#include <vtkSMRenderViewProxy.h>
 
 #include <vtkSMAnimationScene.h>
 #include <vtkSMProxy.h>
@@ -132,10 +138,43 @@ void AnimationSceneGuard::follow(pqAnimationScene* scene)
   if (!scene) {
     return;
   }
+  // Both run before the player reads the scene time or starts ticking
   connect(scene, &pqAnimationScene::beginPlay, this,
           [this, scene](vtkObject*, unsigned long, void*, void* reversed) {
+            provideDefaultAnimation();
             rewindIfAtEnd(scene, reversed && *static_cast<bool*>(reversed));
           });
+}
+
+void AnimationSceneGuard::provideDefaultAnimation()
+{
+  auto& viewpoints = CameraViewpoints::instance();
+  auto& active = ActiveObjects::instance();
+  auto* pipeline = active.pipeline();
+  auto* timeKeeper = active.activeTimeKeeper();
+  // Nothing set up, but something to look at. A lone plain viewpoint is
+  // a path in the making and is left alone; a time series plays its own
+  // steps.
+  if (viewpoints.size() != 0 || !ModuleAnimations::instance().isEmpty() ||
+      !pipeline || pipeline->nodes().isEmpty() ||
+      (timeKeeper && !timeKeeper->getTimeSteps().empty())) {
+    return;
+  }
+  auto* view = animationRenderView();
+  auto* proxy = view ? view->getRenderViewProxy() : nullptr;
+  auto* camera = proxy ? proxy->GetActiveCamera() : nullptr;
+  if (!camera) {
+    return;
+  }
+  Viewpoint viewpoint;
+  viewpoint.readFrom(camera);
+  viewpoint.name = "Camera Orbit";
+  viewpoint.orbitTurns = 1;
+  // Recorded like a viewpoint the user adds, so a visualization added
+  // later fades in on the leg that first has it
+  viewpoint.scene = SceneSnapshot::capture(pipeline);
+  // Appending arms the flight through the change handler
+  viewpoints.append(viewpoint);
 }
 
 void AnimationSceneGuard::rewindIfAtEnd(pqAnimationScene* scene, bool reversed)

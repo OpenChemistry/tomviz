@@ -20,7 +20,6 @@
 #include "Utilities.h"
 #include "vtkOMETiffReader.h"
 
-#include "animations/CameraViewpoints.h"
 #include "animations/TimeSeriesAnimation.h"
 
 #include "pipeline/OutputPort.h"
@@ -44,9 +43,7 @@
 #include <pqRenderView.h>
 #include <pqSMAdaptor.h>
 #include <pqView.h>
-#include <vtkCamera.h>
 #include <vtkSMCoreUtilities.h>
-#include <vtkSMRenderViewProxy.h>
 #include <vtkSMParaViewPipelineController.h>
 #include <vtkSMPropertyHelper.h>
 #include <vtkSMSessionProxyManager.h>
@@ -596,35 +593,15 @@ void LoadDataReaction::sourceNodeAdded(pipeline::SourceNode* source,
   ActiveObjects::instance().clearActiveSelection();
 
   if (isFirstSource && createCameraOrbit && pip) {
-    // The opening spin: a viewpoint that orbits, created after the first
-    // execution completes so the camera has been reset to frame the
-    // data. It is an ordinary viewpoint, which is what lets the
-    // Animation Helper show why Play spins and lets the user build on it
-    // or remove it.
+    // Give the animation enough frames to show motion once the first
+    // execution completes. The opening spin itself is made when Play is
+    // pressed with nothing else set up (see AnimationSceneGuard), from
+    // whatever the user is looking at then.
     auto conn = std::make_shared<QMetaObject::Connection>();
     *conn = QObject::connect(
-      pip, &pipeline::Pipeline::executionFinished, pip, [conn, pip]() {
+      pip, &pipeline::Pipeline::executionFinished, pip, [conn]() {
         QObject::disconnect(*conn);
         tomviz::setAnimationNumberOfFrames(200);
-        auto* rv = ActiveObjects::instance().activePqRenderView();
-        auto* proxy = rv ? rv->getRenderViewProxy() : nullptr;
-        auto* camera = proxy ? proxy->GetActiveCamera() : nullptr;
-        if (!camera) {
-          return;
-        }
-        auto& viewpoints = CameraViewpoints::instance();
-        // A state file loaded alongside may have brought its own path
-        if (viewpoints.size() == 0) {
-          Viewpoint viewpoint;
-          viewpoint.readFrom(camera);
-          viewpoint.name = "Camera Orbit";
-          viewpoint.orbitTurns = 1;
-          // Recorded like a viewpoint the user adds, so a visualization
-          // added later fades in on the leg that first has it
-          viewpoint.scene = SceneSnapshot::capture(pip);
-          viewpoints.append(viewpoint);
-        }
-        viewpoints.syncFlight(rv);
       });
   }
 

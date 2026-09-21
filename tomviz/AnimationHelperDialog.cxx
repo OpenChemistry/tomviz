@@ -275,8 +275,8 @@ public:
       "point before it moves on: full turns, in this direction, lasting "
       "this long relative to the legs of the path. The last viewpoint can "
       "orbit too, to end on a spin, and a single viewpoint that orbits is "
-      "an animation on its own: what a freshly loaded dataset starts "
-      "with.");
+      "an animation on its own: what Play makes of the current view when "
+      "nothing else is set up.");
     orbitTurns = new QSpinBox(parent);
     orbitTurns->setObjectName("orbitTurns");
     orbitTurns->setRange(1, 10);

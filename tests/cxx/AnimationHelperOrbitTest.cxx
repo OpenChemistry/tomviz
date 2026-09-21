@@ -37,6 +37,7 @@
 #include "animations/CameraViewpoints.h"
 #include "animations/ModuleAnimation.h"
 #include "pipeline/Pipeline.h"
+#include "pipeline/SourceNode.h"
 
 using namespace tomviz;
 
@@ -115,6 +116,8 @@ private slots:
       builder->createView(pqRenderView::renderViewType(), server));
     QVERIFY(m_view);
     pqActiveObjects::instance().setActiveView(m_view);
+    // Something loaded, so Play has a view worth an opening orbit
+    m_pipeline.addNode(new pipeline::SourceNode());
     ActiveObjects::instance().setPipeline(&m_pipeline);
   }
 
@@ -294,23 +297,58 @@ private slots:
     QVERIFY(probe.ticks < 30);
     QTest::qWait(50);
 
-    // Nothing to fly now: Play runs the clock and leaves the camera
-    // where the interrupted orbit put it
-    probe.reset();
-    scene()->getProxy()->InvokeCommand("Play");
-    QVERIFY(probe.ticks >= 98);
-    QVERIFY(probe.sweep() < 1e-9);
-
-    // A new orbit at the current view flies again, all the way round
+    // Nothing set up any more, so Play makes a new Camera Orbit from
+    // the view as it is and flies it, all the way round
     camera->SetPosition(0, 0, 10);
-    m_add->click();
-    m_orbit->setChecked(true);
-    QVERIFY(viewpoints.isFlying());
     probe.reset();
     scene()->getProxy()->InvokeCommand("Play");
+    QCOMPARE(viewpoints.size(), 1);
+    QCOMPARE(viewpoints.at(0).name, QString("Camera Orbit"));
+    QVERIFY(viewpoints.isFlying());
     QVERIFY2(probe.ticks >= 98, qPrintable(QString("%1 ticks").arg(probe.ticks)));
     QVERIFY2(probe.highestX > 8.0, "never swung out to the right");
     QVERIFY2(probe.lowestX < -8.0, "never swung out to the left");
+    QCOMPARE(m_list->count(), 1);
+  }
+
+  // Play with nothing to animate makes the opening orbit, once; a lone
+  // plain viewpoint or an authored animation is left alone.
+  void playWithNothingSetUpMakesACameraOrbit()
+  {
+    auto& viewpoints = CameraViewpoints::instance();
+    auto* camera = m_view->getRenderViewProxy()->GetActiveCamera();
+    camera->SetPosition(0, 0, 10);
+    camera->SetFocalPoint(0, 0, 0);
+    camera->SetViewUp(0, 1, 0);
+    QCOMPARE(viewpoints.size(), 0);
+
+    TickProbe probe;
+    probe.view = m_view;
+    play(60);
+    QCOMPARE(viewpoints.size(), 1);
+    QCOMPARE(viewpoints.at(0).name, QString("Camera Orbit"));
+    QCOMPARE(viewpoints.at(0).orbitTurns, 1);
+    QVERIFY(!viewpoints.at(0).scene.isEmpty());
+    QVERIFY(viewpoints.isFlying());
+    QVERIFY(probe.ticks >= 58);
+    QVERIFY(probe.sweep() > 8.0);
+
+    // Playing again does not add another
+    probe.reset();
+    scene()->getProxy()->InvokeCommand("Play");
+    QCOMPARE(viewpoints.size(), 1);
+    QVERIFY(probe.sweep() > 8.0);
+
+    // A single plain viewpoint is a path in the making: Play leaves it
+    // alone and moves nothing
+    m_clear->click();
+    m_add->click();
+    QCOMPARE(viewpoints.size(), 1);
+    probe.reset();
+    scene()->getProxy()->InvokeCommand("Play");
+    QCOMPARE(viewpoints.size(), 1);
+    QCOMPARE(viewpoints.at(0).orbitTurns, 0);
+    QVERIFY(probe.sweep() < 1e-9);
   }
 
   // Every edit a user can make from the dialog, made from inside a
@@ -391,7 +429,10 @@ private slots:
       }
       Q_UNUSED(before);
     }
-    QCOMPARE(viewpoints.size(), 0);
+    // Clear All emptied the list, and that last Play made the opening
+    // orbit out of the emptiness
+    QCOMPARE(viewpoints.size(), 1);
+    QCOMPARE(viewpoints.at(0).name, QString("Camera Orbit"));
   }
 
   // A rename commits after the list widget has finished its own edit,

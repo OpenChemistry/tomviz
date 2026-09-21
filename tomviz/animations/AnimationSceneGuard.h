@@ -33,6 +33,9 @@ void interruptAnimationPlayback(bool rewind = true);
 ///   destroyed and recreated picks the flight up again.
 /// - A change to the path or to the module animations interrupts a
 ///   playback (see interruptAnimationPlayback).
+/// - Play with nothing set up to animate turns the current view into a
+///   Camera Orbit viewpoint first, so a fresh dataset spins out of the
+///   box and the viewpoint list stays empty until then.
 /// - A finished animation is rewound before it plays again. ParaView's
 ///   player only rewinds when the scene time is at or past the end, but
 ///   its sequence player reaches the last frame by summing frame-sized
@@ -51,6 +54,7 @@ public:
 private:
   void follow(pqAnimationScene* scene);
   void rewindIfAtEnd(pqAnimationScene* scene, bool reversed);
+  void provideDefaultAnimation();
   void syncFlight();
 
   QPointer<pqAnimationScene> m_scene;
