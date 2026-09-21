@@ -9,7 +9,6 @@
 #include <pqPVApplicationCore.h>
 #include <pqRenderView.h>
 #include <pqServerResource.h>
-#include <vtkCallbackCommand.h>
 #include <vtkCellData.h>
 #include <vtkImageData.h>
 #include <vtkNew.h>
@@ -19,7 +18,9 @@
 #include <vtkRenderWindow.h>
 #include <vtkRenderer.h>
 #include <vtkSMViewProxy.h>
+#include <vtkOutputWindow.h>
 #include <vtkSmartPointer.h>
+#include <vtkStringOutputWindow.h>
 #include <vtkUnsignedCharArray.h>
 #include <vtkWindowToImageFilter.h>
 #include <vtkActor.h>
@@ -37,6 +38,7 @@
 #include "pipeline/sinks/LabelMapSurface.h"
 
 #include <map>
+#include <string>
 #include <set>
 #include <tuple>
 
@@ -103,26 +105,35 @@ private slots:
   // that fails to load its OpenGL functions crashes when torn down, and
   // the view's window gets initialized as soon as the sink draws into
   // it, so the check has to come before any view exists. It is done
-  // with a throwaway window of its own: SupportsOpenGL() reports
-  // support on the EGL runner despite a failed function loader, but the
-  // failure is announced as a warning (an error, on Windows) on the
-  // window being initialized, and a healthy window initializes without
-  // a word.
+  // with a throwaway window of its own, watching what VTK says while
+  // that window is created and initialized: vtkRenderWindow::New()
+  // tries the backends in turn and each one that fails says so as it
+  // goes (no X server, no EGL device, no OSMesa, no pixel format on
+  // Windows), before any observer could be attached, and a healthy
+  // window is created without a word. SupportsOpenGL() is not enough:
+  // on the EGL runner it reports support despite all that.
   void initTestCase()
   {
-    vtkNew<vtkRenderWindow> probe;
-    probe->SetOffScreenRendering(1);
-    bool complained = false;
-    vtkNew<vtkCallbackCommand> listener;
-    listener->SetClientData(&complained);
-    listener->SetCallback([](vtkObject*, unsigned long, void* data, void*) {
-      *static_cast<bool*>(data) = true;
-    });
-    probe->AddObserver(vtkCommand::WarningEvent, listener);
-    probe->AddObserver(vtkCommand::ErrorEvent, listener);
-    probe->Initialize();
-    if (complained) {
-      QSKIP("no OpenGL available for an offscreen render");
+    vtkNew<vtkStringOutputWindow> capture;
+    auto* previous = vtkOutputWindow::GetInstance();
+    previous->Register(nullptr);
+    vtkOutputWindow::SetInstance(capture);
+    {
+      vtkNew<vtkRenderWindow> probe;
+      probe->SetOffScreenRendering(1);
+      probe->Initialize();
+    }
+    vtkOutputWindow::SetInstance(previous);
+    previous->Delete();
+    const std::string said = capture->GetOutput();
+    for (const char* complaint : { "OpenGL", "X server", "EGL", "OSMesa",
+                                   "pixel format", "PixelFormat" }) {
+      if (said.find(complaint) != std::string::npos) {
+        QSKIP(qPrintable(QString("no OpenGL available for an offscreen "
+                                 "render: %1")
+                           .arg(QString::fromStdString(said).trimmed()
+                                  .left(160))));
+      }
     }
   }
 
