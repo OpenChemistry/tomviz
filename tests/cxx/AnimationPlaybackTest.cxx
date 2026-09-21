@@ -299,6 +299,47 @@ private slots:
     CameraViewpoints::instance().clear();
   }
 
+  // Adding a visualization animation while the scene plays (from a
+  // tick, as the dialog's Add button would) stops that playback and
+  // rewinds it; the next one runs through with the new animation in it.
+  void addingAModuleAnimationDuringPlaybackStopsAndRewinds()
+  {
+    pipeline::Pipeline pipeline;
+    auto* slice = new pipeline::SliceSink();
+    pipeline.addNode(slice);
+    slice->setOpacity(1.0);
+
+    struct Adder : ModuleAnimation
+    {
+      Adder() : ModuleAnimation(nullptr) {}
+      int ticks = 0;
+      pipeline::SliceSink* slice = nullptr;
+      void onTimeChanged() override
+      {
+        if (++ticks == 10) {
+          ModuleAnimations::instance().add(new OpacityAnimation(slice, 1.0, 0.2));
+        }
+      }
+    } adder;
+    adder.slice = slice;
+    play(60);
+    QVERIFY2(adder.ticks < 25, qPrintable(QString("ran on for %1 ticks").arg(adder.ticks)));
+    QCOMPARE(ModuleAnimations::instance().animations().size(), 1);
+
+    QTest::qWait(50);
+    auto* proxy = scene()->getProxy();
+    proxy->UpdatePropertyInformation();
+    QCOMPARE(vtkSMPropertyHelper(proxy, "AnimationTime").GetAsDouble(), 0.0);
+
+    adder.ticks = 100; // no second add
+    Probe probe;
+    proxy->InvokeCommand("Play");
+    QVERIFY2(probe.progressSamples.size() >= 58,
+             qPrintable(QString("only %1 ticks").arg(probe.progressSamples.size())));
+    // The new animation ran: the slice faded down to its end value
+    QVERIFY(slice->opacity() < 0.25);
+  }
+
   void recordedOpacityFadesInAndYieldsToAuthoredAnimations()
   {
     pipeline::Pipeline pipeline;
