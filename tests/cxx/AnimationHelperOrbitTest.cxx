@@ -349,6 +349,8 @@ private slots:
       { "reorder", [&]() { viewpoints.move(0, 1); } },
       // Go To stops the playback but keeps the camera where it was sent
       { "go to", [&]() { emit m_list->itemDoubleClicked(m_list->item(0)); }, false },
+      // Rename applies on the next event-loop turn, once the list widget
+      // is done with its own edit
       { "rename", [&]() { m_list->item(0)->setText("Hero shot"); } },
       { "leg duration", [&]() { m_list->setCurrentRow(0); duration->setValue(2.0); } },
       { "orbit turns", [&]() { m_list->setCurrentRow(0); m_orbit->setChecked(true); m_turns->setValue(2); } },
@@ -390,6 +392,35 @@ private slots:
       Q_UNUSED(before);
     }
     QCOMPARE(viewpoints.size(), 0);
+  }
+
+  // A rename commits after the list widget has finished its own edit,
+  // and the list and the model agree afterwards.
+  void renamingAViewpointRebuildsTheListSafely()
+  {
+    auto& viewpoints = CameraViewpoints::instance();
+    m_add->click();
+    m_add->click();
+    QCOMPARE(viewpoints.size(), 2);
+    m_list->setCurrentRow(1);
+    auto* item = m_list->item(1);
+    item->setFlags(item->flags() | Qt::ItemIsEditable);
+    m_list->editItem(item);
+    item->setText("Detail");
+    m_list->closePersistentEditor(item);
+    // Not yet: the widget is still the owner of that edit
+    QCOMPARE(viewpoints.at(1).name, QString("Viewpoint 2"));
+    QTest::qWait(20);
+    QCOMPARE(viewpoints.at(1).name, QString("Detail"));
+    QCOMPARE(m_list->count(), 2);
+    QCOMPARE(m_list->item(1)->text(), QString("Detail"));
+    QCOMPARE(m_list->currentRow(), 1);
+
+    // An empty name is rejected and the old one comes back
+    m_list->item(1)->setText("   ");
+    QTest::qWait(20);
+    QCOMPARE(viewpoints.at(1).name, QString("Detail"));
+    QCOMPARE(m_list->item(1)->text(), QString("Detail"));
   }
 
   // The view the flight was armed in goes away; the next render view

@@ -700,7 +700,11 @@ public:
     if (!item) {
       return;
     }
-    ui.viewpointList->setCurrentItem(item);
+    // The menu runs its own event loop, during which the list can be
+    // rebuilt (a playback stopping, a state file), so hold the row, not
+    // the item, and look the item up again afterwards.
+    const int row = ui.viewpointList->row(item);
+    ui.viewpointList->setCurrentRow(row);
 
     QMenu menu;
     auto* rename = menu.addAction("Rename");
@@ -708,6 +712,10 @@ public:
     auto* update = menu.addAction("Update From Current View");
     auto* remove = menu.addAction("Remove");
     auto* chosen = menu.exec(ui.viewpointList->mapToGlobal(pos));
+    item = ui.viewpointList->item(row);
+    if (!chosen || !item) {
+      return;
+    }
     if (chosen == rename) {
       item->setFlags(item->flags() | Qt::ItemIsEditable);
       ui.viewpointList->editItem(item);
@@ -720,24 +728,29 @@ public:
     }
   }
 
+  // itemChanged fires from inside the list widget's own edit commit,
+  // and replacing the viewpoint rebuilds the list, which would delete
+  // the item Qt is still working with: the crash on the next right
+  // click. So take the row and the text now, and apply them once the
+  // widget is done.
   void commitViewpointRename(QListWidgetItem* item)
   {
-    auto& viewpoints = CameraViewpoints::instance();
-    int row = ui.viewpointList->row(item);
-    if (row < 0 || row >= viewpoints.size()) {
-      return;
-    }
-
-    auto viewpoint = viewpoints.at(row);
-    auto name = item->text().trimmed();
-    if (name.isEmpty() || name == viewpoint.name) {
-      // Rejected edit; put the old name back.
-      refreshViewpoints();
-      return;
-    }
-
-    viewpoint.name = name;
-    viewpoints.replace(row, viewpoint);
+    const int row = ui.viewpointList->row(item);
+    const auto name = item->text().trimmed();
+    QTimer::singleShot(0, this, [this, row, name]() {
+      auto& viewpoints = CameraViewpoints::instance();
+      if (row < 0 || row >= viewpoints.size()) {
+        return;
+      }
+      auto viewpoint = viewpoints.at(row);
+      if (name.isEmpty() || name == viewpoint.name) {
+        // Rejected edit; put the old name back.
+        refreshViewpoints();
+        return;
+      }
+      viewpoint.name = name;
+      viewpoints.replace(row, viewpoint);
+    });
   }
 
   // The duration and easing belong to the leg leaving the selected
