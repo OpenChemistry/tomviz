@@ -9,6 +9,7 @@
 #include <pqPVApplicationCore.h>
 #include <pqRenderView.h>
 #include <pqServerResource.h>
+#include <vtkCallbackCommand.h>
 #include <vtkCellData.h>
 #include <vtkImageData.h>
 #include <vtkNew.h>
@@ -101,14 +102,26 @@ private slots:
   // A CI runner has no GPU and no software GL. There, a render window
   // that fails to load its OpenGL functions crashes when torn down, and
   // the view's window gets initialized as soon as the sink draws into
-  // it, so the check has to come before any view exists. The probe is
-  // a throwaway window of its own.
+  // it, so the check has to come before any view exists. It is done
+  // with a throwaway window of its own: SupportsOpenGL() reports
+  // support on the EGL runner despite a failed function loader, but the
+  // failure is announced as a warning (an error, on Windows) on the
+  // window being initialized, and a healthy window initializes without
+  // a word.
   void initTestCase()
   {
     vtkNew<vtkRenderWindow> probe;
     probe->SetOffScreenRendering(1);
-    auto* gl = vtkOpenGLRenderWindow::SafeDownCast(probe.Get());
-    if (gl && !gl->SupportsOpenGL()) {
+    bool complained = false;
+    vtkNew<vtkCallbackCommand> listener;
+    listener->SetClientData(&complained);
+    listener->SetCallback([](vtkObject*, unsigned long, void* data, void*) {
+      *static_cast<bool*>(data) = true;
+    });
+    probe->AddObserver(vtkCommand::WarningEvent, listener);
+    probe->AddObserver(vtkCommand::ErrorEvent, listener);
+    probe->Initialize();
+    if (complained) {
       QSKIP("no OpenGL available for an offscreen render");
     }
   }
