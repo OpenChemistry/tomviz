@@ -20,6 +20,7 @@
 #include "Utilities.h"
 #include "vtkOMETiffReader.h"
 
+#include "animations/CameraViewpoints.h"
 #include "animations/TimeSeriesAnimation.h"
 
 #include "pipeline/OutputPort.h"
@@ -43,7 +44,9 @@
 #include <pqRenderView.h>
 #include <pqSMAdaptor.h>
 #include <pqView.h>
+#include <vtkCamera.h>
 #include <vtkSMCoreUtilities.h>
+#include <vtkSMRenderViewProxy.h>
 #include <vtkSMParaViewPipelineController.h>
 #include <vtkSMPropertyHelper.h>
 #include <vtkSMSessionProxyManager.h>
@@ -593,20 +596,35 @@ void LoadDataReaction::sourceNodeAdded(pipeline::SourceNode* source,
   ActiveObjects::instance().clearActiveSelection();
 
   if (isFirstSource && createCameraOrbit && pip) {
-    // Create the camera orbit after the first execution completes so the
-    // camera has been reset to frame the data.
+    // The opening spin: a viewpoint that orbits, created after the first
+    // execution completes so the camera has been reset to frame the
+    // data. It is an ordinary viewpoint, which is what lets the
+    // Animation Helper show why Play spins and lets the user build on it
+    // or remove it.
     auto conn = std::make_shared<QMetaObject::Connection>();
     *conn = QObject::connect(
-      pip, &pipeline::Pipeline::executionFinished, pip, [conn]() {
+      pip, &pipeline::Pipeline::executionFinished, pip, [conn, pip]() {
         QObject::disconnect(*conn);
         tomviz::setAnimationNumberOfFrames(200);
         auto* rv = ActiveObjects::instance().activePqRenderView();
-        if (rv) {
-          // Drop any orbit left over from data that has since been
-          // removed, so the cues don't pile up on the same camera.
-          tomviz::clearCameraCues(rv->getRenderViewProxy());
-          tomviz::createCameraOrbit(rv->getRenderViewProxy());
+        auto* proxy = rv ? rv->getRenderViewProxy() : nullptr;
+        auto* camera = proxy ? proxy->GetActiveCamera() : nullptr;
+        if (!camera) {
+          return;
         }
+        auto& viewpoints = CameraViewpoints::instance();
+        // A state file loaded alongside may have brought its own path
+        if (viewpoints.size() == 0) {
+          Viewpoint viewpoint;
+          viewpoint.readFrom(camera);
+          viewpoint.name = "Camera Orbit";
+          viewpoint.orbitTurns = 1;
+          // Recorded like a viewpoint the user adds, so a visualization
+          // added later fades in on the leg that first has it
+          viewpoint.scene = SceneSnapshot::capture(pip);
+          viewpoints.append(viewpoint);
+        }
+        viewpoints.syncFlight(rv);
       });
   }
 

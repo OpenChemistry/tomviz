@@ -160,6 +160,48 @@ private slots:
     viewpoints.stopFlight();
     builder->destroy(view);
   }
+
+  // A lone viewpoint with an orbit is a whole animation: played through
+  // the scene it carries the camera right round the focal point, out
+  // to both sides, and back to where it started.
+  void cameraOrbitsALoneViewpointDuringPlayback()
+  {
+    auto* server = pqActiveObjects::instance().activeServer();
+    auto* builder = pqApplicationCore::instance()->getObjectBuilder();
+    auto* view = qobject_cast<pqRenderView*>(
+      builder->createView(pqRenderView::renderViewType(), server));
+    QVERIFY(view);
+
+    auto& viewpoints = CameraViewpoints::instance();
+    Viewpoint orbiting = viewpointAt(0.0);
+    orbiting.viewUp = { 0, 1, 0 };
+    orbiting.orbitTurns = 1;
+    viewpoints.append(orbiting);
+    QVERIFY(viewpoints.syncFlight(view));
+    QVERIFY(viewpoints.isFlying());
+
+    Probe probe;
+    probe.view = view;
+    play(20);
+
+    QVERIFY(probe.cameraX.size() >= 10);
+    double lowest = 0.0, highest = 0.0;
+    for (double x : probe.cameraX) {
+      lowest = std::min(lowest, x);
+      highest = std::max(highest, x);
+    }
+    QVERIFY2(highest > 8.0, "never swung out to the right");
+    QVERIFY2(lowest < -8.0, "never swung out to the left");
+    QVERIFY2(std::abs(probe.cameraX.last()) < 0.5, "did not come back");
+
+    // Taking the orbit away un-arms the flight through the same call
+    Viewpoint still = orbiting;
+    still.orbitTurns = 0;
+    viewpoints.replace(0, still);
+    QVERIFY(!viewpoints.syncFlight(view));
+    QVERIFY(!viewpoints.isFlying());
+    builder->destroy(view);
+  }
 };
 
 #include "AnimatableProperties.h"

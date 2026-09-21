@@ -259,7 +259,9 @@ AnchorSpan anchorSpanAt(const QList<int>& anchors, double t)
   } else {
     span.from = anchors[next - 1];
     span.to = anchors[next];
-    const double start = viewpoints.anchorTime(span.from);
+    // From leaving one anchor to reaching the next: an orbit at the
+    // first holds the state recorded there until the camera moves on.
+    const double start = viewpoints.departureTime(span.from);
     const double stop = viewpoints.anchorTime(span.to);
     span.u = stop > start ? std::clamp((t - start) / (stop - start), 0.0, 1.0)
                           : 1.0;

@@ -62,60 +62,6 @@
       </attribute>
       <layout class="QVBoxLayout" name="cameraLayout">
        <item>
-        <layout class="QHBoxLayout" name="cameraModeLayout">
-         <item>
-          <widget class="QLabel" name="cameraModeLabel">
-           <property name="text">
-            <string>Camera animation:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QRadioButton" name="radioCameraNone">
-           <property name="text">
-            <string>None</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QRadioButton" name="radioCameraOrbit">
-           <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Orbit the camera once around its focal point, starting from the current view.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-           </property>
-           <property name="text">
-            <string>Orbit</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QRadioButton" name="radioCameraPath">
-           <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Fly the camera through the viewpoints below, in order. Needs at least two viewpoints.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-           </property>
-           <property name="text">
-            <string>Fly through viewpoints</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="cameraModeSpacer">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>10</width>
-             <height>10</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
         <widget class="QLabel" name="viewpointsLabel">
          <property name="text">
           <string>Viewpoints:</string>

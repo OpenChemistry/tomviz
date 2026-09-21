@@ -6,7 +6,6 @@
 #include "ActiveObjects.h"
 #include "tomvizConfig.h"
 
-#include <pqAnimationCue.h>
 #include <pqAnimationManager.h>
 #include <pqAnimationScene.h>
 #include <pqCoreUtilities.h>
@@ -26,7 +25,6 @@
 #include <vtkSMRenderViewProxy.h>
 #include <vtkSMTransferFunctionManager.h>
 #include <vtkSMTransferFunctionProxy.h>
-#include <vtkSMUtilities.h>
 
 #include <vtkBoundingBox.h>
 #include <vtkCamera.h>
@@ -669,110 +667,6 @@ QString readInPythonScript(const QString& scriptName)
 QString readInJSONDescription(const QString& fileName)
 {
   return readInTextFile(fileName, ".json");
-}
-
-void clearCameraCues(vtkSMRenderViewProxy* renderView)
-{
-  pqAnimationScene* scene =
-    pqPVApplicationCore::instance()->animationManager()->getActiveScene();
-
-  for (auto* cue : scene->getCues()) {
-    if (!cue->getSMName().startsWith("CameraAnimationCue")) {
-      continue;
-    }
-
-    vtkSMProxy* animatedProxy = pqSMAdaptor::getProxyProperty(
-      cue->getProxy()->GetProperty("AnimatedProxy"));
-    if (renderView && animatedProxy != renderView) {
-      continue;
-    }
-
-    // If we made it this far, we should remove this cue
-    scene->removeCue(cue);
-  }
-}
-
-void createCameraOrbit(vtkSMSourceProxy* data, vtkSMRenderViewProxy* renderView)
-{
-  // Get camera position at start
-  double* normal = renderView->GetActiveCamera()->GetViewUp();
-  double* origin = renderView->GetActiveCamera()->GetPosition();
-
-  // Get center of data
-  double center[3];
-  vtkTrivialProducer* t =
-    vtkTrivialProducer::SafeDownCast(data->GetClientSideObject());
-  if (!t) {
-    return;
-  }
-  auto imageData = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
-  double data_bounds[6];
-  imageData->GetBounds(data_bounds);
-  vtkBoundingBox box;
-  box.SetBounds(data_bounds);
-  box.GetCenter(center);
-  QList<QVariant> centerList;
-  centerList << center[0] << center[1] << center[2];
-
-  // Generate camera orbit
-  vtkSmartPointer<vtkPoints> pts;
-  pts.TakeReference(vtkSMUtilities::CreateOrbit(center, normal, 7, origin));
-  QList<QVariant> points;
-  for (vtkIdType i = 0; i < pts->GetNumberOfPoints(); ++i) {
-    double coords[3];
-    pts->GetPoint(i, coords);
-    points << coords[0] << coords[1] << coords[2];
-  }
-
-  pqAnimationScene* scene =
-    pqPVApplicationCore::instance()->animationManager()->getActiveScene();
-
-  pqAnimationCue* cue =
-    scene->createCue(renderView, "Camera", 0, "CameraAnimationCue");
-  pqSMAdaptor::setElementProperty(cue->getProxy()->GetProperty("Mode"), 1);
-  cue->getProxy()->UpdateVTKObjects();
-  vtkSMProxy* kf = cue->getKeyFrame(0);
-  pqSMAdaptor::setMultipleElementProperty(kf->GetProperty("PositionPathPoints"),
-                                          points);
-  pqSMAdaptor::setMultipleElementProperty(kf->GetProperty("FocalPathPoints"),
-                                          centerList);
-  pqSMAdaptor::setElementProperty(kf->GetProperty("ClosedPositionPath"), 1);
-  kf->UpdateVTKObjects();
-}
-
-void createCameraOrbit(vtkSMRenderViewProxy* renderView)
-{
-  // Get camera position at start
-  double* normal = renderView->GetActiveCamera()->GetViewUp();
-  double* origin = renderView->GetActiveCamera()->GetPosition();
-  double* center = renderView->GetActiveCamera()->GetFocalPoint();
-
-  QList<QVariant> centerList;
-  centerList << center[0] << center[1] << center[2];
-
-  // Generate camera orbit
-  vtkSmartPointer<vtkPoints> pts;
-  pts.TakeReference(vtkSMUtilities::CreateOrbit(center, normal, 7, origin));
-  QList<QVariant> points;
-  for (vtkIdType i = 0; i < pts->GetNumberOfPoints(); ++i) {
-    auto* coords = pts->GetPoint(i);
-    points << coords[0] << coords[1] << coords[2];
-  }
-
-  pqAnimationScene* scene =
-    pqPVApplicationCore::instance()->animationManager()->getActiveScene();
-
-  pqAnimationCue* cue =
-    scene->createCue(renderView, "Camera", 0, "CameraAnimationCue");
-  pqSMAdaptor::setElementProperty(cue->getProxy()->GetProperty("Mode"), 1);
-  cue->getProxy()->UpdateVTKObjects();
-  vtkSMProxy* kf = cue->getKeyFrame(0);
-  pqSMAdaptor::setMultipleElementProperty(kf->GetProperty("PositionPathPoints"),
-                                          points);
-  pqSMAdaptor::setMultipleElementProperty(kf->GetProperty("FocalPathPoints"),
-                                          centerList);
-  pqSMAdaptor::setElementProperty(kf->GetProperty("ClosedPositionPath"), 1);
-  kf->UpdateVTKObjects();
 }
 
 bool ensureAnimationFrames()

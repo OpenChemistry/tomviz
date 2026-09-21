@@ -15,6 +15,7 @@
 #include <vtkSmartPointer.h>
 
 #include <array>
+#include <vector>
 
 class pqRenderView;
 class vtkCamera;
@@ -41,6 +42,18 @@ struct Viewpoint
   /// Ease in and out of that segment, so the camera slows to a stop at
   /// each end instead of rounding the corner at full speed.
   bool eased = true;
+
+  /// Full turns the camera makes around the focal point once it has
+  /// arrived here, before the leg to the next viewpoint; 0 is none.
+  /// Positive turns counterclockwise as seen from above (looking down
+  /// this viewpoint's view-up), negative clockwise. The last viewpoint
+  /// can orbit too, which ends the animation on a spin.
+  int orbitTurns = 0;
+
+  /// How long that orbit lasts, relative to the legs and the other
+  /// orbits, on the same scale as `duration`. Unused when orbitTurns
+  /// is 0.
+  double orbitDuration = 1.0;
 
   /// What the user calls this viewpoint. Stable: renumbering on every
   /// delete would silently repoint anything that refers to viewpoints by
@@ -70,6 +83,14 @@ struct Viewpoint
   static Viewpoint deserialize(const QJsonObject& json);
 };
 
+/// Put @a camera @a u of the way (0 to 1) through the orbit at
+/// @a viewpoint: its position swung around the focal point on the
+/// viewpoint's view-up axis, through viewpoint.orbitTurns full turns,
+/// with everything else as saved. It starts and ends at the viewpoint
+/// itself. A camera sitting on the axis has nothing to swing and stays
+/// put.
+void orbitAt(const Viewpoint& viewpoint, double u, vtkCamera* camera);
+
 /// The camera viewpoints saved for the current session, and the timing
 /// that turns them into a path.
 ///
@@ -87,17 +108,25 @@ public:
   int size() const { return m_viewpoints.size(); }
   const Viewpoint& at(int index) const { return m_viewpoints.at(index); }
 
+  /// Whether there is anything to fly: two or more viewpoints, or one
+  /// that orbits, which is an animation on its own.
+  bool isPath() const;
+
   void append(const Viewpoint& viewpoint);
   void replace(int index, const Viewpoint& viewpoint);
   void removeAt(int index);
   void move(int from, int to);
   void clear();
 
-  /// The progress at which each viewpoint is reached, with every segment
-  /// weighted by its duration. The first entry is always 0 and the last
-  /// always 1. Empty for fewer than two viewpoints, which have no path
-  /// between them.
+  /// The progress at which each viewpoint is reached, with every leg and
+  /// every orbit weighted by its duration. The first entry is always 0.
+  /// Empty when there is no path (see isPath). A viewpoint that orbits
+  /// is reached at its stop and left at its departure; for the others
+  /// the two coincide, and the last departure is always 1.
   QList<double> stops() const;
+  /// The progress at which the camera leaves each viewpoint, after any
+  /// orbit there. Same shape as stops().
+  QList<double> departures() const;
 
   /// The next unused default name, "Viewpoint N". Numbers are never
   /// reused within a session, so deleting Viewpoint 2 does not cause the
@@ -105,10 +134,14 @@ public:
   QString nextDefaultName() const;
 
   /// The time at which the path reaches viewpoint `anchor`, in [0, 1].
-  /// With no path (fewer than two viewpoints), anchor 0 is the start of
-  /// the animation and anything later is the end, so a curve keyed to
-  /// anchors still spans the timeline. Out-of-range anchors clamp.
+  /// With no path, anchor 0 is the start of the animation and anything
+  /// later is the end, so a curve keyed to anchors still spans the
+  /// timeline. Out-of-range anchors clamp.
   double anchorTime(int anchor) const;
+  /// The time at which the path leaves viewpoint `anchor`, after its
+  /// orbit if it has one; what an animation from that anchor waits for,
+  /// so the state recorded there holds through the spin.
+  double departureTime(int anchor) const;
 
   /// Map animation progress in [0, 1] onto a time along the path, also
   /// in [0, 1], applying each segment's easing. Segment boundaries are
@@ -139,6 +172,11 @@ public:
   void startFlight(pqRenderView* view, bool snapToHead = true);
   void stopFlight();
   bool isFlying() const;
+  /// The camera flies whenever there is a path and not otherwise: arm
+  /// the flight in @a view if a path appeared, stop it if the path
+  /// went. The camera is left where it is either way. Returns true when
+  /// a flight was just armed.
+  bool syncFlight(pqRenderView* view);
 
   /// Where viewpoint captions are drawn, as fractions of the view's
   /// width and height from its lower-left corner, so the placement
@@ -166,9 +204,19 @@ private:
   QList<Viewpoint> m_viewpoints;
   std::array<double, 2> m_captionPosition = { 0.02, 0.03 };
   QPointer<QObject> m_flight;
-  // Held by pointer rather than by value so the header does not have to
-  // pull in the interpolator to destroy it.
-  vtkSmartPointer<vtkCameraInterpolator> m_interpolator;
+  /// A stretch of consecutive viewpoints joined by ordinary legs, and
+  /// the interpolator that flies them. Orbit legs split the path into
+  /// these, so the spline through one stretch never bends towards a
+  /// viewpoint an orbit reaches by other means. Held by pointer rather
+  /// than by value so the header does not have to pull in the
+  /// interpolator to destroy it.
+  struct Run
+  {
+    int first = 0;
+    int last = 0;
+    vtkSmartPointer<vtkCameraInterpolator> interpolator;
+  };
+  std::vector<Run> m_runs;
   bool m_interpolatorStale = true;
 };
 

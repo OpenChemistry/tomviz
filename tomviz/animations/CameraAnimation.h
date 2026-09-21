@@ -89,7 +89,7 @@ private:
     }
 
     auto& viewpoints = CameraViewpoints::instance();
-    if (viewpoints.size() < 2) {
+    if (!viewpoints.isPath()) {
       hideCaption();
       return;
     }

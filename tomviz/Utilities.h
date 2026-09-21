@@ -195,16 +195,6 @@ QString userDataPath();
 // Remove all camera cues from the animation scene.
 // If a render view is provided, only camera cues associated with that
 // render view will be removed.
-void clearCameraCues(vtkSMRenderViewProxy* renderView = nullptr);
-
-// Create a camera orbit animation for the given renderview around the given
-// object
-void createCameraOrbit(vtkSMSourceProxy* data,
-                       vtkSMRenderViewProxy* renderView);
-
-// Create a camera orbit animation for the given renderview around the current
-// camera focal point.
-void createCameraOrbit(vtkSMRenderViewProxy* renderView);
 
 // Set the number of frames in the animation scene
 void setAnimationNumberOfFrames(int numFrames);

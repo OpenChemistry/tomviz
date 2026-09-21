@@ -210,6 +210,155 @@ TEST_F(AnimationTest, ThePathPassesThroughEveryViewpoint)
   }
 }
 
+namespace {
+
+Viewpoint lookingAtOrigin(const std::array<double, 3>& position, int turns)
+{
+  Viewpoint viewpoint;
+  viewpoint.position = position;
+  viewpoint.focalPoint = { 0, 0, 0 };
+  viewpoint.viewUp = { 0, 1, 0 };
+  viewpoint.orbitTurns = turns;
+  viewpoint.eased = false;
+  return viewpoint;
+}
+
+std::array<double, 3> positionAt(double t)
+{
+  vtkNew<vtkCamera> camera;
+  CameraViewpoints::instance().interpolate(t, camera);
+  std::array<double, 3> position;
+  camera->GetPosition(position.data());
+  return position;
+}
+
+void expectNear(const std::array<double, 3>& a, const std::array<double, 3>& b,
+                const char* what)
+{
+  for (int k = 0; k < 3; ++k) {
+    EXPECT_NEAR(a[k], b[k], 1e-6) << what << " component " << k;
+  }
+}
+
+} // namespace
+
+// A viewpoint that orbits spins the camera once around the focal point
+// on the view-up axis, at the same distance all the way, and hands it
+// back where it started. Alone, it is an animation by itself.
+TEST_F(AnimationTest, AnOrbitingViewpointSpinsInPlace)
+{
+  viewpoints().append(lookingAtOrigin({ 0, 0, 10 }, 1));
+  EXPECT_TRUE(viewpoints().isPath());
+  ASSERT_EQ(viewpoints().stops().size(), 1);
+  EXPECT_DOUBLE_EQ(viewpoints().departures()[0], 1.0);
+
+  expectNear(positionAt(0.0), { 0, 0, 10 }, "start");
+  // Counterclockwise seen from above (+y): the camera goes to +x first
+  expectNear(positionAt(0.25), { 10, 0, 0 }, "quarter turn");
+  expectNear(positionAt(0.5), { 0, 0, -10 }, "half turn");
+  expectNear(positionAt(0.75), { -10, 0, 0 }, "three quarters");
+  expectNear(positionAt(1.0), { 0, 0, 10 }, "full turn");
+  for (int i = 0; i <= 20; ++i) {
+    auto p = positionAt(i / 20.0);
+    EXPECT_NEAR(std::sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]), 10.0,
+                1e-6)
+      << "distance changed at " << i;
+    EXPECT_NEAR(p[1], 0.0, 1e-6) << "left the orbit plane at " << i;
+  }
+
+  // Clockwise goes the other way, and two turns pass the far side twice
+  viewpoints().replace(0, lookingAtOrigin({ 0, 0, 10 }, -1));
+  expectNear(positionAt(0.25), { -10, 0, 0 }, "clockwise quarter");
+  viewpoints().replace(0, lookingAtOrigin({ 0, 0, 10 }, 2));
+  expectNear(positionAt(0.25), { 0, 0, -10 }, "two turns, first far side");
+  expectNear(positionAt(0.5), { 0, 0, 10 }, "two turns, halfway");
+
+  // Without the orbit a lone viewpoint is no path at all
+  viewpoints().replace(0, lookingAtOrigin({ 0, 0, 10 }, 0));
+  EXPECT_FALSE(viewpoints().isPath());
+  EXPECT_TRUE(viewpoints().stops().isEmpty());
+}
+
+// An orbit takes its own share of the timeline: the camera arrives,
+// spins, then flies on. Whatever is bound to the leg waits for the spin
+// to finish, and a curve keyed to the viewpoint holds through it.
+TEST_F(AnimationTest, AnOrbitHoldsTheLegAndTheAnchorsStill)
+{
+  auto first = lookingAtOrigin({ 0, 0, 10 }, 1);
+  first.duration = 1.0;
+  first.orbitDuration = 1.0;
+  viewpoints().append(first);
+  viewpoints().append(lookingAtOrigin({ 0, 0, -10 }, 0));
+
+  // Orbit 0 to 0.5, leg 0.5 to 1
+  auto stops = viewpoints().stops();
+  auto departures = viewpoints().departures();
+  ASSERT_EQ(stops.size(), 2);
+  EXPECT_DOUBLE_EQ(stops[0], 0.0);
+  EXPECT_DOUBLE_EQ(departures[0], 0.5);
+  EXPECT_DOUBLE_EQ(stops[1], 1.0);
+  EXPECT_DOUBLE_EQ(departures[1], 1.0);
+
+  expectNear(positionAt(0.125), { 10, 0, 0 }, "quarter turn");
+  expectNear(positionAt(0.5), { 0, 0, 10 }, "back at the start");
+  expectNear(positionAt(0.75), { 0, 0, 0 }, "halfway along the leg");
+  expectNear(positionAt(1.0), { 0, 0, -10 }, "arrived");
+
+  // The leg's own progress and the anchor spans skip the spin
+  EXPECT_DOUBLE_EQ(viewpoints().segmentProgress(0.25, 0), 0.0);
+  EXPECT_DOUBLE_EQ(viewpoints().segmentProgress(0.5, 0), 0.0);
+  EXPECT_DOUBLE_EQ(viewpoints().segmentProgress(0.75, 0), 0.5);
+  EXPECT_DOUBLE_EQ(viewpoints().segmentProgress(1.0, 0), 1.0);
+  EXPECT_DOUBLE_EQ(viewpoints().anchorTime(0), 0.0);
+  EXPECT_DOUBLE_EQ(viewpoints().departureTime(0), 0.5);
+  QList<int> anchors = { 0, 1 };
+  EXPECT_DOUBLE_EQ(tomviz::anchorSpanAt(anchors, 0.25).u, 0.0);
+  EXPECT_DOUBLE_EQ(tomviz::anchorSpanAt(anchors, 0.75).u, 0.5);
+
+  // A longer orbit takes a bigger share
+  first.orbitDuration = 3.0;
+  viewpoints().replace(0, first);
+  EXPECT_DOUBLE_EQ(viewpoints().departures()[0], 0.75);
+}
+
+// The last viewpoint can orbit, ending the animation on a spin, and a
+// spin in the middle of a path leaves the legs either side straight.
+TEST_F(AnimationTest, OrbitsAtTheEndAndInTheMiddleOfAPath)
+{
+  viewpoints().append(lookingAtOrigin({ 0, 0, 10 }, 0));
+  viewpoints().append(lookingAtOrigin({ 0, 0, -10 }, 1));
+  // Leg 0 to 0.5, orbit at the end 0.5 to 1
+  expectNear(positionAt(0.25), { 0, 0, 0 }, "halfway along the leg");
+  expectNear(positionAt(0.5), { 0, 0, -10 }, "arrived");
+  // At the far side the camera's own e1 points to -z, so a quarter turn
+  // counterclockwise takes it to -x
+  expectNear(positionAt(0.625), { -10, 0, 0 }, "quarter turn at the end");
+  expectNear(positionAt(1.0), { 0, 0, -10 }, "ends where it stopped");
+
+  viewpoints().append(lookingAtOrigin({ 20, 0, -10 }, 0));
+  // Leg 0 to 1/3, orbit 1/3 to 2/3, leg 2/3 to 1
+  auto stops = viewpoints().stops();
+  ASSERT_EQ(stops.size(), 3);
+  EXPECT_NEAR(stops[1], 1.0 / 3.0, 1e-12);
+  EXPECT_NEAR(viewpoints().departures()[1], 2.0 / 3.0, 1e-12);
+  expectNear(positionAt(1.0 / 6.0), { 0, 0, 0 }, "first leg midpoint");
+  expectNear(positionAt(0.5), { 0, 0, 10 }, "half turn in the middle");
+  expectNear(positionAt(2.0 / 3.0), { 0, 0, -10 }, "spin over");
+  expectNear(positionAt(5.0 / 6.0), { 10, 0, -10 }, "second leg midpoint");
+}
+
+// A camera looking straight down its own up axis has no radius to
+// swing; the orbit holds it in place rather than producing NaNs.
+TEST_F(AnimationTest, AnOrbitOnTheAxisHoldsStill)
+{
+  viewpoints().append(lookingAtOrigin({ 0, 10, 0 }, 1));
+  auto p = positionAt(0.5);
+  for (int k = 0; k < 3; ++k) {
+    EXPECT_FALSE(std::isnan(p[k]));
+  }
+  expectNear(p, { 0, 10, 0 }, "stays put");
+}
+
 TEST_F(AnimationTest, ViewpointsSurviveAStateFileRoundTrip)
 {
   Viewpoint saved;
@@ -221,6 +370,8 @@ TEST_F(AnimationTest, ViewpointsSurviveAStateFileRoundTrip)
   saved.parallelProjection = true;
   saved.duration = 2.5;
   saved.eased = false;
+  saved.orbitTurns = -2;
+  saved.orbitDuration = 0.5;
   saved.name = "Money shot";
   saved.thumbnail = QByteArray("not really a png, but it should come back");
 
@@ -245,6 +396,9 @@ TEST_F(AnimationTest, ViewpointsSurviveAStateFileRoundTrip)
   EXPECT_TRUE(restored.parallelProjection);
   EXPECT_DOUBLE_EQ(restored.duration, saved.duration);
   EXPECT_FALSE(restored.eased);
+  EXPECT_EQ(restored.orbitTurns, -2);
+  EXPECT_DOUBLE_EQ(restored.orbitDuration, 0.5);
+  EXPECT_EQ(viewpoints().at(1).orbitTurns, 0) << "absent means no orbit";
   EXPECT_EQ(restored.thumbnail, saved.thumbnail);
   EXPECT_EQ(restored.name, saved.name);
   // The second viewpoint was saved without a name, as older files were,

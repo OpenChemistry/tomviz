@@ -11,9 +11,11 @@
 
 #include <vtkCamera.h>
 #include <vtkCameraInterpolator.h>
+#include <vtkMath.h>
 #include <vtkTupleInterpolator.h>
 
 #include <algorithm>
+#include <cmath>
 
 namespace tomviz {
 
@@ -67,6 +69,10 @@ QJsonObject Viewpoint::serialize() const
   json["parallelProjection"] = parallelProjection;
   json["duration"] = duration;
   json["eased"] = eased;
+  if (orbitTurns != 0) {
+    json["orbitTurns"] = orbitTurns;
+    json["orbitDuration"] = orbitDuration;
+  }
   json["name"] = name;
   if (!label.isEmpty()) {
     json["label"] = label;
@@ -93,12 +99,65 @@ Viewpoint Viewpoint::deserialize(const QJsonObject& json)
     json["parallelProjection"].toBool(viewpoint.parallelProjection);
   viewpoint.duration = json["duration"].toDouble(viewpoint.duration);
   viewpoint.eased = json["eased"].toBool(viewpoint.eased);
+  viewpoint.orbitTurns = json["orbitTurns"].toInt(0);
+  viewpoint.orbitDuration =
+    json["orbitDuration"].toDouble(viewpoint.orbitDuration);
   viewpoint.name = json["name"].toString();
   viewpoint.label = json["label"].toString();
   viewpoint.thumbnail =
     QByteArray::fromBase64(json["thumbnail"].toString().toLatin1());
   viewpoint.scene = SceneSnapshot::deserialize(json["scene"].toObject());
   return viewpoint;
+}
+
+void orbitAt(const Viewpoint& viewpoint, double u, vtkCamera* camera)
+{
+  if (!camera) {
+    return;
+  }
+  u = std::clamp(u, 0.0, 1.0);
+  viewpoint.applyTo(camera);
+
+  // The offset from the focal point splits into a height along the
+  // view-up axis, which the orbit keeps, and a radius in the plane
+  // across it, which it swings round.
+  double axis[3] = { viewpoint.viewUp[0], viewpoint.viewUp[1],
+                     viewpoint.viewUp[2] };
+  if (vtkMath::Normalize(axis) == 0.0) {
+    return;
+  }
+  double offset[3];
+  for (int k = 0; k < 3; ++k) {
+    offset[k] = viewpoint.position[k] - viewpoint.focalPoint[k];
+  }
+  const double height = vtkMath::Dot(offset, axis);
+  double e1[3];
+  for (int k = 0; k < 3; ++k) {
+    e1[k] = offset[k] - height * axis[k];
+  }
+  const double radius = vtkMath::Normalize(e1);
+  if (radius < 1e-9) {
+    // Looking straight along the axis: nothing to swing.
+    return;
+  }
+  double e2[3];
+  vtkMath::Cross(axis, e1, e2);
+
+  const double angle = viewpoint.orbitTurns * 2.0 * vtkMath::Pi() * u;
+  double position[3];
+  for (int k = 0; k < 3; ++k) {
+    position[k] = viewpoint.focalPoint[k] +
+                  radius * (std::cos(angle) * e1[k] + std::sin(angle) * e2[k]) +
+                  height * axis[k];
+  }
+  // Both ends are the viewpoint itself; say so exactly rather than to
+  // rounding.
+  if (u <= 0.0 || u >= 1.0) {
+    for (int k = 0; k < 3; ++k) {
+      position[k] = viewpoint.position[k];
+    }
+  }
+  camera->SetPosition(position);
 }
 
 CameraViewpoints& CameraViewpoints::instance()
@@ -159,41 +218,92 @@ void CameraViewpoints::clear()
   emit changed();
 }
 
-QList<double> CameraViewpoints::stops() const
+bool CameraViewpoints::isPath() const
 {
-  int count = m_viewpoints.size();
-  if (count < 2) {
-    return {};
-  }
+  return m_viewpoints.size() >= 2 ||
+         (m_viewpoints.size() == 1 && m_viewpoints[0].orbitTurns != 0);
+}
 
-  QList<double> durations;
+namespace {
+
+struct Timeline
+{
+  QList<double> arrivals;
+  QList<double> departures;
+};
+
+// Legs and orbits laid end to end, each weighted by its duration: the
+// orbit at a viewpoint runs from its arrival to its departure, the leg
+// to the next viewpoint from that departure to the next arrival.
+Timeline timelineOf(const QList<Viewpoint>& viewpoints)
+{
+  Timeline timeline;
+  const int count = viewpoints.size();
+  QList<double> dwells;
+  QList<double> legs;
   double total = 0;
-  for (int i = 0; i < count - 1; ++i) {
-    double duration = std::max(0.0, m_viewpoints[i].duration);
-    durations.append(duration);
-    total += duration;
+  for (int i = 0; i < count; ++i) {
+    const double dwell = viewpoints[i].orbitTurns != 0
+                           ? std::max(0.0, viewpoints[i].orbitDuration)
+                           : 0.0;
+    dwells.append(dwell);
+    total += dwell;
+    if (i + 1 < count) {
+      const double leg = std::max(0.0, viewpoints[i].duration);
+      legs.append(leg);
+      total += leg;
+    }
   }
 
-  // Every segment was given a zero (or negative) duration, which would
+  // Everything was given a zero (or negative) duration, which would
   // leave no time to run the path in. Spread it evenly instead.
   if (total <= 0) {
-    durations.fill(1.0);
-    total = count - 1;
+    legs.fill(1.0);
+    for (int i = 0; i < count; ++i) {
+      if (viewpoints[i].orbitTurns != 0) {
+        dwells[i] = 1.0;
+      }
+    }
+    total = legs.size() + std::count_if(dwells.begin(), dwells.end(),
+                                        [](double d) { return d > 0; });
   }
 
-  QList<double> stops;
-  stops.reserve(count);
-  stops.append(0.0);
   double elapsed = 0;
-  for (int i = 0; i < count - 1; ++i) {
-    elapsed += durations[i];
-    stops.append(elapsed / total);
+  for (int i = 0; i < count; ++i) {
+    timeline.arrivals.append(elapsed / total);
+    elapsed += dwells[i];
+    timeline.departures.append(elapsed / total);
+    if (i + 1 < count) {
+      elapsed += legs[i];
+    }
   }
-  // Guard the last stop against accumulated rounding: the caller treats
-  // it as the end of the path.
-  stops.last() = 1.0;
+  // Guard the ends against accumulated rounding: callers treat them as
+  // the start and the end of the path.
+  timeline.arrivals.first() = 0.0;
+  timeline.departures.last() = 1.0;
+  if (count > 1) {
+    timeline.arrivals.last() =
+      std::min(timeline.arrivals.last(), timeline.departures.last());
+  }
+  return timeline;
+}
 
-  return stops;
+} // namespace
+
+QList<double> CameraViewpoints::stops() const
+{
+  if (!isPath()) {
+    return {};
+  }
+  return timelineOf(m_viewpoints).arrivals;
+}
+
+QList<double> CameraViewpoints::departures() const
+{
+  if (!isPath()) {
+    return {};
+  }
+  return timelineOf(m_viewpoints).departures;
 }
 
 QString CameraViewpoints::nextDefaultName() const
@@ -212,40 +322,60 @@ QString CameraViewpoints::nextDefaultName() const
 double CameraViewpoints::anchorTime(int anchor) const
 {
   auto stopList = stops();
-  if (stopList.size() < 2) {
+  if (stopList.isEmpty()) {
     return anchor <= 0 ? 0.0 : 1.0;
   }
   return stopList[qBound(0, anchor, static_cast<int>(stopList.size()) - 1)];
 }
 
+double CameraViewpoints::departureTime(int anchor) const
+{
+  auto departureList = departures();
+  if (departureList.isEmpty()) {
+    return anchor <= 0 ? 0.0 : 1.0;
+  }
+  return departureList[qBound(0, anchor,
+                              static_cast<int>(departureList.size()) - 1)];
+}
+
 double CameraViewpoints::remapProgress(double progress) const
 {
-  auto stopList = stops();
-  if (stopList.size() < 2) {
+  if (!isPath()) {
     return 0.0;
   }
+  const auto timeline = timelineOf(m_viewpoints);
+  const double p = qBound(0.0, progress, 1.0);
 
-  double p = qBound(0.0, progress, 1.0);
-
-  // The last segment owns p == 1, so stop one short of the end.
-  int segment = 0;
-  while (segment + 2 < stopList.size() && p >= stopList[segment + 1]) {
-    ++segment;
+  // Walk the pieces in order: the orbit at each viewpoint, then the leg
+  // leaving it. The last piece owns p == 1. A piece of no length is
+  // skipped over.
+  const int count = m_viewpoints.size();
+  for (int i = 0; i < count; ++i) {
+    const double pieces[2][2] = {
+      { timeline.arrivals[i], timeline.departures[i] },
+      { timeline.departures[i],
+        i + 1 < count ? timeline.arrivals[i + 1] : timeline.departures[i] }
+    };
+    for (const auto& piece : pieces) {
+      const double start = piece[0];
+      const double stop = piece[1];
+      const double span = stop - start;
+      if (span <= 0) {
+        continue;
+      }
+      const bool last = stop >= 1.0;
+      if (p < stop || last) {
+        double u = (p - start) / span;
+        if (m_viewpoints[i].eased) {
+          // Smoothstep: zero slope at both ends, so the camera
+          // accelerates away from a stop and decelerates into the next.
+          u = u * u * (3.0 - 2.0 * u);
+        }
+        return start + u * span;
+      }
+    }
   }
-
-  double span = stopList[segment + 1] - stopList[segment];
-  if (span <= 0) {
-    return stopList[segment + 1];
-  }
-
-  double u = (p - stopList[segment]) / span;
-  if (m_viewpoints[segment].eased) {
-    // Smoothstep: zero slope at both ends, so the camera accelerates
-    // away from one viewpoint and decelerates into the next.
-    u = u * u * (3.0 - 2.0 * u);
-  }
-
-  return stopList[segment] + u * span;
+  return 1.0;
 }
 
 double CameraViewpoints::segmentProgress(double progress, int segment) const
@@ -255,41 +385,67 @@ double CameraViewpoints::segmentProgress(double progress, int segment) const
     return progress;
   }
 
-  double span = stopList[segment + 1] - stopList[segment];
+  // The leg runs from leaving one viewpoint to reaching the next; an
+  // orbit at either end is time the animation holds still.
+  const double start = departures()[segment];
+  const double stop = stopList[segment + 1];
+  const double span = stop - start;
   if (span <= 0) {
-    return progress >= stopList[segment] ? 1.0 : 0.0;
+    return progress >= stop ? 1.0 : 0.0;
   }
 
-  return qBound(0.0, (progress - stopList[segment]) / span, 1.0);
+  return qBound(0.0, (progress - start) / span, 1.0);
 }
 
 void CameraViewpoints::interpolate(double t, vtkCamera* camera)
 {
-  if (!camera || m_viewpoints.size() < 2) {
+  if (!camera || !isPath()) {
     return;
-  }
-
-  if (!m_interpolator) {
-    m_interpolator = vtkSmartPointer<vtkCameraInterpolator>::New();
-    m_interpolatorStale = true;
   }
 
   if (m_interpolatorStale) {
     rebuildInterpolator();
   }
 
-  m_interpolator->InterpolateCamera(qBound(0.0, t, 1.0), camera);
+  const auto timeline = timelineOf(m_viewpoints);
+  t = qBound(0.0, t, 1.0);
+
+  // The viewpoint whose orbit or leg t falls in: the last one reached.
+  const int count = m_viewpoints.size();
+  int current = 0;
+  while (current + 1 < count && t >= timeline.arrivals[current + 1]) {
+    ++current;
+  }
+
+  const auto& viewpoint = m_viewpoints[current];
+  const double departure = timeline.departures[current];
+  if (viewpoint.orbitTurns != 0 &&
+      (t < departure || current + 1 == count)) {
+    const double span = departure - timeline.arrivals[current];
+    const double u =
+      span > 0 ? (t - timeline.arrivals[current]) / span : 1.0;
+    orbitAt(viewpoint, u, camera);
+    return;
+  }
+
+  for (const auto& run : m_runs) {
+    if (current >= run.first && current < run.last) {
+      run.interpolator->InterpolateCamera(t, camera);
+      return;
+    }
+  }
+  // A viewpoint in no run (between two orbits, or the last) is held.
+  viewpoint.applyTo(camera);
 }
 
 void CameraViewpoints::rebuildInterpolator()
 {
-  m_interpolator->Initialize();
+  m_runs.clear();
   m_interpolatorStale = false;
-
-  auto stopList = stops();
-  if (stopList.size() != m_viewpoints.size()) {
+  if (!isPath()) {
     return;
   }
+  const auto timeline = timelineOf(m_viewpoints);
 
   // A spline needs three points to curve through; with two it would
   // ease in and out of the straight line on its own, on top of the
@@ -302,35 +458,58 @@ void CameraViewpoints::rebuildInterpolator()
   // second, so its linear mode stores nothing and hands back
   // uninitialized memory, which parked the camera at the origin on every
   // two-viewpoint path. In manual mode it leaves the types alone.
-  const bool linear = m_viewpoints.size() < 3;
-  auto tuple = [linear]() {
-    auto interpolator = vtkSmartPointer<vtkTupleInterpolator>::New();
-    if (linear) {
-      interpolator->SetInterpolationTypeToLinear();
-    } else {
-      interpolator->SetInterpolationTypeToSpline();
+  //
+  // A run's first camera is added at its departure (the orbit there, if
+  // any, is over) and the others at their arrival.
+  auto makeRun = [this, &timeline](int first, int last) {
+    Run run;
+    run.first = first;
+    run.last = last;
+    const bool linear = last - first + 1 < 3;
+    auto tuple = [linear]() {
+      auto interpolator = vtkSmartPointer<vtkTupleInterpolator>::New();
+      if (linear) {
+        interpolator->SetInterpolationTypeToLinear();
+      } else {
+        interpolator->SetInterpolationTypeToSpline();
+      }
+      return interpolator;
+    };
+    run.interpolator = vtkSmartPointer<vtkCameraInterpolator>::New();
+    run.interpolator->SetInterpolationTypeToManual();
+    run.interpolator->SetPositionInterpolator(tuple());
+    run.interpolator->SetFocalPointInterpolator(tuple());
+    run.interpolator->SetViewUpInterpolator(tuple());
+    run.interpolator->SetViewAngleInterpolator(tuple());
+    run.interpolator->SetParallelScaleInterpolator(tuple());
+    run.interpolator->SetClippingRangeInterpolator(tuple());
+    for (int i = first; i <= last; ++i) {
+      vtkNew<vtkCamera> camera;
+      m_viewpoints[i].applyTo(camera);
+      run.interpolator->AddCamera(
+        i == first ? timeline.departures[i] : timeline.arrivals[i], camera);
     }
-    return interpolator;
+    return run;
   };
-  m_interpolator->SetInterpolationTypeToManual();
-  m_interpolator->SetPositionInterpolator(tuple());
-  m_interpolator->SetFocalPointInterpolator(tuple());
-  m_interpolator->SetViewUpInterpolator(tuple());
-  m_interpolator->SetViewAngleInterpolator(tuple());
-  m_interpolator->SetParallelScaleInterpolator(tuple());
-  m_interpolator->SetClippingRangeInterpolator(tuple());
 
+  // A spline cannot hold still, so a viewpoint that orbits ends the run
+  // arriving at it and starts the next one leaving it.
+  int first = 0;
   for (int i = 0; i < m_viewpoints.size(); ++i) {
-    vtkNew<vtkCamera> camera;
-    m_viewpoints[i].applyTo(camera);
-    m_interpolator->AddCamera(stopList[i], camera);
+    const bool last = i + 1 == m_viewpoints.size();
+    if (last || m_viewpoints[i].orbitTurns != 0) {
+      if (i > first) {
+        m_runs.push_back(makeRun(first, i));
+      }
+      first = i;
+    }
   }
 }
 
 void CameraViewpoints::startFlight(pqRenderView* view, bool snapToHead)
 {
   stopFlight();
-  if (view && m_viewpoints.size() >= 2) {
+  if (view && isPath()) {
     auto* flight = new CameraAnimation(view);
     m_flight = flight;
     // Playback that starts at time zero never announces a time change,
@@ -356,6 +535,19 @@ void CameraViewpoints::stopFlight()
 bool CameraViewpoints::isFlying() const
 {
   return !m_flight.isNull();
+}
+
+bool CameraViewpoints::syncFlight(pqRenderView* view)
+{
+  if (!isPath()) {
+    stopFlight();
+    return false;
+  }
+  if (isFlying() || !view) {
+    return false;
+  }
+  startFlight(view, /*snapToHead=*/false);
+  return isFlying();
 }
 
 void CameraViewpoints::setCaptionPosition(double x, double y)

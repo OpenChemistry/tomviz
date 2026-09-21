@@ -49,6 +49,8 @@
 
 #include <QBuffer>
 #include <QCheckBox>
+#include <QSpinBox>
+#include <QComboBox>
 #include <QDoubleSpinBox>
 #include <QLineEdit>
 #include <QHBoxLayout>
@@ -66,6 +68,8 @@
 #include <QSignalBlocker>
 #include <QTimer>
 #include <QToolButton>
+
+#include <cstdlib>
 
 namespace tomviz {
 
@@ -167,6 +171,12 @@ public:
   // lower-left corner
   QDoubleSpinBox* captionX = nullptr;
   QDoubleSpinBox* captionY = nullptr;
+  // The orbit at the selected viewpoint
+  QCheckBox* viewpointOrbit = nullptr;
+  QSpinBox* orbitTurns = nullptr;
+  QComboBox* orbitDirection = nullptr;
+  QDoubleSpinBox* orbitDuration = nullptr;
+  QLabel* orbitDurationTitle = nullptr;
   pqPropertyLinks pqLinks;
   QPointer<AnimationHelperDialog> parent;
   vtkWeakPointer<vtkSMProxy> linkedScene;
@@ -249,6 +259,66 @@ public:
             &CameraViewpoints::captionPositionChanged, this,
             &Internal::refreshCaptionPosition);
 
+    // The orbit at the viewpoint, above the leg controls: what happens
+    // on arriving here comes before what happens on leaving.
+    auto* orbitRow = new QHBoxLayout;
+    viewpointOrbit = new QCheckBox("Add orbit", parent);
+    viewpointOrbit->setObjectName("viewpointOrbit");
+    viewpointOrbit->setToolTip(
+      "Once the camera reaches this viewpoint, swing it around the focal "
+      "point before it moves on: full turns, in this direction, lasting "
+      "this long relative to the legs of the path. The last viewpoint can "
+      "orbit too, to end on a spin, and a single viewpoint that orbits is "
+      "an animation on its own: what a freshly loaded dataset starts "
+      "with.");
+    orbitTurns = new QSpinBox(parent);
+    orbitTurns->setObjectName("orbitTurns");
+    orbitTurns->setRange(1, 10);
+    orbitTurns->setSuffix(" turn(s)");
+    // Typed values commit once editing is done: every change rebuilds
+    // the viewpoint list, which would otherwise reset the text mid-edit
+    orbitTurns->setKeyboardTracking(false);
+    orbitTurns->setToolTip("Full turns around the focal point.");
+    orbitDirection = new QComboBox(parent);
+    orbitDirection->setObjectName("orbitDirection");
+    orbitDirection->addItems({ "Counterclockwise", "Clockwise" });
+    orbitDirection->setToolTip(
+      "Which way the camera goes round, as seen from above (looking down "
+      "the view's up direction).");
+    orbitDurationTitle = new QLabel("lasting", parent);
+    orbitDuration = new QDoubleSpinBox(parent);
+    orbitDuration->setObjectName("orbitDuration");
+    // Never zero: an orbit of no length would be a checkbox that does
+    // nothing
+    orbitDuration->setRange(0.1, 100.0);
+    orbitDuration->setDecimals(2);
+    orbitDuration->setSingleStep(0.25);
+    orbitDuration->setValue(1.0);
+    orbitDuration->setKeyboardTracking(false);
+    orbitDuration->setToolTip(
+      "How long the orbit runs, on the same scale as the legs: an orbit "
+      "of 2 takes twice as many frames as a leg of 1.");
+    orbitDurationTitle->setBuddy(orbitDuration);
+    orbitRow->addWidget(viewpointOrbit);
+    orbitRow->addWidget(orbitTurns);
+    orbitRow->addWidget(orbitDirection);
+    orbitRow->addWidget(orbitDurationTitle);
+    orbitRow->addWidget(orbitDuration);
+    orbitRow->addStretch(1);
+    // The details only appear once there is an orbit to describe
+    for (auto* detail : orbitDetails()) {
+      detail->setVisible(false);
+    }
+    ui.cameraLayout->insertLayout(ui.cameraLayout->indexOf(ui.segmentLayout),
+                                  orbitRow);
+    connect(viewpointOrbit, &QCheckBox::toggled, this, &Internal::orbitChanged);
+    connect(orbitTurns, qOverload<int>(&QSpinBox::valueChanged), this,
+            &Internal::orbitChanged);
+    connect(orbitDirection, qOverload<int>(&QComboBox::currentIndexChanged),
+            this, &Internal::orbitChanged);
+    connect(orbitDuration, qOverload<double>(&QDoubleSpinBox::valueChanged),
+            this, &Internal::orbitChanged);
+
     recordScene = new QCheckBox("Record module state with viewpoints", parent);
     recordScene->setToolTip(
       "Also save the state of every visualization with each viewpoint: "
@@ -270,20 +340,22 @@ public:
 
     ui.keyframeList->setIconSize(QSize(96, 28));
 
+    // The viewpoint and leg controls start out matching the (empty)
+    // selection, like the ones the .ui file starts disabled
+    updateSegmentControls();
     updateGui();
     setupConnections();
   }
 
   void setupConnections()
   {
-    // Camera animation mode. clicked rather than toggled: reflecting the
-    // actual state back into the radios must not re-trigger the actions.
-    connect(ui.radioCameraNone, &QRadioButton::clicked, this,
-            &Internal::cameraModeChanged);
-    connect(ui.radioCameraOrbit, &QRadioButton::clicked, this,
-            &Internal::cameraModeChanged);
-    connect(ui.radioCameraPath, &QRadioButton::clicked, this,
-            &Internal::cameraModeChanged);
+    // No control arms the camera path: it flies whenever there is one
+    // (see CameraViewpoints::syncFlight), and Clear All Animations is
+    // how it stops.
+    ui.clearAllAnimations->setToolTip(
+      "Remove every animation: the viewpoints and their path, the module "
+      "state recorded with them, the visualization animations, and the "
+      "time series playback.");
 
     // Camera viewpoints
     connect(ui.addViewpoint, &QPushButton::clicked, this,
@@ -324,6 +396,12 @@ public:
     // dialog is open. Everything showing viewpoint names follows it.
     connect(&CameraViewpoints::instance(), &CameraViewpoints::changed, this,
             [this]() {
+              // A path that just appeared flies from now on, and one that
+              // just went stops; the camera stays where the user has it.
+              if (CameraViewpoints::instance().syncFlight(
+                    renderViewForOrbit())) {
+                ensureAnimationFrames();
+              }
               refreshViewpoints();
               refreshSegmentOptions();
               refreshKeyframeRows();
@@ -501,32 +579,7 @@ public:
 
   void updateEnableStates()
   {
-    bool hasCameraCues = false;
-    if (auto* animationScene = scene()) {
-      for (auto* cue : animationScene->getCues()) {
-        if (cue->getSMName().startsWith("CameraAnimationCue")) {
-          hasCameraCues = true;
-          break;
-        }
-      }
-    }
-    bool hasCameraPath = CameraViewpoints::instance().isFlying();
-    bool hasCameraAnimations = hasCameraCues || hasCameraPath;
-
-    // Reflect what is actually driving the camera. Blocked so setting the
-    // state never re-runs the mode actions.
-    {
-      QSignalBlocker blockNone(ui.radioCameraNone);
-      QSignalBlocker blockOrbit(ui.radioCameraOrbit);
-      QSignalBlocker blockPath(ui.radioCameraPath);
-      if (hasCameraPath) {
-        ui.radioCameraPath->setChecked(true);
-      } else if (hasCameraCues) {
-        ui.radioCameraOrbit->setChecked(true);
-      } else {
-        ui.radioCameraNone->setChecked(true);
-      }
-    }
+    bool hasCameraAnimations = CameraViewpoints::instance().isFlying();
 
     bool hasTimeSeries = false;
     auto* tk = activeObjects().activeTimeKeeper();
@@ -539,15 +592,12 @@ public:
     // take up footer space until one is.
     ui.enableTimeSeriesAnimations->setVisible(hasTimeSeries);
 
-    int viewpointCount = CameraViewpoints::instance().size();
     int selectedViewpoint = ui.viewpointList->currentRow();
     bool viewpointSelected = selectedViewpoint >= 0;
 
     ui.addViewpoint->setEnabled(renderViewForOrbit() != nullptr);
     ui.updateViewpoint->setEnabled(viewpointSelected);
     ui.removeViewpoint->setEnabled(viewpointSelected);
-    // One viewpoint is a camera position, not a path.
-    ui.radioCameraPath->setEnabled(viewpointCount >= 2 || hasCameraPath);
 
     auto* node = selectedSink();
     bool hasModuleAnimations = !ModuleAnimations::instance().isEmpty();
@@ -583,53 +633,6 @@ public:
       hasCameraAnimations || timeSeriesEnabled || hasModuleAnimations;
     ui.exportMovie->setEnabled(hasAnyAnimations);
     ui.clearAllAnimations->setEnabled(hasAnyAnimations);
-  }
-
-  // Camera animation mode
-  void cameraModeChanged()
-  {
-    if (ui.radioCameraOrbit->isChecked()) {
-      createCameraOrbitInternal();
-    } else if (ui.radioCameraPath->isChecked()) {
-      animateViewpointsInternal();
-    } else {
-      clearCameraCues();
-      CameraViewpoints::instance().stopFlight();
-    }
-    updateEnableStates();
-  }
-
-  void createCameraOrbitInternal()
-  {
-    auto* renderView = renderViewForOrbit();
-    if (!renderView) {
-      return;
-    }
-
-    clearCameraCues(renderView->getRenderViewProxy());
-    // The orbit and the viewpoint path both drive the camera every tick.
-    CameraViewpoints::instance().stopFlight();
-    createCameraOrbit(renderView->getRenderViewProxy());
-
-    ensureAnimationFrames();
-    play();
-  }
-
-  void animateViewpointsInternal()
-  {
-    auto* renderView = renderViewForOrbit();
-    if (!renderView || CameraViewpoints::instance().size() < 2) {
-      return;
-    }
-
-    // Only one animation can own the camera.
-    clearCameraCues(renderView->getRenderViewProxy());
-    ensureAnimationFrames();
-    // startFlight() puts the camera at the head of the path straight
-    // away, which previews it the moment it is switched on.
-    CameraViewpoints::instance().startFlight(renderView);
-
-    play();
   }
 
   // Camera viewpoints
@@ -668,6 +671,12 @@ public:
       QPixmap thumbnail;
       if (thumbnail.loadFromData(viewpoints.at(i).thumbnail, "PNG")) {
         item->setIcon(QIcon(thumbnail));
+      }
+      const int turns = viewpoints.at(i).orbitTurns;
+      if (turns != 0) {
+        item->setToolTip(QString("Orbits %1 full turn(s) %2 here")
+                           .arg(std::abs(turns))
+                           .arg(turns > 0 ? "counterclockwise" : "clockwise"));
       }
       ui.viewpointList->addItem(item);
     }
@@ -735,12 +744,25 @@ public:
 
     QSignalBlocker blockedDuration(ui.segmentDuration);
     QSignalBlocker blockedEased(ui.segmentEased);
+    QSignalBlocker blockedOrbit(viewpointOrbit);
+    QSignalBlocker blockedTurns(orbitTurns);
+    QSignalBlocker blockedDirection(orbitDirection);
+    QSignalBlocker blockedOrbitDuration(orbitDuration);
     QSignalBlocker blockedLabel(viewpointLabel);
     if (hasSegment) {
       ui.segmentDuration->setValue(viewpoints.at(row).duration);
       ui.segmentEased->setChecked(viewpoints.at(row).eased);
     }
     bool hasViewpoint = row >= 0 && row < viewpoints.size();
+    bool orbiting = false;
+    if (hasViewpoint) {
+      const int turns = viewpoints.at(row).orbitTurns;
+      orbiting = turns != 0;
+      orbitTurns->setValue(orbiting ? std::abs(turns) : 1);
+      orbitDirection->setCurrentIndex(turns < 0 ? 1 : 0);
+      orbitDuration->setValue(viewpoints.at(row).orbitDuration);
+    }
+    viewpointOrbit->setChecked(orbiting);
     viewpointLabel->setText(hasViewpoint ? viewpoints.at(row).label
                                          : QString());
     viewpointLabel->setEnabled(hasViewpoint);
@@ -748,6 +770,34 @@ public:
     ui.segmentDurationLabel->setEnabled(hasSegment);
     ui.segmentDuration->setEnabled(hasSegment);
     ui.segmentEased->setEnabled(hasSegment);
+    viewpointOrbit->setEnabled(hasViewpoint);
+    for (auto* detail : orbitDetails()) {
+      detail->setVisible(hasViewpoint && orbiting);
+    }
+  }
+
+  // The orbit controls other than the checkbox that shows them
+  QList<QWidget*> orbitDetails() const
+  {
+    return { orbitTurns, orbitDirection, orbitDurationTitle, orbitDuration };
+  }
+
+  void orbitChanged()
+  {
+    auto& viewpoints = CameraViewpoints::instance();
+    int row = ui.viewpointList->currentRow();
+    if (row < 0 || row >= viewpoints.size()) {
+      return;
+    }
+
+    auto viewpoint = viewpoints.at(row);
+    const int turns = orbitTurns->value();
+    viewpoint.orbitTurns =
+      viewpointOrbit->isChecked()
+        ? (orbitDirection->currentIndex() == 0 ? turns : -turns)
+        : 0;
+    viewpoint.orbitDuration = orbitDuration->value();
+    viewpoints.replace(row, viewpoint);
   }
 
   void addViewpoint()
@@ -768,16 +818,6 @@ public:
 
     viewpoints.append(viewpoint);
     ui.viewpointList->setCurrentRow(viewpoints.size() - 1);
-
-    // Building a path is a statement of intent: once there are enough
-    // viewpoints to fly, make Play fly through them instead of doing a
-    // camera orbit. Arm the flight only; no snap to the path head (the
-    // user just framed this view) and no auto-play.
-    if (viewpoints.size() >= 2 && !viewpoints.isFlying()) {
-      clearCameraCues(context.proxy);
-      viewpoints.startFlight(context.view, /*snapToHead=*/false);
-      updateEnableStates();
-    }
   }
 
   void updateViewpoint()
@@ -1736,20 +1776,12 @@ public:
 
   void clearAllAnimations()
   {
-    clearCameraCues();
     auto& viewpoints = CameraViewpoints::instance();
-    viewpoints.stopFlight();
+    // The viewpoints are the camera animation, so they go with the rest;
+    // clearing them stops the flight.
+    viewpoints.clear();
     if (ui.enableTimeSeriesAnimations->isVisible()) {
       ui.enableTimeSeriesAnimations->setChecked(false);
-    }
-    // The state recorded with the viewpoints exists only to animate, so
-    // it goes too; the viewpoints themselves stay.
-    for (int i = 0; i < viewpoints.size(); ++i) {
-      if (!viewpoints.at(i).scene.isEmpty()) {
-        auto viewpoint = viewpoints.at(i);
-        viewpoint.scene = SceneSnapshot();
-        viewpoints.replace(i, viewpoint);
-      }
     }
     ModuleAnimations::instance().clear();
 

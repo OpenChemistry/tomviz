@@ -19,6 +19,8 @@
 #include <vtkPiecewiseFunction.h>
 #include <vtkSmartPointer.h>
 
+#include <algorithm>
+
 namespace tomviz {
 
 /// An opacity curve captured for one point of the animation. The anchor
@@ -159,9 +161,13 @@ public:
     } else {
       const auto& from = m_keyframes[next - 1];
       const auto& to = m_keyframes[next];
-      const double start = viewpoints.anchorTime(from.anchor);
+      // The morph runs on the leg: from leaving one anchor, after any
+      // orbit there, to reaching the next.
+      const double start = viewpoints.departureTime(from.anchor);
       const double stop = viewpoints.anchorTime(to.anchor);
-      const double u = stop > start ? (t - start) / (stop - start) : 1.0;
+      const double u =
+        stop > start ? std::clamp((t - start) / (stop - start), 0.0, 1.0)
+                     : 1.0;
 
       // Both curves are read over the volume's own window, which is what
       // makes two curves captured at different times comparable.
