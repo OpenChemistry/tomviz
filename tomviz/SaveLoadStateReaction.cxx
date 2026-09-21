@@ -5,6 +5,7 @@
 
 #include "ActiveObjects.h"
 #include "AnimationSerializer.h"
+#include "animations/AnimationSceneGuard.h"
 #include "MainWindow.h"
 #include "pipeline/LegacyStateLoader.h"
 #include "pipeline/Pipeline.h"
@@ -232,6 +233,9 @@ bool SaveLoadStateReaction::loadTvh5(const QString& filename,
     return false;
   }
 
+  // A playback still running would tear down its own scene from
+  // inside a tick
+  interruptAnimationPlayback(/*rewind=*/false);
   pipeline->clear();
 
   QMap<int, vtkSMViewProxy*> viewIdMap;
@@ -293,6 +297,9 @@ bool SaveLoadStateReaction::loadTvsm(const QString& filename,
       }
       // Drop whatever was in the pipeline (matching the confirmation
       // dialog we already showed the user in loadState()).
+      // A playback still running would tear down its own scene from
+      // inside a tick
+      interruptAnimationPlayback(/*rewind=*/false);
       pipeline->clear();
 
       // Order matters: restore views first so sinks can bind to them

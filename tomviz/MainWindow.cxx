@@ -31,6 +31,7 @@
 #include "AddAlignReaction.h"
 #include "AddPythonTransformReaction.h"
 #include "AnimationHelperDialog.h"
+#include "animations/AnimationSceneGuard.h"
 #include "animations/RecordedAnimations.h"
 #include "AxesReaction.h"
 #include "Behaviors.h"
@@ -1639,6 +1640,8 @@ void MainWindow::initPipeline()
   // The animations recorded with the camera viewpoints follow the
   // viewpoints and the authored animations from here on
   RecordedAnimations::instance().install();
+  // Rewinds a finished animation before it plays again; see the class.
+  new AnimationSceneGuard(this);
   m_progressDialogManager = new ProgressDialogManager(this);
   m_progressDialogManager->setPipeline(p);
 

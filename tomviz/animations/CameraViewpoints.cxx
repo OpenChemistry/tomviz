@@ -160,6 +160,17 @@ void orbitAt(const Viewpoint& viewpoint, double u, vtkCamera* camera)
   camera->SetPosition(position);
 }
 
+void CameraViewpoints::noteChanged()
+{
+  m_interpolatorStale = true;
+  // No path, no flight: whoever emptied the list (Reset, a state file,
+  // the last Remove) need not know about the flight for it to stop.
+  if (!isPath()) {
+    stopFlight();
+  }
+  emit changed();
+}
+
 CameraViewpoints& CameraViewpoints::instance()
 {
   static CameraViewpoints viewpoints;
@@ -169,8 +180,7 @@ CameraViewpoints& CameraViewpoints::instance()
 void CameraViewpoints::append(const Viewpoint& viewpoint)
 {
   m_viewpoints.append(viewpoint);
-  m_interpolatorStale = true;
-  emit changed();
+  noteChanged();
 }
 
 void CameraViewpoints::replace(int index, const Viewpoint& viewpoint)
@@ -180,8 +190,7 @@ void CameraViewpoints::replace(int index, const Viewpoint& viewpoint)
   }
 
   m_viewpoints[index] = viewpoint;
-  m_interpolatorStale = true;
-  emit changed();
+  noteChanged();
 }
 
 void CameraViewpoints::removeAt(int index)
@@ -191,8 +200,7 @@ void CameraViewpoints::removeAt(int index)
   }
 
   m_viewpoints.removeAt(index);
-  m_interpolatorStale = true;
-  emit changed();
+  noteChanged();
 }
 
 void CameraViewpoints::move(int from, int to)
@@ -203,8 +211,7 @@ void CameraViewpoints::move(int from, int to)
   }
 
   m_viewpoints.move(from, to);
-  m_interpolatorStale = true;
-  emit changed();
+  noteChanged();
 }
 
 void CameraViewpoints::clear()
@@ -214,8 +221,7 @@ void CameraViewpoints::clear()
   }
 
   m_viewpoints.clear();
-  m_interpolatorStale = true;
-  emit changed();
+  noteChanged();
 }
 
 bool CameraViewpoints::isPath() const
@@ -600,8 +606,7 @@ bool CameraViewpoints::deserialize(const QJsonObject& json)
     setCaptionPosition(0.02, 0.03);
   }
 
-  m_interpolatorStale = true;
-  emit changed();
+  noteChanged();
   return true;
 }
 

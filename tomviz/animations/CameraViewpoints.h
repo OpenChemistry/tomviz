@@ -200,6 +200,9 @@ private:
   CameraViewpoints() = default;
 
   void rebuildInterpolator();
+  /// After any change to the list: drop the flight if there is no path
+  /// left, and tell everyone.
+  void noteChanged();
 
   QList<Viewpoint> m_viewpoints;
   std::array<double, 2> m_captionPosition = { 0.02, 0.03 };

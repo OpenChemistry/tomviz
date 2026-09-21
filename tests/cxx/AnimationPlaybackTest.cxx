@@ -17,12 +17,17 @@
 #include <pqServer.h>
 #include <pqServerResource.h>
 
+#include <vtkCallbackCommand.h>
 #include <vtkCamera.h>
 #include <vtkNew.h>
+#include <vtkSMAnimationScene.h>
+#include <vtkSMPropertyHelper.h>
 #include <vtkSMProxy.h>
 #include <vtkSMRenderViewProxy.h>
 
+#include "AnimationSceneGuard.h"
 #include "CameraViewpoints.h"
+#include "Utilities.h"
 #include "ModuleAnimation.h"
 
 using namespace tomviz;
@@ -164,6 +169,67 @@ private slots:
   // A lone viewpoint with an orbit is a whole animation: played through
   // the scene it carries the camera right round the focal point, out
   // to both sides, and back to where it started.
+  // Fifty frames reach the last one a rounding error short of the end,
+  // and ParaView's player only rewinds from the end itself, so without
+  // the guard the second Play ticks once and stops. Plays must keep
+  // running from the top.
+  void animationReplaysAfterReachingTheEnd()
+  {
+    Probe probe;
+    for (int frames : { 50, 200, 100 }) {
+      for (int round = 0; round < 3; ++round) {
+        probe.progressSamples.clear();
+        play(frames);
+        QVERIFY2(probe.progressSamples.size() >= frames - 2,
+                 qPrintable(QString("%1 frames, round %2: only %3 ticks")
+                              .arg(frames)
+                              .arg(round)
+                              .arg(probe.progressSamples.size())));
+        QVERIFY(probe.progressSamples.first() < 0.1);
+        QVERIFY(probe.progressSamples.last() > 0.95);
+      }
+    }
+  }
+
+  // Changing the frame count while playing (from a tick, as the frame
+  // box's edit does) ends that playback early; the next one resumes and
+  // the ones after run from the top again.
+  void frameCountChangeMidPlayDoesNotStrandTheAnimation()
+  {
+    struct Shrinker : ModuleAnimation
+    {
+      Shrinker() : ModuleAnimation(nullptr) {}
+      int ticks = 0;
+      void onTimeChanged() override
+      {
+        if (++ticks == 100) {
+          tomviz::setAnimationNumberOfFrames(50);
+        }
+      }
+    } shrinker;
+    Probe probe;
+    play(200);
+    QVERIFY(probe.progressSamples.size() >= 90);
+    QVERIFY(probe.progressSamples.size() <= 110);
+
+    auto* proxy = scene()->getProxy();
+    probe.progressSamples.clear();
+    proxy->InvokeCommand("Play");
+    QVERIFY2(probe.progressSamples.size() >= 15, "did not resume");
+    QVERIFY(probe.progressSamples.last() > 0.95);
+
+    for (int round = 0; round < 2; ++round) {
+      probe.progressSamples.clear();
+      proxy->InvokeCommand("Play");
+      QVERIFY2(probe.progressSamples.size() >= 48,
+               qPrintable(QString("round %1: only %2 ticks")
+                            .arg(round)
+                            .arg(probe.progressSamples.size())));
+      QVERIFY(probe.progressSamples.first() < 0.1);
+      QVERIFY(probe.progressSamples.last() > 0.95);
+    }
+  }
+
   void cameraOrbitsALoneViewpointDuringPlayback()
   {
     auto* server = pqActiveObjects::instance().activeServer();
@@ -177,8 +243,9 @@ private slots:
     orbiting.viewUp = { 0, 1, 0 };
     orbiting.orbitTurns = 1;
     viewpoints.append(orbiting);
-    QVERIFY(viewpoints.syncFlight(view));
+    // The guard arms the flight as soon as the path exists
     QVERIFY(viewpoints.isFlying());
+    QVERIFY(!viewpoints.syncFlight(view));
 
     Probe probe;
     probe.view = view;
@@ -194,12 +261,13 @@ private slots:
     QVERIFY2(lowest < -8.0, "never swung out to the left");
     QVERIFY2(std::abs(probe.cameraX.last()) < 0.5, "did not come back");
 
-    // Taking the orbit away un-arms the flight through the same call
+    // Taking the orbit away leaves no path, and the model drops the
+    // flight on its own
     Viewpoint still = orbiting;
     still.orbitTurns = 0;
     viewpoints.replace(0, still);
-    QVERIFY(!viewpoints.syncFlight(view));
     QVERIFY(!viewpoints.isFlying());
+    QVERIFY(!viewpoints.syncFlight(view));
     builder->destroy(view);
   }
 };
@@ -460,6 +528,8 @@ int main(int argc, char** argv)
   pqPVApplicationCore appCore(argc, argv);
   pqApplicationCore::instance()->getObjectBuilder()->createServer(
     pqServerResource("builtin:"));
+  // Installed by the main window in the application
+  AnimationSceneGuard guard;
   AnimationPlaybackTest tc;
   int status = QTest::qExec(&tc, argc, argv);
   RecordedAnimationTest recorded;

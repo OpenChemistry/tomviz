@@ -2,6 +2,8 @@
    It is released under the 3-Clause BSD License, see "LICENSE". */
 
 #include "AnimationHelperDialog.h"
+
+#include "animations/AnimationSceneGuard.h"
 #include "ui_AnimationHelperDialog.h"
 
 #include "ActiveObjects.h"
@@ -400,12 +402,8 @@ public:
     // dialog is open. Everything showing viewpoint names follows it.
     connect(&CameraViewpoints::instance(), &CameraViewpoints::changed, this,
             [this]() {
-              // A path that just appeared flies from now on, and one that
-              // just went stops; the camera stays where the user has it.
-              if (CameraViewpoints::instance().syncFlight(
-                    renderViewForOrbit())) {
-                ensureAnimationFrames();
-              }
+              // The flight and the playback follow the change on their
+              // own (AnimationSceneGuard); this is the display.
               refreshViewpoints();
               refreshSegmentOptions();
               refreshKeyframeRows();
@@ -420,6 +418,7 @@ public:
             &activeObjects(), &ActiveObjects::enableTimeSeriesAnimations);
     connect(ui.enableTimeSeriesAnimations, &QCheckBox::toggled, this,
             [this](bool b) {
+              interruptAnimationPlayback();
               updateEnableStates();
               if (b) {
                 play();
@@ -636,7 +635,10 @@ public:
     bool hasAnyAnimations =
       hasCameraAnimations || timeSeriesEnabled || hasModuleAnimations;
     ui.exportMovie->setEnabled(hasAnyAnimations);
-    ui.clearAllAnimations->setEnabled(hasAnyAnimations);
+    // A lone viewpoint is not yet an animation, but it is something to
+    // clear
+    ui.clearAllAnimations->setEnabled(hasAnyAnimations ||
+                                      CameraViewpoints::instance().size() > 0);
   }
 
   // Camera viewpoints
@@ -852,6 +854,9 @@ public:
       return;
     }
 
+    // The flight would put the camera back on the path at its next
+    // tick; stopped where it is, the next Play resumes from there.
+    interruptAnimationPlayback(/*rewind=*/false);
     viewpoints.at(row).applyTo(context.camera);
     // Modules some viewpoint recorded but this one lacks were not on
     // screen here; ones no viewpoint knows are left as they are.
@@ -1764,6 +1769,7 @@ public:
   // All animations
   void numberOfFramesModified()
   {
+    interruptAnimationPlayback();
     pqSMAdaptor::setEnumerationProperty(
       scene()->getProxy()->GetProperty("PlayMode"), "Sequence");
     // qtWidgetChanged is emitted after the property link has copied and
@@ -1772,8 +1778,22 @@ public:
     scene()->getProxy()->UpdateVTKObjects();
   }
 
+  // The writer plays the scene itself, which the player refuses during
+  // an active playback, and the dialog is modal, so it must open once
+  // the play loop has unwound: stop, then come back on the event loop
+  // until the scene reports it is no longer playing.
   void exportMovie()
   {
+    auto* animationScene = scene();
+    auto* proxy = animationScene ? animationScene->getProxy() : nullptr;
+    auto* object = proxy ? vtkSMAnimationScene::SafeDownCast(
+                             proxy->GetClientSideObject())
+                         : nullptr;
+    if (object && object->GetInPlay()) {
+      interruptAnimationPlayback(/*rewind=*/false);
+      QTimer::singleShot(0, this, [this]() { exportMovie(); });
+      return;
+    }
     MovieExportDialog dialog(parent);
     dialog.exec();
   }

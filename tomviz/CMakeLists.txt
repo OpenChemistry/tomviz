@@ -502,6 +502,7 @@ list(APPEND SOURCES
   animations/OpacityInterpolation.h
   animations/ScalarOpacityAnimation.h
   animations/CameraAnimation.h
+  animations/AnimationSceneGuard.cxx
   animations/CameraViewpoints.cxx
   animations/CameraViewpoints.h
   animations/RecordedAnimations.cxx
