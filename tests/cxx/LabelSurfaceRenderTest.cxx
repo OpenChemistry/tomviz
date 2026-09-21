@@ -98,6 +98,21 @@ public:
   }
 
 private slots:
+  // A CI runner has no GPU and no software GL. There, a render window
+  // that fails to load its OpenGL functions crashes when torn down, and
+  // the view's window gets initialized as soon as the sink draws into
+  // it, so the check has to come before any view exists. The probe is
+  // a throwaway window of its own.
+  void initTestCase()
+  {
+    vtkNew<vtkRenderWindow> probe;
+    probe->SetOffScreenRendering(1);
+    auto* gl = vtkOpenGLRenderWindow::SafeDownCast(probe.Get());
+    if (gl && !gl->SupportsOpenGL()) {
+      QSKIP("no OpenGL available for an offscreen render");
+    }
+  }
+
   void init()
   {
     auto* server = pqActiveObjects::instance().activeServer();
@@ -163,13 +178,6 @@ private slots:
     vtkNew<vtkRenderer> renderer;
     vtkNew<vtkRenderWindow> window;
     window->SetOffScreenRendering(1);
-    // A CI runner has no GPU and no software GL; rendering there does
-    // not fail, it crashes. The coloring above was still checked.
-    if (auto* gl = vtkOpenGLRenderWindow::SafeDownCast(window.Get())) {
-      if (!gl->SupportsOpenGL()) {
-        QSKIP("no OpenGL available for an offscreen render");
-      }
-    }
     window->AddRenderer(renderer);
     renderer->AddActor(actor);
     renderer->SetBackground(0, 0, 0);
