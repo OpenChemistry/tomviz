@@ -65,6 +65,9 @@ add_cxx_test(LabelSelection)
 add_cxx_test(LabelMapSurface)
 add_cxx_test(ExplodedGeometry)
 add_cxx_test(LightingPresetStore)
+add_cxx_test(CustomOperatorManagerDialog)
+add_cxx_test(OperatorSearchDialog)
+add_cxx_test(CustomOperatorEditDialog)
 # AcquisitionClient needs the `bottle` Python package (acquisition/requirements-dev.txt)
 # to start its test server; not part of the conda build env, so disabled here.
 # if(NOT WIN32)
@@ -89,6 +92,9 @@ set_tests_properties(PyXRFWorkflow PROPERTIES TIMEOUT 1800
 
 # Generate the executable
 create_test_executable(tomvizTests)
+# tomviz's icons are compiled into the app executable, not the library;
+# tests that build widgets showing them need the same resources.
+target_sources(tomvizTests PRIVATE "${PROJECT_SOURCE_DIR}/tomviz/resources.qrc")
 
 target_link_libraries(tomvizTests Qt6::Test)
 

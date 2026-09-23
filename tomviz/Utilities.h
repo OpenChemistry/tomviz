@@ -44,6 +44,7 @@ class vtkTable;
 class QDir;
 class QLayout;
 class QUrl;
+class QWidget;
 
 namespace tomviz {
 
@@ -189,8 +190,27 @@ QString readInPythonScript(const QString& scriptName);
 // of the built-in tomviz python operator scripts.
 QString readInJSONDescription(const QString& scriptName);
 
-// Get the path for the Tomviz directory
+// The user's tomviz directory: custom operators, pipeline templates and
+// the like live here, and tomviz may write to it. <home>/tomviz unless
+// TOMVIZ_USER_DIRECTORY says otherwise. Created on demand; empty (after a
+// warning) when it cannot be.
 QString userDataPath();
+
+// The pipeline templates directory inside userDataPath(); empty when that
+// is. Not created here.
+QString userTemplatesPath();
+
+// The directories to scan for user-defined Python operators in addition to
+// userDataPath(), which is always scanned first (see
+// MainWindow::findCustomOperators). With TOMVIZ_CUSTOM_TRANSFORMS_PATH set,
+// these are its existing entries; otherwise the platform app-data
+// directories. Paths are cleaned, in scan order.
+QStringList customOperatorSearchPaths();
+
+// Write @a text to @a path as UTF-8, telling the user about any failure in
+// a message box parented to @a parent. False when the file may be
+// incomplete.
+bool writeTextFile(QWidget* parent, const QString& path, const QString& text);
 
 // Remove all camera cues from the animation scene.
 // If a render view is provided, only camera cues associated with that

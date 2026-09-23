@@ -62,8 +62,8 @@ bool SaveLoadTemplateReaction::saveTemplate()
         path = envPaths.first();
       }
     }
-    if (path.isEmpty() && !tomviz::userDataPath().isEmpty()) {
-      path = tomviz::userDataPath() + "/templates";
+    if (path.isEmpty()) {
+      path = tomviz::userTemplatesPath();
     }
     if (path.isEmpty()) {
       return false;

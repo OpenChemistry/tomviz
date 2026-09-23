@@ -40,8 +40,14 @@ class NodeDefinitionWidget : public QWidget
   Q_OBJECT
 
 public:
+  /// For a live node: the identity and port checks apply.
   NodeDefinitionWidget(const QString& json, NodeShape shape,
                        DefinitionSchema schema, QWidget* parent = nullptr);
+  /// @a target picks the validation rules; see DefinitionTarget. Shape and
+  /// schema seed the form either way.
+  NodeDefinitionWidget(const QString& json, NodeShape shape,
+                       DefinitionSchema schema, DefinitionTarget target,
+                       QWidget* parent = nullptr);
 
   /// Current editor text, whether or not it validates.
   QString definitionText() const;
@@ -82,6 +88,7 @@ private:
 
   NodeShape m_shape;
   DefinitionSchema m_schema;
+  DefinitionTarget m_target = DefinitionTarget::LiveNode;
   /// The description the node is actually running — the baseline every
   /// candidate is validated and diffed against.
   QString m_appliedJson;

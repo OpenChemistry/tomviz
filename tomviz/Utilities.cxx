@@ -57,6 +57,7 @@
 #include <QDebug>
 #include <QDesktopServices>
 #include <QDir>
+#include <QFile>
 #include <QFileDialog>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -1393,22 +1394,83 @@ double getVoxelValue(vtkImageData* data, const vtkVector3d& point,
   return scalar;
 }
 
-QString userDataPath() {
-  // Ensure the tomviz directory exists
-  QStringList locations =
+QString userDataPath()
+{
+  // TOMVIZ_USER_DIRECTORY relocates the whole user directory, custom
+  // operators and templates included.
+  QString path = QString::fromLocal8Bit(qgetenv("TOMVIZ_USER_DIRECTORY"));
+  if (path.isEmpty()) {
+    const QStringList homes =
       QStandardPaths::standardLocations(QStandardPaths::HomeLocation);
-  QString home = locations[0];
-  QString path = QString("%1%2tomviz").arg(home).arg(QDir::separator());
-  QDir dir(path);
-  // dir.mkpath() returns true if the path already exists or if it was
-  // successfully created.
-  if (!dir.mkpath(path)) {
+    path = QDir(homes.first()).filePath("tomviz");
+  }
+  path = QDir(path).absolutePath();
+
+  // mkpath() is also true when the directory already exists.
+  if (!QDir().mkpath(path)) {
     QMessageBox::warning(
       tomviz::mainWidget(), "Could not create tomviz directory",
       QString("Could not create tomviz directory '%1'.").arg(path));
     return QString();
   }
   return path;
+}
+
+QString userTemplatesPath()
+{
+  const QString base = userDataPath();
+  return base.isEmpty() ? QString() : base + "/templates";
+}
+
+QStringList customOperatorSearchPaths()
+{
+  QStringList paths;
+  auto addIfDir = [&paths](const QString& path) {
+    if (QFileInfo(path).isDir()) {
+      paths.append(QDir::cleanPath(path));
+    }
+  };
+
+  const QByteArray envOverride = qgetenv("TOMVIZ_CUSTOM_TRANSFORMS_PATH");
+  if (!envOverride.isEmpty()) {
+    const QStringList entries = QString::fromLocal8Bit(envOverride)
+                                  .split(QDir::listSeparator(),
+                                         Qt::SkipEmptyParts);
+    for (const QString& path : entries) {
+      addIfDir(path);
+    }
+    return paths;
+  }
+
+  // The platform app-data directories, e.g.
+  // C:/Users/<USER>/AppData/Local/tomviz on Windows.
+  for (const QString& path :
+       QStandardPaths::standardLocations(QStandardPaths::AppDataLocation)) {
+    addIfDir(path);
+  }
+  return paths;
+}
+
+bool writeTextFile(QWidget* parent, const QString& path, const QString& text)
+{
+  QFile file(path);
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+    QMessageBox::critical(parent, QObject::tr("Failed to save"),
+                          QObject::tr("Could not open \"%1\" for writing:\n%2")
+                            .arg(QDir::toNativeSeparators(path),
+                                 file.errorString()));
+    return false;
+  }
+  const QByteArray bytes = text.toUtf8();
+  // Report a short write too: close() can still fail to flush.
+  if (file.write(bytes) != bytes.size() || !file.flush()) {
+    QMessageBox::critical(parent, QObject::tr("Failed to save"),
+                          QObject::tr("Could not write to \"%1\":\n%2")
+                            .arg(QDir::toNativeSeparators(path),
+                                 file.errorString()));
+    return false;
+  }
+  return true;
 }
 
 } // namespace tomviz

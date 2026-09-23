@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 2,
+  "name": "NewCustomTransform",
+  "label": "New Custom Transform",
+  "description": "Describe what this transform does.",
+  "inputs":  [{"name": "volume", "type": "ImageData"}],
+  "outputs": [{"name": "volume", "type": "ImageData"}],
+  "parameters": []
+}

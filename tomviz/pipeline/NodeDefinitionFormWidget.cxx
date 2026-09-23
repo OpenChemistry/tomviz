@@ -142,7 +142,16 @@ namespace pipeline {
 NodeDefinitionFormWidget::NodeDefinitionFormWidget(NodeShape shape,
                                                    DefinitionSchema schema,
                                                    QWidget* parent)
-  : QWidget(parent), m_shape(shape), m_schema(schema)
+  : NodeDefinitionFormWidget(shape, schema, DefinitionTarget::LiveNode,
+                             parent)
+{
+}
+
+NodeDefinitionFormWidget::NodeDefinitionFormWidget(NodeShape shape,
+                                                   DefinitionSchema schema,
+                                                   DefinitionTarget target,
+                                                   QWidget* parent)
+  : QWidget(parent), m_shape(shape), m_schema(schema), m_target(target)
 {
   auto* outer = new QVBoxLayout(this);
   outer->setContentsMargins(0, 0, 0, 0);
@@ -202,10 +211,27 @@ void NodeDefinitionFormWidget::buildGeneralSection(QVBoxLayout* layout)
   m_descriptionEdit = new QLineEdit(box);
   form->addRow(tr("Description"), m_descriptionEdit);
 
-  m_fixedInfoLabel = new QLabel(box);
-  m_fixedInfoLabel->setStyleSheet("QLabel { color: palette(mid); }");
-  m_fixedInfoLabel->setWordWrap(true);
-  form->addRow(m_fixedInfoLabel);
+  if (identityEditable()) {
+    // A definition file is bound to no node class, so the schema a live
+    // node freezes is a plain field here. The custom widget key is not:
+    // anyone who knows what to put there can type it in Raw.
+    m_schemaCombo = new QComboBox(box);
+    m_schemaCombo->setObjectName(QStringLiteral("definitionSchemaCombo"));
+    m_schemaCombo->addItem(tr("Legacy (v1)"), 1);
+    m_schemaCombo->addItem(tr("v2"), 2);
+    m_schemaCombo->setToolTip(
+      tr("v2 declares its ports under \"inputs\" and \"outputs\"; the "
+         "legacy schema takes them from \"inputType\", \"outputType\", "
+         "\"results\", \"children\" and \"dataset\" parameters."));
+    form->addRow(tr("Schema"), m_schemaCombo);
+    connect(m_schemaCombo, &QComboBox::currentIndexChanged, this,
+            [this]() { commitSchema(); });
+  } else {
+    m_fixedInfoLabel = new QLabel(box);
+    m_fixedInfoLabel->setStyleSheet("QLabel { color: palette(mid); }");
+    m_fixedInfoLabel->setWordWrap(true);
+    form->addRow(m_fixedInfoLabel);
+  }
 
   for (auto* edit : { m_nameEdit, m_labelEdit, m_descriptionEdit }) {
     connect(edit, &QLineEdit::textEdited, this, [this]() { commitRoot(); });
@@ -228,31 +254,68 @@ void NodeDefinitionFormWidget::buildPortsSections(QVBoxLayout* layout)
     auto* buttonRow = new QHBoxLayout;
     auto* addButton =
       new QPushButton(input ? tr("Add Input") : tr("Add Output"), box);
+    addButton->setObjectName(input ? QStringLiteral("addInputPortButton")
+                                   : QStringLiteral("addOutputPortButton"));
     connect(addButton, &QPushButton::clicked, this,
             [this, input]() { addPort(input); });
     buttonRow->addWidget(addButton);
     buttonRow->addStretch();
     content->addLayout(buttonRow);
 
-    box->setToolTip(
-      tr("Ports are fixed for the life of a node, because links in the "
-         "pipeline hang off them. Create a new node to change them."));
+    if (!identityEditable()) {
+      box->setToolTip(
+        tr("Ports are fixed for the life of a node, because links in the "
+           "pipeline hang off them. Create a new node to change them."));
+    }
 
     return box;
   };
 
   m_inputBox = build(true);
+  // Whether a v2 description is a source or a transform is decided by
+  // its inputs alone, so the note sits right under them.
+  m_shapeNote = new QLabel(m_inputBox);
+  m_shapeNote->setObjectName(QStringLiteral("definitionShapeNote"));
+  m_shapeNote->setWordWrap(true);
+  m_shapeNote->setStyleSheet("QLabel { color: palette(mid); }");
+  m_inputBox->layout()->addWidget(m_shapeNote);
   m_outputBox = build(false);
 
-  m_legacyPortsNote = new QLabel(this);
+  // Legacy schema: the two port keys the form renders as type pickers,
+  // and a pointer to raw mode for the rest.
+  QVBoxLayout* legacyContent = nullptr;
+  m_legacyPortsBox =
+    addSection(layout, tr("Ports (legacy schema)"), this, legacyContent);
+  auto* legacyForm = new QFormLayout;
+  legacyForm->setContentsMargins(0, 0, 0, 0);
+  legacyContent->addLayout(legacyForm);
+  auto makeTypeCombo = [this](const char* objectName) {
+    auto* combo = new QComboBox(m_legacyPortsBox);
+    combo->setObjectName(QString::fromLatin1(objectName));
+    combo->addItem(tr("(unset)"), QString());
+    // Legacy operators only ever take and return volumes; tables and
+    // molecules travel as "results" or "children" instead.
+    for (auto type : offeredPortTypes()) {
+      if (isVolumeType(type)) {
+        combo->addItem(portTypeToString(type), portTypeToString(type));
+      }
+    }
+    connect(combo, &QComboBox::currentIndexChanged, this,
+            [this]() { commitLegacyPorts(); });
+    return combo;
+  };
+  m_legacyInputType = makeTypeCombo("legacyInputTypeCombo");
+  legacyForm->addRow(tr("Input type"), m_legacyInputType);
+  m_legacyOutputType = makeTypeCombo("legacyOutputTypeCombo");
+  legacyForm->addRow(tr("Output type"), m_legacyOutputType);
+
+  m_legacyPortsNote = new QLabel(m_legacyPortsBox);
   m_legacyPortsNote->setWordWrap(true);
   m_legacyPortsNote->setStyleSheet("QLabel { color: palette(mid); }");
   m_legacyPortsNote->setText(
-    tr("Ports: this node uses the legacy schema, so they come from "
-       "\"inputType\", \"outputType\", \"results\", \"children\" and any "
-       "\"dataset\" parameter. Those are fixed for the life of the node — "
-       "create a new one to change them."));
-  layout->addWidget(m_legacyPortsNote);
+    tr("Extra result ports (\"results\", \"children\") and \"dataset\" "
+       "parameters have no controls here; edit them in Raw."));
+  legacyContent->addWidget(m_legacyPortsNote);
 }
 
 void NodeDefinitionFormWidget::buildParametersSection(QVBoxLayout* layout)
@@ -390,17 +453,22 @@ bool NodeDefinitionFormWidget::setJson(const QString& json)
     edit->setCursorPosition(0);
   }
 
-  QStringList fixed;
-  fixed.append(
-    tr("Schema v%1").arg(m_schema == DefinitionSchema::V2 ? 2 : 1));
-  fixed.append(m_shape == NodeShape::Source ? tr("source node")
-                                            : tr("transform node"));
-  QString widgetId = m_root.value(QStringLiteral("widget")).toString();
-  if (!widgetId.isEmpty()) {
-    fixed.append(tr("custom widget \"%1\"").arg(widgetId));
+  const QString widgetId = m_root.value(QStringLiteral("widget")).toString();
+  if (identityEditable()) {
+    m_schemaCombo->setCurrentIndex(m_schemaCombo->findData(
+      currentSchema() == DefinitionSchema::V2 ? 2 : 1));
+  } else {
+    QStringList fixed;
+    fixed.append(
+      tr("Schema v%1").arg(m_schema == DefinitionSchema::V2 ? 2 : 1));
+    fixed.append(m_shape == NodeShape::Source ? tr("source node")
+                                              : tr("transform node"));
+    if (!widgetId.isEmpty()) {
+      fixed.append(tr("custom widget \"%1\"").arg(widgetId));
+    }
+    m_fixedInfoLabel->setText(tr("%1 — fixed for the life of this node.")
+                                .arg(fixed.join(QStringLiteral(", "))));
   }
-  m_fixedInfoLabel->setText(tr("%1 — fixed for the life of this node.")
-                              .arg(fixed.join(QStringLiteral(", "))));
 
   m_cancelCheck->setChecked(
     m_root.value(QStringLiteral("supportsCancel")).toBool(false));
@@ -408,18 +476,8 @@ bool NodeDefinitionFormWidget::setJson(const QString& json)
     m_root.value(QStringLiteral("supportsComplete")).toBool(false));
   m_externalOnlyCheck->setChecked(
     m_root.value(QStringLiteral("externalOnly")).toBool(false));
-  // The legacy schema derives cancel/complete support from the script's
-  // operator base class instead, so the checkboxes would be lying.
-  bool v2 = m_schema == DefinitionSchema::V2;
-  m_cancelCheck->setEnabled(v2);
-  m_completeCheck->setEnabled(v2);
-  m_cancelCheck->setToolTip(
-    v2 ? QString()
-       : tr("Legacy nodes take this from the script's operator base "
-            "class."));
-  m_completeCheck->setToolTip(m_cancelCheck->toolTip());
 
-  refreshPortRows();
+  refreshSchemaDependentControls();
   refreshParameterRows();
   m_populating = false;
 
@@ -449,6 +507,8 @@ NodeDefinitionFormWidget::PortRow NodeDefinitionFormWidget::makePortRow(
 {
   PortRow row;
   row.container = new QWidget(this);
+  row.container->setObjectName(input ? QStringLiteral("inputPortRow")
+                                     : QStringLiteral("outputPortRow"));
   auto* layout = new QHBoxLayout(row.container);
   layout->setContentsMargins(0, 0, 0, 0);
 
@@ -535,16 +595,43 @@ void NodeDefinitionFormWidget::rebuildPortRows(bool input)
 
 void NodeDefinitionFormWidget::refreshPortRows()
 {
-  bool v2 = m_schema == DefinitionSchema::V2;
-  m_inputBox->setVisible(kPortsEditable && v2 &&
-                         m_shape == NodeShape::Transform);
-  m_outputBox->setVisible(kPortsEditable && v2);
-  m_legacyPortsNote->setVisible(kPortsEditable && !v2);
-  if (!kPortsEditable || !v2) {
+  const bool editable = kPortsEditable || identityEditable();
+  const bool v2 = currentSchema() == DefinitionSchema::V2;
+  // In file mode the inputs list is what makes a description a source
+  // or a transform, so it shows either way; a live node's shape is fixed.
+  const bool showInputs =
+    editable && v2 &&
+    (identityEditable() || m_shape == NodeShape::Transform);
+  m_inputBox->setVisible(showInputs);
+  m_outputBox->setVisible(editable && v2);
+  m_legacyPortsBox->setVisible(editable && !v2);
+  if (!editable) {
     return;
   }
-  rebuildPortRows(true);
-  rebuildPortRows(false);
+
+  if (v2) {
+    rebuildPortRows(true);
+    rebuildPortRows(false);
+    updateShapeNote();
+    return;
+  }
+
+  // Selecting the pickers must not commit back into the document.
+  const bool wasPopulating = m_populating;
+  m_populating = true;
+  auto select = [this](QComboBox* combo, const char* key) {
+    const QString type = m_root.value(QLatin1String(key)).toString();
+    int index = combo->findData(type);
+    if (index < 0) {
+      // A type this build doesn't offer: show it rather than rewrite it.
+      combo->addItem(type, type);
+      index = combo->count() - 1;
+    }
+    combo->setCurrentIndex(index);
+  };
+  select(m_legacyInputType, "inputType");
+  select(m_legacyOutputType, "outputType");
+  m_populating = wasPopulating;
 }
 
 void NodeDefinitionFormWidget::commitPorts(bool input)
@@ -575,6 +662,7 @@ void NodeDefinitionFormWidget::commitPorts(bool input)
     return;
   }
   m_root[key] = ports;
+  updateShapeNote();
   emit changed();
 }
 
@@ -589,6 +677,7 @@ void NodeDefinitionFormWidget::addPort(bool input)
   m_root[key] = ports;
 
   rebuildPortRows(input);
+  updateShapeNote();
   emit changed();
 }
 
@@ -990,7 +1079,7 @@ void NodeDefinitionFormWidget::commitRoot()
              m_descriptionEdit->text());
   // "help" isn't rendered, so it is left exactly as the description
   // declared it rather than being cleared on every commit.
-  if (m_schema == DefinitionSchema::V2) {
+  if (currentSchema() == DefinitionSchema::V2) {
     setOrClearBool(m_root, QStringLiteral("supportsCancel"),
                    m_cancelCheck->isChecked(), false);
     setOrClearBool(m_root, QStringLiteral("supportsComplete"),
@@ -999,6 +1088,91 @@ void NodeDefinitionFormWidget::commitRoot()
   setOrClearBool(m_root, QStringLiteral("externalOnly"),
                  m_externalOnlyCheck->isChecked(), false);
   emit changed();
+}
+
+// --- file mode -------------------------------------------------------
+
+bool NodeDefinitionFormWidget::identityEditable() const
+{
+  return m_target == DefinitionTarget::File;
+}
+
+DefinitionSchema NodeDefinitionFormWidget::currentSchema() const
+{
+  if (!identityEditable()) {
+    return m_schema;
+  }
+  return m_root.value(QStringLiteral("schemaVersion")).toInt(1) == 2
+           ? DefinitionSchema::V2
+           : DefinitionSchema::V1;
+}
+
+NodeShape NodeDefinitionFormWidget::currentShape() const
+{
+  if (!identityEditable()) {
+    return m_shape;
+  }
+  const bool v2 = currentSchema() == DefinitionSchema::V2;
+  return v2 && m_root.value(QLatin1String(kInputsKey)).toArray().isEmpty()
+           ? NodeShape::Source
+           : NodeShape::Transform;
+}
+
+void NodeDefinitionFormWidget::commitSchema()
+{
+  if (m_populating) {
+    return;
+  }
+  // Shipped v1 descriptors carry no "schemaVersion" at all, so going
+  // back to legacy removes the key rather than writing a 1. The port
+  // keys of the other schema are left in place for a round trip.
+  if (m_schemaCombo->currentData().toInt() == 2) {
+    m_root[QStringLiteral("schemaVersion")] = 2;
+  } else {
+    m_root.remove(QStringLiteral("schemaVersion"));
+  }
+  refreshSchemaDependentControls();
+  emit changed();
+}
+
+void NodeDefinitionFormWidget::commitLegacyPorts()
+{
+  if (m_populating) {
+    return;
+  }
+  setOrClear(m_root, QStringLiteral("inputType"),
+             m_legacyInputType->currentData().toString());
+  setOrClear(m_root, QStringLiteral("outputType"),
+             m_legacyOutputType->currentData().toString());
+  emit changed();
+}
+
+void NodeDefinitionFormWidget::refreshSchemaDependentControls()
+{
+  // The legacy schema derives cancel/complete support from the script's
+  // operator base class instead, so the checkboxes would be lying.
+  const bool v2 = currentSchema() == DefinitionSchema::V2;
+  m_cancelCheck->setEnabled(v2);
+  m_completeCheck->setEnabled(v2);
+  m_cancelCheck->setToolTip(
+    v2 ? QString()
+       : tr("Legacy nodes take this from the script's operator base "
+            "class."));
+  m_completeCheck->setToolTip(m_cancelCheck->toolTip());
+  refreshPortRows();
+}
+
+void NodeDefinitionFormWidget::updateShapeNote()
+{
+  if (!identityEditable()) {
+    m_shapeNote->hide();
+    return;
+  }
+  m_shapeNote->setText(
+    currentShape() == NodeShape::Source
+      ? tr("No inputs: this description is a source node.")
+      : tr("With inputs, this description is a transform node."));
+  m_shapeNote->show();
 }
 
 } // namespace pipeline

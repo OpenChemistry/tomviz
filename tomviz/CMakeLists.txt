@@ -52,6 +52,10 @@ set(SOURCES
   ConvertToFloatReaction.h
   CropReaction.cxx
   CropReaction.h
+  CustomOperatorEditDialog.cxx
+  CustomOperatorEditDialog.h
+  CustomOperatorManagerDialog.cxx
+  CustomOperatorManagerDialog.h
   SAM2SeedWidget.cxx
   SAM2SeedWidget.h
   SelectCylinderWidget.cxx
@@ -399,6 +403,8 @@ set(SOURCES
   pipeline/NodeDefinitionWidget.h
   pipeline/PythonNodeEditorWidget.cxx
   pipeline/PythonNodeEditorWidget.h
+  pipeline/PythonScriptEdit.cxx
+  pipeline/PythonScriptEdit.h
   pipeline/NodePropertiesPanel.cxx
   pipeline/NodePropertiesPanel.h
   pipeline/NodeEditDialog.cxx
@@ -612,6 +618,7 @@ set(python_files
   BinVolumeByTwo.py
   BinTiltSeriesByTwo.py
   DefaultCustomTransform.py
+  NewCustomTransform.py
   DefaultITKTransform.py
   BinaryMinMaxCurvatureFlow.py
   ReinterpretSignedToUnsigned.py
@@ -635,6 +642,7 @@ set(python_files
 
 set(json_files
   AddPoissonNoise.json
+  NewCustomTransform.json
   AutoCenterOfMassTiltImageAlignment.json
   AutoCrossCorrelationTiltImageAlignment.json
   AutoTiltAxisRotationAlignment.json
