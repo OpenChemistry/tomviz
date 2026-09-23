@@ -208,9 +208,17 @@ def _cache_dir_for(ptycho_dir: str | Path) -> Path:
 def _dir_fingerprint(ptycho_dir: str | Path) -> str:
     # A digest of the reconstruction files present and their mtimes, so
     # a new scan or an updated reconstruction changes the fingerprint.
+    # The small config beside them counts too: a scan is only complete
+    # once it has arrived, and it can land after the arrays.
     root = Path(ptycho_dir)
     entries = []
-    for path in sorted(root.glob('S*/*/recon_data/recon_*.npy')):
+    for path in sorted(root.glob('S*/*/recon_data/*')):
+        name = path.name
+        is_recon = name.startswith('recon_') and name.endswith('.npy')
+        is_config = (name[:1].isdigit() and
+                     path.suffix.lower() not in NON_CONFIG_SUFFIXES)
+        if not (is_recon or is_config):
+            continue
         try:
             entries.append(f'{path.relative_to(root)}:{path.stat().st_mtime}')
         except OSError:

@@ -121,6 +121,33 @@ def test_ptycho_ignores_incomplete_scans(tmp_path):
         [50001, 50002]
 
 
+def test_ptycho_absorbs_a_scan_whose_config_lands_last(tmp_path):
+    sim = _ptycho_sim()
+    mod, spec = _load_source('PtychoSource')
+    rng = np.random.default_rng(0)
+
+    sim.write_scan(tmp_path, 50001, -60.0, sim.BASE_SHAPE, rng)
+    kernel = _make_kernel(mod.PtychoSource, spec)
+    params = _ptycho_params(tmp_path, [50001], ['t1'], [-60.0])
+    assert kernel.should_auto_execute(**params) is False
+
+    # Both arrays first: a re-run, but nothing to absorb without an angle
+    recon = tmp_path / 'S50002' / 't1' / 'recon_data'
+    recon.mkdir(parents=True)
+    np.save(recon / 'recon_50002_t1_object_ave.npy',
+            np.zeros((4, 4), np.complex64))
+    np.save(recon / 'recon_50002_t1_probe_ave.npy',
+            np.zeros((4, 4), np.complex64))
+    assert kernel.should_auto_execute(**params) is True
+    assert 'sid_list' not in kernel._parameter_updates
+
+    # The config alone arriving completes the scan and must be noticed
+    (recon / '50002_t1.txt').write_text('angle = -58.0\n')
+    assert kernel.should_auto_execute(**params) is True
+    assert json.loads(kernel._parameter_updates['sid_list']) == \
+        [50001, 50002]
+
+
 def test_ptycho_produce_includes_absorbed_scans(tmp_path):
     sim = _ptycho_sim()
     mod, spec = _load_source('PtychoSource')
