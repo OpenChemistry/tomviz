@@ -742,7 +742,10 @@ public:
   // and replacing the viewpoint rebuilds the list, which would delete
   // the item Qt is still working with: the crash on the next right
   // click. So take the row and the text now, and apply them once the
-  // widget is done.
+  // widget is done. It also fires for the editable flag Rename sets
+  // just before opening the editor, when the text is unchanged: that
+  // must not rebuild the list either, or the editor is gone before the
+  // user has typed a letter.
   void commitViewpointRename(QListWidgetItem* item)
   {
     const int row = ui.viewpointList->row(item);
@@ -753,7 +756,10 @@ public:
         return;
       }
       auto viewpoint = viewpoints.at(row);
-      if (name.isEmpty() || name == viewpoint.name) {
+      if (name == viewpoint.name) {
+        return;
+      }
+      if (name.isEmpty()) {
         // Rejected edit; put the old name back.
         refreshViewpoints();
         return;

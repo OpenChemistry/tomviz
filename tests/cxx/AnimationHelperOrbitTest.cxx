@@ -8,6 +8,7 @@
 #include <QLabel>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QLineEdit>
 #include <QListWidget>
 #include <QPushButton>
 #include <QSpinBox>
@@ -466,6 +467,12 @@ private slots:
     auto* item = m_list->item(1);
     item->setFlags(item->flags() | Qt::ItemIsEditable);
     m_list->editItem(item);
+    QVERIFY(m_list->findChild<QLineEdit*>() != nullptr);
+    // Setting the flag alone reports the item as changed. The editor the
+    // user is typing into has to survive the event loop that follows.
+    QTest::qWait(20);
+    QVERIFY(m_list->findChild<QLineEdit*>() != nullptr);
+    QCOMPARE(m_list->item(1), item);
     item->setText("Detail");
     m_list->closePersistentEditor(item);
     // Not yet: the widget is still the owner of that edit
