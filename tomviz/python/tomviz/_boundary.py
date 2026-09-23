@@ -173,8 +173,19 @@ def flush_dataset(dataset, image=None):
             view = np_s.vtk_to_numpy(existing)
             if _same_buffer(view, np.asarray(arr)):
                 continue
-        contiguous = np.asfortranarray(arr)
-        vtkarray = np_s.numpy_to_vtk(contiguous.ravel(order='A'), deep=1)
+        replacement = np.asarray(arr)
+        if replacement.ndim == 4:
+            # A multi-component array (dims + components, as _as_views
+            # shapes it): VTK stores it tuple by tuple with x fastest,
+            # so the components have to interleave, not trail.
+            comps = replacement.shape[3]
+            flat = replacement.transpose(3, 0, 1, 2).ravel(order='F')
+            tuples = np.ascontiguousarray(flat.reshape(-1, comps))
+            vtkarray = np_s.numpy_to_vtk(tuples, deep=1)
+        else:
+            contiguous = np.asfortranarray(replacement)
+            vtkarray = np_s.numpy_to_vtk(contiguous.ravel(order='A'),
+                                         deep=1)
         vtkarray.SetName(name)
         pd.RemoveArray(name)
         pd.AddArray(vtkarray)

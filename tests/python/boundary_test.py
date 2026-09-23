@@ -59,6 +59,39 @@ def test_flush_replaced_array_and_metadata():
     assert list(ta) == [0.0, 1.0]
 
 
+def test_flush_replaced_multi_component_array_keeps_its_components():
+    # An RGB stack is one array of three components per voxel. Replacing
+    # it has to come back as such, with the components interleaved the
+    # way VTK stores them, not as one long single-component array.
+    dims = (3, 4, 5)
+    comps = 3
+    n = dims[0] * dims[1] * dims[2]
+    img = vtk.vtkImageData()
+    img.SetDimensions(*dims)
+    tuples = np.arange(n * comps, dtype=np.float32).reshape(n, comps)
+    va = np_s.numpy_to_vtk(tuples, deep=1)
+    va.SetName('RGB')
+    img.GetPointData().SetScalars(va)
+
+    ds = _boundary.wrap_vtk_image(img)
+    view = ds.active_scalars
+    assert view.shape == dims + (comps,)
+    x, y, z = 1, 2, 3
+    t = x + dims[0] * (y + dims[1] * z)
+    assert view[x, y, z, 1] == tuples[t, 1]
+
+    ds.active_scalars = view * 2
+    _boundary.flush_dataset(ds)
+    out = img.GetPointData().GetScalars()
+    assert out.GetNumberOfComponents() == comps
+    assert out.GetNumberOfTuples() == n
+    flushed = np_s.vtk_to_numpy(out)
+    assert np.array_equal(flushed, tuples * 2)
+    # And the views over the new buffer read the same way again
+    assert _boundary.wrap_vtk_image(img).active_scalars[x, y, z, 1] == \
+        2 * tuples[t, 1]
+
+
 def test_deepcopy_does_not_clone_backing_vtk():
     """Regression: a deep-copied wrapped dataset must NOT carry the VTK
     backing image. Otherwise copy.deepcopy (used by
