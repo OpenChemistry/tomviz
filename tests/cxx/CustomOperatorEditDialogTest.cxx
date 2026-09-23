@@ -553,7 +553,10 @@ TEST_F(CustomOperatorEditDialogTest,
   EXPECT_FALSE(draft->isBacked());
   EXPECT_EQ(stemEdit(draft)->text(), expectedStem);
   EXPECT_EQ(scriptEditor(draft)->toPlainText(), script);
-  EXPECT_EQ(jsonEditor(draft)->toPlainText(), original);
+  // A text edit stores line breaks as "\n" whatever the file used (a
+  // Windows checkout ships the description with "\r\n").
+  EXPECT_EQ(jsonEditor(draft)->toPlainText(),
+            QString(original).replace("\r\n", "\n"));
   EXPECT_TRUE(QDir(userDir.path()).entryList(QDir::Files).isEmpty());
 
   ASSERT_TRUE(saveButton(draft)->isEnabled());

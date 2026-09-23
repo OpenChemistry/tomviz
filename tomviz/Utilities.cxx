@@ -1442,6 +1442,12 @@ QStringList customOperatorSearchPaths()
     return paths;
   }
 
+  // ~/.tomviz, where earlier releases also looked; kept so operators
+  // placed there keep appearing (read-only, unlike userDataPath()).
+  for (const QString& home :
+       QStandardPaths::standardLocations(QStandardPaths::HomeLocation)) {
+    addIfDir(QDir(home).filePath(QStringLiteral(".tomviz")));
+  }
   // The platform app-data directories, e.g.
   // C:/Users/<USER>/AppData/Local/tomviz on Windows.
   for (const QString& path :

@@ -11,6 +11,7 @@
 #include "Utilities.h"
 
 #include <QDir>
+#include <QStandardPaths>
 #include <QFileInfo>
 #include <QTemporaryDir>
 
@@ -204,4 +205,21 @@ TEST_F(UtilitiesTest, custom_operator_search_paths_default_to_existing_dirs)
   for (const QString& path : paths) {
     EXPECT_TRUE(QFileInfo(path).isDir()) << path.toStdString();
   }
+}
+
+TEST_F(UtilitiesTest, custom_operator_search_paths_keep_the_dot_tomviz_dir)
+{
+  ScopedEnv guard(kCustomTransformsPath);
+  qunsetenv(kCustomTransformsPath);
+  const QString home =
+    QStandardPaths::standardLocations(QStandardPaths::HomeLocation).first();
+  const QString legacy = QDir::cleanPath(QDir(home).filePath(".tomviz"));
+
+  const QStringList paths = customOperatorSearchPaths();
+  EXPECT_EQ(paths.contains(legacy), QFileInfo(legacy).isDir())
+    << legacy.toStdString();
+  // The environment override replaces the default locations entirely.
+  QTemporaryDir only;
+  qputenv(kCustomTransformsPath, only.path().toLocal8Bit());
+  EXPECT_FALSE(customOperatorSearchPaths().contains(legacy));
 }

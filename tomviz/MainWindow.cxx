@@ -905,7 +905,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   // Sources, Filters, and Extractors)
   auto showSearch = [this]() {
     // Custom operators can change on disk without the menu ever having
-    // been opened; a rescan is a directory listing, cheap enough here.
+    // been opened; a rescan only lists the directories and parses the
+    // JSON descriptions, cheap enough here.
     registerCustomOperators(findCustomOperators());
     m_operatorSearchDialog->show();
     m_operatorSearchDialog->raise();

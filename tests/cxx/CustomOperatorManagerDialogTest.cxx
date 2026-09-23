@@ -6,7 +6,9 @@
 #include "CustomOperatorManagerDialog.h"
 
 #include <QCoreApplication>
+#include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QLabel>
 #include <QPushButton>
 #include <QTest>
@@ -35,6 +37,13 @@ OperatorDescription describe(const QString& label, const QString& dir,
   op.userOwned = userOwned;
   op.type = type;
   return op;
+}
+
+// A directory as the dialog displays it: absolute, with the platform's
+// separators (and drive letter on Windows).
+QString nativeDirectory(const QString& directory)
+{
+  return QDir::toNativeSeparators(QFileInfo(directory).absoluteFilePath());
 }
 
 class CustomOperatorManagerDialogTest : public ::testing::Test
@@ -154,14 +163,16 @@ TEST_F(CustomOperatorManagerDialogTest, groups_sources_above_transforms)
 
 TEST_F(CustomOperatorManagerDialogTest, rows_show_path_and_state)
 {
+  // The directory is shown the way the platform writes it (a drive letter
+  // and backslashes on Windows).
   auto* blurPath = rowWidget<QLabel>("customOperatorPath", "Blur");
   ASSERT_NE(blurPath, nullptr);
-  EXPECT_EQ(blurPath->toolTip(), "/user");
-  EXPECT_EQ(blurPath->text(), "/user");
+  EXPECT_EQ(blurPath->toolTip(), nativeDirectory("/user"));
+  EXPECT_EQ(blurPath->text(), nativeDirectory("/user"));
 
   auto* noisePath = rowWidget<QLabel>("customOperatorPath", "Noise");
   ASSERT_NE(noisePath, nullptr);
-  EXPECT_EQ(noisePath->toolTip(), "/elsewhere");
+  EXPECT_EQ(noisePath->toolTip(), nativeDirectory("/elsewhere"));
 
   // A broken definition is greyed and says why on hover.
   EXPECT_FALSE(rowWidget<QLabel>("customOperatorName", "Broken")->isEnabled());
@@ -185,12 +196,13 @@ TEST_F(CustomOperatorManagerDialogTest, long_paths_are_elided_in_the_middle)
   // Both ends survive, the middle goes, and the tooltip keeps it all.
   auto* path = rowWidget<QLabel>("customOperatorPath", "Deep");
   ASSERT_NE(path, nullptr);
+  const QString full = nativeDirectory("/a/very/long/directory");
   const QString shown = path->text();
   EXPECT_TRUE(shown.contains(QChar(0x2026))) << shown.toStdString();
   EXPECT_LT(shown.size(), path->toolTip().size());
-  EXPECT_TRUE(shown.startsWith("/a")) << shown.toStdString();
+  EXPECT_TRUE(shown.startsWith(full.left(4))) << shown.toStdString();
   EXPECT_TRUE(shown.endsWith("give")) << shown.toStdString();
-  EXPECT_TRUE(path->toolTip().startsWith("/a/very/long/directory"));
+  EXPECT_TRUE(path->toolTip().startsWith(full)) << full.toStdString();
   EXPECT_FALSE(path->toolTip().contains(QChar(0x2026)));
 }
 
