@@ -39,12 +39,12 @@ using tomviz::pipeline::planeTravelRange;
 
 namespace {
 
-Viewpoint viewpointAt(double x, double duration, bool eased)
+Viewpoint viewpointAt(double x, int legFrames, bool eased)
 {
   Viewpoint viewpoint;
   viewpoint.position = { x, 0, 10 };
   viewpoint.focalPoint = { x, 0, 0 };
-  viewpoint.duration = duration;
+  viewpoint.legFrames = legFrames;
   viewpoint.eased = eased;
   return viewpoint;
 }
@@ -98,11 +98,11 @@ TEST_F(AnimationTest, SegmentDurationsDivideUpTheAnimation)
 {
   EXPECT_TRUE(viewpoints().stops().isEmpty());
 
-  viewpoints().append(viewpointAt(0, 1.0, false));
+  viewpoints().append(viewpointAt(0, 1, false));
   EXPECT_TRUE(viewpoints().stops().isEmpty()) << "one viewpoint is not a path";
 
-  viewpoints().append(viewpointAt(1, 3.0, false));
-  viewpoints().append(viewpointAt(2, 1.0, false));
+  viewpoints().append(viewpointAt(1, 3, false));
+  viewpoints().append(viewpointAt(2, 1, false));
 
   // The first leg is a quarter as long as the second, so it is over a
   // quarter of the way through.
@@ -113,8 +113,8 @@ TEST_F(AnimationTest, SegmentDurationsDivideUpTheAnimation)
   EXPECT_DOUBLE_EQ(stops[2], 1.0);
 
   // Durations that leave no time at all fall back to equal legs.
-  viewpoints().replace(0, viewpointAt(0, 0.0, false));
-  viewpoints().replace(1, viewpointAt(1, 0.0, false));
+  viewpoints().replace(0, viewpointAt(0, 0, false));
+  viewpoints().replace(1, viewpointAt(1, 0, false));
   stops = viewpoints().stops();
   ASSERT_EQ(stops.size(), 3);
   EXPECT_DOUBLE_EQ(stops[1], 0.5);
@@ -122,9 +122,9 @@ TEST_F(AnimationTest, SegmentDurationsDivideUpTheAnimation)
 
 TEST_F(AnimationTest, RemappingProgressLeavesTheViewpointsWhereTheyAre)
 {
-  viewpoints().append(viewpointAt(0, 3.0, true));
-  viewpoints().append(viewpointAt(1, 1.0, true));
-  viewpoints().append(viewpointAt(2, 1.0, true));
+  viewpoints().append(viewpointAt(0, 3, true));
+  viewpoints().append(viewpointAt(1, 1, true));
+  viewpoints().append(viewpointAt(2, 1, true));
 
   // Easing changes the pacing inside a leg, never when a leg ends.
   for (auto stop : viewpoints().stops()) {
@@ -147,14 +147,14 @@ TEST_F(AnimationTest, RemappingProgressLeavesTheViewpointsWhereTheyAre)
 
 TEST_F(AnimationTest, EasingSlowsTheEndsOfALegAndNotItsMiddle)
 {
-  viewpoints().append(viewpointAt(0, 1.0, false));
-  viewpoints().append(viewpointAt(1, 1.0, false));
+  viewpoints().append(viewpointAt(0, 1, false));
+  viewpoints().append(viewpointAt(1, 1, false));
 
   // Without easing the camera moves at a constant rate.
   EXPECT_DOUBLE_EQ(viewpoints().remapProgress(0.25), 0.25);
   EXPECT_DOUBLE_EQ(viewpoints().remapProgress(0.75), 0.75);
 
-  viewpoints().replace(0, viewpointAt(0, 1.0, true));
+  viewpoints().replace(0, viewpointAt(0, 1, true));
 
   // With it, the camera has covered less of the leg by the first quarter
   // and more by the last, and the two ends stay symmetric.
@@ -168,9 +168,9 @@ TEST_F(AnimationTest, EasingSlowsTheEndsOfALegAndNotItsMiddle)
 
 TEST_F(AnimationTest, BindingToALegConfinesAnAnimationToIt)
 {
-  viewpoints().append(viewpointAt(0, 1.0, false));
-  viewpoints().append(viewpointAt(1, 3.0, false));
-  viewpoints().append(viewpointAt(2, 1.0, false));
+  viewpoints().append(viewpointAt(0, 1, false));
+  viewpoints().append(viewpointAt(1, 3, false));
+  viewpoints().append(viewpointAt(2, 1, false));
   // Legs run 0 -> 0.25 -> 1.
 
   // The first leg: done by the time the camera reaches viewpoint 2, and
@@ -193,9 +193,9 @@ TEST_F(AnimationTest, BindingToALegConfinesAnAnimationToIt)
 
 TEST_F(AnimationTest, ThePathPassesThroughEveryViewpoint)
 {
-  viewpoints().append(viewpointAt(0, 1.0, true));
-  viewpoints().append(viewpointAt(5, 3.0, true));
-  viewpoints().append(viewpointAt(9, 1.0, true));
+  viewpoints().append(viewpointAt(0, 1, true));
+  viewpoints().append(viewpointAt(5, 3, true));
+  viewpoints().append(viewpointAt(9, 1, true));
 
   auto stops = viewpoints().stops();
   ASSERT_EQ(stops.size(), 3);
@@ -220,6 +220,9 @@ Viewpoint lookingAtOrigin(const std::array<double, 3>& position, int turns)
   viewpoint.viewUp = { 0, 1, 0 };
   viewpoint.orbitTurns = turns;
   viewpoint.eased = false;
+  // Equal shares for legs and orbits, so the stops below come out round
+  viewpoint.legFrames = 1;
+  viewpoint.orbitFrames = 1;
   return viewpoint;
 }
 
@@ -285,8 +288,8 @@ TEST_F(AnimationTest, AnOrbitingViewpointSpinsInPlace)
 TEST_F(AnimationTest, AnOrbitHoldsTheLegAndTheAnchorsStill)
 {
   auto first = lookingAtOrigin({ 0, 0, 10 }, 1);
-  first.duration = 1.0;
-  first.orbitDuration = 1.0;
+  first.legFrames = 1;
+  first.orbitFrames = 1;
   viewpoints().append(first);
   viewpoints().append(lookingAtOrigin({ 0, 0, -10 }, 0));
 
@@ -316,7 +319,7 @@ TEST_F(AnimationTest, AnOrbitHoldsTheLegAndTheAnchorsStill)
   EXPECT_DOUBLE_EQ(tomviz::anchorSpanAt(anchors, 0.75).u, 0.5);
 
   // A longer orbit takes a bigger share
-  first.orbitDuration = 3.0;
+  first.orbitFrames = 3;
   viewpoints().replace(0, first);
   EXPECT_DOUBLE_EQ(viewpoints().departures()[0], 0.75);
 }
@@ -359,6 +362,95 @@ TEST_F(AnimationTest, AnOrbitOnTheAxisHoldsStill)
   expectNear(p, { 0, 10, 0 }, "stays put");
 }
 
+// Legs of no length are cuts. The path still has a start and an end to
+// play, and a run whose cameras all sit at one time has nothing for a
+// spline to curve through, which must not come out as garbage.
+TEST_F(AnimationTest, LegsOfNoLengthAreCuts)
+{
+  viewpoints().append(viewpointAt(0, 0, false));
+  viewpoints().append(viewpointAt(1, 0, false));
+  viewpoints().append(viewpointAt(2, 0, false));
+  EXPECT_EQ(viewpoints().totalFrames(), 2);
+  for (double t : { 0.0, 0.3, 0.5, 0.7, 1.0 }) {
+    auto p = positionAt(t);
+    for (int k = 0; k < 3; ++k) {
+      EXPECT_FALSE(std::isnan(p[k])) << "t = " << t;
+    }
+    EXPECT_GE(p[0], 0.0) << "t = " << t;
+    EXPECT_LE(p[0], 2.0) << "t = " << t;
+  }
+  expectNear(positionAt(1.0), { 2, 0, 10 }, "ends at the last viewpoint");
+
+  // One cut among real legs: the path jumps there and flies the rest
+  viewpoints().clear();
+  viewpoints().append(viewpointAt(0, 30, false));
+  viewpoints().append(viewpointAt(1, 0, false));
+  viewpoints().append(viewpointAt(2, 30, false));
+  viewpoints().append(viewpointAt(3, 30, false));
+  EXPECT_EQ(viewpoints().totalFrames(), 30 + 0 + 30);
+  expectNear(positionAt(0.0), { 0, 0, 10 }, "start");
+  expectNear(positionAt(1.0), { 3, 0, 10 }, "end");
+  for (double t : { 0.1, 1.0 / 3.0, 0.5, 0.9 }) {
+    auto p = positionAt(t);
+    for (int k = 0; k < 3; ++k) {
+      EXPECT_FALSE(std::isnan(p[k])) << "t = " << t;
+    }
+  }
+}
+
+// The animation is as long as the path: legs and orbits added up.
+TEST_F(AnimationTest, ThePathSetsTheFrameCount)
+{
+  EXPECT_EQ(viewpoints().totalFrames(), 0);
+  viewpoints().append(viewpointAt(0, 40, false));
+  EXPECT_EQ(viewpoints().totalFrames(), 0) << "one plain viewpoint is no path";
+  viewpoints().append(viewpointAt(1, 25, false));
+  EXPECT_EQ(viewpoints().totalFrames(), 40) << "the last leg count is unused";
+  auto spinning = viewpointAt(2, 7, false);
+  spinning.orbitTurns = 1;
+  spinning.orbitFrames = 30;
+  viewpoints().append(spinning);
+  EXPECT_EQ(viewpoints().totalFrames(), 40 + 25 + 30);
+  // A lone orbit is an animation of its own length
+  viewpoints().clear();
+  viewpoints().append(spinning);
+  EXPECT_EQ(viewpoints().totalFrames(), 30);
+}
+
+// A file from before legs had frame counts carried relative durations
+// and one total; each piece gets its share of that total.
+TEST_F(AnimationTest, LegacyDurationsBecomeFrameShares)
+{
+  QJsonObject a;
+  a["duration"] = 1.0;
+  QJsonObject b;
+  b["duration"] = 3.0;
+  b["orbitTurns"] = 1;
+  b["orbitDuration"] = 2.0;
+  QJsonObject c;
+  QJsonObject file;
+  file["viewpoints"] = QJsonArray{ a, b, c };
+  file["numberOfFrames"] = 120;
+  ASSERT_TRUE(viewpoints().deserialize(file));
+  // Weights 1 + 3 + 2 = 6 over 120 frames
+  EXPECT_EQ(viewpoints().at(0).legFrames, 20);
+  EXPECT_EQ(viewpoints().at(1).legFrames, 60);
+  EXPECT_EQ(viewpoints().at(1).orbitFrames, 40);
+  EXPECT_EQ(viewpoints().totalFrames(), 120);
+
+  // A current file is taken as written
+  QJsonObject d;
+  d["legFrames"] = 15;
+  QJsonObject e;
+  e["legFrames"] = 99;
+  QJsonObject current;
+  current["viewpoints"] = QJsonArray{ d, e };
+  current["numberOfFrames"] = 1000;
+  ASSERT_TRUE(viewpoints().deserialize(current));
+  EXPECT_EQ(viewpoints().at(0).legFrames, 15);
+  EXPECT_EQ(viewpoints().totalFrames(), 15);
+}
+
 TEST_F(AnimationTest, ViewpointsSurviveAStateFileRoundTrip)
 {
   Viewpoint saved;
@@ -368,15 +460,15 @@ TEST_F(AnimationTest, ViewpointsSurviveAStateFileRoundTrip)
   saved.viewAngle = 45;
   saved.parallelScale = 2.5;
   saved.parallelProjection = true;
-  saved.duration = 2.5;
+  saved.legFrames = 25;
   saved.eased = false;
   saved.orbitTurns = -2;
-  saved.orbitDuration = 0.5;
+  saved.orbitFrames = 50;
   saved.name = "Money shot";
   saved.thumbnail = QByteArray("not really a png, but it should come back");
 
   viewpoints().append(saved);
-  viewpoints().append(viewpointAt(7, 1.0, true));
+  viewpoints().append(viewpointAt(7, 1, true));
   viewpoints().setCaptionPosition(0.6, 0.9);
   auto json = viewpoints().serialize();
 
@@ -394,10 +486,10 @@ TEST_F(AnimationTest, ViewpointsSurviveAStateFileRoundTrip)
   EXPECT_DOUBLE_EQ(restored.viewAngle, saved.viewAngle);
   EXPECT_DOUBLE_EQ(restored.parallelScale, saved.parallelScale);
   EXPECT_TRUE(restored.parallelProjection);
-  EXPECT_DOUBLE_EQ(restored.duration, saved.duration);
+  EXPECT_EQ(restored.legFrames, 25);
   EXPECT_FALSE(restored.eased);
   EXPECT_EQ(restored.orbitTurns, -2);
-  EXPECT_DOUBLE_EQ(restored.orbitDuration, 0.5);
+  EXPECT_EQ(restored.orbitFrames, 50);
   EXPECT_EQ(viewpoints().at(1).orbitTurns, 0) << "absent means no orbit";
   EXPECT_EQ(restored.thumbnail, saved.thumbnail);
   EXPECT_EQ(restored.name, saved.name);
@@ -454,7 +546,7 @@ TEST_F(AnimationTest, RecordedThresholdChangesNameTheEndThatMoved)
   const int id = pipeline.nodeId(threshold);
 
   auto record = [&](double lower, double upper) {
-    Viewpoint viewpoint = viewpointAt(0.0, 1.0, false);
+    Viewpoint viewpoint = viewpointAt(0.0, 1, false);
     SinkSnapshot snapshot;
     snapshot.thresholdLower = lower;
     snapshot.thresholdUpper = upper;
@@ -525,12 +617,12 @@ TEST_F(AnimationTest, SavedAnimationsWithoutTheirVisualizationAreDropped)
 
 TEST_F(AnimationTest, DefaultViewpointNamesAreNotReused)
 {
-  auto first = viewpointAt(0, 1.0, true);
+  auto first = viewpointAt(0, 1, true);
   first.name = viewpoints().nextDefaultName();
   viewpoints().append(first);
   EXPECT_EQ(first.name, QString("Viewpoint 1"));
 
-  auto second = viewpointAt(1, 1.0, true);
+  auto second = viewpointAt(1, 1, true);
   second.name = viewpoints().nextDefaultName();
   viewpoints().append(second);
   EXPECT_EQ(second.name, QString("Viewpoint 2"));
@@ -556,9 +648,9 @@ TEST_F(AnimationTest, CurveAnchorsResolveThroughTheCameraPath)
   EXPECT_DOUBLE_EQ(viewpoints().anchorTime(1), 1.0);
   EXPECT_DOUBLE_EQ(viewpoints().anchorTime(5), 1.0);
 
-  viewpoints().append(viewpointAt(0, 1.0, false));
-  viewpoints().append(viewpointAt(1, 3.0, false));
-  viewpoints().append(viewpointAt(2, 1.0, false));
+  viewpoints().append(viewpointAt(0, 1, false));
+  viewpoints().append(viewpointAt(1, 3, false));
+  viewpoints().append(viewpointAt(2, 1, false));
 
   // Anchored curves land when the camera does, so they follow the same
   // stops that pace it, retiming and all.
@@ -828,9 +920,9 @@ TEST_F(AnimationTest, RecordedChangesIncludeSlicePositionsAndIsoValues)
 
 TEST_F(AnimationTest, AnchorSpansFollowThePathStops)
 {
-  viewpoints().append(viewpointAt(0, 1.0, false));
-  viewpoints().append(viewpointAt(1, 1.0, false));
-  viewpoints().append(viewpointAt(2, 2.0, false));
+  viewpoints().append(viewpointAt(0, 1, false));
+  viewpoints().append(viewpointAt(1, 1, false));
+  viewpoints().append(viewpointAt(2, 2, false));
   // Stops at 0, 0.25, 1; anchors 0 and 2 recorded
   QList<int> anchors = { 0, 2 };
   auto before = tomviz::anchorSpanAt(anchors, -0.1);

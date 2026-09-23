@@ -34,10 +34,11 @@ struct Viewpoint
   double parallelScale = 1.0;
   bool parallelProjection = false;
 
-  /// How long the segment leaving this viewpoint runs, relative to the
-  /// other segments. The last viewpoint has no segment leaving it, so
-  /// its value is unused.
-  double duration = 1.0;
+  /// Frames the leg leaving this viewpoint takes. The animation is as
+  /// long as its legs and orbits add up to, so lengthening one leg
+  /// never shortens another. The last viewpoint has no leg leaving it,
+  /// so its value is unused.
+  int legFrames = 60;
 
   /// Ease in and out of that segment, so the camera slows to a stop at
   /// each end instead of rounding the corner at full speed.
@@ -50,10 +51,8 @@ struct Viewpoint
   /// can orbit too, which ends the animation on a spin.
   int orbitTurns = 0;
 
-  /// How long that orbit lasts, relative to the legs and the other
-  /// orbits, on the same scale as `duration`. Unused when orbitTurns
-  /// is 0.
-  double orbitDuration = 1.0;
+  /// Frames that orbit takes. Unused when orbitTurns is 0.
+  int orbitFrames = 120;
 
   /// What the user calls this viewpoint. Stable: renumbering on every
   /// delete would silently repoint anything that refers to viewpoints by
@@ -111,6 +110,11 @@ public:
   /// Whether there is anything to fly: two or more viewpoints, or one
   /// that orbits, which is an animation on its own.
   bool isPath() const;
+
+  /// Frames the whole path takes: its legs and orbits added up, never
+  /// below two. Zero without a path. The animation scene is kept at
+  /// this count while there is a path (see AnimationSceneGuard).
+  int totalFrames() const;
 
   void append(const Viewpoint& viewpoint);
   void replace(int index, const Viewpoint& viewpoint);

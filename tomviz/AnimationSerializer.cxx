@@ -81,8 +81,12 @@ void AnimationSerializer::restore(const QJsonObject& doc,
   // Loading a state file builds a fresh animation scene, which the view
   // restore leaves on the frame count used for newly loaded data. A file
   // that recorded its own count knows better; one that did not keeps it.
+  // With a path the count is what its legs and orbits add up to; the
+  // saved total only applies without one.
   int numberOfFrames = animation["numberOfFrames"].toInt(0);
-  if (numberOfFrames > 0) {
+  if (viewpoints.isPath()) {
+    setAnimationNumberOfFrames(viewpoints.totalFrames());
+  } else if (numberOfFrames > 0) {
     setAnimationNumberOfFrames(numberOfFrames);
   }
 }

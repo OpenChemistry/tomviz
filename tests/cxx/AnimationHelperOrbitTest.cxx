@@ -5,6 +5,7 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDoubleSpinBox>
+#include <QLabel>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QListWidget>
@@ -133,9 +134,11 @@ private slots:
     m_orbit = m_dialog->findChild<QCheckBox*>("viewpointOrbit");
     m_turns = m_dialog->findChild<QSpinBox*>("orbitTurns");
     m_direction = m_dialog->findChild<QComboBox*>("orbitDirection");
-    m_duration = m_dialog->findChild<QDoubleSpinBox*>("orbitDuration");
+    m_duration = m_dialog->findChild<QSpinBox*>("orbitFrames");
+    m_frames = m_dialog->findChild<QSpinBox*>("numberOfFrames");
+    m_framesLabel = m_dialog->findChild<QLabel*>("numberOfFramesLabel");
     QVERIFY(m_add && m_clear && m_remove && m_export && m_list && m_orbit &&
-            m_turns && m_direction && m_duration);
+            m_turns && m_direction && m_duration && m_frames && m_framesLabel);
   }
 
   void cleanup()
@@ -170,7 +173,7 @@ private slots:
     // and reveals the details with their defaults
     m_orbit->setChecked(true);
     QCOMPARE(viewpoints.at(0).orbitTurns, 1);
-    QCOMPARE(viewpoints.at(0).orbitDuration, 1.0);
+    QCOMPARE(viewpoints.at(0).orbitFrames, 120);
     QVERIFY(viewpoints.isPath());
     QVERIFY(viewpoints.isFlying());
     QVERIFY(!m_turns->isHidden());
@@ -185,12 +188,18 @@ private slots:
     QCOMPARE(viewpoints.at(0).orbitTurns, 3);
     m_direction->setCurrentIndex(1);
     QCOMPARE(viewpoints.at(0).orbitTurns, -3);
-    m_duration->setValue(2.5);
-    QCOMPARE(viewpoints.at(0).orbitDuration, 2.5);
+    m_duration->setValue(150);
+    QCOMPARE(viewpoints.at(0).orbitFrames, 150);
     // And survive the list being rebuilt around them
     QCOMPARE(m_turns->value(), 3);
     QCOMPARE(m_direction->currentIndex(), 1);
-    QCOMPARE(m_duration->value(), 2.5);
+    QCOMPARE(m_duration->value(), 150);
+    // The path sets the frame count, and the dialog shows the total in
+    // place of the box
+    QVERIFY(m_frames->isHidden());
+    QCOMPARE(m_framesLabel->text(), QString("Total: 150 frames"));
+    auto* sceneProxy = scene()->getProxy();
+    QCOMPARE(vtkSMPropertyHelper(sceneProxy, "NumberOfFrames").GetAsInt(), 150);
 
     // Unticking takes the orbit away, and with it the path and the flight
     m_orbit->setChecked(false);
@@ -204,7 +213,7 @@ private slots:
     // orbit, and the second viewpoint alone keeps the path flying
     m_orbit->setChecked(true);
     QCOMPARE(viewpoints.at(0).orbitTurns, 1);
-    QCOMPARE(viewpoints.at(0).orbitDuration, 2.5);
+    QCOMPARE(viewpoints.at(0).orbitFrames, 150);
     m_turns->setValue(3);
     m_direction->setCurrentIndex(1);
     QCOMPARE(viewpoints.at(0).orbitTurns, -3);
@@ -218,7 +227,10 @@ private slots:
     QVERIFY(m_orbit->isChecked());
     QCOMPARE(m_turns->value(), 3);
     QCOMPARE(m_direction->currentIndex(), 1);
-    QCOMPARE(m_duration->value(), 2.5);
+    QCOMPARE(m_duration->value(), 150);
+    // Two viewpoints: the orbit plus the leg between them
+    QCOMPARE(viewpoints.totalFrames(), 150 + 60);
+    QCOMPARE(vtkSMPropertyHelper(scene()->getProxy(), "NumberOfFrames").GetAsInt(), 210);
     m_list->setCurrentRow(1);
     m_orbit->setChecked(false);
     QVERIFY2(viewpoints.at(0).orbitTurns == -3, "the other row was edited");
@@ -235,6 +247,9 @@ private slots:
     QVERIFY(!viewpoints.isFlying());
     QVERIFY(!m_export->isEnabled());
     QVERIFY(!m_orbit->isEnabled());
+    // No path: the frame count is the user's again
+    QVERIFY(!m_frames->isHidden());
+    QCOMPARE(m_framesLabel->text(), QString("Number of Frames:"));
   }
 
   // An edit made while the animation plays stops it after that tick and
@@ -259,11 +274,13 @@ private slots:
     proxy->UpdatePropertyInformation();
     QCOMPARE(vtkSMPropertyHelper(proxy, "AnimationTime").GetAsDouble(), 0.0);
 
-    // From the top, all the way through
+    // From the top, all the way through: the path now sets the count,
+    // one 60-frame leg
     probe.pressAt = -1;
     probe.ticks = 0;
     proxy->InvokeCommand("Play");
-    QVERIFY2(probe.ticks >= 98,
+    QCOMPARE(vtkSMPropertyHelper(proxy, "NumberOfFrames").GetAsInt(), 60);
+    QVERIFY2(probe.ticks >= 58,
              qPrintable(QString("only %1 ticks").arg(probe.ticks)));
 
     // A paused animation is not disturbed by an edit
@@ -328,6 +345,8 @@ private slots:
     QCOMPARE(viewpoints.size(), 1);
     QCOMPARE(viewpoints.at(0).name, QString("Camera Orbit"));
     QCOMPARE(viewpoints.at(0).orbitTurns, 1);
+    // As long as the animation was set to be
+    QCOMPARE(viewpoints.at(0).orbitFrames, 60);
     QVERIFY(!viewpoints.at(0).scene.isEmpty());
     QVERIFY(viewpoints.isFlying());
     QVERIFY(probe.ticks >= 58);
@@ -361,7 +380,7 @@ private slots:
     auto* camera = m_view->getRenderViewProxy()->GetActiveCamera();
     auto* proxy = scene()->getProxy();
     auto* update = m_dialog->findChild<QPushButton*>("updateViewpoint");
-    auto* duration = m_dialog->findChild<QDoubleSpinBox*>("segmentDuration");
+    auto* duration = m_dialog->findChild<QSpinBox*>("segmentDuration");
     auto* frames = m_dialog->findChild<QSpinBox*>("numberOfFrames");
     QVERIFY(update && duration && frames);
 
@@ -390,7 +409,7 @@ private slots:
       // Rename applies on the next event-loop turn, once the list widget
       // is done with its own edit
       { "rename", [&]() { m_list->item(0)->setText("Hero shot"); } },
-      { "leg duration", [&]() { m_list->setCurrentRow(0); duration->setValue(2.0); } },
+      { "leg frames", [&]() { m_list->setCurrentRow(0); duration->setValue(80); } },
       { "orbit turns", [&]() { m_list->setCurrentRow(0); m_orbit->setChecked(true); m_turns->setValue(2); } },
       { "orbit off", [&]() { m_list->setCurrentRow(0); m_orbit->setChecked(false); } },
       { "frame count", [&]() { frames->setValue(80); } },
@@ -547,7 +566,9 @@ private:
   QCheckBox* m_orbit = nullptr;
   QSpinBox* m_turns = nullptr;
   QComboBox* m_direction = nullptr;
-  QDoubleSpinBox* m_duration = nullptr;
+  QSpinBox* m_duration = nullptr;
+  QSpinBox* m_frames = nullptr;
+  QLabel* m_framesLabel = nullptr;
 };
 
 int main(int argc, char** argv)

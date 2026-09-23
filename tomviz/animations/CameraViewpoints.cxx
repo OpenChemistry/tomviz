@@ -67,11 +67,11 @@ QJsonObject Viewpoint::serialize() const
   json["viewAngle"] = viewAngle;
   json["parallelScale"] = parallelScale;
   json["parallelProjection"] = parallelProjection;
-  json["duration"] = duration;
+  json["legFrames"] = legFrames;
   json["eased"] = eased;
   if (orbitTurns != 0) {
     json["orbitTurns"] = orbitTurns;
-    json["orbitDuration"] = orbitDuration;
+    json["orbitFrames"] = orbitFrames;
   }
   json["name"] = name;
   if (!label.isEmpty()) {
@@ -97,11 +97,10 @@ Viewpoint Viewpoint::deserialize(const QJsonObject& json)
     json["parallelScale"].toDouble(viewpoint.parallelScale);
   viewpoint.parallelProjection =
     json["parallelProjection"].toBool(viewpoint.parallelProjection);
-  viewpoint.duration = json["duration"].toDouble(viewpoint.duration);
+  viewpoint.legFrames = json["legFrames"].toInt(viewpoint.legFrames);
   viewpoint.eased = json["eased"].toBool(viewpoint.eased);
   viewpoint.orbitTurns = json["orbitTurns"].toInt(0);
-  viewpoint.orbitDuration =
-    json["orbitDuration"].toDouble(viewpoint.orbitDuration);
+  viewpoint.orbitFrames = json["orbitFrames"].toInt(viewpoint.orbitFrames);
   viewpoint.name = json["name"].toString();
   viewpoint.label = json["label"].toString();
   viewpoint.thumbnail =
@@ -230,6 +229,25 @@ bool CameraViewpoints::isPath() const
          (m_viewpoints.size() == 1 && m_viewpoints[0].orbitTurns != 0);
 }
 
+int CameraViewpoints::totalFrames() const
+{
+  if (!isPath()) {
+    return 0;
+  }
+  int total = 0;
+  for (int i = 0; i < m_viewpoints.size(); ++i) {
+    if (m_viewpoints[i].orbitTurns != 0) {
+      total += std::max(0, m_viewpoints[i].orbitFrames);
+    }
+    if (i + 1 < m_viewpoints.size()) {
+      total += std::max(0, m_viewpoints[i].legFrames);
+    }
+  }
+  // A start and an end at the least: legs of no length are cuts, and
+  // one frame is not an animation the player can run.
+  return std::max(2, total);
+}
+
 namespace {
 
 struct Timeline
@@ -250,12 +268,12 @@ Timeline timelineOf(const QList<Viewpoint>& viewpoints)
   double total = 0;
   for (int i = 0; i < count; ++i) {
     const double dwell = viewpoints[i].orbitTurns != 0
-                           ? std::max(0.0, viewpoints[i].orbitDuration)
+                           ? std::max(0, viewpoints[i].orbitFrames)
                            : 0.0;
     dwells.append(dwell);
     total += dwell;
     if (i + 1 < count) {
-      const double leg = std::max(0.0, viewpoints[i].duration);
+      const double leg = std::max(0, viewpoints[i].legFrames);
       legs.append(leg);
       total += leg;
     }
@@ -466,12 +484,25 @@ void CameraViewpoints::rebuildInterpolator()
   // two-viewpoint path. In manual mode it leaves the types alone.
   //
   // A run's first camera is added at its departure (the orbit there, if
-  // any, is over) and the others at their arrival.
+  // any, is over) and the others at their arrival. A leg of no length
+  // puts two cameras at the same time, where the later one replaces the
+  // earlier (the path has arrived), so it is the distinct times that
+  // decide whether there is anything for a spline to curve through.
   auto makeRun = [this, &timeline](int first, int last) {
     Run run;
     run.first = first;
     run.last = last;
-    const bool linear = last - first + 1 < 3;
+    int distinct = 0;
+    double previous = -1.0;
+    for (int i = first; i <= last; ++i) {
+      const double t =
+        i == first ? timeline.departures[i] : timeline.arrivals[i];
+      if (t != previous) {
+        ++distinct;
+      }
+      previous = t;
+    }
+    const bool linear = distinct < 3;
     auto tuple = [linear]() {
       auto interpolator = vtkSmartPointer<vtkTupleInterpolator>::New();
       if (linear) {
@@ -589,12 +620,56 @@ bool CameraViewpoints::deserialize(const QJsonObject& json)
   }
 
   m_viewpoints.clear();
-  for (const auto& value : json["viewpoints"].toArray()) {
+  const auto entries = json["viewpoints"].toArray();
+  for (const auto& value : entries) {
     m_viewpoints.append(Viewpoint::deserialize(value.toObject()));
     // Files from before viewpoints had names get positional ones.
     if (m_viewpoints.last().name.isEmpty()) {
       m_viewpoints.last().name =
         QString("Viewpoint %1").arg(m_viewpoints.size());
+    }
+  }
+
+  // Files from before legs and orbits had frame counts of their own
+  // carried relative durations and one total: each piece took its share
+  // of the total, so that share is its frame count now.
+  bool legacy = !entries.isEmpty();
+  for (const auto& value : entries) {
+    if (value.toObject().contains("legFrames")) {
+      legacy = false;
+    }
+  }
+  if (legacy) {
+    const int count = m_viewpoints.size();
+    const int total = std::max(2, json["numberOfFrames"].toInt(200));
+    QList<double> legWeights;
+    QList<double> orbitWeights;
+    double sum = 0;
+    for (int i = 0; i < count; ++i) {
+      const auto entry = entries[i].toObject();
+      const double leg = i + 1 < count
+                           ? std::max(0.0, entry["duration"].toDouble(1.0))
+                           : 0.0;
+      const double orbit =
+        m_viewpoints[i].orbitTurns != 0
+          ? std::max(0.0, entry["orbitDuration"].toDouble(1.0))
+          : 0.0;
+      legWeights.append(leg);
+      orbitWeights.append(orbit);
+      sum += leg + orbit;
+    }
+    for (int i = 0; i < count; ++i) {
+      auto share = [&](double weight) {
+        return sum > 0 ? std::max(1, static_cast<int>(std::lround(
+                                       total * weight / sum)))
+                       : total;
+      };
+      if (i + 1 < count) {
+        m_viewpoints[i].legFrames = share(legWeights[i]);
+      }
+      if (m_viewpoints[i].orbitTurns != 0) {
+        m_viewpoints[i].orbitFrames = share(orbitWeights[i]);
+      }
     }
   }
 

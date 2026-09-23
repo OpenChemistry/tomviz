@@ -133,7 +133,7 @@
          <item>
           <widget class="QLabel" name="segmentDurationLabel">
            <property name="text">
-            <string>Segment to next:</string>
+            <string>Leg to next:</string>
            </property>
            <property name="buddy">
             <cstring>segmentDuration</cstring>
@@ -141,7 +141,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QDoubleSpinBox" name="segmentDuration">
+          <widget class="QSpinBox" name="segmentDuration">
            <property name="keyboardTracking">
             <bool>false</bool>
            </property>
@@ -149,22 +149,22 @@
             <bool>false</bool>
            </property>
            <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;How long the leg from this viewpoint to the next one runs, relative to the other legs.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;A leg with twice the duration of another takes twice as many frames.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Frames the leg from this viewpoint to the next one takes.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The animation is as long as its legs and orbits add up to, so a longer leg here never shortens another.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
-           <property name="decimals">
-            <number>2</number>
+           <property name="suffix">
+            <string> frames</string>
            </property>
            <property name="minimum">
-            <double>0.010000000000000</double>
+            <number>0</number>
            </property>
            <property name="maximum">
-            <double>100.000000000000000</double>
+            <number>100000</number>
            </property>
            <property name="singleStep">
-            <double>0.250000000000000</double>
+            <number>10</number>
            </property>
            <property name="value">
-            <double>1.000000000000000</double>
+            <number>60</number>
            </property>
           </widget>
          </item>

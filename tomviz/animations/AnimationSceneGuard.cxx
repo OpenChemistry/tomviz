@@ -22,10 +22,13 @@
 #include <vtkSMRenderViewProxy.h>
 
 #include <vtkSMAnimationScene.h>
+#include <vtkSMPropertyHelper.h>
 #include <vtkSMProxy.h>
 #include <vtkSMViewProxy.h>
 
 #include <QTimer>
+
+#include <algorithm>
 
 namespace tomviz {
 
@@ -109,6 +112,7 @@ AnimationSceneGuard::AnimationSceneGuard(QObject* parent) : QObject(parent)
   connect(&viewpoints, &CameraViewpoints::changed, this, [this]() {
     interruptAnimationPlayback();
     syncFlight();
+    syncFrames();
   });
   connect(&ModuleAnimations::instance(), &ModuleAnimations::changed, this,
           []() { interruptAnimationPlayback(); });
@@ -123,6 +127,14 @@ void AnimationSceneGuard::syncFlight()
 {
   if (CameraViewpoints::instance().syncFlight(animationRenderView())) {
     ensureAnimationFrames();
+  }
+}
+
+void AnimationSceneGuard::syncFrames()
+{
+  const int frames = CameraViewpoints::instance().totalFrames();
+  if (frames > 0) {
+    setAnimationNumberOfFrames(frames);
   }
 }
 
@@ -142,6 +154,7 @@ void AnimationSceneGuard::follow(pqAnimationScene* scene)
   connect(scene, &pqAnimationScene::beginPlay, this,
           [this, scene](vtkObject*, unsigned long, void*, void* reversed) {
             provideDefaultAnimation();
+            syncFrames();
             rewindIfAtEnd(scene, reversed && *static_cast<bool*>(reversed));
           });
 }
@@ -170,6 +183,11 @@ void AnimationSceneGuard::provideDefaultAnimation()
   viewpoint.readFrom(camera);
   viewpoint.name = "Camera Orbit";
   viewpoint.orbitTurns = 1;
+  // As long as the animation was going to be
+  if (auto* scene = activeScene()) {
+    viewpoint.orbitFrames = std::max(
+      2, vtkSMPropertyHelper(scene->getProxy(), "NumberOfFrames").GetAsInt());
+  }
   // Recorded like a viewpoint the user adds, so a visualization added
   // later fades in on the leg that first has it
   viewpoint.scene = SceneSnapshot::capture(pipeline);

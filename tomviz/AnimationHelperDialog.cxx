@@ -177,8 +177,8 @@ public:
   QCheckBox* viewpointOrbit = nullptr;
   QSpinBox* orbitTurns = nullptr;
   QComboBox* orbitDirection = nullptr;
-  QDoubleSpinBox* orbitDuration = nullptr;
-  QLabel* orbitDurationTitle = nullptr;
+  QSpinBox* orbitFrames = nullptr;
+  QLabel* orbitFramesTitle = nullptr;
   pqPropertyLinks pqLinks;
   QPointer<AnimationHelperDialog> parent;
   vtkWeakPointer<vtkSMProxy> linkedScene;
@@ -291,25 +291,24 @@ public:
     orbitDirection->setToolTip(
       "Which way the camera goes round, as seen from above (looking down "
       "the view's up direction).");
-    orbitDurationTitle = new QLabel("lasting", parent);
-    orbitDuration = new QDoubleSpinBox(parent);
-    orbitDuration->setObjectName("orbitDuration");
+    orbitFramesTitle = new QLabel("lasting", parent);
+    orbitFrames = new QSpinBox(parent);
+    orbitFrames->setObjectName("orbitFrames");
     // Never zero: an orbit of no length would be a checkbox that does
     // nothing
-    orbitDuration->setRange(0.1, 100.0);
-    orbitDuration->setDecimals(2);
-    orbitDuration->setSingleStep(0.25);
-    orbitDuration->setValue(1.0);
-    orbitDuration->setKeyboardTracking(false);
-    orbitDuration->setToolTip(
-      "How long the orbit runs, on the same scale as the legs: an orbit "
-      "of 2 takes twice as many frames as a leg of 1.");
-    orbitDurationTitle->setBuddy(orbitDuration);
+    orbitFrames->setRange(1, 100000);
+    orbitFrames->setSingleStep(10);
+    orbitFrames->setSuffix(" frames");
+    orbitFrames->setValue(120);
+    orbitFrames->setKeyboardTracking(false);
+    orbitFrames->setToolTip(
+      "Frames the orbit takes, on top of the legs.");
+    orbitFramesTitle->setBuddy(orbitFrames);
     orbitRow->addWidget(viewpointOrbit);
     orbitRow->addWidget(orbitTurns);
     orbitRow->addWidget(orbitDirection);
-    orbitRow->addWidget(orbitDurationTitle);
-    orbitRow->addWidget(orbitDuration);
+    orbitRow->addWidget(orbitFramesTitle);
+    orbitRow->addWidget(orbitFrames);
     orbitRow->addStretch(1);
     // The details only appear once there is an orbit to describe
     for (auto* detail : orbitDetails()) {
@@ -322,8 +321,8 @@ public:
             &Internal::orbitChanged);
     connect(orbitDirection, qOverload<int>(&QComboBox::currentIndexChanged),
             this, &Internal::orbitChanged);
-    connect(orbitDuration, qOverload<double>(&QDoubleSpinBox::valueChanged),
-            this, &Internal::orbitChanged);
+    connect(orbitFrames, qOverload<int>(&QSpinBox::valueChanged), this,
+            &Internal::orbitChanged);
 
     recordScene = new QCheckBox("Record module state with viewpoints", parent);
     recordScene->setToolTip(
@@ -393,9 +392,8 @@ public:
                 ui.viewpointList->setCurrentRow(to);
               });
             });
-    connect(ui.segmentDuration,
-            QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
-            &Internal::segmentChanged);
+    connect(ui.segmentDuration, QOverload<int>::of(&QSpinBox::valueChanged),
+            this, &Internal::segmentChanged);
     connect(ui.segmentEased, &QCheckBox::toggled, this,
             &Internal::segmentChanged);
     // The list is shared with the state file, so it can change while the
@@ -632,6 +630,18 @@ public:
     ui.addModuleAnimation->setEnabled(node &&
                                       (!curveProperty || stagedCount >= 2));
 
+    // With a path the frame count is what its legs and orbits add up to,
+    // so the box gives way to the total; without one it is the count.
+    auto& viewpoints = CameraViewpoints::instance();
+    const bool pathSetsFrames = viewpoints.isPath();
+    ui.numberOfFrames->setVisible(!pathSetsFrames);
+    ui.numberOfFramesLabel->setText(
+      pathSetsFrames ? tr("Total: %1 frames").arg(viewpoints.totalFrames())
+                     : tr("Number of Frames:"));
+    ui.numberOfFramesLabel->setToolTip(
+      pathSetsFrames ? tr("The legs and orbits of the camera path added up.")
+                     : QString());
+
     bool hasAnyAnimations =
       hasCameraAnimations || timeSeriesEnabled || hasModuleAnimations;
     ui.exportMovie->setEnabled(hasAnyAnimations);
@@ -766,10 +776,10 @@ public:
     QSignalBlocker blockedOrbit(viewpointOrbit);
     QSignalBlocker blockedTurns(orbitTurns);
     QSignalBlocker blockedDirection(orbitDirection);
-    QSignalBlocker blockedOrbitDuration(orbitDuration);
+    QSignalBlocker blockedOrbitFrames(orbitFrames);
     QSignalBlocker blockedLabel(viewpointLabel);
     if (hasSegment) {
-      ui.segmentDuration->setValue(viewpoints.at(row).duration);
+      ui.segmentDuration->setValue(viewpoints.at(row).legFrames);
       ui.segmentEased->setChecked(viewpoints.at(row).eased);
     }
     bool hasViewpoint = row >= 0 && row < viewpoints.size();
@@ -779,7 +789,7 @@ public:
       orbiting = turns != 0;
       orbitTurns->setValue(orbiting ? std::abs(turns) : 1);
       orbitDirection->setCurrentIndex(turns < 0 ? 1 : 0);
-      orbitDuration->setValue(viewpoints.at(row).orbitDuration);
+      orbitFrames->setValue(viewpoints.at(row).orbitFrames);
     }
     viewpointOrbit->setChecked(orbiting);
     viewpointLabel->setText(hasViewpoint ? viewpoints.at(row).label
@@ -798,7 +808,7 @@ public:
   // The orbit controls other than the checkbox that shows them
   QList<QWidget*> orbitDetails() const
   {
-    return { orbitTurns, orbitDirection, orbitDurationTitle, orbitDuration };
+    return { orbitTurns, orbitDirection, orbitFramesTitle, orbitFrames };
   }
 
   void orbitChanged()
@@ -815,7 +825,7 @@ public:
       viewpointOrbit->isChecked()
         ? (orbitDirection->currentIndex() == 0 ? turns : -turns)
         : 0;
-    viewpoint.orbitDuration = orbitDuration->value();
+    viewpoint.orbitFrames = orbitFrames->value();
     viewpoints.replace(row, viewpoint);
   }
 
@@ -919,7 +929,7 @@ public:
     }
 
     auto viewpoint = viewpoints.at(row);
-    viewpoint.duration = ui.segmentDuration->value();
+    viewpoint.legFrames = ui.segmentDuration->value();
     viewpoint.eased = ui.segmentEased->isChecked();
     viewpoints.replace(row, viewpoint);
   }
