@@ -405,11 +405,15 @@ void SceneSnapshot::apply(Pipeline* pipeline, const QSet<int>* known) const
           const auto& d = *snapshot.explodedDirection;
           volume->setExplodedDirection(d[0], d[1], d[2]);
         }
-        volume->setExplodedAxis(snapshot.explodedAxis.value_or(2));
+        // The camera was just placed at the viewpoint, or is flying;
+        // neither switch may refit it.
+        volume->setExplodedAxis(snapshot.explodedAxis.value_or(2),
+                                /*refitCamera=*/false);
         volume->setExplodedChunks(snapshot.explodedChunks.value_or(4));
         volume->setExplodedGap(snapshot.explodedGap.value_or(0.25));
         volume->setExplodedOffset(snapshot.explodedOffset.value_or(0));
-        volume->setExplodedEnabled(*snapshot.explodedEnabled);
+        volume->setExplodedEnabled(*snapshot.explodedEnabled,
+                                   /*refitCamera=*/false);
       }
     }
     if (snapshot.planeDirection && snapshot.planeCenter &&

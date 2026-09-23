@@ -1919,7 +1919,7 @@ int VolumeSink::explodedAxis() const
   return m_explodedAxis;
 }
 
-void VolumeSink::setExplodedAxis(int axis)
+void VolumeSink::setExplodedAxis(int axis, bool refitCamera)
 {
   axis = qBound(0, axis, kExplodedCustomAxis);
   if (m_explodedAxis == axis) {
@@ -1928,7 +1928,9 @@ void VolumeSink::setExplodedAxis(int axis)
   m_explodedAxis = axis;
   applyExploded();
   emit explodedChanged();
-  resetCameraQueued();
+  if (refitCamera) {
+    resetCameraQueued();
+  }
   emit renderNeeded();
 }
 

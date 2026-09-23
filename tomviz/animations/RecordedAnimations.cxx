@@ -387,7 +387,7 @@ void RecordedExplodedAnimation::applySpan(const AnchorSpan& span)
   const auto& side = span.u < 0.5 ? a : b;
   volume->setExplodedDirection(side.direction[0], side.direction[1],
                                side.direction[2]);
-  volume->setExplodedAxis(side.axis);
+  volume->setExplodedAxis(side.axis, /*refitCamera=*/false);
   volume->setExplodedChunks(side.chunks);
   volume->setExplodedGap(lerp(a.gap, b.gap, span.u));
   volume->setExplodedOffset(

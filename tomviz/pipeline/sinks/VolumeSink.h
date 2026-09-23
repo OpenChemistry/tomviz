@@ -196,9 +196,10 @@ public:
   /// may own the camera, and a refit mid-flight would yank it.
   void setExplodedEnabled(bool enabled, bool refitCamera = true);
   /// 0-2 for X, Y, Z; kExplodedCustomAxis (3) to cut along
-  /// explodedDirection() instead.
+  /// explodedDirection() instead. The camera is refit for a user's
+  /// change of axis; animations and viewpoint recalls pass false.
   int explodedAxis() const;
-  void setExplodedAxis(int axis);
+  void setExplodedAxis(int axis, bool refitCamera = true);
   /// The custom direction, in the data's coordinates. Stored as given;
   /// the slabs use it normalized.
   std::array<double, 3> explodedDirection() const;
