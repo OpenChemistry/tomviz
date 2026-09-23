@@ -6,6 +6,7 @@
 
 #include <QDialog>
 #include <QList>
+#include <QPointer>
 #include <QString>
 
 class QAction;
@@ -42,6 +43,9 @@ public:
 
   /// Recursively collect all actions from a menu hierarchy.
   void collectActionsFromMenu(QMenu* menu, const QString& prefix);
+  /// Forget every action registered under exactly @a category, so a menu
+  /// that rebuilds its actions can register the new ones.
+  void removeCategory(const QString& category);
 
   void showEvent(QShowEvent* event) override;
 
@@ -59,7 +63,9 @@ private:
 
   struct OperatorEntry
   {
-    QAction* action;
+    /// Guarded: a menu may delete and recreate its actions while the
+    /// entry is still registered; a gone action is simply not listed.
+    QPointer<QAction> action;
     QString name;
     QString category;
     QString description;

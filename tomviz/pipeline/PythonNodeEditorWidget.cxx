@@ -16,15 +16,14 @@
 #include "ParameterInterfaceBuilder.h"
 #include "Pipeline.h"
 #include "PythonEnvironmentCheck.h"
+#include "PythonScriptEdit.h"
 #include "SourceNode.h"
 #include "Utilities.h"
 #include "data/VolumeData.h"
 
 #include <pqApplicationCore.h>
-#include <pqPythonSyntaxHighlighter.h>
 #include <pqSettings.h>
 
-#include <QTextBlock>
 #include <QTimer>
 
 #include <QCheckBox>
@@ -33,7 +32,6 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
-#include <QFontDatabase>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QJsonArray>
@@ -52,77 +50,6 @@
 #include <QVBoxLayout>
 
 namespace {
-
-/// Ask before replacing a file the user didn't name in the save dialog.
-bool confirmOverwrite(QWidget* parent, const QString& path)
-{
-  return QMessageBox::question(
-           parent, QObject::tr("Overwrite file?"),
-           QObject::tr("\"%1\" already exists. Overwrite it?")
-             .arg(QDir::toNativeSeparators(path)),
-           QMessageBox::Yes | QMessageBox::No,
-           QMessageBox::No) == QMessageBox::Yes;
-}
-
-/// Write @a text to @a path as UTF-8, reporting any failure to the user.
-bool writeTextFile(QWidget* parent, const QString& path, const QString& text)
-{
-  QFile file(path);
-  if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-    QMessageBox::critical(parent, QObject::tr("Failed to save"),
-                          QObject::tr("Could not open \"%1\" for writing:\n%2")
-                            .arg(QDir::toNativeSeparators(path),
-                                 file.errorString()));
-    return false;
-  }
-  const QByteArray bytes = text.toUtf8();
-  // Report a short write too: close() can still fail to flush.
-  if (file.write(bytes) != bytes.size() || !file.flush()) {
-    QMessageBox::critical(parent, QObject::tr("Failed to save"),
-                          QObject::tr("Could not write to \"%1\":\n%2")
-                            .arg(QDir::toNativeSeparators(path),
-                                 file.errorString()));
-    return false;
-  }
-  return true;
-}
-
-// Copy character formatting (syntax colors) from src into dst without
-// modifying dst's text.  Walks blocks in parallel, skipping blank lines
-// that only exist in one document (the HTML round-trip can lose them).
-void applySyntaxFormatting(QTextDocument* dst, const QTextDocument& src)
-{
-  QTextCursor cursor(dst);
-  cursor.beginEditBlock();
-
-  QTextBlock dstBlock = dst->begin();
-  QTextBlock srcBlock = src.begin();
-
-  while (dstBlock.isValid() && srcBlock.isValid()) {
-    if (dstBlock.text() == srcBlock.text()) {
-      for (auto it = srcBlock.begin(); !it.atEnd(); ++it) {
-        QTextFragment frag = it.fragment();
-        int start =
-          dstBlock.position() + frag.position() - srcBlock.position();
-        cursor.setPosition(start);
-        cursor.setPosition(start + frag.length(),
-                           QTextCursor::KeepAnchor);
-        cursor.setCharFormat(frag.charFormat());
-      }
-      dstBlock = dstBlock.next();
-      srcBlock = srcBlock.next();
-    } else if (dstBlock.text().isEmpty()) {
-      dstBlock = dstBlock.next();
-    } else if (srcBlock.text().isEmpty()) {
-      srcBlock = srcBlock.next();
-    } else {
-      dstBlock = dstBlock.next();
-      srcBlock = srcBlock.next();
-    }
-  }
-
-  cursor.endEditBlock();
-}
 
 // Settings store for remembered external-env paths. The app's
 // pqSettings when available; a plain QSettings in test harnesses that
@@ -202,58 +129,13 @@ PythonNodeEditorWidget::PythonNodeEditorWidget(
   auto* scriptTab = new QWidget(m_tabWidget);
   auto* scriptLayout = new QVBoxLayout(scriptTab);
 
-  m_scriptEdit = new QTextEdit(scriptTab);
-  m_scriptEdit->setLineWrapMode(QTextEdit::NoWrap);
-
-  auto* highlighter =
-    new pqPythonSyntaxHighlighter(m_scriptEdit, *m_scriptEdit);
-
-  // Set font after the highlighter ctor, which sets QFont("Monospace")
-  m_scriptEdit->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
-
-  // Wire up highlighting ourselves instead of ConnectHighligter(), which
-  // uses setHtml() to replace the whole document — that loses blank lines.
-  // Instead we parse the HTML into a temp document and copy only the
-  // character formatting (colors) into the real document via
-  // applySyntaxFormatting(), leaving the text untouched.
-  auto* rehighlightTimer = new QTimer(m_scriptEdit);
-  rehighlightTimer->setSingleShot(true);
-  rehighlightTimer->setInterval(0);
-
-  connect(m_scriptEdit, &QTextEdit::textChanged, m_scriptEdit,
-    [rehighlightTimer]() { rehighlightTimer->start(); });
-
-  connect(rehighlightTimer, &QTimer::timeout, m_scriptEdit,
-    [highlighter, edit = m_scriptEdit]() {
-      const QString html = highlighter->Highlight(edit->toPlainText());
-      if (html.isEmpty()) {
-        return;
-      }
-      QTextDocument tempDoc;
-      tempDoc.setHtml(html);
-      const bool blocked = edit->blockSignals(true);
-      applySyntaxFormatting(edit->document(), tempDoc);
-      edit->blockSignals(blocked);
-    });
+  m_scriptEdit = new PythonScriptEdit(scriptTab);
 
   if (!script.isEmpty()) {
     m_scriptEdit->setPlainText(script);
   }
 
   scriptLayout->addWidget(m_scriptEdit, 1);
-
-  auto* scriptButtonRow = new QHBoxLayout;
-  scriptButtonRow->addStretch();
-  auto* saveScriptButton = new QPushButton(tr("Save Script..."), scriptTab);
-  saveScriptButton->setObjectName("saveScriptButton");
-  saveScriptButton->setToolTip(
-    tr("Write the script to a .py file, with this node's JSON description "
-       "saved beside it. Saved into your tomviz user directory, the pair "
-       "is picked up as a custom operator the next time tomviz starts."));
-  connect(saveScriptButton, &QPushButton::clicked, this,
-          &PythonNodeEditorWidget::saveScript);
-  scriptButtonRow->addWidget(saveScriptButton);
-  scriptLayout->addLayout(scriptButtonRow);
 
   m_scriptTabIndex = m_tabWidget->addTab(scriptTab, tr("Script"));
 
@@ -867,62 +749,6 @@ void PythonNodeEditorWidget::applyChangesToOperator()
   }
 }
 
-void PythonNodeEditorWidget::saveScript()
-{
-  // Everything written here comes from the widgets, not the node: the point
-  // is to capture the edit in progress, which may never have been applied.
-  //
-  // Flush first so isValid() reflects the current text rather than the
-  // keystroke before last. definitionText() itself is always current: the
-  // text buffer is authoritative, debounce or no debounce.
-  if (m_definitionWidget) {
-    m_definitionWidget->flushPendingValidation();
-    if (!m_definitionWidget->isValid()) {
-      QMessageBox::warning(
-        this, tr("Invalid node definition"),
-        tr("The description in the Definition tab has errors, so it can't be "
-           "saved next to the script. Fix the problems listed there, or "
-           "revert the edit."));
-      return;
-    }
-  }
-
-  const QString description = m_definitionWidget
-                                ? m_definitionWidget->definitionText()
-                                : m_jsonDescription;
-
-  // Default to the tomviz user directory, which is one of the locations
-  // scanned for custom operators at startup.
-  QString fileName = QFileDialog::getSaveFileName(
-    this, tr("Save Script"), tomviz::userDataPath(),
-    tr("Python scripts (*.py)"));
-  if (fileName.isEmpty()) {
-    return;
-  }
-  // Not every platform's dialog appends the filter's extension, and the
-  // name it already confirmed was the one without it.
-  if (!fileName.endsWith(QLatin1String(".py"), Qt::CaseInsensitive)) {
-    fileName += QLatin1String(".py");
-    if (QFile::exists(fileName) && !confirmOverwrite(this, fileName)) {
-      return;
-    }
-  }
-
-  // Decide about the description before writing anything, so a declined
-  // overwrite doesn't leave a half-saved pair behind.
-  bool withDescription = !description.trimmed().isEmpty();
-  if (withDescription) {
-    // The save dialog only confirmed the .py name, so this one is on us.
-    const QString descriptionPath = descriptionPathFor(fileName);
-    if (QFile::exists(descriptionPath) &&
-        !confirmOverwrite(this, descriptionPath)) {
-      withDescription = false;
-    }
-  }
-
-  saveScriptTo(fileName, withDescription);
-}
-
 QString PythonNodeEditorWidget::descriptionPathFor(const QString& scriptPath)
 {
   // completeBaseName() strips only the final suffix, so "my.operator.py"
@@ -932,27 +758,20 @@ QString PythonNodeEditorWidget::descriptionPathFor(const QString& scriptPath)
                              QLatin1String(".json"));
 }
 
-bool PythonNodeEditorWidget::saveScriptTo(const QString& scriptPath,
-                                          bool withDescription)
+QString PythonNodeEditorWidget::scriptText() const
 {
-  if (!writeTextFile(this, scriptPath, m_scriptEdit->toPlainText())) {
-    return false;
-  }
-  if (!withDescription) {
-    return true;
-  }
+  return m_scriptEdit->toPlainText();
+}
 
-  const QString description = m_definitionWidget
-                                ? m_definitionWidget->definitionText()
-                                : m_jsonDescription;
-  if (description.trimmed().isEmpty()) {
-    // Nothing to put beside it; the script alone is a valid result.
-    return true;
-  }
-  // A failure here is reported by writeTextFile but doesn't undo the
-  // script, which is already on disk and useful on its own.
-  writeTextFile(this, descriptionPathFor(scriptPath), description);
-  return true;
+QString PythonNodeEditorWidget::definitionText() const
+{
+  return m_definitionWidget ? m_definitionWidget->definitionText()
+                            : m_jsonDescription;
+}
+
+QString PythonNodeEditorWidget::nodeLabel() const
+{
+  return m_nameEdit->text();
 }
 
 void PythonNodeEditorWidget::showScriptTab()

@@ -32,12 +32,21 @@ namespace pipeline {
 /// The port sections are hidden while ports can't be edited — see
 /// kPortsEditable. Their rows and commit path are written, so enabling
 /// them is a focused change rather than a rewrite.
+///
+/// With DefinitionTarget::File the form edits a definition file rather
+/// than a live node: the schema and the ports are ordinary fields, and
+/// schema and shape follow the document instead of the constructor
+/// arguments (which only seed the initial rendering). The custom widget
+/// key is niche enough to stay raw-only.
 class NodeDefinitionFormWidget : public QWidget
 {
   Q_OBJECT
 
 public:
   NodeDefinitionFormWidget(NodeShape shape, DefinitionSchema schema,
+                           QWidget* parent = nullptr);
+  NodeDefinitionFormWidget(NodeShape shape, DefinitionSchema schema,
+                           DefinitionTarget target,
                            QWidget* parent = nullptr);
 
   /// Repopulate every control from @a json. Does not emit changed().
@@ -84,6 +93,17 @@ private:
     QPushButton* remove = nullptr;
   };
 
+  /// File mode: what a live node freezes is editable here, and schema
+  /// and shape are read off the document.
+  bool identityEditable() const;
+  DefinitionSchema currentSchema() const;
+  NodeShape currentShape() const;
+  void commitSchema();
+  void commitLegacyPorts();
+  /// Cancel/complete enablement and which port sections show depend on
+  /// the schema, which in file mode can change under the form.
+  void refreshSchemaDependentControls();
+  void updateShapeNote();
   void buildGeneralSection(QVBoxLayout* layout);
   void buildPortsSections(QVBoxLayout* layout);
   void buildParametersSection(QVBoxLayout* layout);
@@ -119,6 +139,7 @@ private:
 
   NodeShape m_shape;
   DefinitionSchema m_schema;
+  DefinitionTarget m_target = DefinitionTarget::LiveNode;
   QJsonObject m_root;
   /// Set while setJson() / loadParameterDetail() drive the controls, so
   /// their change signals don't loop back as user edits.
@@ -129,6 +150,12 @@ private:
   QLineEdit* m_labelEdit = nullptr;
   QLineEdit* m_descriptionEdit = nullptr;
   QLabel* m_fixedInfoLabel = nullptr;
+  // File mode only.
+  QComboBox* m_schemaCombo = nullptr;
+  QWidget* m_legacyPortsBox = nullptr;
+  QComboBox* m_legacyInputType = nullptr;
+  QComboBox* m_legacyOutputType = nullptr;
+  QLabel* m_shapeNote = nullptr;
 
   QWidget* m_inputBox = nullptr;
   QWidget* m_outputBox = nullptr;

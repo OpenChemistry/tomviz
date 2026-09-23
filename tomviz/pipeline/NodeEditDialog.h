@@ -83,6 +83,9 @@ private:
   void restoreGeometry();
 
   void completeInsertion();
+  /// Hand the Python editor's script and description to a
+  /// CustomOperatorEditDialog draft in the user directory.
+  void saveAsCustomOperator();
 
   QPointer<Node> m_node;
   Pipeline* m_pipeline;

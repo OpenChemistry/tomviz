@@ -221,6 +221,9 @@ struct OperatorDescription
   QString loadError;
   bool valid = true;
   Type type = Type::LegacyTransform;
+  /// True when the files live in the user data directory (userDataPath()),
+  /// the one place tomviz may edit or delete an operator's files itself.
+  bool userOwned = false;
 };
 
 std::vector<OperatorDescription> findCustomOperators(const QString& path);

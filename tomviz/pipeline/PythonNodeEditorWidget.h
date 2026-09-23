@@ -118,13 +118,12 @@ public:
   /// directory and stem, ".json" instead of ".py".
   static QString descriptionPathFor(const QString& scriptPath);
 
-  /// Non-interactive save. Writes the script exactly as it stands in the
-  /// editor to @a scriptPath, and (when @a withDescription) the description
-  /// exactly as it stands in the Definition tab to descriptionPathFor().
-  /// Overwrites without asking; saveScript() is the interactive wrapper
-  /// that prompts and validates first. Returns false if the script could
-  /// not be written.
-  bool saveScriptTo(const QString& scriptPath, bool withDescription = true);
+  /// The editors' contents as they stand, unapplied edits included: what
+  /// "Save as Custom Transform" captures.
+  QString scriptText() const;
+  QString definitionText() const;
+  /// The Name field, i.e. the node label being edited.
+  QString nodeLabel() const;
 
 signals:
   /// Emitted by applyChangesToOperator() carrying everything the node
@@ -151,10 +150,6 @@ private:
   /// `self.set_parameter`): show the new values without discarding the
   /// user's other in-progress edits.
   void onNodeParametersUpdated(const QVariantMap& changed);
-  /// Write the script text to a user-chosen .py file, with the current
-  /// JSON description saved beside it as <name>.json. Both come from the
-  /// editor's widgets, so unapplied edits are included.
-  void saveScript();
   bool inputsInMemory() const;
   /// Debounced entry point for env-path edits: (re)starts the timer
   /// that triggers runEnvironmentCheck(), or clears the status when

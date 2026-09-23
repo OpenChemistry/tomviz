@@ -5,6 +5,7 @@
 
 #include "InputPort.h"
 #include "NodeDefinitionEdits.h"
+#include "NodeDefinitionFormWidget.h"
 #include "NodeDefinitionValidator.h"
 #include "NodeDefinitionWidget.h"
 #include "OutputPort.h"
@@ -14,6 +15,7 @@
 #include "PythonNodeEditorWidget.h"
 #include "SourceNode.h"
 #include "Utilities.h"
+#include "sources/PythonSource.h"
 #include "transforms/LegacyPythonTransform.h"
 #include "transforms/PythonTransform.h"
 
@@ -23,6 +25,10 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QTemporaryDir>
+#include <QComboBox>
+#include <QLabel>
+#include <QPushButton>
+#include <QTabWidget>
 #include <QTextEdit>
 
 #include "TomvizTest.h"
@@ -681,83 +687,153 @@ TEST(NodeDefinitionTest, SchemaV2ReconfigureKeepsInferredOutputType)
 
 // --- Save Script --------------------------------------------------------
 
-TEST(NodeDefinitionTest, SaveScriptWritesTheEditedScriptAndDescription)
+TEST(NodeDefinitionTest, DefinitionShapeFollowsDeclaredInputs)
+{
+  EXPECT_EQ(definitionShape(kV2Transform), NodeShape::Transform);
+  EXPECT_EQ(definitionShape(kV2Source), NodeShape::Source);
+  EXPECT_EQ(definitionShape(kV1Transform), NodeShape::Transform);
+  EXPECT_EQ(definitionShape(QString()), NodeShape::Transform);
+}
+
+TEST(NodeDefinitionTest, FileTargetLeavesIdentityAndPortsFree)
+{
+  // A definition file is bound to no node class, so what a live node
+  // rejects as an identity change is fine here, and there is no live
+  // value set to warn about either.
+  auto validation =
+    validateNodeDefinition(kV2Transform, kV2Source, NodeShape::Transform,
+                           DefinitionSchema::V2, DefinitionTarget::File);
+  EXPECT_FALSE(validation.hasErrors());
+  EXPECT_TRUE(validation.issues.isEmpty());
+
+  validation =
+    validateNodeDefinition(kV2Transform, kV1Transform, NodeShape::Transform,
+                           DefinitionSchema::V2, DefinitionTarget::File);
+  EXPECT_FALSE(validation.hasErrors());
+}
+
+TEST(NodeDefinitionTest, FileTargetStillChecksTheDescriptionItself)
+{
+  auto check = [](const QString& candidate) {
+    return validateNodeDefinition(kV2Transform, candidate,
+                                  NodeShape::Transform, DefinitionSchema::V2,
+                                  DefinitionTarget::File);
+  };
+  EXPECT_TRUE(check("{ not json").hasErrors());
+  EXPECT_TRUE(check(QString()).hasErrors()) << "cannot blank an existing one";
+  EXPECT_TRUE(check(withParameters(kV2Transform,
+                                   R"([{"name": "a", "type": "double"},
+                                       {"name": "a", "type": "int"}])"))
+                .hasErrors());
+}
+
+namespace {
+
+QJsonObject rootOf(const NodeDefinitionFormWidget& form)
+{
+  return QJsonDocument::fromJson(form.json().toUtf8()).object();
+}
+
+} // namespace
+
+TEST(NodeDefinitionTest, FileModeFormEditsSchemaAndPorts)
 {
   tomviz_test::ensureQApp();
+  NodeDefinitionFormWidget form(NodeShape::Transform, DefinitionSchema::V2,
+                                DefinitionTarget::File);
+  ASSERT_TRUE(form.setJson(kV2Transform));
+  form.show();
 
-  QTemporaryDir dir;
-  ASSERT_TRUE(dir.isValid());
+  auto* schema = form.findChild<QComboBox*>("definitionSchemaCombo");
+  ASSERT_NE(schema, nullptr);
+  EXPECT_EQ(schema->currentData().toInt(), 2);
+  auto* addInput = form.findChild<QPushButton*>("addInputPortButton");
+  ASSERT_NE(addInput, nullptr);
+  EXPECT_TRUE(addInput->isVisible());
 
-  const QString original = tomviz::readInJSONDescription("GaussianFilter");
-  ASSERT_FALSE(original.isEmpty());
+  // Removing the only input turns the description into a source, and
+  // adding one back makes it a transform again.
+  auto inputRows = form.findChildren<QWidget*>("inputPortRow");
+  ASSERT_EQ(inputRows.size(), 1);
+  inputRows.first()->findChild<QPushButton*>()->click();
+  EXPECT_TRUE(rootOf(form).value("inputs").toArray().isEmpty());
+  EXPECT_EQ(definitionShape(form.json()), NodeShape::Source);
+  auto* note = form.findChild<QLabel*>("definitionShapeNote");
+  ASSERT_NE(note, nullptr);
+  EXPECT_TRUE(note->text().contains("source"));
 
+  addInput->click();
+  EXPECT_EQ(definitionShape(form.json()), NodeShape::Transform);
+  EXPECT_EQ(form.findChildren<QWidget*>("inputPortRow").size(), 1);
+
+  // Switching to the legacy schema drops the key (shipped v1 descriptors
+  // have none) and swaps the port sections for the legacy type pickers.
+  schema->setCurrentIndex(schema->findData(1));
+  EXPECT_FALSE(rootOf(form).contains("schemaVersion"));
+  EXPECT_EQ(definitionSchema(form.json()), DefinitionSchema::V1);
+  EXPECT_FALSE(addInput->isVisible());
+  auto* inputType = form.findChild<QComboBox*>("legacyInputTypeCombo");
+  ASSERT_NE(inputType, nullptr);
+  EXPECT_TRUE(inputType->isVisible());
+  // Legacy operators only take volumes: the ImageData family is on
+  // offer and nothing else.
+  EXPECT_GE(inputType->findData("ImageData"), 0);
+  EXPECT_GE(inputType->findData("LabelMap"), 0);
+  EXPECT_GE(inputType->findData("TiltSeries"), 0);
+  EXPECT_LT(inputType->findData("Table"), 0);
+  EXPECT_LT(inputType->findData("Molecule"), 0);
+  inputType->setCurrentIndex(inputType->findData("LabelMap"));
+  EXPECT_EQ(rootOf(form).value("inputType").toString(), QString("LabelMap"));
+
+  // And back: the v2 port lists survived the round trip.
+  schema->setCurrentIndex(schema->findData(2));
+  EXPECT_EQ(definitionSchema(form.json()), DefinitionSchema::V2);
+  EXPECT_TRUE(addInput->isVisible());
+  EXPECT_EQ(form.findChildren<QWidget*>("inputPortRow").size(), 1);
+}
+
+TEST(NodeDefinitionTest, LiveModeFormKeepsIdentityFixed)
+{
+  tomviz_test::ensureQApp();
+  NodeDefinitionFormWidget form(NodeShape::Transform, DefinitionSchema::V2);
+  ASSERT_TRUE(form.setJson(kV2Transform));
+  form.show();
+
+  EXPECT_EQ(form.findChild<QComboBox*>("definitionSchemaCombo"), nullptr);
+  EXPECT_TRUE(form.findChildren<QWidget*>("inputPortRow").isEmpty());
+  EXPECT_FALSE(
+    form.findChild<QPushButton*>("addInputPortButton")->isVisible());
+}
+
+namespace {
+
+QStringList tabTitles(const QWidget* widget)
+{
+  QStringList titles;
+  if (auto* tabs = widget->findChild<QTabWidget*>()) {
+    for (int i = 0; i < tabs->count(); ++i) {
+      titles.append(tabs->tabText(i));
+    }
+  }
+  return titles;
+}
+
+} // namespace
+
+TEST(NodeDefinitionTest, SourceEditorOffersTheDefinitionTab)
+{
+  tomviz_test::ensureQApp();
   Pipeline pipeline;
-  auto* node = new LegacyPythonTransform();
-  node->setJSONDescription(original);
-  node->setScript("def transform(dataset):\n    pass\n");
-  pipeline.addNode(node);
+  auto* source = new PythonSource;
+  // Same order as AddPythonSourceReaction.
+  source->setJSONDescription(tomviz::readInJSONDescription("ConstantDataset"));
+  source->setScript(tomviz::readInPythonScript("ConstantDataset"));
+  pipeline.addNode(source);
 
-  auto* editor = node->createPropertiesWidget(&pipeline, nullptr);
+  auto* editor = source->createPropertiesWidget(&pipeline, nullptr);
   ASSERT_NE(editor, nullptr);
-  auto* python = qobject_cast<PythonNodeEditorWidget*>(editor);
-  ASSERT_NE(python, nullptr);
-
-  // Edit both tabs without applying: what lands on disk must be these
-  // edits, not the descriptions the node is still running.
-  auto* scriptEdit = editor->findChild<QTextEdit*>();
-  ASSERT_NE(scriptEdit, nullptr);
-  const QString editedScript =
-    // Split so the "d" isn't swallowed into the \xA9 escape. Non-ASCII on
-    // purpose: the old 2.x saveScript() wrote Latin-1 and mangled this.
-    QString::fromUtf8("def transform(dataset):\n    # \xC3\xA9" "dited\n");
-  scriptEdit->setPlainText(editedScript);
-
-  auto* definition = editor->findChild<NodeDefinitionWidget*>();
-  ASSERT_NE(definition, nullptr);
-  auto* rawEditor = definition->findChild<QTextEdit*>();
-  ASSERT_NE(rawEditor, nullptr);
-  QJsonObject edited = QJsonDocument::fromJson(original.toUtf8()).object();
-  edited["label"] = "Edited Label";
-  const QString editedJson =
-    QString::fromUtf8(QJsonDocument(edited).toJson());
-  rawEditor->setPlainText(editedJson);
-  definition->flushPendingValidation();
-  ASSERT_TRUE(definition->isValid());
-
-  const QString scriptPath = dir.filePath("my.operator.py");
-  ASSERT_TRUE(python->saveScriptTo(scriptPath));
-
-  // The description lands beside it, keeping the full stem.
-  const QString jsonPath = dir.filePath("my.operator.json");
-  EXPECT_EQ(PythonNodeEditorWidget::descriptionPathFor(scriptPath), jsonPath);
-  ASSERT_TRUE(QFile::exists(scriptPath));
-  ASSERT_TRUE(QFile::exists(jsonPath));
-
-  QFile written(scriptPath);
-  ASSERT_TRUE(written.open(QIODevice::ReadOnly));
-  EXPECT_EQ(QString::fromUtf8(written.readAll()), editedScript)
-    << "saved the node's script instead of the edited one";
-  // Windows won't let us rewrite or remove a file we are still holding open.
-  written.close();
-
-  QFile writtenJson(jsonPath);
-  ASSERT_TRUE(writtenJson.open(QIODevice::ReadOnly));
-  const QJsonObject reloaded =
-    QJsonDocument::fromJson(writtenJson.readAll()).object();
-  writtenJson.close();
-  EXPECT_EQ(reloaded.value("label").toString(), QString("Edited Label"))
-    << "saved the node's description instead of the edited one";
-  // The rest of the descriptor has to survive the round trip intact.
-  EXPECT_EQ(reloaded.value("name").toString(),
-            QJsonDocument::fromJson(original.toUtf8())
-              .object()
-              .value("name")
-              .toString());
-
-  // withDescription=false leaves any existing .json alone.
-  ASSERT_TRUE(QFile::remove(jsonPath));
-  ASSERT_TRUE(python->saveScriptTo(scriptPath, false));
-  EXPECT_FALSE(QFile::exists(jsonPath));
-
+  const QStringList titles = tabTitles(editor);
+  EXPECT_TRUE(titles.contains("Definition")) << titles.join(", ").toStdString();
+  EXPECT_NE(editor->findChild<NodeDefinitionWidget*>(), nullptr);
   delete editor;
 }
