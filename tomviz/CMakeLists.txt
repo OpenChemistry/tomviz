@@ -613,6 +613,7 @@ set(python_files
   SetNegativeVoxelsToZero.py
   ShiftTiltSeriesRandomly.py
   STEM_probe.py
+  SimulatedLiveAcquisition.py
   InvertData.py
   Pad_Data.py
   BinVolumeByTwo.py
@@ -717,6 +718,7 @@ set(json_files
   PtychoSource.json
   PyXRFSource.json
   STEM_probe.json
+  SimulatedLiveAcquisition.json
   )
 
 set(resource_files

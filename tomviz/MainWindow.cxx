@@ -974,6 +974,12 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   bool haveTilt =
     QFileInfo(dataDir + "/TiltSeries_NanoParticle_doi_10.1021-nl103400a.emd")
       .exists();
+  QAction* liveAcquisitionAction =
+    sampleDataMenu->addAction("Simulated Live Acquisition");
+  new AddPythonSourceReaction(
+    liveAcquisitionAction, readInPythonScript("SimulatedLiveAcquisition"),
+    readInJSONDescription("SimulatedLiveAcquisition"));
+  sampleDataMenu->addSeparator();
   if (haveRecon) {
     QAction* reconAction =
       sampleDataMenu->addAction("Star Nanoparticle (Reconstruction)");

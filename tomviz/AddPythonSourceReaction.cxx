@@ -38,6 +38,21 @@ void AddPythonSourceReaction::onTriggered()
   source->setJSONDescription(m_json);
   source->setScript(m_script);
 
+  // A description can ask for periodic execution from the start, for
+  // sources that exist to be polled. The setting is the node's from
+  // here on, so the Execution tab shows and edits it as usual.
+  const QJsonObject description =
+    QJsonDocument::fromJson(m_json.toUtf8()).object();
+  if (description.contains(QStringLiteral("autoExecute"))) {
+    const QJsonObject autoExec =
+      description.value(QStringLiteral("autoExecute")).toObject();
+    source->setAutoExecuteIntervalSeconds(
+      autoExec.value(QStringLiteral("intervalSeconds"))
+        .toInt(source->autoExecuteIntervalSeconds()));
+    source->setAutoExecuteEnabled(
+      autoExec.value(QStringLiteral("enabled")).toBool(false));
+  }
+
   // Add the source to the pipeline before opening the dialog. This is
   // what gives us the cancel-rollback symmetry with transform
   // insertion: NodeEditDialog::reject() removes the node from the
@@ -50,10 +65,7 @@ void AddPythonSourceReaction::onTriggered()
     new pipeline::NodeEditDialog(source, pip, deferred, mainWindow);
   dialog->setAttribute(Qt::WA_DeleteOnClose);
 
-  QString title = QJsonDocument::fromJson(m_json.toUtf8())
-                    .object()
-                    .value(QStringLiteral("label"))
-                    .toString();
+  QString title = description.value(QStringLiteral("label")).toString();
   if (title.isEmpty()) {
     title = source->label();
   }
