@@ -350,6 +350,7 @@ bool LegacyPythonTransform::deserialize(const QJsonObject& json)
 
 void LegacyPythonTransform::parseJSON(bool createPorts, bool applyLabel)
 {
+  m_inheritColorMap = true;
   QJsonDocument doc = QJsonDocument::fromJson(m_jsonDescription.toUtf8());
   if (!doc.isObject()) {
     return;
@@ -358,6 +359,7 @@ void LegacyPythonTransform::parseJSON(bool createPorts, bool applyLabel)
   QJsonObject obj = doc.object();
 
   m_operatorName = obj.value("name").toString();
+  m_inheritColorMap = obj.value("inheritColorMap").toBool(true);
 
   if (applyLabel && obj.contains("label")) {
     setLabel(obj.value("label").toString());

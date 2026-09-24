@@ -79,10 +79,6 @@ void DataTransformMenu::buildTransforms()
   auto hannWindowAction = mathOps->addAction("Hann Window");
   // "Fourier" and "FFT" both find it in the operator search
   auto fftAbsLogAction = mathOps->addAction("Fast Fourier Transform (FFT)");
-  fftAbsLogAction->setStatusTip(
-    "Replace the data with the log magnitude of its Fourier transform, "
-    "centered so the zero frequency is in the middle. Add it on a branch "
-    "to look at the spectrum and find its peaks.");
   auto fourierFilterAction = mathOps->addAction("Fourier Filter");
   auto fourierPeakMaskAction = mathOps->addAction("Fourier Peak Mask");
   auto fourierMaskAction = mathOps->addAction("Fourier Mask");
@@ -190,7 +186,8 @@ void DataTransformMenu::buildTransforms()
   new AddPythonTransformReaction(hannWindowAction, "Hann Window",
                                  readInPythonScript("HannWindow3D"));
   new AddPythonTransformReaction(fftAbsLogAction, "FFT",
-                                 readInPythonScript("FFT_AbsLog"));
+                                 readInPythonScript("FFT_AbsLog"),
+                                 readInJSONDescription("FFT_AbsLog"));
   new AddPythonTransformReaction(fourierFilterAction, "Fourier Filter",
                                  readInPythonScript("FourierFilter"),
                                  readInJSONDescription("FourierFilter"));

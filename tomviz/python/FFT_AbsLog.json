@@ -1,0 +1,7 @@
+{
+  "name": "FFT_AbsLog",
+  "label": "FFT",
+  "description": "Replace the data with the log magnitude of its Fourier transform, centered so the zero frequency is in the middle. Add it on a branch to look at the spectrum and find its peaks.",
+  "inheritColorMap": false,
+  "parameters": []
+}

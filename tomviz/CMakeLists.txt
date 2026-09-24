@@ -679,6 +679,7 @@ set(json_files
   Pad_Data.json
   Resample.json
   DeleteSlices.json
+  FFT_AbsLog.json
   GaussianFilter.json
   GaussianFilterTiltSeries.json
   PeronaMalikAnisotropicDiffusion.json

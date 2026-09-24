@@ -216,6 +216,11 @@ QString PythonNodeBackend::helpText() const { return m_help; }
 QString PythonNodeBackend::customWidgetID() const { return m_customWidgetID; }
 bool PythonNodeBackend::supportsCancel() const { return m_supportsCancel; }
 bool PythonNodeBackend::supportsComplete() const { return m_supportsComplete; }
+bool PythonNodeBackend::inheritsColorMap() const
+{
+  QMutexLocker locker(&m_parametersMutex);
+  return m_inheritColorMap;
+}
 bool PythonNodeBackend::isTransformShape() const { return !m_inputs.isEmpty(); }
 
 QString PythonNodeBackend::externalPythonEnvPath() const
@@ -302,6 +307,7 @@ void PythonNodeBackend::parseDescriptionLocked()
   m_customWidgetID.clear();
   m_supportsCancel = false;
   m_supportsComplete = false;
+  m_inheritColorMap = true;
   m_externalPythonEnvPath.clear();
   m_externalOnly = false;
   m_inputs.clear();
@@ -328,6 +334,8 @@ void PythonNodeBackend::parseDescriptionLocked()
     obj.value(QStringLiteral("supportsCancel")).toBool(false);
   m_supportsComplete =
     obj.value(QStringLiteral("supportsComplete")).toBool(false);
+  m_inheritColorMap =
+    obj.value(QStringLiteral("inheritColorMap")).toBool(true);
   m_externalPythonEnvPath =
     obj.value(QStringLiteral("tomviz_pipeline_env")).toString();
   m_externalOnly = obj.value(QStringLiteral("externalOnly")).toBool(false);

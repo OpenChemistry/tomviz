@@ -16,6 +16,7 @@ class QObject;
 namespace tomviz {
 namespace pipeline {
 
+class Node;
 class VolumeData;
 using VolumeDataPtr = std::shared_ptr<VolumeData>;
 
@@ -51,13 +52,22 @@ bool applyLabelMapColors(const VolumeDataPtr& vol);
 /// gradient opacity from their first volume-typed input. Adding a
 /// new inheritable type means a new branch here.
 ///
-/// @a threadOwner is the QObject whose thread should run the
-/// inheritance work. ParaView SM-proxy operations underneath VolumeData
+/// The work runs on @a node's thread. ParaView SM-proxy operations underneath VolumeData
 /// aren't thread-safe; this function marshals to threadOwner's thread
 /// via Qt::BlockingQueuedConnection when the caller is elsewhere.
-void inheritOutputMetadata(QObject* threadOwner,
+void inheritOutputMetadata(Node* node,
                            const QMap<QString, PortData>& inputs,
                            const QMap<QString, PortData>& outputs);
+
+/// The input whose color map a new volume output of @a node copies: the
+/// first of @a inputs, in the order @a node declares its input ports (so
+/// the primary data before a mask or a second dataset), that has a color
+/// map and is not a label map. A label map's colors are one per label
+/// value and mean nothing on other data. Null when no input qualifies,
+/// or @a node declines inheritance (Node::inheritsColorMap); the output
+/// then starts from the default color map.
+VolumeDataPtr colorMapSource(Node* node,
+                             const QMap<QString, PortData>& inputs);
 
 } // namespace pipeline
 } // namespace tomviz

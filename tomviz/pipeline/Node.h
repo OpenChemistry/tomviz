@@ -112,6 +112,12 @@ public:
 
   virtual bool execute();
 
+  /// Whether a new volume output takes its color map from an input
+  /// (see colorMapSource). Nodes whose output values mean something
+  /// else entirely, like a Fourier spectrum, return false so the output
+  /// starts from the default color map.
+  virtual bool inheritsColorMap() const { return true; }
+
   /// Whether this node provides an editor widget (script + parameters
   /// + execution settings) usable from the properties panel and the
   /// edit dialog. Defaults to false; subclasses that have user-editable

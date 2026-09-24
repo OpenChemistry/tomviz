@@ -38,6 +38,7 @@
 #include "AxesReaction.h"
 #include "Behaviors.h"
 #include "CameraReaction.h"
+#include "ColorMap.h"
 #include "Connection.h"
 #include "DataBroker.h"
 #include "DataBrokerLoadReaction.h"
@@ -2330,8 +2331,16 @@ bool MainWindow::ensureColorMapForPort(pipeline::Node* node,
   bool created = false;
   if (!vol->hasColorMap()) {
     vol->initColorMap();
-    if (upstream && upstream->hasColorMap()) {
-      vol->copyColorMapFrom(*upstream);
+    // The same choice as the execution path (inheritOutputMetadata): the
+    // primary input's color map, never a label map's
+    const auto inputs =
+      node ? node->collectInputs() : QMap<QString, pipeline::PortData>();
+    if (auto source = pipeline::colorMapSource(node, inputs)) {
+      vol->copyColorMapFrom(*source);
+    } else {
+      // Nothing to inherit: tomviz's default preset, as loaded data gets,
+      // not ParaView's
+      ColorMap::instance().applyPreset(vol->colorMap());
     }
     created = true;
   }

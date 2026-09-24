@@ -31,6 +31,9 @@ public:
   LegacyPythonTransform(QObject* parent = nullptr);
   ~LegacyPythonTransform() override = default;
 
+  /// The description's "inheritColorMap" (default true).
+  bool inheritsColorMap() const override { return m_inheritColorMap; }
+
   /// Load from JSON description string
   void setJSONDescription(const QString& json);
   QString jsonDescription() const;
@@ -96,6 +99,7 @@ private:
   QMap<QString, ParameterBinding> m_parameterBindings;
   QString m_customWidgetID;
   QStringList m_resultNames;
+  bool m_inheritColorMap = true;
   QStringList m_resultTypes;
   QStringList m_datasetInputNames;
   QString m_primaryOutputName = QStringLiteral("volume");

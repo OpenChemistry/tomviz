@@ -98,6 +98,8 @@ public:
   /// Schema-v2 ``supportsComplete`` flag (default false). Shells use
   /// this to drive Node::setSupportsCompletion.
   bool supportsComplete() const;
+  /// The description's "inheritColorMap" (default true).
+  bool inheritsColorMap() const;
   /// Schema-v2 description shape: true if the JSON declared a
   /// non-empty ``inputs`` array. Used by the factory routing to
   /// validate that a transform-shape description is paired with the
@@ -204,6 +206,7 @@ private:
   QString m_customWidgetID;
   bool m_supportsCancel = false;
   bool m_supportsComplete = false;
+  bool m_inheritColorMap = true;
   QString m_externalPythonEnvPath;
   bool m_externalOnly = false;
 

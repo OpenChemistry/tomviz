@@ -4,6 +4,8 @@
 #include "PortDataMetadata.h"
 
 #include "ColorMap.h"
+#include "InputPort.h"
+#include "Node.h"
 #include "PortType.h"
 #include "ThreadUtils.h"
 #include "data/LabelMapData.h"
@@ -78,13 +80,14 @@ bool applyLabelMapColors(const VolumeDataPtr& vol)
 namespace {
 
 /// Volume-specific inheritance: copy colormap + gradient opacity from
-/// the first volume-typed input that has them onto each volume-typed
-/// output that doesn't. LabelMap outputs are handled separately —
-/// their colors come from their own label table, reconciled against
-/// the scalars they just produced, never inherited from upstream.
-void inheritVolumeMetadata(const QMap<QString, PortData>& inputs,
+/// colorMapSource() onto each volume-typed output that has none. LabelMap
+/// outputs are handled separately: their colors come from their own
+/// label table, reconciled against the scalars they just produced, never
+/// inherited from upstream.
+void inheritVolumeMetadata(Node* node, const QMap<QString, PortData>& inputs,
                            const QMap<QString, PortData>& outputs)
 {
+  const VolumeDataPtr source = colorMapSource(node, inputs);
   for (auto outIt = outputs.constBegin(); outIt != outputs.constEnd();
        ++outIt) {
     if (!isVolumeType(outIt.value().type())) {
@@ -108,39 +111,64 @@ void inheritVolumeMetadata(const QMap<QString, PortData>& inputs,
       // VolumeData) — leave its colormap alone.
       continue;
     }
-    for (auto inIt = inputs.constBegin(); inIt != inputs.constEnd();
-         ++inIt) {
-      if (!isVolumeType(inIt.value().type())) {
-        continue;
-      }
-      VolumeDataPtr inVolume;
-      try {
-        inVolume = inIt.value().value<VolumeDataPtr>();
-      } catch (const std::bad_any_cast&) {
-        continue;
-      }
-      if (!inVolume || !inVolume->hasColorMap()) {
-        continue;
-      }
+    if (source) {
       outVolume->initColorMap();
-      outVolume->copyColorMapFrom(*inVolume);
-      break;
+      outVolume->copyColorMapFrom(*source);
     }
   }
 }
 
 } // namespace
 
-void inheritOutputMetadata(QObject* threadOwner,
+VolumeDataPtr colorMapSource(Node* node, const QMap<QString, PortData>& inputs)
+{
+  if (node && !node->inheritsColorMap()) {
+    return nullptr;
+  }
+  // Declaration order first: the primary input before a mask or a
+  // second dataset (a QMap would put "mask" before "volume").
+  QStringList order;
+  if (node) {
+    for (auto* port : node->inputPorts()) {
+      order.append(port->name());
+    }
+  }
+  for (const auto& name : inputs.keys()) {
+    if (!order.contains(name)) {
+      order.append(name);
+    }
+  }
+  for (const auto& name : order) {
+    if (!inputs.contains(name)) {
+      continue;
+    }
+    const PortData& input = inputs.value(name);
+    if (!isVolumeType(input.type()) || input.type() == PortType::LabelMap) {
+      continue;
+    }
+    VolumeDataPtr volume;
+    try {
+      volume = input.value<VolumeDataPtr>();
+    } catch (const std::bad_any_cast&) {
+      continue;
+    }
+    if (volume && volume->hasColorMap() && !labelMapData(volume)) {
+      return volume;
+    }
+  }
+  return nullptr;
+}
+
+void inheritOutputMetadata(Node* node,
                            const QMap<QString, PortData>& inputs,
                            const QMap<QString, PortData>& outputs)
 {
   auto apply = [&]() {
-    inheritVolumeMetadata(inputs, outputs);
+    inheritVolumeMetadata(node, inputs, outputs);
     // Future payload types with inheritable metadata: dispatch here.
   };
 
-  runOnThread(threadOwner, apply);
+  runOnThread(node, apply);
 }
 
 } // namespace pipeline
