@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "name": "FourierPeakMask",
   "label": "Fourier Peak Mask",
-  "description": "Keep only the reciprocal-space volumes around selected peaks and transform back to real space, the equivalent of selected-area electron diffraction. With Auto-detect Peaks on, the peaks are found by thresholding the spectrum's normalized log magnitude (what 'FFT (abs log)' shows) and taking the strongest voxel of each region above the threshold, skipping the center; the peaks found are written into Peak Centers, so uncheck Auto-detect to review or edit them. Otherwise enter peaks by hand or from a CSV, reading their (x, y, z) voxel indices off an 'FFT (abs log)' branch. Soft spherical windows (erf edges) are applied around each peak and, optionally, its Friedel mate mirrored through the spectrum center.",
+  "description": "Keep only the reciprocal-space volumes around selected peaks and transform back to real space, the equivalent of selected-area electron diffraction. With Auto-detect Peaks on, the peaks are found by thresholding the spectrum's normalized log magnitude (what 'Fast Fourier Transform (FFT)' shows) and taking the strongest voxel of each region above the threshold, skipping the center; the peaks found are written into Peak Centers, so uncheck Auto-detect to review or edit them. Otherwise enter peaks by hand or from a CSV, reading their (x, y, z) voxel indices off a 'Fast Fourier Transform (FFT)' branch. Soft spherical windows (erf edges) are applied around each peak and, optionally, its Friedel mate mirrored through the spectrum center.",
   "help": {
     "url": "analysis.html#fourier-peak-mask"
   },
@@ -29,7 +29,7 @@
     {
       "name": "threshold",
       "label": "Threshold",
-      "description": "Fraction of the maximum normalized log magnitude, as displayed by 'FFT (abs log)', above which voxels belong to a peak. Preview it with a Threshold visualization on an 'FFT (abs log)' branch.",
+      "description": "Fraction of the maximum normalized log magnitude, as displayed by 'Fast Fourier Transform (FFT)', above which voxels belong to a peak. Preview it with a Threshold visualization on a 'Fast Fourier Transform (FFT)' branch.",
       "type": "double",
       "default": 0.65,
       "minimum": 0.0,
@@ -66,7 +66,7 @@
     {
       "name": "centers",
       "label": "Peak Centers",
-      "description": "Peaks as 'x, y, z' voxel indices into the centered spectrum, separated by semicolons, as shown by the 'FFT (abs log)' operator. Auto-detect fills this in.",
+      "description": "Peaks as 'x, y, z' voxel indices into the centered spectrum, separated by semicolons, as shown by the 'Fast Fourier Transform (FFT)' operator. Auto-detect fills this in.",
       "type": "string",
       "default": "",
       "visible_if": "auto_detect == false"

@@ -18,15 +18,17 @@ class FourierPeakMask(tomviz.nodes.TransformNode):
 
         With auto-detection on, the peaks are found by thresholding the
         normalized log magnitude of the spectrum (the same quantity the
-        "FFT (abs log)" operator displays), labeling the connected
-        regions above the threshold and taking the strongest voxel of
+        "Fast Fourier Transform (FFT)" operator displays), labeling the
+        connected regions above the threshold and taking the strongest
+        voxel of
         each, skipping the central (DC) region and specks smaller than
         min_peak_size. The peaks found are written back into the Peak
         Centers parameter so they can be reviewed or edited.
 
         Otherwise peak coordinates are voxel indices into the centered
-        (fftshift-ed) spectrum, exactly as displayed by "FFT (abs log)":
-        find each peak's (x, y, z) index there and enter one peak per
+        (fftshift-ed) spectrum, exactly as displayed by "Fast Fourier
+        Transform (FFT)": find each peak's (x, y, z) index there and enter
+        one peak per
         line (or semicolon) as "x, y, z". A CSV file with one x,y,z row
         per peak (extra columns and header lines are ignored) can be
         used instead.
@@ -117,8 +119,8 @@ def _detect_peaks(magnitude, dc, threshold, exclude_center_radius,
 
     Returns the strongest voxel of each connected region above the
     threshold, strongest peak first. The normalization matches the
-    "FFT (abs log)" operator, so a threshold tuned visually on that
-    output applies here unchanged.
+    "Fast Fourier Transform (FFT)" operator, so a threshold tuned
+    visually on that output applies here unchanged.
     """
     import numpy as np
     from scipy import ndimage
