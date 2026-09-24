@@ -106,10 +106,10 @@ include(Git)
 determine_version("${tomviz_SOURCE_DIR}" "${GIT_EXECUTABLE}" "tomviz")
 # The version being developed here. Authoritative, because "git
 # describe" keeps reporting the previous release until the matching tag
-# is created, and a 3.0 build must not label itself 2.3.1. Also what
+# is created, and a 3.1 build must not label itself 3.0.0. Also what
 # source tarballs (no git at all) fall back on.
 set(tomviz_version_major 3)
-set(tomviz_version_minor 0)
+set(tomviz_version_minor 1)
 set(tomviz_version_patch 0)
 set(tomviz_version_extra)
 set(tomviz_version
@@ -118,7 +118,7 @@ set(tomviz_version
 # git describe refines that in two ways: it supplies the commit-count
 # and sha suffix that distinguishes a development build from the release
 # (empty when sitting exactly on the tag), and once a tag newer than the
-# version above exists it takes over the number too, so tagging 3.0.1
+# version above exists it takes over the number too, so tagging 3.1.1
 # needs no edit here. Packaging that builds outside a git checkout can
 # pass -DTOMVIZ_GIT_DESCRIBE=<version> to drive both.
 if(tomviz_VERSION_FULL)
