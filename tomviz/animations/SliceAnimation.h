@@ -12,7 +12,7 @@ namespace tomviz {
 
 /// Sweeps a slice through the data. An axis-aligned slice moves by
 /// slice index, the unit its own property panel uses; a custom-oriented
-/// slice has no slices, so it moves by signed distance from the centre
+/// slice has no slices, so it moves by signed distance from the center
 /// of the data along its own normal instead.
 class SliceAnimation : public ModuleAnimation
 {

@@ -1074,7 +1074,7 @@ void VolumeSink::updateExplodedWidget()
     // left, and dragging its tip turns the normal, which is the
     // direction. The plane's outline is kept at zero opacity so it is
     // still there to grab, which slides the widget; the end of a drag
-    // puts it back at the centre.
+    // puts it back at the center.
     m_explodedWidget = vtkSmartPointer<vtkNonOrthoImagePlaneWidget>::New();
     m_explodedWidget->SetInteractor(
       renderView()->GetRenderWindow()->GetInteractor());
@@ -1144,7 +1144,7 @@ void VolumeSink::onExplodedWidgetInteraction()
 void VolumeSink::onExplodedWidgetInteractionEnded()
 {
   // Dragging the (invisible) plane slides the widget; only its
-  // direction means anything, so put it back at the centre.
+  // direction means anything, so put it back at the center.
   updateExplodedWidget();
   emit renderNeeded();
 }
@@ -1680,6 +1680,7 @@ void VolumeSink::setSolidity(double value)
 {
   if (value > 0.0) {
     m_volumeProperty->SetScalarOpacityUnitDistance(1.0 / value);
+    emit solidityChanged(value);
     emit renderNeeded();
   }
 }
@@ -2720,7 +2721,7 @@ QWidget* VolumeSink::createSinkPropertiesWidget(QWidget* parent)
   }
   auto* arrowCheck = new QCheckBox("Show Arrow", explodedBody);
   arrowCheck->setToolTip(
-    "Draw an arrow along the direction at the centre of the volume; drag "
+    "Draw an arrow along the direction at the center of the volume; drag "
     "its tip to turn it.");
   const int arrowRowIndex = explodedForm->rowCount();
   explodedForm->addRow(QString(), arrowCheck);
@@ -3007,6 +3008,11 @@ QWidget* VolumeSink::createSinkPropertiesWidget(QWidget* parent)
           });
   connect(widget, &VolumeSinkWidget::solidityChanged, this,
           &VolumeSink::setSolidity);
+  // Animations and Go To set the solidity too; keep the slider on it
+  connect(this, &VolumeSink::solidityChanged, widget, [widget](double value) {
+    QSignalBlocker blocker(widget);
+    widget->setSolidity(value);
+  });
 
   return widget;
 }

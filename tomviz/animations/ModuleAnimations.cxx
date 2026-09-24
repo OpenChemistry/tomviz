@@ -13,6 +13,7 @@
 #include "OpacityAnimation.h"
 #include "ScalarOpacityAnimation.h"
 #include "SliceAnimation.h"
+#include "SolidityAnimation.h"
 #include "ThresholdAnimation.h"
 
 #include "pipeline/Pipeline.h"
@@ -36,6 +37,10 @@ ModuleAnimation* buildAnimation(const QString& type, pipeline::Node* node,
   if (type == "contour") {
     if (auto* sink = qobject_cast<pipeline::ContourSink*>(node)) {
       return new ContourAnimation(sink, start, stop);
+    }
+  } else if (type == "solidity") {
+    if (auto* sink = qobject_cast<pipeline::VolumeSink*>(node)) {
+      return new SolidityAnimation(sink, start, stop);
     }
   } else if (type == "slice") {
     if (auto* sink = qobject_cast<pipeline::SliceSink*>(node)) {

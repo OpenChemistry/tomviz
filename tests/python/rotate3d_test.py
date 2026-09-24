@@ -31,7 +31,7 @@ def _slab_with_marker():
     return arr
 
 
-def _marker_centre(arr):
+def _marker_center(arr):
     return np.argwhere(arr > 3.0).mean(axis=0)
 
 
@@ -39,11 +39,11 @@ def test_rotate_in_plane_without_expand_keeps_shape():
     """An alignment rotation about Z should turn the data within the image
     plane, leave the dimensions alone, and leave the marker at the top."""
     arr = _slab_with_marker()
-    before = _marker_centre(arr)
+    before = _marker_center(arr)
     out = _run_rotate(arr, rotation_angle=3.0, rotation_axis=2, expand=False)
 
     assert out.shape == arr.shape
-    after = _marker_centre(out)
+    after = _marker_center(out)
     # Still near the top in y, and still in the same slices.
     assert after[1] > arr.shape[1] * 0.6
     assert abs(after[2] - before[2]) < 1.0

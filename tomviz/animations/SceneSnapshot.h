@@ -25,8 +25,8 @@ class LegacyModuleSink;
 
 /// The whitelisted state of one visualization module that a viewpoint
 /// records: visibility, the flat opacity of surface/plane modules (and
-/// a label map's surface), the scalar opacity curve of a volume, the
-/// volume cut-out and exploded view, where a slice or clip plane sits,
+/// a label map's surface), the scalar opacity curve and solidity of a
+/// volume, the volume cut-out and exploded view, where a slice or clip plane sits,
 /// a contour's iso value, a threshold's range, and which labels of a
 /// label map are hidden. Fields a module does not have stay unset.
 struct SinkSnapshot
@@ -34,6 +34,8 @@ struct SinkSnapshot
   bool visible = true;
   std::optional<double> opacity;
   vtkSmartPointer<vtkPiecewiseFunction> scalarOpacity;
+  /// Volumes: the solidity.
+  std::optional<double> solidity;
   std::optional<bool> cutOutEnabled;
   std::optional<int> cutOutCorner;
   std::optional<std::array<double, 3>> cutOutPosition;

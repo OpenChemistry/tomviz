@@ -31,7 +31,7 @@ void explodedExtent(const double bounds[6], const std::array<double, 3>& dir,
 {
   // Half the projected extent is the sum of the half-widths weighted by
   // how much of each axis the direction contains; the box is symmetric
-  // about its centre, so lo is minus that.
+  // about its center, so lo is minus that.
   double half = 0.0;
   for (int a = 0; a < 3; ++a) {
     half += std::abs(dir[a]) * (bounds[2 * a + 1] - bounds[2 * a]) / 2.0;

@@ -40,7 +40,7 @@ ThresholdSink::ThresholdSink(QObject* parent) : LegacyModuleSink(parent)
 
 namespace {
 
-/// A voxel is a cell, not a point. Thresholding the point-centred image
+/// A voxel is a cell, not a point. Thresholding the point-centered image
 /// keeps a hexahedron only when all eight voxels around it pass, which
 /// erases thin features and isolated voxels that Binary Threshold still
 /// segments. Rebuild the grid one cell per voxel, sharing the arrays,
@@ -55,7 +55,7 @@ vtkSmartPointer<vtkImageData> cellCenteredCopy(vtkImageData* image)
   cells->SetSpacing(image->GetSpacing());
   cells->SetDirectionMatrix(image->GetDirectionMatrix());
   // Half a voxel back along each of the image's own axes, so the cell
-  // centres land on the voxel centres whatever the direction matrix.
+  // centers land on the voxel centers whatever the direction matrix.
   image->TransformContinuousIndexToPhysicalPoint(-0.5, -0.5, -0.5, origin);
   cells->SetOrigin(origin);
 

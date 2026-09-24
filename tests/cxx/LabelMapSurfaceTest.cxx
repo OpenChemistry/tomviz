@@ -120,7 +120,7 @@ TEST(LabelMapSurfaceTest, ColorsEachLabelSmoothed)
 
 namespace {
 
-// A radius-4 sphere of label 1 centred in a 16^3 volume: 257 voxels, a
+// A radius-4 sphere of label 1 centered in a 16^3 volume: 257 voxels, a
 // particle of the size a segmentation is full of.
 vtkSmartPointer<vtkImageData> smallSphere(const double spacing[3])
 {

@@ -525,6 +525,7 @@ list(APPEND SOURCES
   animations/ExplodedAnimation.h
   animations/OpacityAnimation.h
   animations/SliceAnimation.h
+  animations/SolidityAnimation.h
   animations/ThresholdAnimation.h
   animations/TimeSeriesAnimation.h
 )

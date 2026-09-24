@@ -20,7 +20,7 @@ std::array<double, 3> explodedDirection(int axis,
                                         const std::array<double, 3>& custom);
 
 /// How far the box @a bounds reaches along @a dir, measured from its
-/// centre: @a lo is the signed distance of the nearest corner (never
+/// center: @a lo is the signed distance of the nearest corner (never
 /// positive) and @a length the full span, so the slab boundaries lie at
 /// lo + length * k / chunks. For an axis direction this is the box's own
 /// extent along that axis.

@@ -507,7 +507,7 @@ void SliceSink::propagateToLinkedSinks()
     if (!other || other == this || !other->linked()) {
       continue;
     }
-    // Direction first: changing it re-centres the peer's slice, which
+    // Direction first: changing it re-centers the peer's slice, which
     // the position below then overwrites.
     other->setDirection(m_direction);
     if (isOrtho()) {

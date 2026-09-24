@@ -15,7 +15,7 @@
     {
       "name": "rotation_axis",
       "label": "Axis",
-      "description": "Axis to rotate about. Z turns the data within the XY image plane, which is what aligns features seen in a slice. X and Y tip the volume through the slice stack instead, which moves features between slices: even 3 degrees shifts a feature 256 voxels off-centre by 13 slices.",
+      "description": "Axis to rotate about. Z turns the data within the XY image plane, which is what aligns features seen in a slice. X and Y tip the volume through the slice stack instead, which moves features between slices: even 3 degrees shifts a feature 256 voxels off-center by 13 slices.",
       "type": "enumeration",
       "default": 0,
       "options": [

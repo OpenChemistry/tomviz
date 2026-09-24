@@ -143,6 +143,7 @@ SinkSnapshot SinkSnapshot::capture(LegacyModuleSink* sink)
         removePlaceholderNodes(snapshot.scalarOpacity);
       }
     }
+    snapshot.solidity = volume->solidity();
     snapshot.cutOutEnabled = volume->cutOutEnabled();
     snapshot.cutOutCorner = volume->cutOutCorner();
     snapshot.cutOutPosition = { { volume->cutOutPosition(0),
@@ -167,7 +168,9 @@ SinkSnapshot SinkSnapshot::capture(LegacyModuleSink* sink)
     snapshot.planeDirection = static_cast<int>(clip->direction());
     snapshot.sliceIndex = clip->slice();
     clip->planeCenter(center);
-    clip->planeNormal(normal);
+    // What setPlaneNormal takes back; the world normal differs once the
+    // volume is moved or turned
+    clip->planeNormalInData(normal);
     snapshot.planeCenter = { { center[0], center[1], center[2] } };
     snapshot.planeNormal = { { normal[0], normal[1], normal[2] } };
   } else if (auto* contour = qobject_cast<ContourSink*>(sink)) {
@@ -255,6 +258,9 @@ QJsonObject SinkSnapshot::serialize() const
   if (isoValue) {
     json["iso"] = *isoValue;
   }
+  if (solidity) {
+    json["solidity"] = *solidity;
+  }
   if (thresholdLower && thresholdUpper) {
     json["threshold"] =
       QJsonObject{ { "lower", *thresholdLower }, { "upper", *thresholdUpper } };
@@ -310,6 +316,9 @@ SinkSnapshot SinkSnapshot::deserialize(const QJsonObject& json)
   }
   if (json.contains("iso")) {
     snapshot.isoValue = json["iso"].toDouble();
+  }
+  if (json.contains("solidity")) {
+    snapshot.solidity = json["solidity"].toDouble();
   }
   if (json.contains("threshold")) {
     auto threshold = json["threshold"].toObject();
@@ -420,6 +429,11 @@ void SceneSnapshot::apply(Pipeline* pipeline, const QSet<int>* known) const
         snapshot.planeNormal) {
       applyPlane(sink, *snapshot.planeDirection, snapshot.sliceIndex.value_or(0),
                  *snapshot.planeCenter, *snapshot.planeNormal);
+    }
+    if (snapshot.solidity) {
+      if (auto* volume = qobject_cast<VolumeSink*>(sink)) {
+        volume->setSolidity(*snapshot.solidity);
+      }
     }
     if (snapshot.isoValue) {
       if (auto* contour = qobject_cast<ContourSink*>(sink)) {

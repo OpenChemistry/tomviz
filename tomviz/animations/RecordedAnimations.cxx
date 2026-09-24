@@ -6,6 +6,7 @@
 #include "ActiveObjects.h"
 #include "CameraViewpoints.h"
 #include "ModuleAnimations.h"
+#include "SolidityAnimation.h"
 #include "pipeline/Pipeline.h"
 #include "pipeline/sinks/ClipSink.h"
 #include "pipeline/sinks/ContourSink.h"
@@ -16,6 +17,8 @@
 #include "pipeline/sinks/VolumeSink.h"
 
 #include <vtkPiecewiseFunction.h>
+
+#include <vtkMath.h>
 
 #include <algorithm>
 #include <cmath>
@@ -35,6 +38,48 @@ namespace {
 double lerp(double a, double b, double u)
 {
   return a + (b - a) * u;
+}
+
+/// How far an effect that is on at one end of a leg and off (or set up
+/// differently) at the other has got: collapsing out of the old state
+/// (a fraction from 1 down to 0) or growing into the new one (0 up to
+/// 1). Turning off collapses over the whole leg and turning on grows
+/// over it, unless the exclusive other effect is on at the far end,
+/// when each keeps to its half; a change of setup collapses in the
+/// first half and grows in the second, passing through nothing.
+struct Sweep
+{
+  bool into = false;    // growing into b, rather than collapsing out of a
+  bool on = false;      // the effect is on at all
+  double amount = 0.0;  // of the side's own extent, 0 to 1
+};
+
+Sweep sweepAt(double u, bool aOn, bool bOn, bool aOtherOn, bool bOtherOn)
+{
+  Sweep sweep;
+  if (aOn && bOn) {
+    sweep.on = true;
+    sweep.into = u >= 0.5;
+    sweep.amount = sweep.into ? 2 * u - 1 : 1 - 2 * u;
+  } else if (aOn) {
+    const double end = bOtherOn ? 0.5 : 1.0;
+    sweep.on = u < end;
+    sweep.amount = sweep.on ? 1 - u / end : 0.0;
+  } else if (bOn) {
+    const double start = aOtherOn ? 0.5 : 0.0;
+    sweep.into = true;
+    sweep.on = u > start;
+    sweep.amount = sweep.on ? (u - start) / (1 - start) : 0.0;
+  }
+  return sweep;
+}
+
+/// Cut-out fractions that remove nothing: the corner of the volume the
+/// cut-out grows from
+std::array<double, 3> emptyCutOut(int corner)
+{
+  return { corner & 1 ? 1.0 : 0.0, corner & 2 ? 1.0 : 0.0,
+           corner & 4 ? 1.0 : 0.0 };
 }
 
 /// Viewpoint indices that recorded a scene, in order.
@@ -104,6 +149,7 @@ CutOutKey cutOutKey(const SinkSnapshot& snapshot)
   key.corner = snapshot.cutOutCorner.value_or(0);
   key.position = snapshot.cutOutPosition.value_or(
     std::array<double, 3>{ 0.5, 0.5, 0.5 });
+  key.otherOn = snapshot.explodedEnabled.value_or(false);
   return key;
 }
 
@@ -117,6 +163,7 @@ ExplodedKey explodedKey(const SinkSnapshot& snapshot)
   key.chunks = snapshot.explodedChunks.value_or(4);
   key.gap = snapshot.explodedGap.value_or(0.25);
   key.offset = snapshot.explodedOffset.value_or(0);
+  key.otherOn = snapshot.cutOutEnabled.value_or(false);
   return key;
 }
 
@@ -358,14 +405,37 @@ void RecordedCutOutAnimation::applySpan(const AnchorSpan& span)
   }
   const auto& a = m_keys[span.from];
   const auto& b = m_keys[span.to];
-  // The position slides; the corner and the switch flip halfway. The
-  // sink's setters ignore values that do not change.
-  volume->setCutOutCorner(span.u < 0.5 ? a.corner : b.corner);
-  for (int axis = 0; axis < 3; ++axis) {
-    volume->setCutOutPosition(axis,
-                              lerp(a.position[axis], b.position[axis], span.u));
+  // The sink's setters ignore values that do not change.
+  auto apply = [volume](int corner, const std::array<double, 3>& from,
+                        const std::array<double, 3>& to, double u,
+                        bool enabled) {
+    volume->setCutOutCorner(corner);
+    for (int axis = 0; axis < 3; ++axis) {
+      volume->setCutOutPosition(axis, lerp(from[axis], to[axis], u));
+    }
+    volume->setCutOutEnabled(enabled);
+  };
+
+  if (a.enabled == b.enabled && (!a.enabled || a.corner == b.corner)) {
+    // The same box, or none: the position slides, and a corner that
+    // nobody sees flips halfway
+    apply(span.u < 0.5 ? a.corner : b.corner, a.position, b.position,
+          span.u, a.enabled);
+    return;
   }
-  volume->setCutOutEnabled(span.u < 0.5 ? a.enabled : b.enabled);
+  // Switched on or off, or moved to another corner: the box shrinks
+  // into its corner and grows out of the new one
+  const auto sweep =
+    sweepAt(span.u, a.enabled, b.enabled, a.otherOn, b.otherOn);
+  if (!sweep.on) {
+    // Not yet on, or already gone: the settings of the end it is off at
+    const auto& side = sweep.into ? a : b;
+    apply(side.corner, side.position, side.position, 0.0, false);
+    return;
+  }
+  const auto& side = sweep.into ? b : a;
+  apply(side.corner, emptyCutOut(side.corner), side.position, sweep.amount,
+        true);
 }
 
 // --- Exploded view ---
@@ -384,15 +454,39 @@ void RecordedExplodedAnimation::applySpan(const AnchorSpan& span)
   }
   const auto& a = m_keys[span.from];
   const auto& b = m_keys[span.to];
-  const auto& side = span.u < 0.5 ? a : b;
-  volume->setExplodedDirection(side.direction[0], side.direction[1],
-                               side.direction[2]);
-  volume->setExplodedAxis(side.axis, /*refitCamera=*/false);
-  volume->setExplodedChunks(side.chunks);
-  volume->setExplodedGap(lerp(a.gap, b.gap, span.u));
-  volume->setExplodedOffset(
-    static_cast<int>(std::lround(lerp(a.offset, b.offset, span.u))));
-  volume->setExplodedEnabled(side.enabled, /*refitCamera=*/false);
+  auto apply = [volume](const ExplodedKey& setup, double gap, int offset,
+                        bool enabled) {
+    volume->setExplodedDirection(setup.direction[0], setup.direction[1],
+                                 setup.direction[2]);
+    volume->setExplodedAxis(setup.axis, /*refitCamera=*/false);
+    volume->setExplodedChunks(setup.chunks);
+    volume->setExplodedGap(gap);
+    volume->setExplodedOffset(offset);
+    volume->setExplodedEnabled(enabled, /*refitCamera=*/false);
+  };
+
+  const bool sameSlabs =
+    a.axis == b.axis && a.chunks == b.chunks &&
+    (a.axis != pipeline::kExplodedCustomAxis || a.direction == b.direction);
+  if (a.enabled == b.enabled && (!a.enabled || sameSlabs)) {
+    // The same slabs, or none: the gap and offset slide, and a setup
+    // nobody sees changes halfway
+    apply(span.u < 0.5 ? a : b, lerp(a.gap, b.gap, span.u),
+          static_cast<int>(std::lround(lerp(a.offset, b.offset, span.u))),
+          a.enabled);
+    return;
+  }
+  // Switched on or off, or cut differently: the slabs close up and open
+  // again in their new arrangement, which changes while they touch
+  const auto sweep =
+    sweepAt(span.u, a.enabled, b.enabled, a.otherOn, b.otherOn);
+  if (!sweep.on) {
+    const auto& side = sweep.into ? a : b;
+    apply(side, side.gap, side.offset, false);
+    return;
+  }
+  const auto& side = sweep.into ? b : a;
+  apply(side, side.gap * sweep.amount, side.offset, true);
 }
 
 // --- Slice and clip planes ---
@@ -427,9 +521,48 @@ void RecordedPlaneAnimation::applySpan(const AnchorSpan& span)
       normal = span.u < 0.5 ? a.normal : b.normal;
     }
     applyPlane(sink, 3, a.slice, center, normal);
-  } else {
-    const PlaneKey& side = span.u < 0.5 ? a : b;
+  } else if (span.u <= 0.0 || span.u >= 1.0) {
+    const PlaneKey& side = span.u <= 0.0 ? a : b;
     applyPlane(sink, side.direction, side.slice, side.center, side.normal);
+  } else {
+    // A new direction: the plane swings from one orientation to the
+    // other as a custom plane, turning its normal about the axis the two
+    // share, and settles into the recorded direction at the end
+    std::array<double, 3> from = a.normal, to = b.normal;
+    if (vtkMath::Normalize(from.data()) == 0.0 ||
+        vtkMath::Normalize(to.data()) == 0.0) {
+      const PlaneKey& side = span.u < 0.5 ? a : b;
+      applyPlane(sink, side.direction, side.slice, side.center, side.normal);
+      return;
+    }
+    // A slice looks the same from either side, so it takes the short way
+    // round; a clip keeps its normal, which says which side is cut away
+    double cosine = vtkMath::Dot(from.data(), to.data());
+    if (cosine < 0 && !qobject_cast<ClipSink*>(sink)) {
+      vtkMath::MultiplyScalar(to.data(), -1.0);
+      cosine = -cosine;
+    }
+    std::array<double, 3> axis;
+    vtkMath::Cross(from.data(), to.data(), axis.data());
+    if (vtkMath::Normalize(axis.data()) < 1e-9) {
+      // Parallel: nothing to turn, or a half turn about any axis in the
+      // plane
+      double other[3] = { 1, 0, 0 };
+      if (std::abs(from[0]) > 0.9) {
+        other[0] = 0, other[1] = 1;
+      }
+      vtkMath::Cross(from.data(), other, axis.data());
+      vtkMath::Normalize(axis.data());
+    }
+    const double angle = std::acos(std::clamp(cosine, -1.0, 1.0)) * span.u;
+    // Rodrigues: the from normal turned by angle about axis
+    std::array<double, 3> across, normal, center;
+    vtkMath::Cross(axis.data(), from.data(), across.data());
+    for (int i = 0; i < 3; ++i) {
+      normal[i] = from[i] * std::cos(angle) + across[i] * std::sin(angle);
+      center[i] = lerp(a.center[i], b.center[i], span.u);
+    }
+    applyPlane(sink, 3, a.slice, center, normal);
   }
 }
 
@@ -475,6 +608,21 @@ void RecordedIsoAnimation::applySpan(const AnchorSpan& span)
   const double value = lerp(m_keys[span.from], m_keys[span.to], span.u);
   if (contour->isoValue() != value) {
     contour->setIsoValue(value);
+  }
+}
+
+// --- Solidity ---
+
+void RecordedSolidityAnimation::applySpan(const AnchorSpan& span)
+{
+  auto* volume = qobject_cast<VolumeSink*>(baseNode.data());
+  if (!volume || m_keys.isEmpty()) {
+    return;
+  }
+  const double value =
+    SolidityAnimation::blend(m_keys[span.from], m_keys[span.to], span.u);
+  if (volume->solidity() != value) {
+    volume->setSolidity(value);
   }
 }
 
@@ -663,6 +811,20 @@ void RecordedAnimations::sync(Pipeline* pipeline)
         if (differs) {
           auto* animation = new RecordedPlaneAnimation(sink, keys);
           animation->excludedSegments = authoredSegments(sink, planeType(sink));
+          registry.add(animation);
+        }
+      }
+      if (volume && sample.solidity) {
+        QMap<int, double> keys;
+        bool differs = false;
+        for (int anchor : anchors) {
+          keys[anchor] = snapshotAt(anchor, id, sample).solidity.value_or(
+            *sample.solidity);
+          differs = differs || keys[anchor] != keys[anchors.first()];
+        }
+        if (differs) {
+          auto* animation = new RecordedSolidityAnimation(volume, keys);
+          animation->excludedSegments = authoredSegments(sink, "solidity");
           registry.add(animation);
         }
       }
@@ -855,6 +1017,14 @@ QList<RecordedChange> RecordedAnimations::changes(Pipeline* pipeline) const
           }
         }
       }
+      if (volume && sample.solidity) {
+        const double start = a.solidity.value_or(*sample.solidity);
+        const double stop = b.solidity.value_or(*sample.solidity);
+        if (start != stop) {
+          row("solidity", "solidity " + number(start) + " to " + number(stop),
+              start, stop);
+        }
+      }
       if (sample.isoValue) {
         const double start = a.isoValue.value_or(*sample.isoValue);
         const double stop = b.isoValue.value_or(*sample.isoValue);
@@ -960,6 +1130,8 @@ void RecordedAnimations::remove(const RecordedChange& change,
     later.planeNormal = earlier.planeNormal;
   } else if (change.property == "iso") {
     later.isoValue = earlier.isoValue;
+  } else if (change.property == "solidity") {
+    later.solidity = earlier.solidity;
   } else if (change.property == "threshold") {
     later.thresholdLower = earlier.thresholdLower;
     later.thresholdUpper = earlier.thresholdUpper;

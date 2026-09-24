@@ -9,6 +9,7 @@
 #include "ExplodedAnimation.h"
 #include "OpacityAnimation.h"
 #include "SliceAnimation.h"
+#include "SolidityAnimation.h"
 #include "ThresholdAnimation.h"
 
 #include "pipeline/sinks/ClipSink.h"
@@ -70,7 +71,7 @@ AnimatableProperty isoValue()
 }
 
 // A slice and a clip both move by index while axis aligned and by
-// signed distance from the centre of the data along their normal while
+// signed distance from the center of the data along their normal while
 // custom, so the two entries share their shape.
 template <typename SinkT, typename AnimationT>
 AnimatableProperty planeProperty(const QString& id)
@@ -198,6 +199,39 @@ AnimatableProperty opacity()
   return p;
 }
 
+AnimatableProperty solidity()
+{
+  AnimatableProperty p;
+  p.id = "solidity";
+  p.label = [](Node*) { return QString("Solidity"); };
+  p.applies = isA<VolumeSink>;
+  p.range = [](Node* node) {
+    PropertyRange r;
+    r.label = "Solidity:";
+    // Zero would make the volume vanish and cannot be set
+    r.lo = 0.01;
+    r.hi = 1.0;
+    auto* volume = qobject_cast<VolumeSink*>(node);
+    r.start = volume ? volume->solidity() : 1.0;
+    r.stop = r.start >= 0.5 ? 0.1 : 1.0;
+    return r;
+  };
+  p.make = [](Node* node, double start, double stop) -> ModuleAnimation* {
+    auto* volume = qobject_cast<VolumeSink*>(node);
+    return volume ? new SolidityAnimation(volume, start, stop) : nullptr;
+  };
+  p.matches = [](ModuleAnimation* animation, double& start, double& stop) {
+    auto* sweep = qobject_cast<SolidityAnimation*>(animation);
+    if (!sweep) {
+      return false;
+    }
+    start = sweep->startValue;
+    stop = sweep->stopValue;
+    return true;
+  };
+  return p;
+}
+
 AnimatableProperty exploded(ExplodedAnimation::Unit unit)
 {
   AnimatableProperty p;
@@ -297,6 +331,7 @@ const QList<AnimatableProperty>& animatableProperties()
     threshold(ThresholdAnimation::Lower),
     threshold(ThresholdAnimation::Upper),
     opacity(),
+    solidity(),
     exploded(ExplodedAnimation::Gap),
     exploded(ExplodedAnimation::Chunks),
     exploded(ExplodedAnimation::Offset),

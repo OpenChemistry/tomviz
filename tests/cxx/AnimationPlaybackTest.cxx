@@ -25,6 +25,8 @@
 #include <vtkSMProxy.h>
 #include <vtkSMRenderViewProxy.h>
 
+#include <cmath>
+
 #include "AnimationSceneGuard.h"
 #include "CameraViewpoints.h"
 #include "Utilities.h"
@@ -292,6 +294,19 @@ class RecordedAnimationTest : public QObject
 {
   Q_OBJECT
 
+  // Two viewpoints, one straight leg between them: path time is the
+  // progress along it
+  static void twoViewpoints()
+  {
+    auto& viewpoints = CameraViewpoints::instance();
+    Viewpoint first;
+    first.eased = false;
+    Viewpoint second = first;
+    second.position = { 0, 0, 5 };
+    viewpoints.append(first);
+    viewpoints.append(second);
+  }
+
 private slots:
   void cleanup()
   {
@@ -508,6 +523,161 @@ private slots:
         { "unit", "gap" } }) };
     animations.deserialize(wrong, &pipeline);
     QVERIFY(animations.animations().isEmpty());
+  }
+
+  // Turning the exploded view on grows the gap from nothing, turning it
+  // off closes it, and new slabs close up and open out again; nothing
+  // pops in a single frame.
+  void recordedExplodedViewSlidesOnOffAndBetweenSetups()
+  {
+    twoViewpoints();
+    pipeline::Pipeline pipeline;
+    auto* volume = new pipeline::VolumeSink();
+    pipeline.addNode(volume);
+
+    ExplodedKey off;
+    off.chunks = 4;
+    off.gap = 0.4;
+    ExplodedKey on = off;
+    on.enabled = true;
+    RecordedExplodedAnimation turningOn(volume, { { 0, off }, { 1, on } });
+    turningOn.applyPathTime(0.0);
+    QVERIFY(!volume->explodedEnabled());
+    turningOn.applyPathTime(0.5);
+    QVERIFY(volume->explodedEnabled());
+    QVERIFY(qFuzzyCompare(volume->explodedGap(), 0.2));
+    turningOn.applyPathTime(1.0);
+    QVERIFY(qFuzzyCompare(volume->explodedGap(), 0.4));
+
+    RecordedExplodedAnimation turningOff(volume, { { 0, on }, { 1, off } });
+    turningOff.applyPathTime(0.25);
+    QVERIFY(volume->explodedEnabled());
+    QVERIFY(qFuzzyCompare(volume->explodedGap(), 0.3));
+    turningOff.applyPathTime(1.0);
+    QVERIFY(!volume->explodedEnabled());
+
+    // Four slabs to eight: closed at the midpoint, where the count
+    // changes, and open again by the end
+    ExplodedKey eight = on;
+    eight.chunks = 8;
+    RecordedExplodedAnimation resliced(volume, { { 0, on }, { 1, eight } });
+    resliced.applyPathTime(0.25);
+    QCOMPARE(volume->explodedChunks(), 4);
+    QVERIFY(qFuzzyCompare(volume->explodedGap(), 0.2));
+    resliced.applyPathTime(0.5);
+    QCOMPARE(volume->explodedChunks(), 8);
+    QCOMPARE(volume->explodedGap(), 0.0);
+    resliced.applyPathTime(0.75);
+    QVERIFY(qFuzzyCompare(volume->explodedGap(), 0.2));
+    QVERIFY(volume->explodedEnabled());
+  }
+
+  // The cut-out box grows out of its corner, shrinks back into it, and
+  // moves corners by way of an empty box. Swapped for the exploded view
+  // (the two cannot both be on), each takes half the leg.
+  void recordedCutOutGrowsShrinksAndHandsOverToTheExplodedView()
+  {
+    twoViewpoints();
+    pipeline::Pipeline pipeline;
+    auto* volume = new pipeline::VolumeSink();
+    pipeline.addNode(volume);
+
+    CutOutKey off;
+    off.corner = 7; // high X, Y and Z: it grows down from (1, 1, 1)
+    off.position = { 0.5, 0.5, 0.5 };
+    CutOutKey on = off;
+    on.enabled = true;
+    RecordedCutOutAnimation turningOn(volume, { { 0, off }, { 1, on } });
+    turningOn.applyPathTime(0.0);
+    QVERIFY(!volume->cutOutEnabled());
+    turningOn.applyPathTime(0.5);
+    QVERIFY(volume->cutOutEnabled());
+    QCOMPARE(volume->cutOutPosition(0), 0.75);
+    turningOn.applyPathTime(1.0);
+    QCOMPARE(volume->cutOutPosition(2), 0.5);
+
+    CutOutKey lowCorner = on;
+    lowCorner.corner = 0; // grows up from (0, 0, 0)
+    RecordedCutOutAnimation moved(volume, { { 0, on }, { 1, lowCorner } });
+    moved.applyPathTime(0.25);
+    QCOMPARE(volume->cutOutCorner(), 7);
+    QCOMPARE(volume->cutOutPosition(1), 0.75);
+    moved.applyPathTime(0.75);
+    QCOMPARE(volume->cutOutCorner(), 0);
+    QCOMPARE(volume->cutOutPosition(1), 0.25);
+
+    // Cut-out at the first viewpoint, exploded view at the second
+    CutOutKey cutFirst = on;
+    CutOutKey cutAfter = off;
+    cutAfter.otherOn = true;
+    ExplodedKey explodedFirst;
+    explodedFirst.gap = 0.4;
+    explodedFirst.otherOn = true;
+    ExplodedKey explodedAfter = explodedFirst;
+    explodedFirst.enabled = false;
+    explodedAfter.enabled = true;
+    explodedAfter.otherOn = false;
+    RecordedCutOutAnimation cut(volume, { { 0, cutFirst }, { 1, cutAfter } });
+    RecordedExplodedAnimation exploded(
+      volume, { { 0, explodedFirst }, { 1, explodedAfter } });
+    auto at = [&](double t) {
+      cut.applyPathTime(t);
+      exploded.applyPathTime(t);
+    };
+    at(0.25);
+    QVERIFY(volume->cutOutEnabled());
+    QVERIFY(!volume->explodedEnabled());
+    QCOMPARE(volume->cutOutPosition(0), 0.75);
+    at(0.75);
+    QVERIFY(!volume->cutOutEnabled());
+    QVERIFY(volume->explodedEnabled());
+    QVERIFY(qFuzzyCompare(volume->explodedGap(), 0.2));
+  }
+
+  // Solidity is recorded with a viewpoint, comes back from a state file,
+  // and plays between viewpoints geometrically: halfway from 0.1 to 1 is
+  // their geometric mean. An authored sweep does the same and survives a
+  // state file.
+  void solidityIsRecordedAndSweptGeometrically()
+  {
+    twoViewpoints();
+    pipeline::Pipeline pipeline;
+    auto* volume = new pipeline::VolumeSink();
+    pipeline.addNode(volume);
+
+    volume->setSolidity(0.25);
+    auto snapshot = SinkSnapshot::capture(volume);
+    QVERIFY(snapshot.solidity);
+    QVERIFY(qFuzzyCompare(*snapshot.solidity, 0.25));
+    auto restored = SinkSnapshot::deserialize(snapshot.serialize());
+    QVERIFY(restored.solidity);
+    QVERIFY(qFuzzyCompare(*restored.solidity, 0.25));
+
+    // The panel follows through a signal, as it does for the cut-out
+    double announced = 0.0;
+    connect(volume, &pipeline::VolumeSink::solidityChanged,
+            [&announced](double value) { announced = value; });
+    RecordedSolidityAnimation recorded(volume, { { 0, 0.1 }, { 1, 1.0 } });
+    recorded.applyPathTime(0.5);
+    QVERIFY(qFuzzyCompare(volume->solidity(), std::sqrt(0.1)));
+    QVERIFY(qFuzzyCompare(announced, std::sqrt(0.1)));
+    recorded.applyPathTime(1.0);
+    QVERIFY(qFuzzyCompare(volume->solidity(), 1.0));
+
+    auto* property = animatableProperty("solidity");
+    QVERIFY(property);
+    QVERIFY(property->applies(volume));
+    auto& animations = ModuleAnimations::instance();
+    animations.add(property->make(volume, 1.0, 0.1));
+    auto json = animations.serialize(&pipeline);
+    animations.deserialize(json, &pipeline);
+    QCOMPARE(animations.animations().size(), 1);
+    double start = 0, stop = 0;
+    QCOMPARE(animatablePropertyOf(animations.animations().first(), start,
+                                  stop),
+             property);
+    QCOMPARE(start, 1.0);
+    QCOMPARE(stop, 0.1);
   }
 
   // A threshold range end and a cut-out position sweep during playback

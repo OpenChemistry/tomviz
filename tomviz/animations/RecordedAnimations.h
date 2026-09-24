@@ -88,6 +88,10 @@ struct CutOutKey
   bool enabled = false;
   int corner = 0;
   std::array<double, 3> position = { 0.5, 0.5, 0.5 };
+  /// The exploded view is on here. The two cannot both be on, so a leg
+  /// that swaps one for the other gives each half of it. Not part of
+  /// the cut-out's own state.
+  bool otherOn = false;
   bool operator==(const CutOutKey& o) const
   {
     return enabled == o.enabled && corner == o.corner && position == o.position;
@@ -112,6 +116,8 @@ struct ExplodedKey
   int chunks = 4;
   double gap = 0.25;
   int offset = 0;
+  /// The cut-out is on here; see CutOutKey::otherOn.
+  bool otherOn = false;
   bool operator==(const ExplodedKey& o) const
   {
     // The direction only shows while the axis is custom
@@ -291,6 +297,29 @@ public:
   }
   QString type() const override { return "contour"; }
   QString describeParameters() const override { return "recorded iso value"; }
+
+protected:
+  void applySpan(const AnchorSpan& span) override;
+  QList<int> anchors() const override { return m_keys.keys(); }
+
+private:
+  QMap<int, double> m_keys;
+};
+
+/// A volume's solidity between recorded values, swept geometrically as
+/// SolidityAnimation does.
+class RecordedSolidityAnimation : public RecordedAnimation
+{
+  Q_OBJECT
+
+public:
+  RecordedSolidityAnimation(pipeline::VolumeSink* sink,
+                            const QMap<int, double>& keys)
+    : RecordedAnimation(sink), m_keys(keys)
+  {
+  }
+  QString type() const override { return "solidity"; }
+  QString describeParameters() const override { return "recorded solidity"; }
 
 protected:
   void applySpan(const AnchorSpan& span) override;

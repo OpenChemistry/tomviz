@@ -254,6 +254,8 @@ signals:
   void interpolationTypeChanged(int type);
   void cutOutChanged();
   void explodedChanged();
+  /// The solidity was set, by the panel or by an animation.
+  void solidityChanged(double value);
   /// Emitted when the sink starts or stops being rendered as part of the
   /// view's multi-volume, or when it becomes or stops being its lead.
   void multiVolumeStateChanged();

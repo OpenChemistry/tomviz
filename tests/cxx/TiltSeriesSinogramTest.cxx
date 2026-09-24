@@ -87,7 +87,7 @@ TEST(TiltSeriesSinogram, negativeSliceClampsToZero)
 }
 
 // In-range slices still gather the expected samples: with no axis shift the
-// ray at the centre of the sinogram lands on the middle of the tilt axis.
+// ray at the center of the sinogram lands on the middle of the tilt axis.
 TEST(TiltSeriesSinogram, inRangeSliceMatchesSource)
 {
   auto image = makeWideTiltSeries();

@@ -115,7 +115,7 @@ public:
   void planeNormal(double xyz[3]) const;
 
   /// Where a Custom plane sits along its own normal, as a signed
-  /// distance from the centre of the data; the unit the Animation
+  /// distance from the center of the data; the unit the Animation
   /// Helper sweeps a custom slice in, as it does a custom clip.
   double planeDistance() const;
   void setPlaneDistance(double distance);

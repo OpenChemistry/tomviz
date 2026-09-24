@@ -13,7 +13,7 @@ namespace tomviz {
 /// Sweeps a clipping plane between two positions along its own normal.
 /// An axis-aligned clip moves by slice index, the unit its own property
 /// panel uses; a custom-oriented clip has no slices, so it moves by
-/// signed distance from the centre of the data instead.
+/// signed distance from the center of the data instead.
 class ClipAnimation : public ModuleAnimation
 {
   Q_OBJECT
