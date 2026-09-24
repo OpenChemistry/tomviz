@@ -171,6 +171,30 @@ private slots:
     QCOMPARE(clip->direction(), pipeline::ClipSink::YZ);
   }
 
+  // The arrow belongs to the plane: with Show Plane off it stays hidden
+  // when playback or Go To shows the clip again, and when a state file
+  // turns Show Arrow on after Show Plane off.
+  void aHiddenPlaneKeepsItsArrowHidden()
+  {
+    pipeline::Pipeline pip;
+    auto* source = addSource(&pip);
+    auto* clip = addSink<pipeline::ClipSink>(&pip, source, m_view);
+    QVERIFY(clip->arrowVisible());
+
+    clip->setShowPlane(false);
+    QVERIFY(!clip->arrowVisible());
+    clip->setShowArrow(true);
+    QVERIFY(!clip->arrowVisible());
+    clip->setVisibility(false);
+    clip->setVisibility(true);
+    QVERIFY2(!clip->arrowVisible(), "showing the clip again showed the arrow");
+
+    clip->setShowPlane(true);
+    QVERIFY(clip->arrowVisible());
+    clip->setShowArrow(false);
+    QVERIFY(!clip->arrowVisible());
+  }
+
 private:
   pqRenderView* m_view = nullptr;
 };

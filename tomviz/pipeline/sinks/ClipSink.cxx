@@ -121,8 +121,10 @@ void ClipSink::setVisibility(bool visible)
   if (m_widget) {
     m_widget->SetEnabled(visible ? 1 : 0);
     if (visible) {
-      m_widget->SetArrowVisibility(m_showArrow ? 1 : 0);
-      m_widget->SetInteraction(m_showArrow ? 1 : 0);
+      // A hidden plane hides its arrow too, whatever Show Arrow says
+      const bool arrow = m_showPlane && m_showArrow;
+      m_widget->SetArrowVisibility(arrow ? 1 : 0);
+      m_widget->SetInteraction(arrow ? 1 : 0);
     }
   }
 
@@ -204,7 +206,7 @@ bool ClipSink::initialize(vtkSMViewProxy* view)
 
       m_widget->On();
       m_widget->InteractionOn();
-      m_widget->SetArrowVisibility(m_showArrow ? 1 : 0);
+      m_widget->SetArrowVisibility(m_showPlane && m_showArrow ? 1 : 0);
     }
   }
 
@@ -391,10 +393,16 @@ bool ClipSink::showArrow() const
 void ClipSink::setShowArrow(bool show)
 {
   m_showArrow = show;
-  if (m_widget) {
-    m_widget->SetArrowVisibility(show ? 1 : 0);
+  if (m_widget && m_widget->GetEnabled()) {
+    m_widget->SetArrowVisibility(m_showPlane && show ? 1 : 0);
   }
   emit renderNeeded();
+}
+
+bool ClipSink::arrowVisible() const
+{
+  return m_widget && m_widget->GetEnabled() &&
+         m_widget->GetArrowVisibility() != 0;
 }
 
 bool ClipSink::showPlane() const
@@ -407,10 +415,10 @@ void ClipSink::setShowPlane(bool show)
   m_showPlane = show;
   if (m_widget) {
     m_widget->SetTextureVisibility(show ? 1 : 0);
-    if (!show) {
-      m_widget->SetArrowVisibility(0);
-    } else {
-      m_widget->SetArrowVisibility(m_showArrow ? 1 : 0);
+    // The widget ignores (and warns about) arrow changes while it is
+    // off; setVisibility applies them when it comes back on
+    if (m_widget->GetEnabled()) {
+      m_widget->SetArrowVisibility(show && m_showArrow ? 1 : 0);
     }
   }
   emit renderNeeded();

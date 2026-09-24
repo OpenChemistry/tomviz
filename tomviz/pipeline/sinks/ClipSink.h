@@ -79,6 +79,10 @@ public:
   bool showPlane() const;
   void setShowPlane(bool show);
 
+  /// Whether the arrow is drawn: it needs both Show Plane and Show
+  /// Arrow, and the widget on screen.
+  bool arrowVisible() const;
+
   /// Plane color.
   void planeColor(double rgb[3]) const;
   void setPlaneColor(double r, double g, double b);
