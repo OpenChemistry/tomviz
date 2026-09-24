@@ -100,6 +100,7 @@ private:
   // need to update the proxy with these modifications, or any operations
   // with the proxy will over-write what the user has done.
   void updateLUTProxy();
+  void updateOpacityProxy();
 
   // Auto contrast functions
   void autoAdjustContrast();

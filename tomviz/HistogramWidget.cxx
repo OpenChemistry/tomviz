@@ -394,6 +394,13 @@ void HistogramWidget::syncScalarOpacityFunction()
   // Update the histogram
   m_histogramView->GetRenderWindow()->Render();
 
+  updateOpacityProxy();
+
+  emit opacityChanged();
+}
+
+void HistogramWidget::updateOpacityProxy()
+{
   // Update the scalar opacity function proxy as it does not update its
   // internal state when the VTK object changes.
   if (!m_LUTProxy || !m_scalarOpacityFunction) {
@@ -418,8 +425,6 @@ void HistogramWidget::syncScalarOpacityFunction()
     recordProxyValues(opacityMapProxy, "Points", points.data(),
                       static_cast<unsigned int>(points.size()));
   }
-
-  emit opacityChanged();
 }
 
 void HistogramWidget::onCurrentPointEditEvent()
@@ -1153,9 +1158,11 @@ void HistogramWidget::rescaleTransferFunction(vtkSMProxy* lutProxy, double min,
   // Sync the client state into the property first; otherwise the placeholder
   // nodes still in the property span the full data range, which makes the
   // rescale a no-op (or compresses the real window instead of setting it).
-  // The opacity property needs no sync: onScalarOpacityFunctionChanged
-  // already mirrors every client-side opacity change into it.
+  // The opacity needs the same: onScalarOpacityFunctionChanged mirrors
+  // client-side changes into its property only on the next event-loop
+  // turn, so without this each rescale compressed the window further.
   updateLUTProxy();
+  updateOpacityProxy();
   vtkSMTransferFunctionProxy::RescaleTransferFunction(lutProxy, min, max);
   vtkSMTransferFunctionProxy::RescaleTransferFunction(opacityMap, min, max);
   addPlaceholderNodes();
