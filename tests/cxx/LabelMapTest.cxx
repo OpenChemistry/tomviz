@@ -5,6 +5,8 @@
 #include <QColor>
 #include <QTest>
 
+#include <set>
+
 #include <pqApplicationCore.h>
 #include <pqObjectBuilder.h>
 #include <pqPVApplicationCore.h>
@@ -48,6 +50,26 @@ vtkSmartPointer<vtkImageData> rampImage(int vtkType, double span)
   }
   scalars->Modified();
   return vtkSmartPointer<vtkImageData>(image.GetPointer());
+}
+
+// Labels 0..5, with the values in @a removed sent to the background
+vtkSmartPointer<vtkImageData> sixLabelImage(std::set<int> removed = {})
+{
+  vtkNew<vtkImageData> image;
+  image->SetDimensions(12, 12, 12);
+  image->AllocateScalars(VTK_UNSIGNED_CHAR, 1);
+  auto* p = static_cast<unsigned char*>(image->GetScalarPointer());
+  for (int i = 0; i < 12 * 12 * 12; ++i) {
+    const int label = i % 6;
+    p[i] = static_cast<unsigned char>(removed.count(label) ? 0 : label);
+  }
+  return vtkSmartPointer<vtkImageData>(image.GetPointer());
+}
+
+QColor colorOf(LabelMapData& data, double value)
+{
+  const int index = data.labels().indexOfValue(value);
+  return index >= 0 ? data.labels().at(index).color : QColor();
 }
 
 } // namespace
@@ -144,6 +166,24 @@ private slots:
     QCOMPARE(second->labels().at(hidden).visible, false);
     QCOMPARE(second->scalarOpacity()->GetValue(1.0), 0.0);
     QCOMPARE(second->scalarOpacity()->GetValue(2.0), 1.0);
+  }
+
+  // Removing labels from the middle leaves every other label its color:
+  // colors follow the label values, not the order labels were found in
+  void labelColorsFollowTheirValues()
+  {
+    auto all = std::make_shared<LabelMapData>(sixLabelImage());
+    all->refreshLabels();
+    auto fewer = std::make_shared<LabelMapData>(sixLabelImage({ 2, 3 }));
+    fewer->refreshLabels();
+
+    QCOMPARE(fewer->labels().count(), 4);
+    for (double value : { 1.0, 4.0, 5.0 }) {
+      QVERIFY(colorOf(*fewer, value).isValid());
+      QCOMPARE(colorOf(*fewer, value), colorOf(*all, value));
+    }
+    // Neighbors still differ
+    QVERIFY(colorOf(*all, 4.0) != colorOf(*all, 5.0));
   }
 };
 

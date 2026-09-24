@@ -22,6 +22,7 @@
 #include <QObject>
 
 #include <algorithm>
+#include <cmath>
 #include <unordered_map>
 #include <vector>
 
@@ -220,7 +221,12 @@ void LabelTable::reconcile(
     LabelEntry entry;
     entry.value = pair.first;
     entry.voxelCount = pair.second;
-    entry.color = tomviz::segmentationLabelColor(m_nextColorIndex++);
+    // Colored by value, not by arrival: a label keeps its color in every
+    // label map that holds it, so removing labels upstream (Remove
+    // Labels, say) does not shift the colors of the ones left.
+    entry.color =
+      tomviz::segmentationLabelColor(
+        static_cast<int>(std::lround(pair.first)));
     // 0 is the conventional background label: showing it would wrap
     // every other label in an opaque block.
     entry.visible = pair.first != 0.0;

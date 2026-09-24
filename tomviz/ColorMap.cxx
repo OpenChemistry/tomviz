@@ -76,7 +76,9 @@ QJsonObject buildSegmentationPreset(vtkDataArray* scalars)
   int idx = 0;
   const int lastIdx = static_cast<int>(uniqueValues.size()) - 1;
   for (double val : uniqueValues) {
-    QColor color = segmentationLabelColor(idx);
+    // By value, as LabelTable::reconcile colors, so a label keeps its
+    // color whichever path built the map
+    QColor color = segmentationLabelColor(static_cast<int>(std::lround(val)));
 
     // Two nodes per label at val -/+ 0.25 with the same color give each
     // integer label its own constant-color band under plain RGB
