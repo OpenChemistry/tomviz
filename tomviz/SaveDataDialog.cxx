@@ -165,7 +165,7 @@ void SaveDataDialog::restrictScope()
   // "Leaf nodes only" is meaningless once we're down to one node or one
   // port — pin the scope, but leave the group visible so the rule the
   // dialog is following stays on screen.
-  m_ui->allPersistedRadio->setChecked(true);
+  m_ui->allPortsRadio->setChecked(true);
   m_ui->scopeGroup->setEnabled(false);
 
   rebuildPlan();
@@ -212,15 +212,37 @@ void SaveDataDialog::init()
 
 SaveDataDialog::~SaveDataDialog() = default;
 
-QList<OutputPort*> SaveDataDialog::candidatePorts(OutputPort* port, Scope scope)
+namespace {
+
+// The output ports @a scope covers within @a node, before any test of
+// what they hold
+QList<OutputPort*> portsInScope(Node* node, SaveDataDialog::Scope scope)
 {
-  if (!port || !port->hasData()) {
+  if (!node || isSinkLike(node)) {
     return {};
   }
-  if (scope == Scope::AllPersisted && !port->isPersistent()) {
+  if (scope == SaveDataDialog::Scope::LeafNodes && !isLeafNode(node)) {
     return {};
   }
-  if (PortDataWriter::formats(port->type()).isEmpty()) {
+  return node->outputPorts();
+}
+
+bool writable(OutputPort* port)
+{
+  return port && !PortDataWriter::formats(port->type()).isEmpty();
+}
+
+// Transient, and its data has already been let go
+bool released(OutputPort* port)
+{
+  return writable(port) && !port->hasData() && !port->isPersistent();
+}
+
+} // namespace
+
+QList<OutputPort*> SaveDataDialog::candidatePorts(OutputPort* port, Scope)
+{
+  if (!writable(port) || !port->hasData()) {
     return {};
   }
   return { port };
@@ -229,17 +251,9 @@ QList<OutputPort*> SaveDataDialog::candidatePorts(OutputPort* port, Scope scope)
 QList<OutputPort*> SaveDataDialog::candidatePorts(Node* node, Scope scope)
 {
   QList<OutputPort*> result;
-  if (!node || isSinkLike(node)) {
-    return result;
-  }
-  if (scope == Scope::LeafNodes && !isLeafNode(node)) {
-    return result;
-  }
-
-  for (auto* port : node->outputPorts()) {
+  for (auto* port : portsInScope(node, scope)) {
     result.append(candidatePorts(port, scope));
   }
-
   return result;
 }
 
@@ -250,11 +264,39 @@ QList<OutputPort*> SaveDataDialog::candidatePorts(Pipeline* pipeline,
   if (!pipeline) {
     return result;
   }
-
   for (auto* node : pipeline->nodes()) {
     result.append(candidatePorts(node, scope));
   }
+  return result;
+}
 
+QList<OutputPort*> SaveDataDialog::releasedPorts(OutputPort* port, Scope)
+{
+  if (!released(port)) {
+    return {};
+  }
+  return { port };
+}
+
+QList<OutputPort*> SaveDataDialog::releasedPorts(Node* node, Scope scope)
+{
+  QList<OutputPort*> result;
+  for (auto* port : portsInScope(node, scope)) {
+    result.append(releasedPorts(port, scope));
+  }
+  return result;
+}
+
+QList<OutputPort*> SaveDataDialog::releasedPorts(Pipeline* pipeline,
+                                                 Scope scope)
+{
+  QList<OutputPort*> result;
+  if (!pipeline) {
+    return result;
+  }
+  for (auto* node : pipeline->nodes()) {
+    result.append(releasedPorts(node, scope));
+  }
   return result;
 }
 
@@ -321,10 +363,10 @@ QList<SaveDataDialog::PortPlan> SaveDataDialog::planPorts(
 SaveDataDialog::Scope SaveDataDialog::currentScope() const
 {
   if (m_port || m_node) {
-    return Scope::AllPersisted;
+    return Scope::AllPorts;
   }
   return m_ui->leafOnlyRadio->isChecked() ? Scope::LeafNodes
-                                          : Scope::AllPersisted;
+                                          : Scope::AllPorts;
 }
 
 QList<OutputPort*> SaveDataDialog::currentCandidates() const
@@ -337,6 +379,18 @@ QList<OutputPort*> SaveDataDialog::currentCandidates() const
     return candidatePorts(m_node, scope);
   }
   return candidatePorts(m_pipeline, scope);
+}
+
+QList<OutputPort*> SaveDataDialog::currentReleased() const
+{
+  auto scope = currentScope();
+  if (m_port) {
+    return releasedPorts(m_port, scope);
+  }
+  if (m_node) {
+    return releasedPorts(m_node, scope);
+  }
+  return releasedPorts(m_pipeline, scope);
 }
 
 PortFormat SaveDataDialog::formatFor(PortType type) const
@@ -480,6 +534,35 @@ void SaveDataDialog::updateSummary()
   bool hasDirectory = !m_ui->directoryEdit->text().trimmed().isEmpty();
   m_ui->buttonBox->button(QDialogButtonBox::Save)
     ->setEnabled(count > 0 && hasDirectory);
+
+  // Say which outputs are missing and why, rather than leave them to be
+  // wondered about
+  const auto gone = currentReleased();
+  if (gone.isEmpty()) {
+    m_ui->releasedNote->hide();
+    return;
+  }
+  QStringList names;
+  for (auto* port : gone.mid(0, 3)) {
+    names << QStringLiteral("%1 (%2)").arg(port->node()->label(),
+                                          port->name());
+  }
+  if (gone.size() > 3) {
+    names << tr("%1 more").arg(gone.size() - 3);
+  }
+  const QString joined = names.join(QStringLiteral(", "));
+  m_ui->releasedNote->setText(
+    gone.size() == 1
+      ? tr("%1 cannot be saved because it is transient and its data is no "
+           "longer in memory. To save it, right-click its port and choose "
+           "Persist in Memory; tomviz runs that step again.")
+          .arg(joined)
+      : tr("%1 outputs cannot be saved because they are transient and their "
+           "data is no longer in memory: %2. To save one, right-click its "
+           "port and choose Persist in Memory; tomviz runs that step again.")
+          .arg(gone.size())
+          .arg(joined));
+  m_ui->releasedNote->show();
 }
 
 QList<SaveDataDialog::Entry> SaveDataDialog::selectedEntries() const
@@ -590,7 +673,7 @@ void SaveDataDialog::restoreSettings()
   }
 
   bool allPersisted = settings->value("allPersisted", true).toBool();
-  m_ui->allPersistedRadio->setChecked(allPersisted);
+  m_ui->allPortsRadio->setChecked(allPersisted);
   m_ui->leafOnlyRadio->setChecked(!allPersisted);
 
   settings->endGroup();
@@ -611,7 +694,7 @@ void SaveDataDialog::saveSettings() const
   if (!m_node && !m_port) {
     // A restricted save has no scope choice to remember; persisting its
     // pinned value would silently retarget the next unrestricted one.
-    settings->setValue("allPersisted", m_ui->allPersistedRadio->isChecked());
+    settings->setValue("allPersisted", m_ui->allPortsRadio->isChecked());
   }
   settings->endGroup();
 }

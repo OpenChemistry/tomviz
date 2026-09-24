@@ -44,14 +44,12 @@ void SaveDataReaction::connectToPipeline(pipeline::Pipeline* p)
 void SaveDataReaction::updateEnableState()
 {
   auto* pipeline = ActiveObjects::instance().pipeline();
-  // Either scope having something to offer is reason enough to let the
-  // user open the dialog.
+  // AllPorts covers every port LeafNodes does. Released ports count too,
+  // so the dialog can say why they cannot be saved.
+  const auto scope = SaveDataDialog::Scope::AllPorts;
   bool anything =
-    !SaveDataDialog::candidatePorts(pipeline,
-                                    SaveDataDialog::Scope::AllPersisted)
-       .isEmpty() ||
-    !SaveDataDialog::candidatePorts(pipeline, SaveDataDialog::Scope::LeafNodes)
-       .isEmpty();
+    !SaveDataDialog::candidatePorts(pipeline, scope).isEmpty() ||
+    !SaveDataDialog::releasedPorts(pipeline, scope).isEmpty();
   parentAction()->setEnabled(anything);
 }
 

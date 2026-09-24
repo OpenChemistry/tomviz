@@ -56,6 +56,7 @@
 #include "PipelineStripWidget.h"
 
 #include <QApplication>
+#include <QLabel>
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonArray>
@@ -4986,7 +4987,7 @@ TEST_F(PipelineLibTest, SaveDataLeafScopeIgnoresSinks)
   EXPECT_EQ(leaves.first(), transform->outputPort("out"));
 }
 
-TEST_F(PipelineLibTest, SaveDataPersistedScope)
+TEST_F(PipelineLibTest, SaveDataAllPortsScopeIncludesTransientData)
 {
   auto* source = new SourceNode();
   source->setLabel("Source");
@@ -5006,16 +5007,41 @@ TEST_F(PipelineLibTest, SaveDataPersistedScope)
   transform->outputPort("out")->setPersistent(false);
   setVolumeData(transform->outputPort("out"), { "A" });
 
-  auto persisted = tomviz::SaveDataDialog::candidatePorts(
-    pipeline, tomviz::SaveDataDialog::Scope::AllPersisted);
-  ASSERT_EQ(persisted.size(), 1);
-  EXPECT_EQ(persisted.first(), source->outputPort("volume"));
+  // A transient port still holding its data can be saved like any other:
+  // persistence is about how long data is kept, not whether it may be
+  // written out.
+  auto all = tomviz::SaveDataDialog::candidatePorts(
+    pipeline, tomviz::SaveDataDialog::Scope::AllPorts);
+  ASSERT_EQ(all.size(), 2);
+  EXPECT_TRUE(all.contains(source->outputPort("volume")));
+  EXPECT_TRUE(all.contains(transform->outputPort("out")));
+  EXPECT_TRUE(tomviz::SaveDataDialog::releasedPorts(
+                pipeline, tomviz::SaveDataDialog::Scope::AllPorts)
+                .isEmpty());
 
   // The transform is the only leaf, so the two scopes disagree here.
   auto leaves = tomviz::SaveDataDialog::candidatePorts(
     pipeline, tomviz::SaveDataDialog::Scope::LeafNodes);
   ASSERT_EQ(leaves.size(), 1);
   EXPECT_EQ(leaves.first(), transform->outputPort("out"));
+
+  // Once its data is released it cannot be saved, and the dialog is
+  // told so it can say why
+  transform->outputPort("out")->clearData();
+  all = tomviz::SaveDataDialog::candidatePorts(
+    pipeline, tomviz::SaveDataDialog::Scope::AllPorts);
+  ASSERT_EQ(all.size(), 1);
+  EXPECT_EQ(all.first(), source->outputPort("volume"));
+  auto released = tomviz::SaveDataDialog::releasedPorts(
+    pipeline, tomviz::SaveDataDialog::Scope::AllPorts);
+  ASSERT_EQ(released.size(), 1);
+  EXPECT_EQ(released.first(), transform->outputPort("out"));
+
+  // A persistent port with no data yet was never released
+  source->outputPort("volume")->clearData();
+  released = tomviz::SaveDataDialog::releasedPorts(
+    source, tomviz::SaveDataDialog::Scope::AllPorts);
+  EXPECT_TRUE(released.isEmpty());
 }
 
 TEST_F(PipelineLibTest, SaveDataNodeScopeSeesOnlyItsOwnPorts)
@@ -5036,22 +5062,27 @@ TEST_F(PipelineLibTest, SaveDataNodeScopeSeesOnlyItsOwnPorts)
 
   // The pipeline-wide view spans both nodes...
   EXPECT_EQ(tomviz::SaveDataDialog::candidatePorts(
-              pipeline, tomviz::SaveDataDialog::Scope::AllPersisted)
+              pipeline, tomviz::SaveDataDialog::Scope::AllPorts)
               .size(),
             2);
 
   // ...while a node-scoped export sees only that node, even though the
   // node is upstream of another and so is not a leaf.
   auto sourcePorts = tomviz::SaveDataDialog::candidatePorts(
-    source, tomviz::SaveDataDialog::Scope::AllPersisted);
+    source, tomviz::SaveDataDialog::Scope::AllPorts);
   ASSERT_EQ(sourcePorts.size(), 1);
   EXPECT_EQ(sourcePorts.first(), source->outputPort("volume"));
 
-  // Transient ports stay out of an AllPersisted export.
+  // Turning a published port transient releases its data: nothing to
+  // save, and the port is reported as released instead.
   transform->outputPort("out")->setPersistent(false);
   EXPECT_TRUE(tomviz::SaveDataDialog::candidatePorts(
-                transform, tomviz::SaveDataDialog::Scope::AllPersisted)
+                transform, tomviz::SaveDataDialog::Scope::AllPorts)
                 .isEmpty());
+  EXPECT_EQ(tomviz::SaveDataDialog::releasedPorts(
+              transform, tomviz::SaveDataDialog::Scope::AllPorts)
+              .size(),
+            1);
 }
 
 TEST_F(PipelineLibTest, SaveDataPortScopeSeesOnlyThatPort)
@@ -5066,13 +5097,13 @@ TEST_F(PipelineLibTest, SaveDataPortScopeSeesOnlyThatPort)
 
   // The node view spans both of its ports...
   EXPECT_EQ(tomviz::SaveDataDialog::candidatePorts(
-              source, tomviz::SaveDataDialog::Scope::AllPersisted)
+              source, tomviz::SaveDataDialog::Scope::AllPorts)
               .size(),
             2);
 
   // ...while the port view is just the one.
   auto ports = tomviz::SaveDataDialog::candidatePorts(
-    source->outputPort("mask"), tomviz::SaveDataDialog::Scope::AllPersisted);
+    source->outputPort("mask"), tomviz::SaveDataDialog::Scope::AllPorts);
   ASSERT_EQ(ports.size(), 1);
   EXPECT_EQ(ports.first(), source->outputPort("mask"));
 
@@ -5084,8 +5115,48 @@ TEST_F(PipelineLibTest, SaveDataPortScopeSeesOnlyThatPort)
   source->outputPort("mask")->clearData();
   EXPECT_TRUE(tomviz::SaveDataDialog::candidatePorts(
                 source->outputPort("mask"),
-                tomviz::SaveDataDialog::Scope::AllPersisted)
+                tomviz::SaveDataDialog::Scope::AllPorts)
                 .isEmpty());
+}
+
+TEST_F(PipelineLibTest, SaveDataDialogExplainsReleasedPorts)
+{
+  auto* source = new SourceNode();
+  source->setLabel("Source");
+  source->addOutput("volume", PortType::ImageData);
+  pipeline->addNode(source);
+  setVolumeData(source->outputPort("volume"), { "A" });
+
+  auto* transform =
+    new PassthroughTransform(PortType::ImageData, PortType::ImageData);
+  transform->setLabel("Remove Labels");
+  pipeline->addNode(transform);
+  pipeline->createLink(source->outputPort("volume"),
+                       transform->inputPort("in"));
+  transform->outputPort("out")->setPersistent(false);
+
+  // Still in memory: offered, and nothing to explain
+  setVolumeData(transform->outputPort("out"), { "A" });
+  {
+    tomviz::SaveDataDialog dialog(static_cast<Node*>(transform));
+    auto* note = dialog.findChild<QLabel*>("releasedNote");
+    ASSERT_NE(note, nullptr);
+    EXPECT_TRUE(note->isHidden());
+    EXPECT_EQ(dialog.selectedEntries().size(), 1);
+  }
+
+  // Released: nothing offered, and the note names the port and why
+  transform->outputPort("out")->clearData();
+  {
+    tomviz::SaveDataDialog dialog(static_cast<Node*>(transform));
+    auto* note = dialog.findChild<QLabel*>("releasedNote");
+    ASSERT_NE(note, nullptr);
+    EXPECT_FALSE(note->isHidden());
+    EXPECT_TRUE(note->text().contains("Remove Labels (out)"))
+      << note->text().toStdString();
+    EXPECT_TRUE(note->text().contains("transient"));
+    EXPECT_TRUE(dialog.selectedEntries().isEmpty());
+  }
 }
 
 TEST_F(PipelineLibTest, SaveDataNodeScopeExcludesSinks)
@@ -5102,7 +5173,7 @@ TEST_F(PipelineLibTest, SaveDataNodeScopeExcludesSinks)
 
   EXPECT_TRUE(tomviz::SaveDataDialog::candidatePorts(
                 static_cast<Node*>(sink),
-                tomviz::SaveDataDialog::Scope::AllPersisted)
+                tomviz::SaveDataDialog::Scope::AllPorts)
                 .isEmpty());
 }
 

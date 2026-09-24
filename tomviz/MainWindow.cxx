@@ -156,10 +156,13 @@ void addSaveDataAction(QMenu& menu, Target* target, QWidget* parent,
       SaveDataDialog::writeEntries(dialog.selectedEntries(), parent);
     }
   });
+  // Also when only released ports are left, so the dialog can say why
+  // they cannot be saved
+  const auto scope = SaveDataDialog::Scope::AllPorts;
   action->setEnabled(
-    enabled && !SaveDataDialog::candidatePorts(
-                  target, SaveDataDialog::Scope::AllPersisted)
-                  .isEmpty());
+    enabled &&
+    (!SaveDataDialog::candidatePorts(target, scope).isEmpty() ||
+     !SaveDataDialog::releasedPorts(target, scope).isEmpty()));
 }
 } // namespace
 class Connection;

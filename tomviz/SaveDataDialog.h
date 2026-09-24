@@ -40,8 +40,10 @@ public:
   {
     /// Ports of nodes whose only downstream nodes are sinks.
     LeafNodes,
-    /// Every persistent port currently holding data, in memory or on disk.
-    AllPersisted
+    /// Every port currently holding data, in memory or on disk. Transient
+    /// ports count while their data is still in memory: persistence
+    /// decides how long data is kept, not whether it may be saved.
+    AllPorts
   };
 
   /// One file to be written.
@@ -71,7 +73,7 @@ public:
                           QWidget* parent = nullptr);
 
   /// Export just @a node's own ports. A single node has no useful
-  /// notion of leaves, so the scope is pinned to AllPersisted and the
+  /// notion of leaves, so the scope is pinned to AllPorts and the
   /// choice is disabled.
   explicit SaveDataDialog(pipeline::Node* node, QWidget* parent = nullptr);
 
@@ -100,9 +102,19 @@ public:
                                                      Scope scope);
 
   /// The same filtering narrowed to a single port. Returns an empty
-  /// list when the port doesn't qualify — nothing to write, no writer
-  /// for its type, or transient under an AllPersisted scope.
+  /// list when the port doesn't qualify: nothing to write, or no writer
+  /// for its type.
   static QList<pipeline::OutputPort*> candidatePorts(
+    pipeline::OutputPort* port, Scope scope);
+
+  /// Ports in the same scope that could be written but no longer can:
+  /// transient ports whose data has been released from memory. The
+  /// dialog names them so the user knows why they are missing.
+  static QList<pipeline::OutputPort*> releasedPorts(
+    pipeline::Pipeline* pipeline, Scope scope);
+  static QList<pipeline::OutputPort*> releasedPorts(pipeline::Node* node,
+                                                    Scope scope);
+  static QList<pipeline::OutputPort*> releasedPorts(
     pipeline::OutputPort* port, Scope scope);
 
   /// Resolve the files each port in @a ports produces under @a directory.
@@ -133,6 +145,8 @@ private:
   void restrictScope();
   /// The ports the current restriction and scope admit.
   QList<pipeline::OutputPort*> currentCandidates() const;
+  /// releasedPorts() for the current restriction and scope.
+  QList<pipeline::OutputPort*> currentReleased() const;
   void browseForDirectory();
   /// Recompute the file list from the current scope, formats and
   /// destination, and repopulate the tree.
