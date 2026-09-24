@@ -80,6 +80,7 @@ add_cxx_qtest(SegmentationColorMap)
 add_cxx_qtest(ImageViewerMode)
 add_cxx_qtest(MultiVolume)
 add_cxx_qtest(LabelSurfaceRender)
+add_cxx_qtest(ClippingRange)
 add_cxx_qtest(PtychoWorkflow PYTHONPATH ${_pythonpath})
 # initTestCase downloads the test data; QtTest aborts any test function
 # after five minutes unless told otherwise, and a slow mirror can take

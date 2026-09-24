@@ -114,6 +114,8 @@ set(SOURCES
   Histogram2DWidget.cxx
   ImageStackDialog.h
   ImageStackDialog.cxx
+  ClippingRangeBehavior.cxx
+  ClippingRangeBehavior.h
   ImageViewerModeBehavior.cxx
   ImageViewerModeBehavior.h
   ImageStackModel.h
