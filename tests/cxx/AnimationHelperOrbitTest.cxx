@@ -183,6 +183,16 @@ private slots:
     QCOMPARE(m_turns->value(), 1);
     QCOMPARE(m_direction->currentIndex(), 0);
     QVERIFY(m_export->isEnabled());
+    // Its easing is off, for a constant-speed spin, and its own
+    auto* eased = m_dialog->findChild<QCheckBox*>("orbitEased");
+    QVERIFY(eased);
+    QVERIFY(!eased->isHidden());
+    QVERIFY(!eased->isChecked());
+    QVERIFY(!viewpoints.at(0).orbitEased);
+    eased->setChecked(true);
+    QVERIFY(viewpoints.at(0).orbitEased);
+    eased->setChecked(false);
+    QVERIFY(!viewpoints.at(0).orbitEased);
 
     // The details write straight through to the viewpoint
     m_turns->setValue(3);
@@ -230,8 +240,8 @@ private slots:
     QCOMPARE(m_direction->currentIndex(), 1);
     QCOMPARE(m_duration->value(), 150);
     // Two viewpoints: the orbit plus the leg between them
-    QCOMPARE(viewpoints.totalFrames(), 150 + 60);
-    QCOMPARE(vtkSMPropertyHelper(scene()->getProxy(), "NumberOfFrames").GetAsInt(), 210);
+    QCOMPARE(viewpoints.totalFrames(), 150 + 100);
+    QCOMPARE(vtkSMPropertyHelper(scene()->getProxy(), "NumberOfFrames").GetAsInt(), 250);
     m_list->setCurrentRow(1);
     m_orbit->setChecked(false);
     QVERIFY2(viewpoints.at(0).orbitTurns == -3, "the other row was edited");
@@ -276,12 +286,12 @@ private slots:
     QCOMPARE(vtkSMPropertyHelper(proxy, "AnimationTime").GetAsDouble(), 0.0);
 
     // From the top, all the way through: the path now sets the count,
-    // one 60-frame leg
+    // one 100-frame leg
     probe.pressAt = -1;
     probe.ticks = 0;
     proxy->InvokeCommand("Play");
-    QCOMPARE(vtkSMPropertyHelper(proxy, "NumberOfFrames").GetAsInt(), 60);
-    QVERIFY2(probe.ticks >= 58,
+    QCOMPARE(vtkSMPropertyHelper(proxy, "NumberOfFrames").GetAsInt(), 100);
+    QVERIFY2(probe.ticks >= 98,
              qPrintable(QString("only %1 ticks").arg(probe.ticks)));
 
     // A paused animation is not disturbed by an edit

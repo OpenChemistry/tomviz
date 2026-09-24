@@ -169,7 +169,7 @@ public:
   QCheckBox* recordScene = nullptr;
   // Caption shown in the view while the path is at the selected viewpoint
   QLineEdit* viewpointLabel = nullptr;
-  // Where every caption is drawn, as fractions of the view from its
+  // Where every caption is centered, as fractions of the view from its
   // lower-left corner
   QDoubleSpinBox* captionX = nullptr;
   QDoubleSpinBox* captionY = nullptr;
@@ -179,6 +179,7 @@ public:
   QComboBox* orbitDirection = nullptr;
   QSpinBox* orbitFrames = nullptr;
   QLabel* orbitFramesTitle = nullptr;
+  QCheckBox* orbitEased = nullptr;
   pqPropertyLinks pqLinks;
   QPointer<AnimationHelperDialog> parent;
   vtkWeakPointer<vtkSMProxy> linkedScene;
@@ -210,10 +211,12 @@ public:
     auto* labelRow = new QHBoxLayout;
     auto* labelTitle = new QLabel("Label:", parent);
     viewpointLabel = new QLineEdit(parent);
-    viewpointLabel->setPlaceholderText("Caption shown while at this viewpoint");
+    viewpointLabel->setPlaceholderText(
+      "Caption shown transitioning to the next viewpoint");
     viewpointLabel->setToolTip(
-      "Text drawn in the corner of the 3D view, and in exported movies, "
-      "from this viewpoint until the next one.");
+      "Text drawn in the 3D view, and in exported movies, while the camera "
+      "is at this viewpoint (including its orbit) and on its way to the "
+      "next one.");
     labelTitle->setBuddy(viewpointLabel);
     labelRow->addWidget(labelTitle);
     labelRow->addWidget(viewpointLabel, 1);
@@ -225,10 +228,11 @@ public:
     auto* positionRow = new QHBoxLayout;
     auto* positionTitle = new QLabel("Label position:", parent);
     positionTitle->setToolTip(
-      "Where the captions sit in the 3D view and in exported movies, as "
-      "a fraction of the view's width and height measured from the "
-      "lower-left corner. 0, 0 is that corner; 0.5, 0.5 is the middle. "
-      "One position serves every viewpoint.");
+      "Where the captions are centered in the 3D view and in exported "
+      "movies, as a fraction of the view's width and height measured from "
+      "the lower-left corner. 0.5, 0.5 is the middle of the view; the "
+      "default, 0.5, 0.05, is the bottom middle. One position serves "
+      "every viewpoint.");
     positionRow->addWidget(positionTitle);
     auto addAxis = [&](const QString& axis) {
       auto* box = new QDoubleSpinBox(parent);
@@ -304,11 +308,17 @@ public:
     orbitFrames->setToolTip(
       "Frames the orbit takes, on top of the legs.");
     orbitFramesTitle->setBuddy(orbitFrames);
+    orbitEased = new QCheckBox("Ease In/Out", parent);
+    orbitEased->setObjectName("orbitEased");
+    orbitEased->setToolTip(
+      "Start the orbit slowly and slow it to a stop at the end. Leave off "
+      "for a spin at constant speed, which loops without a pause.");
     orbitRow->addWidget(viewpointOrbit);
     orbitRow->addWidget(orbitTurns);
     orbitRow->addWidget(orbitDirection);
     orbitRow->addWidget(orbitFramesTitle);
     orbitRow->addWidget(orbitFrames);
+    orbitRow->addWidget(orbitEased);
     orbitRow->addStretch(1);
     // The details only appear once there is an orbit to describe
     for (auto* detail : orbitDetails()) {
@@ -323,6 +333,7 @@ public:
             this, &Internal::orbitChanged);
     connect(orbitFrames, qOverload<int>(&QSpinBox::valueChanged), this,
             &Internal::orbitChanged);
+    connect(orbitEased, &QCheckBox::toggled, this, &Internal::orbitChanged);
 
     recordScene = new QCheckBox("Record module state with viewpoints", parent);
     recordScene->setToolTip(
@@ -783,6 +794,7 @@ public:
     QSignalBlocker blockedTurns(orbitTurns);
     QSignalBlocker blockedDirection(orbitDirection);
     QSignalBlocker blockedOrbitFrames(orbitFrames);
+    QSignalBlocker blockedOrbitEased(orbitEased);
     QSignalBlocker blockedLabel(viewpointLabel);
     if (hasSegment) {
       ui.segmentDuration->setValue(viewpoints.at(row).legFrames);
@@ -796,6 +808,7 @@ public:
       orbitTurns->setValue(orbiting ? std::abs(turns) : 1);
       orbitDirection->setCurrentIndex(turns < 0 ? 1 : 0);
       orbitFrames->setValue(viewpoints.at(row).orbitFrames);
+      orbitEased->setChecked(viewpoints.at(row).orbitEased);
     }
     viewpointOrbit->setChecked(orbiting);
     viewpointLabel->setText(hasViewpoint ? viewpoints.at(row).label
@@ -814,7 +827,8 @@ public:
   // The orbit controls other than the checkbox that shows them
   QList<QWidget*> orbitDetails() const
   {
-    return { orbitTurns, orbitDirection, orbitFramesTitle, orbitFrames };
+    return { orbitTurns, orbitDirection, orbitFramesTitle, orbitFrames,
+             orbitEased };
   }
 
   void orbitChanged()
@@ -832,6 +846,7 @@ public:
         ? (orbitDirection->currentIndex() == 0 ? turns : -turns)
         : 0;
     viewpoint.orbitFrames = orbitFrames->value();
+    viewpoint.orbitEased = orbitEased->isChecked();
     viewpoints.replace(row, viewpoint);
   }
 

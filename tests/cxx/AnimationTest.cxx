@@ -324,6 +324,52 @@ TEST_F(AnimationTest, AnOrbitHoldsTheLegAndTheAnchorsStill)
   EXPECT_DOUBLE_EQ(viewpoints().departures()[0], 0.75);
 }
 
+// An orbit spins at constant speed unless its own easing is on; the
+// leg's easing does not reach it. A file from before orbits had their
+// own easing plays them as the leg's easing did.
+TEST_F(AnimationTest, OrbitsEaseOnlyWhenAskedTo)
+{
+  auto spinning = lookingAtOrigin({ 0, 0, 10 }, 1);
+  spinning.eased = true;
+  viewpoints().append(spinning);
+  EXPECT_DOUBLE_EQ(viewpoints().remapProgress(0.25), 0.25);
+  EXPECT_DOUBLE_EQ(viewpoints().remapProgress(0.75), 0.75);
+
+  spinning.orbitEased = true;
+  viewpoints().replace(0, spinning);
+  double quarter = viewpoints().remapProgress(0.25);
+  EXPECT_LT(quarter, 0.25);
+  EXPECT_NEAR(quarter, 1.0 - viewpoints().remapProgress(0.75), 1e-12);
+  EXPECT_DOUBLE_EQ(viewpoints().remapProgress(1.0), 1.0);
+
+  spinning.orbitEased = false;
+  viewpoints().replace(0, spinning);
+  auto json = viewpoints().serialize();
+  auto list = json["viewpoints"].toArray();
+  auto old = list[0].toObject();
+  old.remove("orbitEased");
+  list[0] = old;
+  json["viewpoints"] = list;
+  ASSERT_TRUE(viewpoints().deserialize(json));
+  EXPECT_TRUE(viewpoints().at(0).orbitEased);
+
+  // A viewpoint with no orbit, from such a file or a new one, gets the
+  // default rather than the leg's easing
+  auto still = lookingAtOrigin({ 0, 0, 10 }, 0);
+  still.eased = true;
+  viewpoints().replace(0, still);
+  json = viewpoints().serialize();
+  ASSERT_TRUE(viewpoints().deserialize(json));
+  EXPECT_FALSE(viewpoints().at(0).orbitEased);
+  list = json["viewpoints"].toArray();
+  old = list[0].toObject();
+  old.remove("orbitEased");
+  list[0] = old;
+  json["viewpoints"] = list;
+  ASSERT_TRUE(viewpoints().deserialize(json));
+  EXPECT_FALSE(viewpoints().at(0).orbitEased);
+}
+
 // The last viewpoint can orbit, ending the animation on a spin, and a
 // spin in the middle of a path leaves the legs either side straight.
 TEST_F(AnimationTest, OrbitsAtTheEndAndInTheMiddleOfAPath)
@@ -464,6 +510,7 @@ TEST_F(AnimationTest, ViewpointsSurviveAStateFileRoundTrip)
   saved.eased = false;
   saved.orbitTurns = -2;
   saved.orbitFrames = 50;
+  saved.orbitEased = true;
   saved.name = "Money shot";
   saved.thumbnail = QByteArray("not really a png, but it should come back");
 
@@ -490,6 +537,7 @@ TEST_F(AnimationTest, ViewpointsSurviveAStateFileRoundTrip)
   EXPECT_FALSE(restored.eased);
   EXPECT_EQ(restored.orbitTurns, -2);
   EXPECT_EQ(restored.orbitFrames, 50);
+  EXPECT_TRUE(restored.orbitEased) << "an orbit's easing is its own";
   EXPECT_EQ(viewpoints().at(1).orbitTurns, 0) << "absent means no orbit";
   EXPECT_EQ(restored.thumbnail, saved.thumbnail);
   EXPECT_EQ(restored.name, saved.name);
@@ -497,12 +545,18 @@ TEST_F(AnimationTest, ViewpointsSurviveAStateFileRoundTrip)
   // and gets a positional one rather than none.
   EXPECT_EQ(viewpoints().at(1).name, QString("Viewpoint 2"));
 
-  // A file from before captions could be moved puts them in the corner,
-  // and the position never leaves the view.
+  // A file from before captions could be moved centers them at the
+  // bottom middle, as does one saved with the old corner default, which
+  // would cut a centered caption in half; and the position never leaves
+  // the view.
   json.remove("captionPosition");
   ASSERT_TRUE(viewpoints().deserialize(json));
-  EXPECT_DOUBLE_EQ(viewpoints().captionPosition()[0], 0.02);
-  EXPECT_DOUBLE_EQ(viewpoints().captionPosition()[1], 0.03);
+  EXPECT_DOUBLE_EQ(viewpoints().captionPosition()[0], 0.5);
+  EXPECT_DOUBLE_EQ(viewpoints().captionPosition()[1], 0.05);
+  json["captionPosition"] = QJsonArray{ 0.02, 0.03 };
+  ASSERT_TRUE(viewpoints().deserialize(json));
+  EXPECT_DOUBLE_EQ(viewpoints().captionPosition()[0], 0.5);
+  EXPECT_DOUBLE_EQ(viewpoints().captionPosition()[1], 0.05);
   viewpoints().setCaptionPosition(-1.0, 4.0);
   EXPECT_DOUBLE_EQ(viewpoints().captionPosition()[0], 0.0);
   EXPECT_DOUBLE_EQ(viewpoints().captionPosition()[1], 1.0);

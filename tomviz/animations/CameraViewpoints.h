@@ -38,7 +38,7 @@ struct Viewpoint
   /// long as its legs and orbits add up to, so lengthening one leg
   /// never shortens another. The last viewpoint has no leg leaving it,
   /// so its value is unused.
-  int legFrames = 60;
+  int legFrames = 100;
 
   /// Ease in and out of that segment, so the camera slows to a stop at
   /// each end instead of rounding the corner at full speed.
@@ -53,6 +53,11 @@ struct Viewpoint
 
   /// Frames that orbit takes. Unused when orbitTurns is 0.
   int orbitFrames = 120;
+
+  /// Ease in and out of that orbit. Off by default: a spin at constant
+  /// speed loops without a visible stop, as tomviz's camera orbit always
+  /// has. Separate from eased, which is for the leg.
+  bool orbitEased = false;
 
   /// What the user calls this viewpoint. Stable: renumbering on every
   /// delete would silently repoint anything that refers to viewpoints by
@@ -182,7 +187,7 @@ public:
   /// a flight was just armed.
   bool syncFlight(pqRenderView* view);
 
-  /// Where viewpoint captions are drawn, as fractions of the view's
+  /// Where viewpoint captions are centered, as fractions of the view's
   /// width and height from its lower-left corner, so the placement
   /// holds at whatever size a movie is exported. One position for the
   /// whole path: captions that hop around the frame read as a mistake.
@@ -209,7 +214,7 @@ private:
   void noteChanged();
 
   QList<Viewpoint> m_viewpoints;
-  std::array<double, 2> m_captionPosition = { 0.02, 0.03 };
+  std::array<double, 2> m_captionPosition = { 0.5, 0.05 };
   QPointer<QObject> m_flight;
   /// A stretch of consecutive viewpoints joined by ordinary legs, and
   /// the interpolator that flies them. Orbit legs split the path into

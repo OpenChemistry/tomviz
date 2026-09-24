@@ -73,6 +73,7 @@ QJsonObject Viewpoint::serialize() const
     json["orbitTurns"] = orbitTurns;
     json["orbitFrames"] = orbitFrames;
   }
+  json["orbitEased"] = orbitEased;
   json["name"] = name;
   if (!label.isEmpty()) {
     json["label"] = label;
@@ -101,6 +102,13 @@ Viewpoint Viewpoint::deserialize(const QJsonObject& json)
   viewpoint.eased = json["eased"].toBool(viewpoint.eased);
   viewpoint.orbitTurns = json["orbitTurns"].toInt(0);
   viewpoint.orbitFrames = json["orbitFrames"].toInt(viewpoint.orbitFrames);
+  // Before orbits had their own easing they followed the leg's, so an
+  // orbit saved then plays as it did; a viewpoint saved then without
+  // one gets the default
+  viewpoint.orbitEased =
+    json.contains("orbitEased")
+      ? json["orbitEased"].toBool()
+      : (viewpoint.orbitTurns != 0 ? viewpoint.eased : false);
   viewpoint.name = json["name"].toString();
   viewpoint.label = json["label"].toString();
   viewpoint.thumbnail =
@@ -380,9 +388,9 @@ double CameraViewpoints::remapProgress(double progress) const
       { timeline.departures[i],
         i + 1 < count ? timeline.arrivals[i + 1] : timeline.departures[i] }
     };
-    for (const auto& piece : pieces) {
-      const double start = piece[0];
-      const double stop = piece[1];
+    for (int k = 0; k < 2; ++k) {
+      const double start = pieces[k][0];
+      const double stop = pieces[k][1];
       const double span = stop - start;
       if (span <= 0) {
         continue;
@@ -390,7 +398,9 @@ double CameraViewpoints::remapProgress(double progress) const
       const bool last = stop >= 1.0;
       if (p < stop || last) {
         double u = (p - start) / span;
-        if (m_viewpoints[i].eased) {
+        const bool eased = k == 0 ? m_viewpoints[i].orbitEased
+                                  : m_viewpoints[i].eased;
+        if (eased) {
           // Smoothstep: zero slope at both ends, so the camera
           // accelerates away from a stop and decelerates into the next.
           u = u * u * (3.0 - 2.0 * u);
@@ -673,12 +683,17 @@ bool CameraViewpoints::deserialize(const QJsonObject& json)
     }
   }
 
-  // Files from before the caption could be moved keep the corner.
+  // Captions are centered on the position now. The old default put their
+  // corner just inside the view's, where a centered caption would be cut
+  // in half, so it becomes the new default, as does a file from before
+  // the caption could be moved.
   auto position = json["captionPosition"].toArray();
-  if (position.size() == 2) {
-    setCaptionPosition(position[0].toDouble(0.02), position[1].toDouble(0.03));
+  const double x = position.size() == 2 ? position[0].toDouble(0.5) : 0.5;
+  const double y = position.size() == 2 ? position[1].toDouble(0.05) : 0.05;
+  if (x == 0.02 && y == 0.03) {
+    setCaptionPosition(0.5, 0.05);
   } else {
-    setCaptionPosition(0.02, 0.03);
+    setCaptionPosition(x, y);
   }
 
   noteChanged();

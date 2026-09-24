@@ -37,13 +37,15 @@ public:
     if (m_view) {
       connect(m_view.data(), &QObject::destroyed, this, &QObject::deleteLater);
     }
-    // Viewpoint captions: readable on any background, placed where the
-    // path says (the lower-left corner unless the user moved them)
+    // Viewpoint captions: readable on any background, centered where the
+    // path says (the bottom middle unless the user moved them)
     auto* text = m_caption->GetTextProperty();
     text->SetFontSize(22);
     text->SetBold(true);
     text->SetColor(1.0, 1.0, 1.0);
     text->SetShadow(true);
+    text->SetJustificationToCentered();
+    text->SetVerticalJustificationToCentered();
     m_caption->GetPositionCoordinate()
       ->SetCoordinateSystemToNormalizedViewport();
     placeCaption();
