@@ -150,40 +150,82 @@ bool sliceBounds(SliceSink* slice, OutputPort* tipPort, double bounds[6])
   return tipPort && volumeBounds(tipPort->data(), bounds);
 }
 
-/// Where the camera looks and which way is up for a slice: x right and
-/// y up for XY, x right and z up for XZ, y right and z up for YZ. Returns
-/// the axis the camera looks along, or -1 for a custom plane.
-int lookAlong(SliceSink* slice, double look[3], double up[3])
+/// Where the camera looks and which way is up for a slice, as close to
+/// the current camera as the slice allows: the camera looks down the
+/// slice normal from the side it is already on, and up is the in-plane
+/// axis nearest its current up. When the camera gives no hint (it looks
+/// edge-on, or its up is the normal) the defaults are x right and y up
+/// for XY, x right and z up for XZ, y right and z up for YZ. Returns the
+/// axis the camera looks along and sets @a upAxis to the one pointing
+/// up, or -1 for both with a custom plane.
+int lookAlong(SliceSink* slice, vtkCamera* camera, double look[3],
+              double up[3], int& upAxis)
 {
+  double current[3], currentUp[3];
+  camera->GetDirectionOfProjection(current);
+  camera->GetViewUp(currentUp);
+  const double hint = 1e-6;
+
+  int axis = -1;
+  double normal[3] = { 0, 0, 0 };
   switch (slice->direction()) {
     case SliceSink::XY:
-      look[0] = 0, look[1] = 0, look[2] = -1;
-      up[0] = 0, up[1] = 1, up[2] = 0;
-      return 2;
+      axis = 2, upAxis = 1, normal[2] = -1;
+      break;
     case SliceSink::XZ:
-      look[0] = 0, look[1] = 1, look[2] = 0;
-      up[0] = 0, up[1] = 0, up[2] = 1;
-      return 1;
+      axis = 1, upAxis = 2, normal[1] = 1;
+      break;
     case SliceSink::YZ:
-      look[0] = -1, look[1] = 0, look[2] = 0;
-      up[0] = 0, up[1] = 0, up[2] = 1;
-      return 0;
+      axis = 0, upAxis = 2, normal[0] = -1;
+      break;
     default:
+      upAxis = -1;
+      slice->planeNormal(normal);
+      if (vtkMath::Normalize(normal) == 0.0) {
+        normal[0] = 0, normal[1] = 0, normal[2] = 1;
+      }
+      vtkMath::MultiplyScalar(normal, -1.0);
       break;
   }
-  double normal[3];
-  slice->planeNormal(normal);
-  if (vtkMath::Normalize(normal) == 0.0) {
-    normal[0] = 0, normal[1] = 0, normal[2] = 1;
-  }
+
+  // The side the camera is on
+  double sign = vtkMath::Dot(normal, current) < -hint ? -1.0 : 1.0;
   for (int i = 0; i < 3; ++i) {
-    look[i] = -normal[i];
+    look[i] = sign * normal[i];
   }
-  // Any up vector not parallel to the normal will do.
-  if (std::abs(normal[2]) < 0.9) {
-    up[0] = 0, up[1] = 0, up[2] = 1;
-  } else {
-    up[0] = 0, up[1] = 1, up[2] = 0;
+
+  if (axis >= 0) {
+    // The in-plane axis, either way round, nearest the current up
+    double best = hint;
+    int bestAxis = -1;
+    for (int i = 0; i < 3; ++i) {
+      if (i != axis && std::abs(currentUp[i]) > best) {
+        best = std::abs(currentUp[i]);
+        bestAxis = i;
+      }
+    }
+    up[0] = up[1] = up[2] = 0;
+    if (bestAxis >= 0) {
+      upAxis = bestAxis;
+      up[upAxis] = currentUp[upAxis] < 0 ? -1 : 1;
+    } else {
+      up[upAxis] = 1;
+    }
+    return axis;
+  }
+
+  // Custom plane: the current up, flattened onto the plane
+  double along = vtkMath::Dot(currentUp, look);
+  for (int i = 0; i < 3; ++i) {
+    up[i] = currentUp[i] - along * look[i];
+  }
+  if (vtkMath::Normalize(up) < hint) {
+    // Any up vector not parallel to the normal will do.
+    if (std::abs(look[2]) < 0.9) {
+      up[0] = 0, up[1] = 0, up[2] = 1;
+    } else {
+      up[0] = 0, up[1] = 1, up[2] = 0;
+    }
   }
   return -1;
 }
@@ -191,7 +233,7 @@ int lookAlong(SliceSink* slice, double look[3], double up[3])
 /// Tighten the parallel scale so the slice fills the viewport along its
 /// narrower dimension, instead of ResetCamera's bounding-sphere fit.
 void fitParallelScale(vtkSMRenderViewProxy* proxy, const double bounds[6],
-                      int axis)
+                      int axis, int upAxis)
 {
   int* size = proxy->GetRenderWindow()->GetSize();
   double w = size[0];
@@ -202,9 +244,8 @@ void fitParallelScale(vtkSMRenderViewProxy* proxy, const double bounds[6],
 
   double lengths[3] = { bounds[1] - bounds[0], bounds[3] - bounds[2],
                         bounds[5] - bounds[4] };
-  // lookAlong() puts the lower-index remaining axis to the right.
-  double bw = lengths[axis == 0 ? 1 : 0];
-  double bh = lengths[axis == 2 ? 1 : 2];
+  double bw = lengths[3 - axis - upAxis];
+  double bh = lengths[upAxis];
   if (bw <= 0 || bh <= 0) {
     return;
   }
@@ -219,14 +260,15 @@ void aimCamera(vtkSMRenderViewProxy* proxy, SliceSink* slice,
                OutputPort* tipPort)
 {
   double look[3], up[3];
-  int axis = lookAlong(slice, look, up);
+  int upAxis = -1;
+  int axis = lookAlong(slice, proxy->GetActiveCamera(), look, up, upAxis);
   proxy->ResetActiveCameraToDirection(look[0], look[1], look[2], up[0],
                                       up[1], up[2]);
   double bounds[6];
   if (sliceBounds(slice, tipPort, bounds)) {
     proxy->ResetCamera(bounds);
     if (axis >= 0) {
-      fitParallelScale(proxy, bounds, axis);
+      fitParallelScale(proxy, bounds, axis, upAxis);
     }
   } else {
     proxy->ResetCamera();

@@ -184,11 +184,12 @@ private slots:
     QVERIFY(!volume->visibility());
     QVERIFY(slice->visibility());
     QVERIFY(!slice->showArrow());
-    // Looking along +y for an XZ slice, z up
+    // Down the XZ normal from the side the camera was on (it looked
+    // toward -y), with its z up kept
     double dir[3], up[3];
     camera(m_view)->GetDirectionOfProjection(dir);
     camera(m_view)->GetViewUp(up);
-    QVERIFY2(near(dir, 0, 1, 0), "camera should look along +y");
+    QVERIFY2(near(dir, 0, -1, 0), "camera should keep looking toward -y");
     QVERIFY2(near(up, 0, 0, 1), "z should be up");
     QCOMPARE(camera(m_view)->GetParallelProjection(), 1);
 
@@ -205,6 +206,38 @@ private slots:
     QVERIFY2(near(pos, 5, 7, 9), "camera position should be restored");
     QVERIFY2(near(focal, 1, 2, 3), "focal point should be restored");
     QVERIFY2(near(up, 0, 0, 1), "view up should be restored");
+  }
+
+  // 2D keeps the camera on its side of the slice and turns it as little
+  // as it can: up becomes the in-plane axis nearest the current up. With
+  // no hint from the camera (edge-on, up along the normal) the defaults
+  // apply.
+  void keepsTheCamerasSideAndNearestUp()
+  {
+    auto ds = addDataset(m_pip, 20, 30, 40);
+    auto* slice = addSink<pipeline::SliceSink>(m_pip, ds, m_view);
+    slice->setDirection(pipeline::SliceSink::XY);
+    ActiveObjects::instance().setActivePort(ds.port());
+
+    // From below, rolled so that roughly -x is up
+    placeCamera(m_view, 0, 0, -10, 0, 0, 0);
+    camera(m_view)->SetViewUp(-0.9, 0.1, 0);
+    setInteractionMode(m_view, MODE_2D);
+    double dir[3], up[3];
+    camera(m_view)->GetDirectionOfProjection(dir);
+    camera(m_view)->GetViewUp(up);
+    QVERIFY2(near(dir, 0, 0, 1), "camera should stay below, looking up");
+    QVERIFY2(near(up, -1, 0, 0), "-x should be up");
+    setInteractionMode(m_view, MODE_3D);
+
+    // Edge-on, with z (the normal) up: the XY defaults
+    placeCamera(m_view, 10, 0, 0, 0, 0, 0);
+    setInteractionMode(m_view, MODE_2D);
+    camera(m_view)->GetDirectionOfProjection(dir);
+    camera(m_view)->GetViewUp(up);
+    QVERIFY2(near(dir, 0, 0, -1), "an XY slice defaults to the view from +z");
+    QVERIFY2(near(up, 0, 1, 0), "y defaults to up");
+    setInteractionMode(m_view, MODE_3D);
   }
 
   // A view with no slice gets one on the tip port. Leaving 2D hides it
