@@ -338,9 +338,9 @@ public:
     recordScene = new QCheckBox("Record module state with viewpoints", parent);
     recordScene->setToolTip(
       "Also save the state of every visualization with each viewpoint: "
-      "which are visible, their opacity or opacity curve, where slice and "
-      "clip planes sit, iso values, threshold ranges, hidden labels, and "
-      "any volume cut-out or exploded view. Whatever differs between two "
+      "which are visible, their opacity or opacity curve, volume "
+      "solidity, where slice and clip planes sit, iso values, threshold "
+      "ranges, hidden labels, and any volume cut-out or exploded view. Whatever differs between two "
       "viewpoints is listed under Visualizations, marked recorded, and "
       "plays between them. A module added after a viewpoint was saved "
       "counts as hidden there until that viewpoint is updated.");
