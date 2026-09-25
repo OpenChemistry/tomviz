@@ -1822,25 +1822,7 @@ public:
     scene()->getProxy()->UpdateVTKObjects();
   }
 
-  // The writer plays the scene itself, which the player refuses during
-  // an active playback, and the dialog is modal, so it must open once
-  // the play loop has unwound: stop, then come back on the event loop
-  // until the scene reports it is no longer playing.
-  void exportMovie()
-  {
-    auto* animationScene = scene();
-    auto* proxy = animationScene ? animationScene->getProxy() : nullptr;
-    auto* object = proxy ? vtkSMAnimationScene::SafeDownCast(
-                             proxy->GetClientSideObject())
-                         : nullptr;
-    if (object && object->GetInPlay()) {
-      interruptAnimationPlayback(/*rewind=*/false);
-      QTimer::singleShot(0, this, [this]() { exportMovie(); });
-      return;
-    }
-    MovieExportDialog dialog(parent);
-    dialog.exec();
-  }
+  void exportMovie() { MovieExportDialog::exportMovie(parent); }
 
   void clearAllAnimations()
   {

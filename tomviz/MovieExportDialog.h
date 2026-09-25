@@ -22,6 +22,12 @@ public:
   explicit MovieExportDialog(QWidget* parent = nullptr);
   ~MovieExportDialog() override;
 
+  /// Open the dialog, as the Export Movie actions do. The writer plays
+  /// the scene itself, which the player refuses during an active
+  /// playback, and the dialog is modal, so a playing scene is stopped
+  /// first and the dialog opens once the play loop has unwound.
+  static void exportMovie(QWidget* parent);
+
   void accept() override;
 
 protected:

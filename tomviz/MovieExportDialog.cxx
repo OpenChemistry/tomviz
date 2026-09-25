@@ -3,6 +3,7 @@
 
 #include "MovieExportDialog.h"
 
+#include "animations/AnimationSceneGuard.h"
 #include "animations/ModuleAnimations.h"
 
 #include "ActiveObjects.h"
@@ -22,6 +23,7 @@
 
 #include <vtkCompositeAnimationPlayer.h>
 #include <vtkNew.h>
+#include <vtkSMAnimationScene.h>
 #include <vtkSMParaViewPipelineController.h>
 #include <vtkSMProperty.h>
 #include <vtkSMPropertyHelper.h>
@@ -36,6 +38,7 @@
 #include <QComboBox>
 #include <QCoreApplication>
 #include <QDialogButtonBox>
+#include <QTimer>
 #include <QDir>
 #include <QEventLoop>
 #include <QFile>
@@ -95,6 +98,7 @@ public:
   QComboBox* resolution;
   QSpinBox* customWidth;
   QSpinBox* customHeight;
+  QLabel* customTimes;
   QSpinBox* frameRate;
   QComboBox* quality;
   QLabel* info;
@@ -153,7 +157,8 @@ public:
     customHeight->setValue(1080);
     resolutionRow->addWidget(resolution);
     resolutionRow->addWidget(customWidth);
-    resolutionRow->addWidget(new QLabel("x", p));
+    customTimes = new QLabel("x", p);
+    resolutionRow->addWidget(customTimes);
     resolutionRow->addWidget(customHeight);
     form->addRow("Resolution:", resolutionRow);
 
@@ -229,6 +234,7 @@ public:
   {
     bool custom = resolution->currentData().toSize() == QSize(-1, -1);
     customWidth->setVisible(custom);
+    customTimes->setVisible(custom);
     customHeight->setVisible(custom);
 
     // An image sequence has no encoder settings.
@@ -572,6 +578,24 @@ void MovieExportDialog::showEvent(QShowEvent* e)
 {
   QDialog::showEvent(e);
   m_internal->refreshInfo();
+}
+
+void MovieExportDialog::exportMovie(QWidget* parent)
+{
+  auto* scene =
+    pqPVApplicationCore::instance()->animationManager()->getActiveScene();
+  auto* proxy = scene ? scene->getProxy() : nullptr;
+  auto* object =
+    proxy ? vtkSMAnimationScene::SafeDownCast(proxy->GetClientSideObject())
+          : nullptr;
+  if (object && object->GetInPlay()) {
+    interruptAnimationPlayback(/*rewind=*/false);
+    QObject* context = parent ? static_cast<QObject*>(parent) : qApp;
+    QTimer::singleShot(0, context, [parent]() { exportMovie(parent); });
+    return;
+  }
+  MovieExportDialog dialog(parent);
+  dialog.exec();
 }
 
 void MovieExportDialog::accept()

@@ -8,7 +8,6 @@
 #include <pqObjectBuilder.h>
 #include <pqOutputWidget.h>
 #include <pqPluginDockWidgetsBehavior.h>
-#include <pqSaveAnimationReaction.h>
 #include <pqSettings.h>
 #include <pqView.h>
 #include <vtkPVRenderView.h>
@@ -75,6 +74,7 @@
 #include "pipeline/SinkNode.h"
 #include "pipeline/VolumePropertiesWidget.h"
 #include "MoleculeProperties.h"
+#include "MovieExportDialog.h"
 #include "CentralWidget.h"
 #include "OperatorSearchDialog.h"
 #include "ProgressDialogManager.h"
@@ -940,7 +940,10 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
 
   new SaveDataReaction(m_ui->actionSaveData);
   new SaveScreenshotReaction(m_ui->actionSaveScreenshot, this);
-  new pqSaveAnimationReaction(m_ui->actionSaveMovie);
+  // The same dialog as the Animation Helper's Export Movie button, which
+  // can write MP4 (ParaView's own exporter cannot in our packages)
+  connect(m_ui->actionSaveMovie, &QAction::triggered, this,
+          [this]() { MovieExportDialog::exportMovie(this); });
   // FIXME: staged for removal
   m_ui->actionSaveWeb->setVisible(false);
 
