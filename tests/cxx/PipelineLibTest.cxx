@@ -22,6 +22,7 @@
 #include "PipelineSettings.h"
 #include "PipelineStateIO.h"
 #include "PortDataWriter.h"
+#include "ParameterInterfaceBuilder.h"
 #include "SaveDataDialog.h"
 #include "SinkGroupNode.h"
 #include "Tvh5Format.h"
@@ -57,6 +58,8 @@
 
 #include <QApplication>
 #include <QLabel>
+#include <QLineEdit>
+#include <QCheckBox>
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonArray>
@@ -5157,6 +5160,48 @@ TEST_F(PipelineLibTest, SaveDataDialogExplainsReleasedPorts)
     EXPECT_TRUE(note->text().contains("transient"));
     EXPECT_TRUE(dialog.selectedEntries().isEmpty());
   }
+}
+
+// visible_if hides a parameter's label with its field, whichever the
+// label is attached to: a string's label is its field's buddy, a file's
+// is the row's.
+TEST_F(PipelineLibTest, VisibleIfHidesLabelsOfEveryParameterType)
+{
+  ParameterInterfaceBuilder builder;
+  builder.setJSONDescription(QString(R"({"parameters": [
+    {"name": "auto", "label": "Auto", "type": "bool", "default": true},
+    {"name": "centers", "label": "Centers", "type": "string",
+     "default": "", "visible_if": "auto == false"},
+    {"name": "centers_file", "label": "Centers CSV", "type": "file",
+     "default": "", "visible_if": "auto == false"}
+  ]})"));
+  QWidget parent;
+  auto* form = builder.buildWidget(&parent);
+  ASSERT_NE(form, nullptr);
+
+  auto labelFor = [&parent](const QString& text) -> QLabel* {
+    for (auto* label : parent.findChildren<QLabel*>()) {
+      if (label->text() == text) {
+        return label;
+      }
+    }
+    return nullptr;
+  };
+  auto* centers = labelFor("Centers");
+  auto* centersFile = labelFor("Centers CSV");
+  auto* autoCheck = parent.findChild<QCheckBox*>("auto");
+  ASSERT_NE(centers, nullptr);
+  ASSERT_NE(centersFile, nullptr);
+  ASSERT_NE(autoCheck, nullptr);
+  EXPECT_TRUE(centers->isHidden());
+  EXPECT_TRUE(centersFile->isHidden());
+  EXPECT_TRUE(parent.findChild<QLineEdit*>("centers")->isHidden() ||
+              parent.findChild<QLineEdit*>("centers")->parentWidget()
+                ->isHidden());
+
+  autoCheck->setChecked(false);
+  EXPECT_FALSE(centers->isHidden());
+  EXPECT_FALSE(centersFile->isHidden());
 }
 
 TEST_F(PipelineLibTest, SaveDataNodeScopeExcludesSinks)

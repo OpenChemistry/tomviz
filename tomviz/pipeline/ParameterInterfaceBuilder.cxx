@@ -902,6 +902,7 @@ QLabel* findLabelForWidget(const QWidget* widget)
 
 void setWidgetProperty(QWidget* widget, const char* property, QVariant value)
 {
+  QWidget* field = widget;
   if (isWidgetNumeric(widget) || isWidgetType<QLineEdit>(widget)) {
     widget = widget->parentWidget();
     if (!widget) {
@@ -911,7 +912,12 @@ void setWidgetProperty(QWidget* widget, const char* property, QVariant value)
 
   widget->setProperty(property, value);
 
+  // The label is the buddy of the row's container for some parameter
+  // types and of the field itself for others (strings)
   auto* label = findLabelForWidget(widget);
+  if (!label && field != widget) {
+    label = findLabelForWidget(field);
+  }
   if (label) {
     label->setProperty(property, value);
   }
