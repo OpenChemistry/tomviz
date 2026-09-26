@@ -23,6 +23,7 @@
 #include "PipelineStateIO.h"
 #include "PortDataWriter.h"
 #include "ParameterInterfaceBuilder.h"
+#include "PipelineUtils.h"
 #include "SaveDataDialog.h"
 #include "SinkGroupNode.h"
 #include "Tvh5Format.h"
@@ -5202,6 +5203,43 @@ TEST_F(PipelineLibTest, VisibleIfHidesLabelsOfEveryParameterType)
   autoCheck->setChecked(false);
   EXPECT_FALSE(centers->isHidden());
   EXPECT_FALSE(centersFile->isHidden());
+}
+
+// Clone Data copies the source feeding the selected branch, which is
+// not always the first source in the pipeline
+TEST_F(PipelineLibTest, FeedingSourcePortWalksUpToTheBranchesSource)
+{
+  auto* first = new SourceNode();
+  first->addOutput("volume", PortType::ImageData);
+  pipeline->addNode(first);
+  auto* second = new SourceNode();
+  second->addOutput("volume", PortType::ImageData);
+  pipeline->addNode(second);
+
+  auto* blur =
+    new PassthroughTransform(PortType::ImageData, PortType::ImageData);
+  pipeline->addNode(blur);
+  pipeline->createLink(second->outputPort("volume"), blur->inputPort("in"));
+  auto* threshold =
+    new PassthroughTransform(PortType::ImageData, PortType::ImageData);
+  pipeline->addNode(threshold);
+  pipeline->createLink(blur->outputPort("out"), threshold->inputPort("in"));
+
+  // A visualization has no output; it is found through its input
+  auto* sink = new CollectorSink();
+  pipeline->addNode(sink);
+  pipeline->createLink(threshold->outputPort("out"), sink->inputPort("in"));
+
+  EXPECT_EQ(feedingSourcePort(threshold->outputPort("out")),
+            second->outputPort("volume"));
+  EXPECT_EQ(feedingSourcePort(sink), second->outputPort("volume"));
+  EXPECT_EQ(feedingSourcePort(first), first->outputPort("volume"));
+
+  // Fed by nothing
+  auto* orphan =
+    new PassthroughTransform(PortType::ImageData, PortType::ImageData);
+  pipeline->addNode(orphan);
+  EXPECT_EQ(feedingSourcePort(orphan), nullptr);
 }
 
 TEST_F(PipelineLibTest, SaveDataNodeScopeExcludesSinks)

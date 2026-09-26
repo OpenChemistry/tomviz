@@ -62,12 +62,14 @@ def read_scan_metadata(working_directory: str,
     ``scan2D_<id>.h5`` files already present in the directory, so a
     directory of downloaded scans shows its contents without requiring
     the range to be typed first (matching the ptycho dialog). Only files
-    matching that exact naming pattern are opened.
+    matching that exact naming pattern are opened. A range that is given
+    but names no scans (a typo, say) lists nothing rather than every file.
     """
     wd = working_directory
 
-    expected_ids = _expand_scan_range(scan_range) if scan_range else []
-    if not expected_ids:
+    if scan_range and scan_range.strip():
+        expected_ids = _expand_scan_range(scan_range)
+    else:
         expected_ids = _scan_ids_present(wd)
     if not expected_ids:
         return []

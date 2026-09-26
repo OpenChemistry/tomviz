@@ -8,7 +8,7 @@
 #define TOMVIZ_VERSION_EXTRA "@tomviz_version_extra@"
 #define TOMVIZ_PLUGIN_PATHS "@tomviz_PLUGIN_PATHS@"
 /* Minimum tomviz-pipeline version for external Python environments;
-   compatible versions are >= this and < the next minor release. */
+   compatible versions are >= this and < the next major release. */
 #define TOMVIZ_PIPELINE_MIN_VERSION "@tomviz_pipeline_min_version@"
 
 #endif

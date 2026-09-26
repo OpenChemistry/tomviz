@@ -64,6 +64,32 @@ OutputPort* findBranchTip(Node* node)
   return tip;
 }
 
+OutputPort* feedingSourcePort(OutputPort* port)
+{
+  if (!port || dynamic_cast<SourceNode*>(port->node())) {
+    return port;
+  }
+  return feedingSourcePort(port->node());
+}
+
+OutputPort* feedingSourcePort(Node* node)
+{
+  if (!node) {
+    return nullptr;
+  }
+  if (dynamic_cast<SourceNode*>(node)) {
+    return node->outputPorts().isEmpty() ? nullptr
+                                         : node->outputPorts().first();
+  }
+  // Pipelines are acyclic (createLink refuses a cycle), so this ends
+  for (auto* input : node->inputPorts()) {
+    if (input->link()) {
+      return feedingSourcePort(input->link()->from());
+    }
+  }
+  return nullptr;
+}
+
 OutputPort* findTipOutputPort(Pipeline* pipeline, Node* contextNode)
 {
   if (!pipeline) {
