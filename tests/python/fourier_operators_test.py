@@ -145,6 +145,23 @@ def test_peak_mask_centers_from_csv(tmp_path):
     assert _corr(out, _wave(k1)) > 0.99
 
 
+def test_peak_mask_wraps_friedel_mates_on_the_nyquist_plane():
+    # k_x = N/2 sits at index 0 after fftshift, and its mate wraps back to
+    # index 0 rather than N
+    k = (N // 2, 5, 0)
+    wave = _wave(k)
+    peak = ', '.join(str(c % N) for c in _peak_index(k))
+    out = _run_peak_mask(wave, centers=peak, radius=3.0, sigma=0.5)
+    assert _corr(out, wave) > 0.99
+    assert 0.9 < out.std() / wave.std() < 1.1
+
+    # Auto-detection keeps one peak of the pair
+    t, _ = _run_operator_raw('FourierPeakMask', {'volume': wave},
+                             auto_detect=True, threshold=0.8,
+                             min_peak_size=1, radius=3.0, sigma=0.5)
+    assert len(t.parameters['centers'].split(';')) == 1
+
+
 def test_peak_mask_rejects_bad_centers():
     # A raising operator surfaces as an empty (failed) result
     _, result = _run_operator_raw('FourierPeakMask',

@@ -79,13 +79,13 @@ class FourierPeakMask(tomviz.nodes.TransformNode):
             return
 
         # The spectrum is Hermitian-symmetric, so every peak has a mate
-        # mirrored through the DC bin (n // 2 after fftshift). Peaks close
-        # enough to the center that their own window already covers the
-        # mate are not mirrored again.
+        # mirrored through the DC bin. Peaks close enough to the center
+        # that their own window already covers the mate are not mirrored
+        # again.
         if include_friedel_mates:
             mates = []
             for peak in peaks:
-                mate = [2 * c - p for c, p in zip(dc, peak)]
+                mate = _friedel_mate(peak, shape)
                 distance = np.sqrt(sum((m - p)**2
                                        for m, p in zip(mate, peak)))
                 if distance > radius:
@@ -111,6 +111,15 @@ class FourierPeakMask(tomviz.nodes.TransformNode):
         dataset.active_scalars = np.asfortranarray(result.astype(np.float32))
         self.progress.value = 4
         return {'volume': dataset}
+
+
+def _friedel_mate(peak, shape):
+    """The peak mirrored through the DC bin (n // 2 after fftshift).
+
+    Each axis wraps: on an even-sized axis, index 0 holds the Nyquist
+    frequency, which is its own mate.
+    """
+    return [(2 * (n // 2) - p) % n for p, n in zip(peak, shape)]
 
 
 def _detect_peaks(magnitude, dc, threshold, exclude_center_radius,
@@ -158,7 +167,7 @@ def _detect_peaks(magnitude, dc, threshold, exclude_center_radius,
     for _, position in candidates:
         if dedupe_friedel:
             # The mate is added back later, so keep one of each pair
-            mate = [2 * c - p for c, p in zip(dc, position)]
+            mate = _friedel_mate(position, magnitude.shape)
             if any(np.sqrt(sum((m - q)**2 for m, q in zip(mate, kept)))
                    <= 1.5 for kept in peaks):
                 continue
