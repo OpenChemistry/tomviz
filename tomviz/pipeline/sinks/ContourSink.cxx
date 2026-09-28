@@ -144,8 +144,7 @@ bool ContourSink::consume(const QMap<QString, PortData>& inputs)
   // of the contour output and reconnect on the next consume().
   m_baseSpacing = volume->spacing();
   m_baseOrigin = volume->origin();
-  m_flyingEdges->Update();
-  m_mapper->SetInputDataObject(m_flyingEdges->GetOutput());
+  updateMapperInput();
 
   // consume() runs on the GUI thread (consumeOnGuiThread()), so refresh
   // the panel directly.
@@ -168,13 +167,7 @@ void ContourSink::setIsoValue(double value)
   m_isoValue = value;
   m_isoValueSet = true;
   m_flyingEdges->SetValue(0, value);
-  m_flyingEdges->Update();
-  if (m_colorByArray) {
-    m_probeFilter->Update();
-    m_mapper->SetInputDataObject(m_probeFilter->GetOutput());
-  } else {
-    m_mapper->SetInputDataObject(m_flyingEdges->GetOutput());
-  }
+  updateMapperInput();
   if (m_controllers) {
     QSignalBlocker blocker(m_controllers);
     m_controllers->setIso(value);
@@ -328,11 +321,10 @@ void ContourSink::setColorByArray(bool state)
     updateColorArrayProducer();
     m_probeFilter->SetInputConnection(m_flyingEdges->GetOutputPort());
     m_probeFilter->SetSourceConnection(m_colorArrayProducer->GetOutputPort());
-    m_mapper->SetInputConnection(m_probeFilter->GetOutputPort());
   } else {
     m_probeFilter->RemoveAllInputs();
-    m_mapper->SetInputConnection(m_flyingEdges->GetOutputPort());
   }
+  updateMapperInput();
   updateColorMap();
   emit renderNeeded();
 }
@@ -364,6 +356,22 @@ void ContourSink::updateColorArrayProducer()
   m_colorArrayProducer->SetActiveScalars(name.c_str());
 }
 
+// Feed the mapper a static copy of the surface (see consume()), probed
+// for the color-by array when one is chosen
+void ContourSink::updateMapperInput()
+{
+  if (!m_contourArrayProducer->GetOutputDataObject(0)) {
+    return; // no data yet (a state restore sets properties first)
+  }
+  m_flyingEdges->Update();
+  if (m_colorByArray) {
+    m_probeFilter->Update();
+    m_mapper->SetInputDataObject(m_probeFilter->GetOutput());
+  } else {
+    m_mapper->SetInputDataObject(m_flyingEdges->GetOutput());
+  }
+}
+
 // --- Active Scalars ---
 
 int ContourSink::activeScalars() const
@@ -375,8 +383,7 @@ void ContourSink::setActiveScalars(int idx)
 {
   m_activeScalars = idx;
   applyActiveScalars();
-  m_flyingEdges->Update();
-  m_mapper->SetInputDataObject(m_flyingEdges->GetOutput());
+  updateMapperInput();
   updateColorMap();
   emit renderNeeded();
 }
@@ -715,8 +722,7 @@ void ContourSink::onMetadataChanged()
   if (applyActiveScalars()) {
     // The contour array changed — re-execute flying edges and reconnect
     // the mapper so the contour geometry reflects the new array.
-    m_flyingEdges->Update();
-    m_mapper->SetInputDataObject(m_flyingEdges->GetOutput());
+    updateMapperInput();
   }
   updateColorArray();
   emit renderNeeded();
