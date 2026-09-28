@@ -73,6 +73,7 @@ private:
   QSet<Node*> m_pending;
   Node* m_inFlight = nullptr;
   QThread* m_thread = nullptr;
+  AutoExecuteWorker* m_worker = nullptr;
   /// Backstop re-drain while the pipeline is busy: a run queued behind
   /// a cancelled one finishes without emitting executionFinished (see
   /// Pipeline::runPlan's single-shot wiring), so waiting on the signal

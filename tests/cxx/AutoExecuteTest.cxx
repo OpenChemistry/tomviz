@@ -3,6 +3,7 @@
 
 #include <gtest/gtest.h>
 
+#include "AutoExecuteController.h"
 #include "EditNodeWidget.h"
 #include "Node.h"
 #include "Pipeline.h"
@@ -10,12 +11,17 @@
 #include "transforms/PythonTransform.h"
 
 #include <QCheckBox>
+#include <QCoreApplication>
 #include <QJsonObject>
 #include <QSignalSpy>
 #include <QSpinBox>
+#include <QThread>
+
+#include <atomic>
 
 #include "TomvizTest.h"
 
+using tomviz::pipeline::AutoExecuteController;
 using tomviz::pipeline::EditNodeWidget;
 using tomviz::pipeline::LegacyPythonTransform;
 using tomviz::pipeline::Node;
@@ -43,7 +49,43 @@ const char* kV1Description = R"({
   "parameters": []
 })";
 
+// A slow should_auto_execute() query, which must not outlive its node
+class SlowQueryNode : public Node
+{
+public:
+  std::atomic<bool> querying{ false };
+
+  bool queryShouldAutoExecute() override
+  {
+    querying = true;
+    QThread::msleep(300);
+    querying = false;
+    return false;
+  }
+
+  ~SlowQueryNode() override { EXPECT_FALSE(querying); }
+};
+
 } // namespace
+
+TEST(AutoExecuteTest, RemovingANodeWaitsForItsQuery)
+{
+  tomviz_test::ensureQApp();
+
+  Pipeline pipeline;
+  AutoExecuteController controller(&pipeline);
+  auto* node = new SlowQueryNode;
+  node->setAutoExecuteIntervalSeconds(1);
+  node->setAutoExecuteEnabled(true);
+  pipeline.addNode(node);
+
+  for (int i = 0; i < 1000 && !node->querying; ++i) {
+    QCoreApplication::processEvents();
+    QThread::msleep(5);
+  }
+  ASSERT_TRUE(node->querying);
+  pipeline.removeNode(node);
+}
 
 TEST(AutoExecuteTest, EditorShowsControlsForV2AndAppliesToNode)
 {

@@ -36,6 +36,7 @@ AutoExecuteController::AutoExecuteController(Pipeline* pipeline,
   m_thread->setObjectName(QStringLiteral("AutoExecuteQuery"));
   auto* worker = new AutoExecuteWorker;
   worker->moveToThread(m_thread);
+  m_worker = worker;
   connect(m_thread, &QThread::finished, worker, &QObject::deleteLater);
   connect(this, &AutoExecuteController::queryRequested, worker,
           &AutoExecuteWorker::runQuery);
@@ -87,8 +88,10 @@ void AutoExecuteController::onNodeRemoved(Node* node)
     timer->deleteLater();
   }
   m_pending.remove(node);
-  // If a query for this node is in flight, its result is dropped in
-  // onQueryFinished via the m_timers guard.
+  if (node == m_inFlight) {
+    // Let the worker finish with the node before it is deleted
+    QMetaObject::invokeMethod(m_worker, [] {}, Qt::BlockingQueuedConnection);
+  }
 }
 
 void AutoExecuteController::syncNode(Node* node)
