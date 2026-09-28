@@ -97,12 +97,12 @@
          </widget>
         </item>
         <item>
-         <widget class="QRadioButton" name="allPersistedRadio">
+         <widget class="QRadioButton" name="allPortsRadio">
           <property name="text">
-           <string>All persisted ports</string>
+           <string>All ports with data</string>
           </property>
           <property name="toolTip">
-           <string>Every pinned output port currently holding data, in memory or on disk.</string>
+           <string>Every output port currently holding data, in memory or on disk, whether it is persistent or transient.</string>
           </property>
           <property name="checked">
            <bool>true</bool>
@@ -158,6 +158,16 @@
        <string>File</string>
       </property>
      </column>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="releasedNote">
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+     <property name="visible">
+      <bool>false</bool>
+     </property>
     </widget>
    </item>
    <item>

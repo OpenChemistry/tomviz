@@ -5,4 +5,19 @@ set -euo pipefail
 # FIXME: this path must be modified to a real path to use this
 PIXI_MANIFEST=/path/to/pyxrf-utils/pixi.toml
 
-pixi run -v --manifest-path "$PIXI_MANIFEST" pyxrf-utils "$@"
+MANIFEST_DIR=$(dirname "$PIXI_MANIFEST")
+ENV_PREFIX="$MANIFEST_DIR/.pixi/envs/default"
+
+# With --as-is, pixi will happily run the task against the system python
+# if the environment is missing, which fails later with a confusing
+# ModuleNotFoundError. Check for it up front instead.
+if [[ ! -x "$ENV_PREFIX/bin/python" ]]; then
+    echo "The pyxrf-utils environment is not installed at $ENV_PREFIX." >&2
+    echo "Run 'pixi install' in $MANIFEST_DIR first." >&2
+    exit 1
+fi
+
+# --as-is is --frozen plus --no-install: never re-solve, never install.
+# A drifted manifest or an incomplete environment then fails immediately
+# rather than stalling a beamline user on a solve or a multi-GB download.
+pixi run --as-is -v --manifest-path "$PIXI_MANIFEST" pyxrf-utils "$@"

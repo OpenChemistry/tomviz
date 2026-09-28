@@ -8,7 +8,6 @@
 #include <pqObjectBuilder.h>
 #include <pqOutputWidget.h>
 #include <pqPluginDockWidgetsBehavior.h>
-#include <pqSaveAnimationReaction.h>
 #include <pqSettings.h>
 #include <pqView.h>
 #include <vtkPVRenderView.h>
@@ -30,10 +29,15 @@
 #include "ActiveObjects.h"
 #include "AddAlignReaction.h"
 #include "AddPythonTransformReaction.h"
+#include "CustomOperatorEditDialog.h"
+#include "CustomOperatorManagerDialog.h"
 #include "AnimationHelperDialog.h"
+#include "animations/AnimationSceneGuard.h"
+#include "animations/RecordedAnimations.h"
 #include "AxesReaction.h"
 #include "Behaviors.h"
 #include "CameraReaction.h"
+#include "ColorMap.h"
 #include "Connection.h"
 #include "DataBroker.h"
 #include "DataBrokerLoadReaction.h"
@@ -45,6 +49,7 @@
 #include "LoadStackReaction.h"
 #include "LoadTimeSeriesReaction.h"
 #include "PipelineModuleMenu.h"
+#include "pipeline/AutoExecuteController.h"
 #include "pipeline/Pipeline.h"
 #include "pipeline/PipelineExecutor.h"
 #include "pipeline/ThreadedExecutor.h"
@@ -69,6 +74,7 @@
 #include "pipeline/SinkNode.h"
 #include "pipeline/VolumePropertiesWidget.h"
 #include "MoleculeProperties.h"
+#include "MovieExportDialog.h"
 #include "CentralWidget.h"
 #include "OperatorSearchDialog.h"
 #include "ProgressDialogManager.h"
@@ -99,10 +105,14 @@
 #include <QDropEvent>
 #include <QMimeData>
 #include <QDir>
+#include <QJsonObject>
+#include <QJsonDocument>
+#include <QDesktopServices>
 #include <QFileInfo>
 #include <QIcon>
 #include <QKeySequence>
 #include <QMessageBox>
+#include <QSet>
 #include <QShortcut>
 #include <QOffscreenSurface>
 #include <QOpenGLContext>
@@ -146,10 +156,13 @@ void addSaveDataAction(QMenu& menu, Target* target, QWidget* parent,
       SaveDataDialog::writeEntries(dialog.selectedEntries(), parent);
     }
   });
+  // Also when only released ports are left, so the dialog can say why
+  // they cannot be saved
+  const auto scope = SaveDataDialog::Scope::AllPorts;
   action->setEnabled(
-    enabled && !SaveDataDialog::candidatePorts(
-                  target, SaveDataDialog::Scope::AllPersisted)
-                  .isEmpty());
+    enabled &&
+    (!SaveDataDialog::candidatePorts(target, scope).isEmpty() ||
+     !SaveDataDialog::releasedPorts(target, scope).isEmpty()));
 }
 } // namespace
 class Connection;
@@ -203,6 +216,12 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
                   "#pipelineScroll, #pipelineScrollContainer, #pipelineStrip"
                   " { background: white; }"));
   setAcceptDrops(true);
+  // Several child widgets accept drops by default (line edits, the
+  // message/python text docks, item views) and claim a file drag only
+  // to refuse it, leaving dead zones where drag-and-drop silently does
+  // nothing. Filter file drags application-wide so dropping data works
+  // anywhere over this window.
+  qApp->installEventFilter(this);
   // Force full messages to be shown
   m_ui->outputWidget->showFullMessages(true);
   m_timer = new QTimer(this);
@@ -312,6 +331,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
 
   // Sync ActiveObjects changes back to the strip widget and properties panel.
   // This ensures programmatic setActiveNode/Port/Link calls are reflected.
+  connect(&ActiveObjects::instance(), &ActiveObjects::mouseOverVoxel, this,
+          &MainWindow::onMouseOverVoxel);
   connect(&ActiveObjects::instance(), &ActiveObjects::activeNodeChanged,
           this, &MainWindow::onActiveNodeChanged);
   connect(&ActiveObjects::instance(), &ActiveObjects::activePortChanged,
@@ -887,6 +908,10 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   // Add "Search Operators..." to each operator menu (like ParaView does for
   // Sources, Filters, and Extractors)
   auto showSearch = [this]() {
+    // Custom operators can change on disk without the menu ever having
+    // been opened; a rescan only lists the directories and parses the
+    // JSON descriptions, cheap enough here.
+    registerCustomOperators(findCustomOperators());
     m_operatorSearchDialog->show();
     m_operatorSearchDialog->raise();
     m_operatorSearchDialog->activateWindow();
@@ -915,7 +940,10 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
 
   new SaveDataReaction(m_ui->actionSaveData);
   new SaveScreenshotReaction(m_ui->actionSaveScreenshot, this);
-  new pqSaveAnimationReaction(m_ui->actionSaveMovie);
+  // The same dialog as the Animation Helper's Export Movie button, which
+  // can write MP4 (ParaView's own exporter cannot in our packages)
+  connect(m_ui->actionSaveMovie, &QAction::triggered, this,
+          [this]() { MovieExportDialog::exportMovie(this); });
   // FIXME: staged for removal
   m_ui->actionSaveWeb->setVisible(false);
 
@@ -933,9 +961,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   connect(m_ui->menu_File, &QMenu::aboutToShow, reaction,
           &ResetReaction::updateEnableState);
 
-  auto* viewMenuManager = new ViewMenuManager(this, m_ui->menuView);
-  connect(viewMenuManager, &ViewMenuManager::imageViewerModeToggled, this,
-          &MainWindow::setImageViewerMode);
+  new ViewMenuManager(this, m_ui->menuView);
 
   QMenu* sampleDataMenu = new QMenu("Sample Data", this);
   m_ui->menubar->insertMenu(m_ui->menuHelp->menuAction(), sampleDataMenu);
@@ -955,6 +981,12 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   bool haveTilt =
     QFileInfo(dataDir + "/TiltSeries_NanoParticle_doi_10.1021-nl103400a.emd")
       .exists();
+  QAction* liveAcquisitionAction =
+    sampleDataMenu->addAction("Simulated Live Acquisition");
+  new AddPythonSourceReaction(
+    liveAcquisitionAction, readInPythonScript("SimulatedLiveAcquisition"),
+    readInJSONDescription("SimulatedLiveAcquisition"));
+  sampleDataMenu->addSeparator();
   if (haveRecon) {
     QAction* reconAction =
       sampleDataMenu->addAction("Star Nanoparticle (Reconstruction)");
@@ -1012,6 +1044,12 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   connect(m_ui->actionAnimationHelper, &QAction::triggered, this, [this]() {
     openDialog<AnimationHelperDialog>(&m_animationHelperDialog);
   });
+  // The Animation menu gathers what the .ui spreads over File, View and
+  // a dock: the helper, the panel with the timeline, and the export.
+  auto* animationPanel = m_ui->dockWidgetAnimation->toggleViewAction();
+  animationPanel->setText(tr("Animation Panel"));
+  m_ui->menuAnimation->insertAction(m_ui->actionSaveMovie, animationPanel);
+  m_ui->menuAnimation->insertSeparator(m_ui->actionSaveMovie);
 
   // Prepopulate the previously seen python readers/writers
   // This operation is fast since it fetches the readers description
@@ -1190,6 +1228,45 @@ void MainWindow::dragEnterEvent(QDragEnterEvent* e)
   if (e->mimeData()->hasUrls()) {
     e->acceptProposedAction();
   }
+}
+
+bool MainWindow::eventFilter(QObject* watched, QEvent* event)
+{
+  // Route local-file drags over any child of this window to the data
+  // loading handlers above. Without this, whichever drop-accepting
+  // child sits under the cursor claims the drag and refuses the files.
+  // Other windows (e.g. the image stack dialog, which has its own drop
+  // handling) are left alone, as are drags carrying no local files.
+  auto type = event->type();
+  if (type == QEvent::DragEnter || type == QEvent::DragMove ||
+      type == QEvent::Drop) {
+    auto* widget = qobject_cast<QWidget*>(watched);
+    if (widget && widget != this && widget->window() == this) {
+      auto* dropEvt = static_cast<QDropEvent*>(event);
+      const auto* mime = dropEvt->mimeData();
+      bool hasLocalFile = false;
+      if (mime && mime->hasUrls()) {
+        const auto urls = mime->urls();
+        for (const auto& url : urls) {
+          if (url.isLocalFile()) {
+            hasLocalFile = true;
+            break;
+          }
+        }
+      }
+      if (hasLocalFile) {
+        if (type == QEvent::DragEnter) {
+          dragEnterEvent(static_cast<QDragEnterEvent*>(event));
+        } else if (type == QEvent::DragMove) {
+          dropEvt->acceptProposedAction();
+        } else {
+          dropEvent(dropEvt);
+        }
+        return true;
+      }
+    }
+  }
+  return QMainWindow::eventFilter(watched, event);
 }
 
 void MainWindow::dropEvent(QDropEvent* e)
@@ -1408,6 +1485,19 @@ void MainWindow::registerCustomOperators(
   std::vector<OperatorDescription> operators)
 {
   m_customTransformsMenu->clear();
+  // The search dialog keeps its own list; the actions it knew are about
+  // to be deleted, so it gets the new set below.
+  const QString searchCategory = m_customTransformsMenu->title();
+  if (m_operatorSearchDialog) {
+    m_operatorSearchDialog->removeCategory(searchCategory);
+  }
+
+  auto* createAction = m_customTransformsMenu->addAction(tr("Create New..."));
+  connect(createAction, &QAction::triggered, this,
+          &MainWindow::createCustomOperator);
+  auto* manageAction = m_customTransformsMenu->addAction(tr("Manage..."));
+  connect(manageAction, &QAction::triggered, this,
+          &MainWindow::manageCustomOperators);
 
   std::vector<const OperatorDescription*> sources;
   std::vector<const OperatorDescription*> transforms;
@@ -1419,9 +1509,22 @@ void MainWindow::registerCustomOperators(
     }
   }
 
-  auto addEntry = [this](const OperatorDescription& op) {
+  auto addEntry = [this, &searchCategory](const OperatorDescription& op) {
+    // Plain actions, like every other menu: editing, deleting and cloning
+    // live in the Manage dialog. A broken definition is listed disabled
+    // so it can be found and fixed there.
     QAction* action = m_customTransformsMenu->addAction(op.label);
     action->setEnabled(op.valid);
+    if (m_operatorSearchDialog) {
+      // Registered before the files are read: the search shows the
+      // action's live status tip, set below once the description is in.
+      m_operatorSearchDialog->addOperatorAction(action, searchCategory);
+    }
+    if (!op.valid) {
+      action->setStatusTip(
+        tr("This definition is broken; fix it under %1 > Manage...")
+          .arg(searchCategory));
+    }
     if (!op.loadError.isNull()) {
       qWarning().noquote()
         << QString("An error occurred trying to load an operator from '%1':")
@@ -1457,6 +1560,14 @@ void MainWindow::registerCustomOperators(
     } else {
       new AddPythonTransformReaction(action, op.label, source, json);
     }
+    // The transform reaction sets the status tip from the description;
+    // give sources the same so the search can show it.
+    if (action->statusTip().isEmpty()) {
+      action->setStatusTip(QJsonDocument::fromJson(json.toUtf8())
+                             .object()
+                             .value(QStringLiteral("description"))
+                             .toString());
+    }
   };
 
   if (!sources.empty()) {
@@ -1475,43 +1586,31 @@ void MainWindow::registerCustomOperators(
 
 std::vector<OperatorDescription> MainWindow::findCustomOperators()
 {
-  QStringList paths;
-  QByteArray envOverride = qgetenv("TOMVIZ_CUSTOM_TRANSFORMS_PATH");
-  if (!envOverride.isEmpty()) {
-    for (const QString& path : QString::fromLocal8Bit(envOverride)
-                                 .split(QDir::listSeparator(),
-                                        Qt::SkipEmptyParts)) {
-      if (QFileInfo(path).isDir()) {
-        paths.append(path);
-      }
-    }
-  } else {
-    // Search in <home>/.tomviz
-    foreach (QString home,
-             QStandardPaths::standardLocations(QStandardPaths::HomeLocation)) {
-      QString path = QString("%1%2.tomviz").arg(home).arg(QDir::separator());
-      if (QFile(path).exists()) {
-        paths.append(path);
-      }
-      path = QString("%1%2tomviz").arg(home).arg(QDir::separator());
-      if (QFile(path).exists()) {
-        paths.append(path);
-      }
-    }
-    // Search in data locations.
-    // For example on window C:/Users/<USER>/AppData/Local/tomviz
-    for (QString path :
-         QStandardPaths::standardLocations(QStandardPaths::AppDataLocation)) {
-      if (QFile(path).exists()) {
-        paths.append(path);
-      }
-    }
-  }
-
   std::vector<OperatorDescription> operators;
-  foreach (QString path, paths) {
+  QSet<QString> scanned;
+  auto scan = [&operators, &scanned](const QString& path, bool userOwned) {
+    // The same directory can be named more than once (a symlink, or the
+    // user directory repeated in the environment); scan it once.
+    const QString canonical = QFileInfo(path).canonicalFilePath();
+    if (canonical.isEmpty() || scanned.contains(canonical)) {
+      return;
+    }
+    scanned.insert(canonical);
     std::vector<OperatorDescription> ops = tomviz::findCustomOperators(path);
+    for (auto& op : ops) {
+      op.userOwned = userOwned;
+    }
     operators.insert(operators.end(), ops.begin(), ops.end());
+  };
+
+  // The user's own directory is always scanned, whatever the environment
+  // says: it is the one place tomviz edits and deletes operators in.
+  const QString userDir = userDataPath();
+  if (!userDir.isEmpty()) {
+    scan(userDir, /*userOwned=*/true);
+  }
+  for (const QString& path : customOperatorSearchPaths()) {
+    scan(path, /*userOwned=*/false);
   }
 
   // Sort so we get a consistent order each time we load
@@ -1523,14 +1622,165 @@ std::vector<OperatorDescription> MainWindow::findCustomOperators()
   return operators;
 }
 
+void MainWindow::deleteCustomOperator(const OperatorDescription& op)
+{
+  QStringList files{ op.pythonPath };
+  if (!op.jsonPath.isEmpty()) {
+    files.append(op.jsonPath);
+  }
+
+  const auto answer = QMessageBox::question(
+    this, tr("Delete Custom Node"),
+    tr("Delete \"%1\"?\n\nThese files will be removed from disk:\n%2")
+      .arg(op.label, files.join('\n')),
+    QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+  if (answer != QMessageBox::Yes) {
+    return;
+  }
+
+  // Nodes already in a pipeline hold their own copy of the script and
+  // description, so they are unaffected by the files going away.
+  QStringList failed;
+  for (const QString& file : files) {
+    if (QFile::exists(file) && !QFile::remove(file)) {
+      failed.append(file);
+    }
+  }
+  if (!failed.isEmpty()) {
+    QMessageBox::warning(
+      this, tr("Delete Custom Node"),
+      tr("These files could not be removed:\n%1").arg(failed.join('\n')));
+  }
+  // The menu rescans the directories the next time it opens; the
+  // manager shows the change right away.
+  if (m_customOperatorManager) {
+    m_customOperatorManager->refresh();
+  }
+}
+
+void MainWindow::showCustomOperatorDialog(CustomOperatorEditDialog* dialog)
+{
+  if (!dialog->loadError().isEmpty()) {
+    QMessageBox::critical(this, tr("Custom Node"), dialog->loadError());
+    delete dialog;
+    return;
+  }
+  // The manager, when open, lists what is on disk; a save changes that.
+  connect(dialog, &CustomOperatorEditDialog::saved, this, [this]() {
+    if (m_customOperatorManager) {
+      m_customOperatorManager->refresh();
+    }
+  });
+  // Modeless, like the node editor: the pipeline stays usable while a
+  // file is being edited. The menu rescans the files on its next open.
+  dialog->setAttribute(Qt::WA_DeleteOnClose);
+  dialog->show();
+  dialog->raise();
+  dialog->activateWindow();
+}
+
+void MainWindow::editCustomOperator(const OperatorDescription& op)
+{
+  showCustomOperatorDialog(
+    new CustomOperatorEditDialog(op.label, op.pythonPath, op.jsonPath, this));
+}
+
+void MainWindow::manageCustomOperators()
+{
+  if (!m_customOperatorManager) {
+    auto* dialog = new CustomOperatorManagerDialog(
+      []() { return findCustomOperators(); }, this);
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    connect(dialog, &CustomOperatorManagerDialog::createRequested, this,
+            &MainWindow::createCustomOperator);
+    connect(dialog, &CustomOperatorManagerDialog::cloneRequested, this,
+            &MainWindow::cloneCustomOperator);
+    connect(dialog, &CustomOperatorManagerDialog::editRequested, this,
+            &MainWindow::editCustomOperator);
+    connect(dialog, &CustomOperatorManagerDialog::deleteRequested, this,
+            &MainWindow::deleteCustomOperator);
+    connect(dialog, &CustomOperatorManagerDialog::openDirectoryRequested,
+            this, &MainWindow::openCustomOperatorDirectory);
+    m_customOperatorManager = dialog;
+  } else {
+    m_customOperatorManager->refresh();
+  }
+  m_customOperatorManager->show();
+  m_customOperatorManager->raise();
+  m_customOperatorManager->activateWindow();
+}
+
+void MainWindow::openCustomOperatorDirectory(const OperatorDescription& op)
+{
+  QDesktopServices::openUrl(
+    QUrl::fromLocalFile(QFileInfo(op.pythonPath).absolutePath()));
+}
+
+void MainWindow::createCustomOperator()
+{
+  const QString directory = userDataPath();
+  if (directory.isEmpty()) {
+    return; // userDataPath() has already told the user why
+  }
+  // The shipped template, named so it doesn't collide with an earlier
+  // "new" operator still sitting under its default name.
+  int number = 1;
+  const QString stem = uniqueOperatorStem(
+    directory, QStringLiteral("NewCustomTransform"), &number);
+  const QString label = number > 1
+                          ? tr("New Custom Transform %1").arg(number)
+                          : tr("New Custom Transform");
+  CustomOperatorDraft draft;
+  draft.directory = directory;
+  draft.stem = stem;
+  draft.script = readInPythonScript("NewCustomTransform");
+  draft.description = withDescriptionIdentity(
+    readInJSONDescription("NewCustomTransform"), stem, label);
+  showCustomOperatorDialog(new CustomOperatorEditDialog(draft, this));
+}
+
+void MainWindow::cloneCustomOperator(const OperatorDescription& op)
+{
+  const QString directory = userDataPath();
+  if (directory.isEmpty()) {
+    return; // userDataPath() has already told the user why
+  }
+
+  auto read = [this](const QString& path, QString* text) {
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly)) {
+      QMessageBox::critical(this, tr("Clone Custom Node"),
+                            tr("Could not read \"%1\":\n%2")
+                              .arg(QDir::toNativeSeparators(path),
+                                   file.errorString()));
+      return false;
+    }
+    *text = QString::fromUtf8(file.readAll());
+    return true;
+  };
+
+  CustomOperatorDraft draft;
+  draft.directory = directory;
+  if (!read(op.pythonPath, &draft.script)) {
+    return;
+  }
+  if (!op.jsonPath.isEmpty() && !read(op.jsonPath, &draft.description)) {
+    return;
+  }
+  // The copy is told apart from its original in both the file name and
+  // the menu, and from earlier copies by a number.
+  int number = 1;
+  draft.stem = uniqueOperatorStem(
+    directory,
+    QFileInfo(op.pythonPath).completeBaseName() + QStringLiteral("_copy"),
+    &number);
+  draft.description = markDescriptionAsCopy(draft.description, number);
+  showCustomOperatorDialog(new CustomOperatorEditDialog(draft, this));
+}
+
 void MainWindow::setEnabledPythonConsole(bool enabled)
 {
   m_ui->dockWidgetPythonConsole->setEnabled(enabled);
-}
-
-void MainWindow::setImageViewerMode(bool enabled)
-{
-  m_ui->centralWidget->setImageViewerMode(enabled);
 }
 
 void MainWindow::onMouseOverVoxel(const vtkVector3i& ijk, double v)
@@ -1559,7 +1809,7 @@ void MainWindow::findPipelineTemplates() {
       }
     }
   } else {
-    locations.append(QDir(tomviz::userDataPath() + "/templates"));
+    locations.append(QDir(tomviz::userTemplatesPath()));
   }
 
   foreach (QDir dir, locations) {
@@ -1581,10 +1831,18 @@ void MainWindow::initPipeline()
 {
   auto* p = new pipeline::Pipeline(this);
   p->setExecutor(new pipeline::ThreadedExecutor(p));
+  // Owns the per-node periodic-execution timers; parented to the pipeline
+  // so its lifetime (and its worker thread's) tracks it exactly.
+  new pipeline::AutoExecuteController(p, p);
   m_pipeline = p;
   m_pipelineStrip->setPipeline(p);
   m_pipelineControls->setPipeline(p);
   ActiveObjects::instance().setPipeline(p);
+  // The animations recorded with the camera viewpoints follow the
+  // viewpoints and the authored animations from here on
+  RecordedAnimations::instance().install();
+  // Rewinds a finished animation before it plays again; see the class.
+  new AnimationSceneGuard(this);
   m_progressDialogManager = new ProgressDialogManager(this);
   m_progressDialogManager->setPipeline(p);
 
@@ -1651,6 +1909,13 @@ void MainWindow::initPipeline()
     }
     for (auto* port : node->outputPorts()) {
       if (!pipeline::isVolumeType(port->type()) || !port->hasData()) {
+        continue;
+      }
+      // A LabelMap's transfer functions carry one band per label, in
+      // data coordinates. Rescaling them to the data range is at best a
+      // no-op and, once the label set shrinks, actively wrong: the
+      // bands would be stretched onto values no label holds.
+      if (port->type() == pipeline::PortType::LabelMap) {
         continue;
       }
       pipeline::VolumeDataPtr vol;
@@ -2040,13 +2305,13 @@ bool MainWindow::ensureColorMapForPort(pipeline::Node* node,
     return false;
   }
 
-  // LabelMap ports never inherit a colormap: each execution gets a
-  // freshly-built segmentation preset based on its own label set. Skip
-  // rescale too — the segmentation preset's node positions are already
-  // in data-coordinate space and rescaling would shift them.
+  // LabelMap ports never inherit a colormap: their colors come from
+  // their own label table, reconciled against the label set this
+  // execution produced. Skip rescale too — the per-label node positions
+  // are already in data-coordinate space and rescaling would shift them.
   if (port->type() == pipeline::PortType::LabelMap) {
     bool created = !vol->hasColorMap();
-    pipeline::applySegmentationColorMap(*vol);
+    pipeline::applyLabelMapColors(vol);
     return created;
   }
 
@@ -2072,12 +2337,26 @@ bool MainWindow::ensureColorMapForPort(pipeline::Node* node,
   bool created = false;
   if (!vol->hasColorMap()) {
     vol->initColorMap();
-    if (upstream && upstream->hasColorMap()) {
-      vol->copyColorMapFrom(*upstream);
+    // The same choice as the execution path (inheritOutputMetadata): the
+    // primary input's color map, never a label map's
+    const auto inputs =
+      node ? node->collectInputs() : QMap<QString, pipeline::PortData>();
+    if (auto source = pipeline::colorMapSource(node, inputs)) {
+      vol->copyColorMapFrom(*source);
+    } else {
+      // Nothing to inherit: tomviz's default preset, as loaded data gets,
+      // not ParaView's
+      ColorMap::instance().applyPreset(vol->colorMap());
     }
     created = true;
   }
-  vol->rescaleColorMap();
+  // A time-series step switch replaces the image in place and announces
+  // it with the same signal new data uses. The range that matters spans
+  // the whole series and cannot move with the step, so rescaling here
+  // would only re-stretch the user's window on every frame of playback.
+  if (created || !vol->hasTimeSteps()) {
+    vol->rescaleColorMap();
+  }
   return created;
 }
 

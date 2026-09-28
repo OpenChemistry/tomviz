@@ -4,7 +4,7 @@ import numpy as np
 
 from utils import load_operator_class, load_operator_module, load_node_class
 
-from tomviz.external_dataset import Dataset
+from tomviz_pipeline.dataset import Dataset
 
 
 def deep_copy_dataset(dataset):

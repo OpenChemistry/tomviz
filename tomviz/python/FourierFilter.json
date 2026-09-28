@@ -1,0 +1,73 @@
+{
+  "name": "FourierFilter",
+  "label": "Fourier Filter",
+  "description": "Filter the dataset in Fourier (reciprocal) space: FFT, multiply by a radial filter, inverse FFT. Distances are in frequency bins from the center of the fftshift-ed spectrum. Low pass keeps frequencies inside the cutoff radius, high pass keeps those outside, and band pass keeps a shell centered on the cutoff radius.",
+  "parameters": [
+    {
+      "name": "filter_type",
+      "label": "Filter Type",
+      "description": "Low pass keeps low frequencies (smooths), high pass keeps high frequencies (edges/detail), band pass keeps a spherical shell of frequencies around the cutoff radius.",
+      "type": "enumeration",
+      "default": 0,
+      "options": [
+        { "Low pass": 0 },
+        { "High pass": 1 },
+        { "Band pass": 2 }
+      ]
+    },
+    {
+      "name": "cutoff",
+      "label": "Cutoff Radius (bins)",
+      "description": "Radius in frequency bins from the spectrum center. For low/high pass this is the cutoff; for band pass it is the center radius of the shell.",
+      "type": "double",
+      "default": 20.0,
+      "minimum": 0.0
+    },
+    {
+      "name": "width",
+      "label": "Width (bins)",
+      "description": "For low/high pass, the edge softness (0 for a hard cutoff). For band pass, the width of the shell.",
+      "type": "double",
+      "default": 5.0,
+      "minimum": 0.0
+    },
+    {
+      "name": "band_profile",
+      "label": "Band Profile",
+      "description": "Radial profile of the band-pass shell (only used for band pass): Gaussian exp(-(d-r0)^2/w^2), a single Hann lobe, a hard rectangle, or a soft rectangle with a one-bin erf edge.",
+      "type": "enumeration",
+      "default": 0,
+      "options": [
+        { "Gaussian": 0 },
+        { "Hann": 1 },
+        { "Rectangular": 2 },
+        { "Erf": 3 }
+      ]
+    },
+    {
+      "name": "dimensionality",
+      "label": "Dimensionality",
+      "description": "Apply one 3D filter to the whole volume, or apply the same 2D filter to every slice perpendicular to the chosen axis.",
+      "type": "enumeration",
+      "default": 0,
+      "options": [
+        { "3D": 0 },
+        { "2D (per slice)": 1 }
+      ]
+    },
+    {
+      "name": "slice_axis",
+      "label": "Slice Axis (2D mode)",
+      "description": "Axis perpendicular to the slices in 2D mode.",
+      "type": "enumeration",
+      "default": 2,
+      "options": [
+        { "X": 0 },
+        { "Y": 1 },
+        { "Z": 2 }
+      ]
+    }
+  ],
+  "inputType": "ImageData",
+  "outputType": "ImageData"
+}

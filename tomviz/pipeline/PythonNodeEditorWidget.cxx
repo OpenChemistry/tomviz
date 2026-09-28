@@ -15,23 +15,23 @@
 #include "OutputPort.h"
 #include "ParameterInterfaceBuilder.h"
 #include "Pipeline.h"
+#include "PythonEnvironmentCheck.h"
+#include "PythonScriptEdit.h"
 #include "SourceNode.h"
 #include "Utilities.h"
 #include "data/VolumeData.h"
 
 #include <pqApplicationCore.h>
-#include <pqPythonSyntaxHighlighter.h>
 #include <pqSettings.h>
 
-#include <QTextBlock>
 #include <QTimer>
 
+#include <QCheckBox>
 #include <QComboBox>
 #include <QDir>
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
-#include <QFontDatabase>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QJsonArray>
@@ -43,83 +43,13 @@
 #include <QMessageBox>
 #include <QPushButton>
 #include <QSettings>
+#include <QSpinBox>
 #include <QStandardItemModel>
 #include <QTabWidget>
 #include <QTextEdit>
 #include <QVBoxLayout>
 
 namespace {
-
-/// Ask before replacing a file the user didn't name in the save dialog.
-bool confirmOverwrite(QWidget* parent, const QString& path)
-{
-  return QMessageBox::question(
-           parent, QObject::tr("Overwrite file?"),
-           QObject::tr("\"%1\" already exists. Overwrite it?")
-             .arg(QDir::toNativeSeparators(path)),
-           QMessageBox::Yes | QMessageBox::No,
-           QMessageBox::No) == QMessageBox::Yes;
-}
-
-/// Write @a text to @a path as UTF-8, reporting any failure to the user.
-bool writeTextFile(QWidget* parent, const QString& path, const QString& text)
-{
-  QFile file(path);
-  if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-    QMessageBox::critical(parent, QObject::tr("Failed to save"),
-                          QObject::tr("Could not open \"%1\" for writing:\n%2")
-                            .arg(QDir::toNativeSeparators(path),
-                                 file.errorString()));
-    return false;
-  }
-  const QByteArray bytes = text.toUtf8();
-  // Report a short write too: close() can still fail to flush.
-  if (file.write(bytes) != bytes.size() || !file.flush()) {
-    QMessageBox::critical(parent, QObject::tr("Failed to save"),
-                          QObject::tr("Could not write to \"%1\":\n%2")
-                            .arg(QDir::toNativeSeparators(path),
-                                 file.errorString()));
-    return false;
-  }
-  return true;
-}
-
-// Copy character formatting (syntax colors) from src into dst without
-// modifying dst's text.  Walks blocks in parallel, skipping blank lines
-// that only exist in one document (the HTML round-trip can lose them).
-void applySyntaxFormatting(QTextDocument* dst, const QTextDocument& src)
-{
-  QTextCursor cursor(dst);
-  cursor.beginEditBlock();
-
-  QTextBlock dstBlock = dst->begin();
-  QTextBlock srcBlock = src.begin();
-
-  while (dstBlock.isValid() && srcBlock.isValid()) {
-    if (dstBlock.text() == srcBlock.text()) {
-      for (auto it = srcBlock.begin(); !it.atEnd(); ++it) {
-        QTextFragment frag = it.fragment();
-        int start =
-          dstBlock.position() + frag.position() - srcBlock.position();
-        cursor.setPosition(start);
-        cursor.setPosition(start + frag.length(),
-                           QTextCursor::KeepAnchor);
-        cursor.setCharFormat(frag.charFormat());
-      }
-      dstBlock = dstBlock.next();
-      srcBlock = srcBlock.next();
-    } else if (dstBlock.text().isEmpty()) {
-      dstBlock = dstBlock.next();
-    } else if (srcBlock.text().isEmpty()) {
-      srcBlock = srcBlock.next();
-    } else {
-      dstBlock = dstBlock.next();
-      srcBlock = srcBlock.next();
-    }
-  }
-
-  cursor.endEditBlock();
-}
 
 // Settings store for remembered external-env paths. The app's
 // pqSettings when available; a plain QSettings in test harnesses that
@@ -199,58 +129,13 @@ PythonNodeEditorWidget::PythonNodeEditorWidget(
   auto* scriptTab = new QWidget(m_tabWidget);
   auto* scriptLayout = new QVBoxLayout(scriptTab);
 
-  m_scriptEdit = new QTextEdit(scriptTab);
-  m_scriptEdit->setLineWrapMode(QTextEdit::NoWrap);
-
-  auto* highlighter =
-    new pqPythonSyntaxHighlighter(m_scriptEdit, *m_scriptEdit);
-
-  // Set font after the highlighter ctor, which sets QFont("Monospace")
-  m_scriptEdit->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
-
-  // Wire up highlighting ourselves instead of ConnectHighligter(), which
-  // uses setHtml() to replace the whole document — that loses blank lines.
-  // Instead we parse the HTML into a temp document and copy only the
-  // character formatting (colors) into the real document via
-  // applySyntaxFormatting(), leaving the text untouched.
-  auto* rehighlightTimer = new QTimer(m_scriptEdit);
-  rehighlightTimer->setSingleShot(true);
-  rehighlightTimer->setInterval(0);
-
-  connect(m_scriptEdit, &QTextEdit::textChanged, m_scriptEdit,
-    [rehighlightTimer]() { rehighlightTimer->start(); });
-
-  connect(rehighlightTimer, &QTimer::timeout, m_scriptEdit,
-    [highlighter, edit = m_scriptEdit]() {
-      const QString html = highlighter->Highlight(edit->toPlainText());
-      if (html.isEmpty()) {
-        return;
-      }
-      QTextDocument tempDoc;
-      tempDoc.setHtml(html);
-      const bool blocked = edit->blockSignals(true);
-      applySyntaxFormatting(edit->document(), tempDoc);
-      edit->blockSignals(blocked);
-    });
+  m_scriptEdit = new PythonScriptEdit(scriptTab);
 
   if (!script.isEmpty()) {
     m_scriptEdit->setPlainText(script);
   }
 
   scriptLayout->addWidget(m_scriptEdit, 1);
-
-  auto* scriptButtonRow = new QHBoxLayout;
-  scriptButtonRow->addStretch();
-  auto* saveScriptButton = new QPushButton(tr("Save Script..."), scriptTab);
-  saveScriptButton->setObjectName("saveScriptButton");
-  saveScriptButton->setToolTip(
-    tr("Write the script to a .py file, with this node's JSON description "
-       "saved beside it. Saved into your tomviz user directory, the pair "
-       "is picked up as a custom operator the next time tomviz starts."));
-  connect(saveScriptButton, &QPushButton::clicked, this,
-          &PythonNodeEditorWidget::saveScript);
-  scriptButtonRow->addWidget(saveScriptButton);
-  scriptLayout->addLayout(scriptButtonRow);
 
   m_scriptTabIndex = m_tabWidget->addTab(scriptTab, tr("Script"));
 
@@ -307,6 +192,10 @@ PythonNodeEditorWidget::PythonNodeEditorWidget(
   });
   connect(m_pipeline, &Pipeline::executionFinished,
           this, &PythonNodeEditorWidget::onExecutionFinished);
+  // Auto connection: the node emits this from the pipeline worker
+  // thread mid-run, so the refresh is queued onto the GUI thread.
+  connect(m_node, &Node::parametersUpdated, this,
+          &PythonNodeEditorWidget::onNodeParametersUpdated);
 
   m_paramsTabIndex = m_tabWidget->addTab(m_paramsTab, tr("Parameters"));
 
@@ -317,6 +206,11 @@ PythonNodeEditorWidget::PythonNodeEditorWidget(
     if (descDoc.isObject()) {
       m_externalOnly =
         descDoc.object().value("externalOnly").toBool(false);
+      // A contradictory externalOnly + externalCompatible=false combo is
+      // treated as externalOnly, matching PythonNodeBackend.
+      m_internalOnly =
+        !descDoc.object().value("externalCompatible").toBool(true) &&
+        !m_externalOnly;
       m_operatorName = descDoc.object().value("name").toString();
     }
   }
@@ -340,6 +234,14 @@ PythonNodeEditorWidget::PythonNodeEditorWidget(
     }
     m_executorCombo->setToolTip(
       tr("This operator requires an external Python environment"));
+  } else if (m_internalOnly) {
+    if (auto* model =
+          qobject_cast<QStandardItemModel*>(m_executorCombo->model())) {
+      model->item(1)->setEnabled(false);
+    }
+    m_executorCombo->setToolTip(
+      tr("This operator can only run in the application's Python "
+         "environment"));
   }
   executorLabel->setBuddy(m_executorCombo);
   execGrid->addWidget(executorLabel, 0, 0);
@@ -368,12 +270,68 @@ PythonNodeEditorWidget::PythonNodeEditorWidget(
   execGrid->addWidget(m_envPathLabel, 1, 0);
   execGrid->addWidget(m_envPathRow, 1, 1);
 
+  // Verdict of the environment check (is it an env, is tomviz-pipeline
+  // installed, is its version compatible). Advisory only: Apply stays
+  // enabled so the user can fix the environment afterwards.
+  m_envStatusLabel = new QLabel(execGridContainer);
+  m_envStatusLabel->setObjectName("executorEnvStatusLabel");
+  m_envStatusLabel->setWordWrap(true);
+  m_envStatusLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+  m_envStatusLabel->hide();
+  execGrid->addWidget(m_envStatusLabel, 2, 1);
+
+  m_envCheck = new PythonEnvironmentCheck(this);
+  connect(m_envCheck, &PythonEnvironmentCheck::finished, this,
+          &PythonNodeEditorWidget::showEnvironmentStatus);
+  m_envCheckTimer = new QTimer(this);
+  m_envCheckTimer->setSingleShot(true);
+  m_envCheckTimer->setInterval(400);
+  connect(m_envCheckTimer, &QTimer::timeout, this,
+          &PythonNodeEditorWidget::runEnvironmentCheck);
+  connect(m_envPathEdit, &QLineEdit::textChanged, this,
+          &PythonNodeEditorWidget::scheduleEnvironmentCheck);
+
+  // Row 3: periodic execution — schema-v2 nodes only.
+  // The legacy (v1) operator API has no should_auto_execute hook, so
+  // the controls are omitted entirely rather than shown disabled.
+  // Schema is frozen for a live node (the Definition-tab validator
+  // rejects v1↔v2 migration), so this can't become wrong mid-edit.
+  if (definitionSchema(m_jsonDescription) == DefinitionSchema::V2) {
+    auto* autoExecLabel =
+      new QLabel(tr("Periodic Execution"), execGridContainer);
+    auto* autoExecRow = new QWidget(execGridContainer);
+    auto* autoExecLayout = new QHBoxLayout(autoExecRow);
+    autoExecLayout->setContentsMargins(0, 0, 0, 0);
+    m_autoExecCheck = new QCheckBox(tr("every"), autoExecRow);
+    m_autoExecCheck->setObjectName("autoExecuteCheck");
+    m_autoExecIntervalSpin = new QSpinBox(autoExecRow);
+    m_autoExecIntervalSpin->setObjectName("autoExecuteIntervalSpin");
+    m_autoExecIntervalSpin->setRange(1, 86400);
+    m_autoExecIntervalSpin->setSuffix(tr(" s"));
+    m_autoExecIntervalSpin->setValue(m_node->autoExecuteIntervalSeconds());
+    m_autoExecCheck->setChecked(m_node->autoExecuteEnabled());
+    m_autoExecIntervalSpin->setEnabled(m_autoExecCheck->isChecked());
+    const QString autoExecTip =
+      tr("Periodically check whether this node should re-execute.");
+    m_autoExecCheck->setToolTip(autoExecTip);
+    m_autoExecIntervalSpin->setToolTip(autoExecTip);
+    connect(m_autoExecCheck, &QCheckBox::toggled,
+            m_autoExecIntervalSpin, &QWidget::setEnabled);
+    autoExecLayout->addWidget(m_autoExecCheck);
+    autoExecLayout->addWidget(m_autoExecIntervalSpin);
+    autoExecLayout->addStretch();
+    autoExecLabel->setBuddy(autoExecRow);
+    execGrid->addWidget(autoExecLabel, 3, 0);
+    execGrid->addWidget(autoExecRow, 3, 1);
+  }
+
   execLayout->addWidget(execGridContainer);
   execLayout->addStretch();
   m_tabWidget->addTab(execTab, tr("Execution"));
 
   int typeIdx = m_executorCombo->findData(executorType);
-  if (typeIdx < 0 || (m_externalOnly && typeIdx == 0)) {
+  if (typeIdx < 0 || (m_externalOnly && typeIdx == 0) ||
+      (m_internalOnly && typeIdx == 1)) {
     typeIdx = m_externalOnly
       ? m_executorCombo->findData(ExternalNodeExecutor::typeString())
       : 0;
@@ -392,6 +350,7 @@ PythonNodeEditorWidget::PythonNodeEditorWidget(
             QString type = m_executorCombo->currentData().toString();
             m_envPathLabel->setEnabled(!type.isEmpty());
             m_envPathRow->setEnabled(!type.isEmpty());
+            scheduleEnvironmentCheck();
           });
   connect(browseBtn, &QPushButton::clicked, this, [this]() {
     auto dir = QFileDialog::getExistingDirectory(
@@ -400,6 +359,9 @@ PythonNodeEditorWidget::PythonNodeEditorWidget(
       m_envPathEdit->setText(dir);
     }
   });
+  // Validate whatever the editor opened with (a node loaded from a
+  // state file may name an environment this machine doesn't have).
+  runEnvironmentCheck();
 
   if (m_definitionWidget) {
     connect(m_definitionWidget, &NodeDefinitionWidget::validityChanged, this,
@@ -414,6 +376,68 @@ PythonNodeEditorWidget::PythonNodeEditorWidget(
 bool PythonNodeEditorWidget::canApply() const
 {
   return !m_definitionWidget || m_definitionWidget->isValid();
+}
+
+void PythonNodeEditorWidget::scheduleEnvironmentCheck()
+{
+  if (m_executorCombo->currentData().toString().isEmpty()) {
+    m_envCheckTimer->stop();
+    m_envCheck->abort();
+    m_envStatusLabel->hide();
+    return;
+  }
+  m_envCheckTimer->start();
+}
+
+void PythonNodeEditorWidget::runEnvironmentCheck()
+{
+  m_envCheckTimer->stop();
+  QString path = m_envPathEdit->text().trimmed();
+  if (m_executorCombo->currentData().toString().isEmpty() ||
+      path.isEmpty()) {
+    m_envCheck->abort();
+    m_envStatusLabel->hide();
+    return;
+  }
+  // Same box geometry as the verdict styles so the label doesn't
+  // jump when the result replaces this.
+  m_envStatusLabel->setStyleSheet(
+    "QLabel { color: palette(mid); background: palette(alternate-base); "
+    "border: 1px solid palette(mid); border-radius: 4px; padding: 8px; }");
+  m_envStatusLabel->setText(tr("Checking environment..."));
+  m_envStatusLabel->show();
+  m_envCheck->start(path);
+}
+
+void PythonNodeEditorWidget::showEnvironmentStatus(
+  const PythonEnvironmentInfo& info)
+{
+  if (info.status == PythonEnvironmentInfo::Status::NoPath) {
+    m_envStatusLabel->hide();
+    return;
+  }
+
+  // A pick of <env>/bin or of the interpreter resolved to a root:
+  // keep the canonical root in the field (silently — the verdict
+  // being shown already covers it).
+  QString typed = m_envPathEdit->text().trimmed();
+  if (!info.envPath.isEmpty() && !typed.isEmpty() &&
+      QDir::cleanPath(QFileInfo(typed).absoluteFilePath()) != info.envPath) {
+    QSignalBlocker blocker(m_envPathEdit);
+    m_envPathEdit->setText(info.envPath);
+  }
+
+  // Problems use the same amber warning style as InputsNotReadyWidget
+  // (the verdict is advisory, not a blocking error); success gets its
+  // green counterpart.
+  m_envStatusLabel->setStyleSheet(
+    info.ok()
+      ? "QLabel { color: #15803d; background: #dcfce7; "
+        "border: 1px solid #86efac; border-radius: 4px; padding: 8px; }"
+      : "QLabel { color: #b45309; background: #fef3c7; "
+        "border: 1px solid #fcd34d; border-radius: 4px; padding: 8px; }");
+  m_envStatusLabel->setText(info.message);
+  m_envStatusLabel->show();
 }
 
 QString PythonNodeEditorWidget::helpUrl() const
@@ -453,6 +477,7 @@ void PythonNodeEditorWidget::installCustomWidget()
   m_customParamsWidget->setJSONDescription(m_jsonDescription);
   m_customParamsWidget->setValues(m_currentValues);
   m_paramsLayout->addWidget(m_customParamsWidget, 1);
+  emit parameterWidgetInstalled();
 }
 
 void PythonNodeEditorWidget::installJsonFormWidget()
@@ -478,6 +503,7 @@ void PythonNodeEditorWidget::installJsonFormWidget()
     m_jsonDescription, m_currentValues, portScalars, m_paramsTab);
   m_paramsLayout->addWidget(m_paramsWidget, 1);
   m_paramsLayout->addStretch();
+  emit parameterWidgetInstalled();
 }
 
 void PythonNodeEditorWidget::rebuildParametersTab(const QString& json)
@@ -527,6 +553,11 @@ void PythonNodeEditorWidget::rebuildParametersTab(const QString& json)
     }
   }
 
+  reinstallParametersWidget();
+}
+
+void PythonNodeEditorWidget::reinstallParametersWidget()
+{
   while (QLayoutItem* item = m_paramsLayout->takeAt(0)) {
     if (auto* widget = item->widget()) {
       widget->hide();
@@ -543,6 +574,39 @@ void PythonNodeEditorWidget::rebuildParametersTab(const QString& json)
   } else {
     installNotReadyWidget();
   }
+}
+
+void PythonNodeEditorWidget::onNodeParametersUpdated(const QVariantMap& changed)
+{
+  if (m_customFactory) {
+    for (auto it = changed.constBegin(); it != changed.constEnd(); ++it) {
+      m_currentValues[it.key()] = it.value();
+    }
+    if (m_customParamsWidget) {
+      m_customParamsWidget->setValues(m_currentValues);
+    }
+    return;
+  }
+
+  // Keep what the user has typed into the form, then let the node's
+  // write-backs win for the parameters it changed. (Deliberately not
+  // rebuildParametersTab(): that merges the live form values *last*,
+  // which would put the stale ones back.)
+  if (m_paramsWidget) {
+    const auto live = m_paramsWidget->values();
+    for (auto it = live.constBegin(); it != live.constEnd(); ++it) {
+      m_currentValues[it.key()] = it.value();
+    }
+  }
+  for (auto it = changed.constBegin(); it != changed.constEnd(); ++it) {
+    m_currentValues[it.key()] = it.value();
+  }
+  if (!m_paramsWidget) {
+    // The not-ready widget is up; the form picks the values up when
+    // it is eventually built from m_currentValues.
+    return;
+  }
+  reinstallParametersWidget();
 }
 
 void PythonNodeEditorWidget::installNotReadyWidget()
@@ -627,6 +691,18 @@ void PythonNodeEditorWidget::applyChangesToOperator()
   edits.executorType = m_executorCombo->currentData().toString();
   edits.executorEnvPath =
     edits.executorType.isEmpty() ? QString() : m_envPathEdit->text();
+  // Store the environment root even when Apply came before the
+  // debounced check could rewrite a <env>/bin or interpreter pick.
+  QString envRoot =
+    PythonEnvironmentCheck::resolveEnvironmentRoot(edits.executorEnvPath);
+  if (!envRoot.isEmpty()) {
+    edits.executorEnvPath = envRoot;
+  }
+  if (m_autoExecCheck && m_autoExecIntervalSpin) {
+    edits.autoExecuteEdited = true;
+    edits.autoExecuteEnabled = m_autoExecCheck->isChecked();
+    edits.autoExecuteIntervalSeconds = m_autoExecIntervalSpin->value();
+  }
 
   // The Definition tab can rewrite both "externalOnly" and "name", so
   // re-read them from what is being committed rather than from what the
@@ -635,7 +711,16 @@ void PythonNodeEditorWidget::applyChangesToOperator()
   QJsonObject descObj =
     QJsonDocument::fromJson(edits.jsonDescription.toUtf8()).object();
   m_externalOnly = descObj.value("externalOnly").toBool(false);
+  m_internalOnly =
+    !descObj.value("externalCompatible").toBool(true) && !m_externalOnly;
   m_operatorName = descObj.value("name").toString();
+
+  if (m_internalOnly && !edits.executorType.isEmpty()) {
+    // The (possibly just-edited) description says in-app only
+    edits.executorType.clear();
+    edits.executorEnvPath.clear();
+    m_executorCombo->setCurrentIndex(0);
+  }
 
   // Remember the applied environment per operator type so future
   // instances of this operator start with it prefilled.
@@ -664,62 +749,6 @@ void PythonNodeEditorWidget::applyChangesToOperator()
   }
 }
 
-void PythonNodeEditorWidget::saveScript()
-{
-  // Everything written here comes from the widgets, not the node: the point
-  // is to capture the edit in progress, which may never have been applied.
-  //
-  // Flush first so isValid() reflects the current text rather than the
-  // keystroke before last. definitionText() itself is always current: the
-  // text buffer is authoritative, debounce or no debounce.
-  if (m_definitionWidget) {
-    m_definitionWidget->flushPendingValidation();
-    if (!m_definitionWidget->isValid()) {
-      QMessageBox::warning(
-        this, tr("Invalid node definition"),
-        tr("The description in the Definition tab has errors, so it can't be "
-           "saved next to the script. Fix the problems listed there, or "
-           "revert the edit."));
-      return;
-    }
-  }
-
-  const QString description = m_definitionWidget
-                                ? m_definitionWidget->definitionText()
-                                : m_jsonDescription;
-
-  // Default to the tomviz user directory, which is one of the locations
-  // scanned for custom operators at startup.
-  QString fileName = QFileDialog::getSaveFileName(
-    this, tr("Save Script"), tomviz::userDataPath(),
-    tr("Python scripts (*.py)"));
-  if (fileName.isEmpty()) {
-    return;
-  }
-  // Not every platform's dialog appends the filter's extension, and the
-  // name it already confirmed was the one without it.
-  if (!fileName.endsWith(QLatin1String(".py"), Qt::CaseInsensitive)) {
-    fileName += QLatin1String(".py");
-    if (QFile::exists(fileName) && !confirmOverwrite(this, fileName)) {
-      return;
-    }
-  }
-
-  // Decide about the description before writing anything, so a declined
-  // overwrite doesn't leave a half-saved pair behind.
-  bool withDescription = !description.trimmed().isEmpty();
-  if (withDescription) {
-    // The save dialog only confirmed the .py name, so this one is on us.
-    const QString descriptionPath = descriptionPathFor(fileName);
-    if (QFile::exists(descriptionPath) &&
-        !confirmOverwrite(this, descriptionPath)) {
-      withDescription = false;
-    }
-  }
-
-  saveScriptTo(fileName, withDescription);
-}
-
 QString PythonNodeEditorWidget::descriptionPathFor(const QString& scriptPath)
 {
   // completeBaseName() strips only the final suffix, so "my.operator.py"
@@ -729,27 +758,20 @@ QString PythonNodeEditorWidget::descriptionPathFor(const QString& scriptPath)
                              QLatin1String(".json"));
 }
 
-bool PythonNodeEditorWidget::saveScriptTo(const QString& scriptPath,
-                                          bool withDescription)
+QString PythonNodeEditorWidget::scriptText() const
 {
-  if (!writeTextFile(this, scriptPath, m_scriptEdit->toPlainText())) {
-    return false;
-  }
-  if (!withDescription) {
-    return true;
-  }
+  return m_scriptEdit->toPlainText();
+}
 
-  const QString description = m_definitionWidget
-                                ? m_definitionWidget->definitionText()
-                                : m_jsonDescription;
-  if (description.trimmed().isEmpty()) {
-    // Nothing to put beside it; the script alone is a valid result.
-    return true;
-  }
-  // A failure here is reported by writeTextFile but doesn't undo the
-  // script, which is already on disk and useful on its own.
-  writeTextFile(this, descriptionPathFor(scriptPath), description);
-  return true;
+QString PythonNodeEditorWidget::definitionText() const
+{
+  return m_definitionWidget ? m_definitionWidget->definitionText()
+                            : m_jsonDescription;
+}
+
+QString PythonNodeEditorWidget::nodeLabel() const
+{
+  return m_nameEdit->text();
 }
 
 void PythonNodeEditorWidget::showScriptTab()

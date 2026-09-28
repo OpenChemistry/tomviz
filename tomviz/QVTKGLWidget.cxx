@@ -3,6 +3,8 @@
 
 #include "QVTKGLWidget.h"
 
+#include "TrackpadTouchFix.h"
+
 #include <QVTKRenderWindowAdapter.h>
 
 #include <QEvent>
@@ -13,6 +15,7 @@ namespace tomviz {
 QVTKGLWidget::QVTKGLWidget(QWidget* parent, Qt::WindowFlags f)
   : QVTKOpenGLNativeWidget(parent, f)
 {
+  disableTrackpadTouchEvents(this);
 }
 
 QVTKGLWidget::~QVTKGLWidget() = default;

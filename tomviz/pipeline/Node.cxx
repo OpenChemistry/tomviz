@@ -127,6 +127,16 @@ void Node::setEditing(bool editing)
   }
 }
 
+bool Node::isHeld() const
+{
+  return m_held;
+}
+
+void Node::setHeld(bool held)
+{
+  m_held = held;
+}
+
 bool Node::hasBreakpoint() const
 {
   return m_breakpoint;
@@ -346,6 +356,52 @@ void Node::setNodeExecutor(NodeExecutor* executor)
   }
 }
 
+bool Node::autoExecuteEnabled() const
+{
+  return m_autoExecuteEnabled;
+}
+
+void Node::setAutoExecuteEnabled(bool enabled)
+{
+  if (m_autoExecuteEnabled != enabled) {
+    m_autoExecuteEnabled = enabled;
+    emit autoExecuteChanged();
+  }
+}
+
+int Node::autoExecuteIntervalSeconds() const
+{
+  return m_autoExecuteIntervalS;
+}
+
+void Node::setAutoExecuteIntervalSeconds(int seconds)
+{
+  seconds = qMax(1, seconds);
+  if (m_autoExecuteIntervalS != seconds) {
+    m_autoExecuteIntervalS = seconds;
+    emit autoExecuteChanged();
+  }
+}
+
+bool Node::queryShouldAutoExecute()
+{
+  return false;
+}
+
+QVariantMap Node::userState() const
+{
+  QMutexLocker locker(&m_userStateMutex);
+  return m_userState;
+}
+
+void Node::setUserState(const QVariantMap& state)
+{
+  QMutexLocker locker(&m_userStateMutex);
+  m_userState = state;
+}
+
+void Node::applyParameterUpdates(const QVariantMap& /*updates*/) {}
+
 int Node::totalProgressSteps() const
 {
   return m_totalProgressSteps;
@@ -547,6 +603,15 @@ QJsonObject Node::serialize() const
     executor[QStringLiteral("type")] = m_nodeExecutor->type();
     json[QStringLiteral("executor")] = executor;
   }
+  // The user-state bag (m_userState) is deliberately not serialized:
+  // it is runtime-only scratch space for the node's Python code.
+  if (m_autoExecuteEnabled ||
+      m_autoExecuteIntervalS != kDefaultAutoExecuteIntervalSeconds) {
+    QJsonObject autoExec;
+    autoExec[QStringLiteral("enabled")] = m_autoExecuteEnabled;
+    autoExec[QStringLiteral("intervalSeconds")] = m_autoExecuteIntervalS;
+    json[QStringLiteral("autoExecute")] = autoExec;
+  }
   if (!m_outputPorts.isEmpty()) {
     QJsonObject outputs;
     for (auto* port : m_outputPorts) {
@@ -628,6 +693,14 @@ bool Node::deserialize(const QJsonObject& json)
         qWarning() << "Node::deserialize: unknown executor type" << type;
       }
     }
+  }
+  if (json.contains(QStringLiteral("autoExecute"))) {
+    auto autoExec = json.value(QStringLiteral("autoExecute")).toObject();
+    setAutoExecuteIntervalSeconds(
+      autoExec.value(QStringLiteral("intervalSeconds"))
+        .toInt(kDefaultAutoExecuteIntervalSeconds));
+    setAutoExecuteEnabled(
+      autoExec.value(QStringLiteral("enabled")).toBool(false));
   }
   if (json.contains(QStringLiteral("outputPorts"))) {
     auto outputs = json.value(QStringLiteral("outputPorts")).toObject();

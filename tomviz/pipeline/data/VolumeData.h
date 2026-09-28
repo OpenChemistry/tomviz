@@ -35,7 +35,9 @@ class VolumeData
 public:
   VolumeData();
   explicit VolumeData(vtkSmartPointer<vtkImageData> imageData);
-  ~VolumeData();
+  /// Virtual so LabelMapData can extend the payload; port data is always
+  /// shared as VolumeDataPtr, so subclasses are destroyed through this.
+  virtual ~VolumeData();
 
   // Non-copyable: the volume data can be large and the vtkNew member is not
   // copyable anyway. Use the explicit copyColorMapFrom() helper or share via
@@ -112,6 +114,28 @@ public:
   /// Get the scalar range [min, max] of the active scalars
   std::array<double, 2> scalarRange() const;
 
+  /// Value below which @a fraction (0 to 1) of the active scalars lie,
+  /// estimated from a histogram; the magnitude for multi-component data.
+  double scalarPercentile(double fraction) const;
+
+  /// A starting lower threshold for showing this data: the 95th
+  /// percentile of the voxels above the minimum value, so the padding
+  /// at the minimum (usually zero) does not pull the estimate into the
+  /// background noise, capped so that no more than about 250,000 voxels
+  /// pass on a large volume. Either way the first render of a Threshold
+  /// visualization stays quick.
+  double thresholdSeed() const;
+
+  /// The range the color map should span: scalarRange(), or the union of
+  /// every step's range when this is a time series.
+  ///
+  /// Playback swaps in a different vtkImageData every frame. Scaling the
+  /// color map to the current step's own range would renormalize each
+  /// frame, so a feature that genuinely brightens over time would look
+  /// constant and the steps could not be compared. The series range is
+  /// what actually bounds the data, and it does not move with the step.
+  std::array<double, 2> colorMapRange() const;
+
   // -- Color/Opacity map --
 
   /// Returns true if the color map has been initialized.
@@ -136,7 +160,7 @@ public:
   /// Get the gradient opacity function.
   vtkPiecewiseFunction* gradientOpacity() const;
 
-  /// Rescale the color and opacity maps to the current scalarRange().
+  /// Rescale the color and opacity maps to the current colorMapRange().
   void rescaleColorMap();
 
   /// Copy color/opacity map control points from another VolumeData as-is
@@ -228,8 +252,10 @@ public:
   /// (spacing, origin), display transform (position, orientation),
   /// color map, and gradient opacity. Does NOT serialize the underlying
   /// voxel data — that lives in the file format (EMD / HDF5 group).
-  QJsonObject serialize() const;
-  bool deserialize(const QJsonObject& json);
+  /// Virtual so subclasses can add their own state (LabelMapData adds
+  /// the label table); OutputPort routes through the base pointer.
+  virtual QJsonObject serialize() const;
+  virtual bool deserialize(const QJsonObject& json);
 
 private:
   vtkSmartPointer<vtkImageData> m_imageData;
@@ -244,6 +270,9 @@ private:
   std::array<double, 3> m_displayOrientation = { 0.0, 0.0, 0.0 };
   QList<TimeStep> m_timeSteps;
   int m_currentTimeStep = 0;
+  /// Union of every time step's scalar range, recomputed by setTimeSteps.
+  /// Only meaningful while m_timeSteps is non-empty.
+  std::array<double, 2> m_timeSeriesRange = { 0.0, 0.0 };
   /// Maps the current display name of each scalar array to the name it
   /// had when the array was first added (usually the on-disk name from
   /// the file or the name assigned by a Python operator). renameScalarArray

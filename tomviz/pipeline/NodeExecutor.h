@@ -48,6 +48,14 @@ public:
   /// signal to their child.
   virtual void complete(Node* node);
 
+  /// Ask whether @a node wants a periodic execution now (the
+  /// auto-execute poll). The hook runs in the same environment
+  /// execute() would use, so a node whose script only imports in its
+  /// external env still answers correctly. Blocks until done — call
+  /// from a worker thread. The default runs in-process via
+  /// Node::queryShouldAutoExecute().
+  virtual bool shouldAutoExecute(Node* node);
+
   /// Identifier written to the node's serialized "executor" block.
   /// Used by NodeExecutorFactory to round-trip the executor on load.
   /// Returning an empty string suppresses serialization (e.g. the

@@ -106,10 +106,10 @@ include(Git)
 determine_version("${tomviz_SOURCE_DIR}" "${GIT_EXECUTABLE}" "tomviz")
 # The version being developed here. Authoritative, because "git
 # describe" keeps reporting the previous release until the matching tag
-# is created, and a 3.0 build must not label itself 2.3.1. Also what
+# is created, and a 3.1 build must not label itself 3.0.0. Also what
 # source tarballs (no git at all) fall back on.
 set(tomviz_version_major 3)
-set(tomviz_version_minor 0)
+set(tomviz_version_minor 1)
 set(tomviz_version_patch 0)
 set(tomviz_version_extra)
 set(tomviz_version
@@ -118,7 +118,7 @@ set(tomviz_version
 # git describe refines that in two ways: it supplies the commit-count
 # and sha suffix that distinguishes a development build from the release
 # (empty when sitting exactly on the tag), and once a tag newer than the
-# version above exists it takes over the number too, so tagging 3.0.1
+# version above exists it takes over the number too, so tagging 3.1.1
 # needs no edit here. Packaging that builds outside a git checkout can
 # pass -DTOMVIZ_GIT_DESCRIBE=<version> to drive both.
 if(tomviz_VERSION_FULL)
@@ -165,6 +165,21 @@ find_package(ITK 4.9)
 
 set(PYBIND11_CPP_STANDARD "-std=c++17" CACHE STRING "")
 add_subdirectory(${PROJECT_SOURCE_DIR}/thirdparty/pybind11)
+
+# Route pybind11's GIL management through CPython's PyGILState_Ensure /
+# PyGILState_Release (see pybind11/gil_simple.h) instead of its own
+# thread-state caching. Tomviz embeds Python alongside VTK/ParaView,
+# which pervasively use PyGILState_Ensure (e.g. vtkSmartPyObject's
+# destructor). Mixing the two GIL bookkeeping schemes across threads —
+# a pipeline worker running a Python transform via pybind while the
+# main thread tears down a Python-bearing widget via VTK — corrupts the
+# worker's thread state (PyThreadState with a NULL interpreter), a
+# SIGSEGV in the next Python allocation. Defined here as an INTERFACE
+# definition so every translation unit that includes pybind11/gil.h
+# agrees on the gil_scoped_* type (it changes a type alias; a per-target
+# definition would be an ODR violation).
+target_compile_definitions(pybind11::pybind11
+  INTERFACE PYBIND11_SIMPLE_GIL_MANAGEMENT)
 
 option(tomviz_ENABLE_LOOKING_GLASS "Enable the looking glass plugin" OFF)
 if (tomviz_ENABLE_LOOKING_GLASS)

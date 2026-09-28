@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>VolumeLightingForm</class>
+ <widget class="QWidget" name="VolumeLightingForm">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>217</width>
+    <height>260</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QGroupBox" name="gbLighting">
+     <property name="title">
+      <string>Lighting</string>
+     </property>
+     <layout class="QVBoxLayout" name="lightingLayout">
+      <item>
+       <layout class="QGridLayout" name="presetLayout">
+        <property name="spacing">
+         <number>4</number>
+        </property>
+         <item row="0" column="0">
+          <widget class="QPushButton" name="btnFlat">
+           <property name="text">
+            <string>Flat</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="toolTip">
+            <string>No shading. Colors come straight from the color map, so data values read accurately. Fastest.</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QPushButton" name="btnSimple">
+           <property name="text">
+            <string>Simple</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="toolTip">
+            <string>Classic directional shading. Fast and interactive.</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2">
+          <widget class="QPushButton" name="btnGentle">
+           <property name="text">
+            <string>Gentle</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="toolTip">
+            <string>Matte, low-contrast shading with no highlight. Reads the shape without turning reconstruction noise into glitter. As fast as Simple.</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QPushButton" name="btnSoft">
+           <property name="text">
+            <string>Soft</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="toolTip">
+            <string>Soft ambient look with gentle volumetric shadows and smooth normals. Emphasizes surface topography. Slower.</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QPushButton" name="btnFull">
+           <property name="text">
+            <string>Full</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="toolTip">
+            <string>Full volumetric scattering with long-range shadows. Highest quality, best for figures. Slowest.</string>
+           </property>
+          </widget>
+         </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QLabel" name="laOverBudget">
+        <property name="text">
+         <string>Shadows were too slow to draw here, so this volume is rendering without them. Cropping the volume or narrowing the opacity map brings them back. Gentle is soft without needing them.</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+        <property name="visible">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="pqExpanderButton" name="expAdvanced">
+        <property name="text">
+         <string>Advanced</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QWidget" name="advancedWidget" native="true">
+        <layout class="QFormLayout" name="advancedLayout">
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <item row="0" column="0" colspan="2">
+          <widget class="QCheckBox" name="cbShading">
+           <property name="text">
+            <string>Shading</string>
+           </property>
+           <property name="toolTip">
+            <string>Enable lighting. When off, the volume is rendered unlit (Flat).</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="laAmbient">
+           <property name="text">
+            <string>Ambient</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="tomviz::DoubleSliderWidget" name="sliAmbient" native="true">
+           <property name="toolTip">
+            <string>Uniform light reaching every voxel regardless of orientation. Has no effect while Shadow Strength is above 0, where all lighting comes through the scattering model.</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="laDiffuse">
+           <property name="text">
+            <string>Diffuse</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="tomviz::DoubleSliderWidget" name="sliDiffuse" native="true"/>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="laSpecular">
+           <property name="text">
+            <string>Specular</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="tomviz::DoubleSliderWidget" name="sliSpecular" native="true"/>
+         </item>
+         <item row="4" column="0">
+          <widget class="QLabel" name="laSpecularPower">
+           <property name="text">
+            <string>Sp. Power</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="1">
+          <widget class="tomviz::DoubleSliderWidget" name="sliSpecularPower" native="true"/>
+         </item>
+         <item row="5" column="0" colspan="2">
+          <widget class="QCheckBox" name="cbShadows">
+           <property name="text">
+            <string>Shadows</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+           <property name="toolTip">
+            <string>Cast volumetric shadows. Turning this off keeps the selected preset but renders it without shadows, which is much faster.</string>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="0">
+          <widget class="QLabel" name="laShadows">
+           <property name="text">
+            <string>Shadow Strength</string>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="1">
+          <widget class="tomviz::DoubleSliderWidget" name="sliShadows" native="true">
+           <property name="toolTip">
+            <string>Blend between plain surface shading (0) and volumetric scattering with shadows (2). Values above 0 enable volumetric shadows and cost render time.</string>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="0">
+          <widget class="QLabel" name="laShadowReach">
+           <property name="text">
+            <string>Shadow Reach</string>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="1">
+          <widget class="tomviz::DoubleSliderWidget" name="sliShadowReach" native="true">
+           <property name="toolTip">
+            <string>How far shadows travel through the volume: 0 captures only local shadows (faster), 1 captures shadows across the whole volume (slower).</string>
+           </property>
+          </widget>
+         </item>
+         <item row="8" column="0">
+          <widget class="QLabel" name="laAnisotropy">
+           <property name="text">
+            <string>Anisotropy</string>
+           </property>
+          </widget>
+         </item>
+         <item row="8" column="1">
+          <widget class="tomviz::DoubleSliderWidget" name="sliAnisotropy" native="true">
+           <property name="toolTip">
+            <string>Direction light scatters in: 0 scatters evenly. Because the scene is lit from the camera, negative (backward) values send more light back to the viewer and brighten the volume, while positive values scatter it away and darken it - beyond about +0.5 the volume goes nearly black. Only used when Shadow Strength is above 0.</string>
+           </property>
+          </widget>
+         </item>
+         <item row="9" column="0" colspan="2">
+          <widget class="QCheckBox" name="cbSmoothNormals">
+           <property name="text">
+            <string>Smooth Normals</string>
+           </property>
+           <property name="toolTip">
+            <string>Compute shading normals from the opacity transfer function instead of the raw data gradient. Reduces shading noise on experimental data.</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>tomviz::DoubleSliderWidget</class>
+   <extends>QWidget</extends>
+   <header>DoubleSliderWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>pqExpanderButton</class>
+   <extends>QFrame</extends>
+   <header>pqExpanderButton.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

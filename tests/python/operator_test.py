@@ -3,23 +3,17 @@ import os
 import pytest
 
 import unittest
-from unittest import mock
 
 # Add fixtures to sys.path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'fixtures')) # noqa
 
 import simple
 import two
-import cancelable
 import function
-import tomviz
 
-# Mock out the wrapping as the library requires symbols in tomviz
-tomviz._wrapping = mock.MagicMock()
-sys.modules['tomviz._wrapping'] = mock.MagicMock()
 from tomviz._internal import find_operator_class # noqa
 from tomviz._internal import find_transform_from_module # noqa
-from tomviz._internal import find_transform_function, is_cancelable # noqa
+from tomviz._internal import find_transform_function # noqa
 from tomviz._internal import find_operators # noqa
 
 
@@ -59,18 +53,6 @@ def test_find_transform_function():
     # Module with none
     with pytest.raises(Exception):
         find_transform_function(unittest)
-
-
-def test_is_cancelable():
-    # Nope
-    assert not is_cancelable(simple)
-    # Nope
-    assert not is_cancelable(function)
-    # Yes
-    assert is_cancelable(cancelable)
-
-    with pytest.raises(Exception):
-        is_cancelable(unittest)
 
 
 def test_find_operators():

@@ -3,8 +3,8 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from tomviz.io_emd import load_dataset
-from tomviz.external_dataset import Dataset, LegacyDataset
+from tomviz_pipeline.io.emd import load_dataset
+from tomviz_pipeline.dataset import Dataset, LegacyDataset
 
 from utils import download_file, download_and_unzip_file
 

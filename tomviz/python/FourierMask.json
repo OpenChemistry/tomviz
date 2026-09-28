@@ -1,0 +1,38 @@
+{
+  "name": "FourierMask",
+  "label": "Fourier Mask",
+  "description": "Keep only the parts of the spectrum selected by a mask volume and transform back to real space. Build the mask on a 'Fast Fourier Transform (FFT)' branch of the data: Binary Threshold to pick out the peaks, then optionally Connected Components and Remove Labels to drop the ones you do not want. Non-zero mask voxels are kept, their Friedel mates are added, and the edges are softened so the cut does not ring.",
+  "externalCompatible": false,
+  "parameters": [
+    {
+      "name": "mask",
+      "label": "Mask",
+      "description": "Volume of the same shape whose non-zero voxels mark the reciprocal-space regions to keep, such as a Binary Threshold of a 'Fast Fourier Transform (FFT)' branch.",
+      "type": "dataset"
+    },
+    {
+      "name": "edge_softness",
+      "label": "Edge Softness (bins)",
+      "description": "Gaussian blur applied to the mask edges, in frequency bins. 0 keeps the hard mask.",
+      "type": "double",
+      "default": 2.0,
+      "minimum": 0.0
+    },
+    {
+      "name": "include_friedel_mates",
+      "label": "Include Friedel Mates",
+      "description": "Also keep the mirror of the mask through the spectrum center, which the symmetric spectrum of real data requires.",
+      "type": "bool",
+      "default": true
+    },
+    {
+      "name": "invert",
+      "label": "Invert Mask",
+      "description": "Remove the selected regions instead of keeping them.",
+      "type": "bool",
+      "default": false
+    }
+  ],
+  "inputType": "ImageData",
+  "outputType": "ImageData"
+}

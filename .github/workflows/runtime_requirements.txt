@@ -9,4 +9,5 @@ pygments
 pystackreg
 h5py
 click
+tqdm
 scikit-image

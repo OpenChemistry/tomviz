@@ -16,8 +16,12 @@
 #include <vtkSmartPointer.h>
 
 #include "pipeline/PortDataMetadata.h"
+#include "pipeline/TransformNode.h"
+#include "pipeline/transforms/LegacyPythonTransform.h"
+#include "pipeline/data/LabelMapData.h"
 #include "pipeline/data/VolumeData.h"
 
+#include <array>
 #include <map>
 #include <set>
 #include <vector>
@@ -25,6 +29,68 @@
 
 using namespace tomviz;
 using namespace tomviz::pipeline;
+
+namespace {
+
+// A transform with a primary input and a second one, declared in that
+// order, like Fourier Mask (volume, mask) or Image Math (volume,
+// second_dataset).
+class TwoInputNode : public TransformNode
+{
+public:
+  explicit TwoInputNode(const QString& second)
+  {
+    addInput("volume", PortType::ImageData);
+    addInput(second, PortType::ImageData);
+    addOutput("volume", PortType::ImageData);
+  }
+
+protected:
+  QMap<QString, PortData> transform(const QMap<QString, PortData>&) override
+  {
+    return {};
+  }
+};
+
+vtkSmartPointer<vtkImageData> smallImage(int labels)
+{
+  auto image = vtkSmartPointer<vtkImageData>::New();
+  image->SetDimensions(8, 8, 8);
+  image->AllocateScalars(VTK_INT, 1);
+  auto* p = static_cast<int*>(image->GetScalarPointer());
+  for (int i = 0; i < 8 * 8 * 8; ++i) {
+    p[i] = i % labels;
+  }
+  return image;
+}
+
+// A plain volume with a one-color map, so a copy of it is recognizable
+VolumeDataPtr coloredVolume(double r, double g, double b)
+{
+  auto vol = std::make_shared<VolumeData>(smallImage(100));
+  vol->initColorMap();
+  auto* ctf = vol->colorTransferFunction();
+  ctf->RemoveAllPoints();
+  ctf->AddRGBPoint(0.0, r, g, b);
+  ctf->AddRGBPoint(99.0, r, g, b);
+  return vol;
+}
+
+VolumeDataPtr labelMap()
+{
+  VolumeDataPtr labels = std::make_shared<LabelMapData>(smallImage(5));
+  applyLabelMapColors(labels);
+  return labels;
+}
+
+std::array<double, 3> colorAt(const VolumeDataPtr& vol, double value)
+{
+  std::array<double, 3> rgb;
+  vol->colorTransferFunction()->GetColor(value, rgb.data());
+  return rgb;
+}
+
+} // namespace
 
 class SegmentationColorMapTest : public QObject
 {
@@ -99,6 +165,76 @@ private slots:
     QVERIFY(opacity);
     QCOMPARE(opacity->GetValue(0.0), 0.0);
     QCOMPARE(opacity->GetValue(1.0), 1.0);
+  }
+
+  // Fourier Mask's output is continuous data: the label map on its mask
+  // input must not color it, even though "mask" sorts before "volume".
+  void outputsNeverTakeALabelMapsColors()
+  {
+    TwoInputNode node("mask");
+    auto primary = coloredVolume(1.0, 0.0, 0.0);
+    QMap<QString, PortData> inputs{
+      { "volume", PortData(primary, PortType::Volume) },
+      { "mask", PortData(labelMap(), PortType::LabelMap) },
+    };
+    QCOMPARE(colorMapSource(&node, inputs), primary);
+
+    auto output = std::make_shared<VolumeData>(smallImage(100));
+    inheritOutputMetadata(&node, inputs,
+                          { { "volume", PortData(output, PortType::Volume) } });
+    QVERIFY(output->hasColorMap());
+    QCOMPARE(colorAt(output, 50.0), (std::array<double, 3>{ 1.0, 0.0, 0.0 }));
+
+    // With only a label map to copy from, the output starts afresh
+    QMap<QString, PortData> onlyLabels{
+      { "volume", PortData(labelMap(), PortType::LabelMap) },
+      { "mask", PortData(labelMap(), PortType::LabelMap) },
+    };
+    QVERIFY(!colorMapSource(&node, onlyLabels));
+    auto fresh = std::make_shared<VolumeData>(smallImage(100));
+    inheritOutputMetadata(&node, onlyLabels,
+                          { { "volume", PortData(fresh, PortType::Volume) } });
+    QVERIFY(!fresh->hasColorMap());
+  }
+
+  // Image Math: the primary input's colors, though "second_dataset"
+  // sorts first
+  void outputsTakeThePrimaryInputsColors()
+  {
+    TwoInputNode node("second_dataset");
+    auto primary = coloredVolume(1.0, 0.0, 0.0);
+    auto second = coloredVolume(0.0, 0.0, 1.0);
+    QMap<QString, PortData> inputs{
+      { "volume", PortData(primary, PortType::Volume) },
+      { "second_dataset", PortData(second, PortType::Volume) },
+    };
+    QCOMPARE(colorMapSource(&node, inputs), primary);
+
+    // A primary input with no color map yet gives way to the other
+    auto bare = std::make_shared<VolumeData>(smallImage(100));
+    inputs["volume"] = PortData(bare, PortType::Volume);
+    QCOMPARE(colorMapSource(&node, inputs), second);
+  }
+
+  // The FFT's output is a spectrum: a color map tuned for the data it
+  // came from means nothing there, so its description opts out.
+  void operatorsCanDeclineInheritance()
+  {
+    auto primary = coloredVolume(1.0, 0.0, 0.0);
+    QMap<QString, PortData> inputs{
+      { "volume", PortData(primary, PortType::Volume) },
+    };
+
+    LegacyPythonTransform fft;
+    fft.setJSONDescription(
+      R"({"name": "FFT_AbsLog", "inheritColorMap": false, "parameters": []})");
+    QVERIFY(!fft.inheritsColorMap());
+    QVERIFY(!colorMapSource(&fft, inputs));
+
+    LegacyPythonTransform blur;
+    blur.setJSONDescription(R"({"name": "GaussianFilter", "parameters": []})");
+    QVERIFY(blur.inheritsColorMap());
+    QCOMPARE(colorMapSource(&blur, inputs), primary);
   }
 };
 

@@ -1,5 +1,4 @@
 import numpy as np
-import vtk
 import tomviz.operators
 import tomviz.utils
 
@@ -7,7 +6,7 @@ import tomviz.utils
 class DummyMoleculeOperator(tomviz.operators.CancelableOperator):
 
     def transform(self, dataset):
-        """Reconstruct atomic positions"""
+        """Emit a benzene molecule at a fixed position"""
 
         atomic_numbers = [6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1]
 
@@ -51,42 +50,25 @@ class DummyMoleculeOperator(tomviz.operators.CancelableOperator):
         ]
 
         bonds = [
-            0,
-            1,
-            0,
-            2,
-            0,
-            10,
-            2,
-            3,
-            2,
-            4,
-            4,
-            5,
-            4,
-            6,
-            6,
-            7,
-            6,
-            8,
-            8,
-            9,
-            8,
-            10,
-            10,
-            11
+            0, 1,
+            0, 2,
+            0, 10,
+            2, 3,
+            2, 4,
+            4, 5,
+            4, 6,
+            6, 7,
+            6, 8,
+            8, 9,
+            8, 10,
+            10, 11
         ]
 
         bonds_order = [1, 1, 2, 1, 2, 1, 1, 1, 2, 1, 1, 1]
 
-        molecule = vtk.vtkMolecule()
-        for i in range(len(atomic_numbers)):
-            pos = np.array(positions[i * 3:i * 3 + 3])
-            # pos *= 30
-            pos += [150, 150, 40]
-            molecule.AppendAtom(atomic_numbers[i], pos[0], pos[1], pos[2])
+        positions = np.asarray(positions).reshape(-1, 3) + [150, 150, 40]
 
-        for i in range(len(bonds_order)):
-            molecule.AppendBond(bonds[i * 2], bonds[i * 2 + 1], bonds_order[i])
+        molecule = tomviz.utils.make_molecule(atomic_numbers, positions,
+                                              bonds, bonds_order)
 
         return {"molecule": molecule}

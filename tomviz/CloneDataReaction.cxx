@@ -8,11 +8,14 @@
 #include "MainWindow.h"
 #include "Utilities.h"
 
+#include "pipeline/OutputPort.h"
 #include "pipeline/Pipeline.h"
+#include "pipeline/PipelineUtils.h"
 #include "pipeline/PortData.h"
 #include "pipeline/PortType.h"
 #include "pipeline/PortUtils.h"
 #include "pipeline/SourceNode.h"
+#include "pipeline/data/LabelMapData.h"
 #include "pipeline/data/VolumeData.h"
 
 #include <vtkImageData.h>
@@ -46,22 +49,31 @@ DataSource* CloneDataReaction::clone(DataSource* toClone)
     return nullptr;
   }
 
-  // Find a source node to clone
-  pipeline::SourceNode* activeSource = nullptr;
-  for (auto* node : pip->nodes()) {
-    auto* src = qobject_cast<pipeline::SourceNode*>(node);
-    if (src) {
-      activeSource = src;
-      break;
+  // Clone the selected dataset: the source feeding whatever the user
+  // picked. Only with no selection at all does the first source in the
+  // pipeline stand in.
+  auto& active = ActiveObjects::instance();
+  auto* sourcePort = pipeline::feedingSourcePort(active.activeNode());
+  if (!sourcePort) {
+    // A selected port, or the tip left by the last selection
+    sourcePort = pipeline::feedingSourcePort(active.activeTipOutputPort());
+  }
+  if (!sourcePort) {
+    for (auto* node : pip->nodes()) {
+      auto* src = qobject_cast<pipeline::SourceNode*>(node);
+      if (src && !src->outputPorts().isEmpty()) {
+        sourcePort = src->outputPorts().first();
+        break;
+      }
     }
   }
 
-  if (!activeSource) {
+  if (!sourcePort) {
     return nullptr;
   }
-
-  auto vol =
-    pipeline::getOutputData<pipeline::VolumeDataPtr>(activeSource);
+  auto* activeSource = sourcePort->node();
+  auto vol = pipeline::getOutputData<pipeline::VolumeDataPtr>(
+    activeSource, sourcePort->name());
   if (!vol || !vol->imageData()) {
     return nullptr;
   }
@@ -85,12 +97,24 @@ DataSource* CloneDataReaction::clone(DataSource* toClone)
 
     auto* newSource = new pipeline::SourceNode();
     newSource->setLabel(activeSource->label() + " (clone)");
-    newSource->addOutput("volume", pipeline::PortType::ImageData);
-    auto newVol = std::make_shared<pipeline::VolumeData>(clonedImage);
+    // Keep the port's type, so a label map stays one (with its label
+    // table: names, colors, visibility). Only a generic ImageData port is
+    // narrowed, as loading does, since it would disable every operator
+    // declaring Volume or TiltSeries.
+    auto dataType = sourcePort->type();
+    if (dataType == pipeline::PortType::ImageData) {
+      dataType = vol->hasTiltAngles() ? pipeline::PortType::TiltSeries
+                                      : pipeline::PortType::Volume;
+    }
+    auto newVol = pipeline::makeVolumeData(clonedImage, dataType);
+    if (auto labels = pipeline::labelMapData(newVol)) {
+      if (auto original = pipeline::labelMapData(vol)) {
+        labels->adoptLabelsFrom(*original);
+      }
+    }
     newVol->setLabel(newSource->label());
-    newSource->setOutputData(
-      "volume",
-      pipeline::PortData(newVol, pipeline::PortType::ImageData));
+    newSource->addOutput("volume", dataType);
+    newSource->setOutputData("volume", pipeline::PortData(newVol, dataType));
 
     LoadDataReaction::sourceNodeAdded(newSource);
 

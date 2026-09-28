@@ -34,6 +34,20 @@ def _expand_scan_range(scan_range: str) -> list[int]:
     return sorted(ids)
 
 
+def _scan_ids_present(working_directory: str) -> list[int]:
+    """Scan IDs for the ``scan2D_<id>.h5`` files in the directory."""
+    import glob
+    import re
+
+    ids = []
+    pattern = re.compile(r'^scan2D_(\d+)\.h5$')
+    for path in glob.glob(os.path.join(working_directory, 'scan2D_*.h5')):
+        match = pattern.match(os.path.basename(path))
+        if match:
+            ids.append(int(match.group(1)))
+    return sorted(ids)
+
+
 def read_scan_metadata(working_directory: str,
                        scan_range: str = '') -> list[dict]:
     """Return a list of scan metadata dicts from HDF5 files in *working_directory*.
@@ -44,14 +58,20 @@ def read_scan_metadata(working_directory: str,
     entry, and a file that exists but cannot be read gets a ``"fail"`` entry.
     The list is sorted by scan ID.
 
-    If *scan_range* is empty, an empty list is returned: the table is only
-    populated for an explicit scan range, never for every file present.
+    If *scan_range* is empty, the table is populated from the
+    ``scan2D_<id>.h5`` files already present in the directory, so a
+    directory of downloaded scans shows its contents without requiring
+    the range to be typed first (matching the ptycho dialog). Only files
+    matching that exact naming pattern are opened. A range that is given
+    but names no scans (a typo, say) lists nothing rather than every file.
     """
     wd = working_directory
 
-    expected_ids = _expand_scan_range(scan_range) if scan_range else []
+    if scan_range and scan_range.strip():
+        expected_ids = _expand_scan_range(scan_range)
+    else:
+        expected_ids = _scan_ids_present(wd)
     if not expected_ids:
-        # No explicit scan range -> show nothing rather than every HDF5 file.
         return []
 
     # Only read the files for the scan IDs the user asked for, so out-of-range

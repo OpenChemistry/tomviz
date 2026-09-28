@@ -77,3 +77,8 @@ def transform(moving_dataset, fixed_dataset, max_num_iterations,
         fixed_image, moving_image, **kwargs)
 
     itkutils.set_itk_image_on_dataset(result_image, moving_dataset)
+
+    # elastix samples the result on the fixed image's grid, so when the
+    # inputs have different voxel sizes the output must carry the fixed
+    # grid's spacing, not the moving dataset's original one.
+    moving_dataset.spacing = list(result_image.GetSpacing())

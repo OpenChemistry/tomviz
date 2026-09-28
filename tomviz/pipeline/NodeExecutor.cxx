@@ -3,6 +3,8 @@
 
 #include "NodeExecutor.h"
 
+#include "Node.h"
+
 namespace tomviz {
 namespace pipeline {
 
@@ -20,6 +22,13 @@ void NodeExecutor::complete(Node* /*node*/)
   // Default no-op. Same shape as cancel(): the completed flag is
   // already set by Node::completeExecution; in-process executors are
   // satisfied with that.
+}
+
+bool NodeExecutor::shouldAutoExecute(Node* node)
+{
+  // Default: evaluate in-process. Out-of-process executors override to
+  // ask their external environment instead.
+  return node && node->queryShouldAutoExecute();
 }
 
 QJsonObject NodeExecutor::serialize() const

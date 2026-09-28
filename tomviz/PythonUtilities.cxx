@@ -156,14 +156,18 @@ bool Python::Object::isValid() const
   return m_smartPyObject->GetPointer() != nullptr;
 }
 
+// The Dict / List constructors take ownership of the pointer they are
+// given (vtkSmartPyObject semantics), so the new wrapper needs its own
+// reference: handing over the bare pointer would leave two owners of one
+// reference and free the object while its container still holds it.
 Python::Dict Python::Object::toDict()
 {
-  return m_smartPyObject->GetPointer();
+  return m_smartPyObject->GetAndIncreaseReferenceCount();
 }
 
 Python::List Python::Object::toList()
 {
-  return m_smartPyObject->GetPointer();
+  return m_smartPyObject->GetAndIncreaseReferenceCount();
 }
 
 QString Python::Object::toString() const
@@ -389,6 +393,8 @@ Variant Python::Dict::toVariant()
 Python::List::List(PyObject* obj) : Object(obj) {}
 
 Python::List::List(const List& other) : Object(other) {}
+
+Python::List::List(const Object& obj) : Object(obj) {}
 
 Python::Object Python::List::operator[](int index)
 {

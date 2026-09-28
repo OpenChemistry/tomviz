@@ -7,7 +7,6 @@ import tempfile
 
 from paraview import simple
 from paraview.web.dataset_builder import ImageDataSetBuilder
-from paraview.web.dataset_builder import CompositeDataSetBuilder
 from paraview.web.dataset_builder import VTKGeometryDataSetBuilder
 
 DATA_DIRECTORY = 'data'
@@ -157,12 +156,6 @@ def bundleDataToHTML(temp_dir, htmlFilePath, dataFilePath=None, compress=False):
                         relPath = '%s/%s' % (DATA_DIRECTORY, filePath)
                         zf.write(fullPath, arcname=relPath,
                                  compress_type=compression_type)
-
-
-def get_proxy(id):
-    session = simple.servermanager.ActiveConnection.Session
-    remoteObj = session.GetRemoteObject(int(id))
-    return simple.servermanager._getPyProxy(remoteObj)
 
 
 def copy_viewer(destinationPath, executionPath):
@@ -651,34 +644,3 @@ def export_volume(destinationPath, **kwargs):
     fieldDataPath = os.path.join(destinationPath, 'data', 'fieldData')
     with open(fieldDataPath, 'wb') as f:
         f.write(memoryview(scalars))
-
-# -----------------------------------------------------------------------------
-# Composite exporter
-# -----------------------------------------------------------------------------
-
-
-def export_layers(destinationPath, camera):
-    view = simple.GetRenderView()
-    fp = tuple(view.CameraFocalPoint)
-    cp = tuple(view.CameraPosition)
-    vu = tuple(view.CameraViewUp)
-    sceneDescription = {
-        'size': tuple(view.ViewSize),
-        'light': ['intensity'],  # 'normal', intensity
-        'camera': {
-            'CameraViewUp': vu,
-            'CameraPosition': cp,
-            'CameraFocalPoint': fp
-        },
-        'scene': []
-    }
-
-    for key, value in simple.GetSources().items():
-        add_scene_item(sceneDescription, key[0], value, view)
-
-    # Generate export
-    dsb = CompositeDataSetBuilder(
-        destinationPath, sceneDescription, camera, {}, {}, view)
-    dsb.start()
-    dsb.writeData()
-    dsb.stop(compress=False)

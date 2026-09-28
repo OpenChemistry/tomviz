@@ -349,6 +349,21 @@ public:
   vtkBooleanMacro(Interaction, int);
 
   // Description:
+  // What the current mouse interaction is doing. Valid between the
+  // StartInteractionEvent and EndInteractionEvent: Pushing slides the
+  // plane along its normal, Rotating turns it about its center (arrow
+  // handle), Moving drags the center (sphere handle).
+  enum WidgetState
+  {
+    Start = 0,
+    Pushing,
+    Rotating,
+    Moving,
+    Outside
+  };
+  int GetWidgetState() const { return this->State; }
+
+  // Description:
   // Set the arrow visible or invisible so only the plane remains on display.
   // This disables interaction with the arrow since only visible actors are
   // pickable, but leaves interaction with the plane up to the state of
@@ -414,14 +429,6 @@ protected:
 
   // BTX - manage the state of the widget
   int State;
-  enum WidgetState
-  {
-    Start = 0,
-    Pushing,
-    Rotating,
-    Moving,
-    Outside
-  };
   // ETX
 
   // Handles the events

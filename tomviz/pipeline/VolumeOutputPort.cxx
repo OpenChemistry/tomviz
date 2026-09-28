@@ -4,6 +4,7 @@
 #include "VolumeOutputPort.h"
 
 #include "ThreadUtils.h"
+#include "data/LabelMapData.h"
 #include "data/VolumeData.h"
 
 #include <vtkImageData.h>
@@ -38,7 +39,7 @@ void VolumeOutputPort::setIntermediateData(const PortData& incoming)
         emit dataChanged();
       }
     } else {
-      auto vol = std::make_shared<VolumeData>(copy.Get());
+      auto vol = makeVolumeData(copy.Get(), type());
       setData(PortData(std::any(vol), type()));
     }
 

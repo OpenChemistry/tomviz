@@ -32,6 +32,7 @@
 #include "HistogramManager.h"
 
 #include "pipeline/sinks/LegacyModuleSink.h"
+#include "pipeline/sinks/VolumeSink.h"
 #include "pipeline/data/VolumeData.h"
 
 namespace tomviz {
@@ -138,6 +139,18 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   m_ui->gradientOpacityWidget->hide();
   connect(m_ui->histogramWidget, &HistogramWidget::opacityChanged,
           m_ui->histogram2DWidget, &Histogram2DWidget::updateTransfer2D);
+  // An opacity morph animation installs an override curve on the sink
+  // (see ScalarOpacityAnimation); scrubbing can leave it installed with
+  // no playback-ended event to clear it. Editing the histogram is the
+  // user taking the controls back, so drop the override or the edit
+  // renders no change.
+  connect(m_ui->histogramWidget, &HistogramWidget::opacityChanged, this,
+          [this]() {
+            if (auto* volumeSink =
+                  qobject_cast<pipeline::VolumeSink*>(m_activeSink.data())) {
+              volumeSink->setAnimatedScalarOpacity(nullptr);
+            }
+          });
 
   auto& histogramMgr = HistogramManager::instance();
   connect(&histogramMgr, &HistogramManager::histogramReady, this,
@@ -151,8 +164,6 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
           &CentralWidget::refreshHistogram);
   layout()->setContentsMargins(0, 0, 0, 0);
   layout()->setSpacing(0);
-
-  m_ui->imageViewerSlider->setVisible(false);
 }
 
 CentralWidget::~CentralWidget()
@@ -180,22 +191,6 @@ void CentralWidget::onColorLegendToggled(bool visibility)
     sbProxy->UpdateVTKObjects();
     ActiveObjects::instance().renderAllViews();
   }
-}
-
-void CentralWidget::setImageViewerMode(bool enabled)
-{
-  // Reset the state of the slider
-  m_ui->imageViewerSlider->setVisible(false);
-  m_ui->imageViewerSlider->disconnect();
-  m_ui->imageViewerSlider->setValue(0);
-  m_ui->imageViewerSlider->setMaximum(0);
-
-  if (!enabled) {
-    return;
-  }
-
-  // TODO: migrate to new pipeline — find a SliceSink from the active node
-  // and connect its slice index to the slider
 }
 
 void CentralWidget::onColorMapDataSourceChanged()

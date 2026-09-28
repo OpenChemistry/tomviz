@@ -2,12 +2,42 @@
    It is released under the 3-Clause BSD License, see "LICENSE". */
 
 #include "VolumeSinkWidget.h"
-#include "ui_LightingParametersForm.h"
+#include "ui_VolumeLightingForm.h"
 #include "ui_VolumeSinkWidget.h"
 
 #include "vtkVolumeMapper.h"
 
+#include "LightingPresetStore.h"
+
+#include <QComboBox>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QPushButton>
+#include <QSignalBlocker>
+#include <QVBoxLayout>
+
 namespace tomviz {
+
+namespace {
+
+/// Enable or disable @a w, showing @a reason as its tool tip while it is
+/// disabled and putting the tool tip Designer set back afterwards.
+void setEnabledWithReason(QWidget* w, bool enabled, const QString& reason)
+{
+  static const char* kOriginalToolTip = "tomvizOriginalToolTip";
+  w->setEnabled(enabled);
+  if (!enabled) {
+    if (!w->property(kOriginalToolTip).isValid()) {
+      w->setProperty(kOriginalToolTip, w->toolTip());
+    }
+    w->setToolTip(reason);
+  } else if (w->property(kOriginalToolTip).isValid()) {
+    w->setToolTip(w->property(kOriginalToolTip).toString());
+    w->setProperty(kOriginalToolTip, QVariant());
+  }
+}
+
+} // namespace
 
 // If we make this bigger, such as 1000, and we make the max too
 // close to the data minimum or the min too close to the data maximum,
@@ -20,7 +50,7 @@ static const double RANGE_INCREMENT = 500;
 
 VolumeSinkWidget::VolumeSinkWidget(QWidget* parent_)
   : QWidget(parent_), m_ui(new Ui::VolumeSinkWidget),
-    m_uiLighting(new Ui::LightingParametersForm)
+    m_uiLighting(new Ui::VolumeLightingForm)
 {
   m_ui->setupUi(this);
 
@@ -34,10 +64,79 @@ VolumeSinkWidget::VolumeSinkWidget(QWidget* parent_)
   m_uiLighting->sliDiffuse->setLineEditWidth(leWidth);
   m_uiLighting->sliSpecular->setLineEditWidth(leWidth);
   m_uiLighting->sliSpecularPower->setLineEditWidth(leWidth);
+  m_uiLighting->sliShadows->setLineEditWidth(leWidth);
+  m_uiLighting->sliShadowReach->setLineEditWidth(leWidth);
+  m_uiLighting->sliAnisotropy->setLineEditWidth(leWidth);
 
   m_uiLighting->sliSpecularPower->setMaximum(150);
   m_uiLighting->sliSpecularPower->setMinimum(1);
   m_uiLighting->sliSpecularPower->setResolution(200);
+
+  m_uiLighting->sliShadows->setMaximum(2.0);
+  m_uiLighting->sliShadows->setResolution(200);
+  // Commit on release: leaving zero asks for confirmation, and a dialog
+  // popping up on the first tick of a drag would cut the drag short.
+  m_uiLighting->sliShadows->setSliderTracking(false);
+  m_uiLighting->sliAnisotropy->setMinimum(-1.0);
+  m_uiLighting->sliAnisotropy->setMaximum(1.0);
+  m_uiLighting->sliAnisotropy->setResolution(200);
+
+  // Advanced section starts collapsed; the presets are the primary control.
+  m_uiLighting->advancedWidget->setVisible(false);
+  connect(m_uiLighting->expAdvanced, &pqExpanderButton::toggled,
+          m_uiLighting->advancedWidget, &QWidget::setVisible);
+
+  // Shown only while the view's volumes are rendered together; see
+  // setMultiVolumeMode.
+  m_multiVolumeNote = new QLabel(lightingWidget);
+  m_multiVolumeNote->setWordWrap(true);
+  m_multiVolumeNote->setVisible(false);
+  m_uiLighting->lightingLayout->insertWidget(0, m_multiVolumeNote);
+
+  const auto presets = presetButtons();
+  for (int i = 0; i < presets.size(); ++i) {
+    connect(presets[i], &QPushButton::clicked, this,
+            [this, i]() { emit lightingPresetClicked(i); });
+  }
+
+  // Saved presets: the user's own bundles, below the built-in buttons
+  auto* userRow = new QHBoxLayout;
+  m_userPresets = new QComboBox(this);
+  m_userPresets->setToolTip("Lighting settings you saved earlier.");
+  auto* saveUserPreset = new QPushButton("Save...", this);
+  saveUserPreset->setToolTip("Save the current lighting settings under a name.");
+  m_renameUserPreset = new QPushButton("Rename...", this);
+  m_renameUserPreset->setToolTip("Give the selected saved preset a new name.");
+  m_deleteUserPreset = new QPushButton("Delete", this);
+  m_deleteUserPreset->setToolTip("Remove the selected saved preset.");
+  userRow->addWidget(m_userPresets, 1);
+  userRow->addWidget(saveUserPreset);
+  userRow->addWidget(m_renameUserPreset);
+  userRow->addWidget(m_deleteUserPreset);
+  m_uiLighting->lightingLayout->insertLayout(1, userRow);
+  refreshUserLightingPresets();
+  connect(&pipeline::LightingPresetStore::instance(), &pipeline::LightingPresetStore::changed,
+          this, &VolumeSinkWidget::refreshUserLightingPresets);
+  connect(m_userPresets, QOverload<int>::of(&QComboBox::currentIndexChanged),
+          this, [this](int idx) {
+            m_renameUserPreset->setEnabled(idx > 0);
+            m_deleteUserPreset->setEnabled(idx > 0);
+            if (idx > 0) {
+              emit userLightingPresetSelected(m_userPresets->itemText(idx));
+            }
+          });
+  connect(saveUserPreset, &QPushButton::clicked, this,
+          &VolumeSinkWidget::saveUserLightingPresetRequested);
+  connect(m_renameUserPreset, &QPushButton::clicked, this, [this]() {
+    if (m_userPresets->currentIndex() > 0) {
+      emit renameUserLightingPresetRequested(m_userPresets->currentText());
+    }
+  });
+  connect(m_deleteUserPreset, &QPushButton::clicked, this, [this]() {
+    if (m_userPresets->currentIndex() > 0) {
+      emit deleteUserLightingPresetRequested(m_userPresets->currentText());
+    }
+  });
 
   m_ui->soliditySlider->setLineEditWidth(leWidth);
 
@@ -65,10 +164,6 @@ VolumeSinkWidget::VolumeSinkWidget(QWidget* parent_)
   connect(m_ui->cbTransferMode,
           QOverload<int>::of(&QComboBox::currentIndexChanged), this,
           &VolumeSinkWidget::transferModeChanged);
-  connect(m_ui->cbMultiVolume, &QCheckBox::toggled, this,
-          &VolumeSinkWidget::allowMultiVolumeToggled);
-  connect(m_ui->cbMultiVolume, &QCheckBox::toggled, this,
-          &VolumeSinkWidget::setAllowMultiVolume);
 
   connect(m_ui->useRgbaMapping, &QCheckBox::toggled, this,
           &VolumeSinkWidget::useRgbaMappingToggled);
@@ -84,7 +179,7 @@ VolumeSinkWidget::VolumeSinkWidget(QWidget* parent_)
   connect(m_ui->sliRgbaMappingMax, &DoubleSliderWidget::valueEdited, this,
           &VolumeSinkWidget::onRgbaMappingMaxChanged, Qt::QueuedConnection);
 
-  connect(m_uiLighting->gbLighting, &QGroupBox::toggled, this,
+  connect(m_uiLighting->cbShading, &QCheckBox::toggled, this,
           &VolumeSinkWidget::lightingToggled);
   connect(m_uiLighting->sliAmbient, &DoubleSliderWidget::valueEdited, this,
           &VolumeSinkWidget::ambientChanged);
@@ -94,19 +189,18 @@ VolumeSinkWidget::VolumeSinkWidget(QWidget* parent_)
           &VolumeSinkWidget::specularChanged);
   connect(m_uiLighting->sliSpecularPower, &DoubleSliderWidget::valueEdited,
           this, &VolumeSinkWidget::specularPowerChanged);
+  connect(m_uiLighting->sliShadows, &DoubleSliderWidget::valueEdited, this,
+          &VolumeSinkWidget::volumetricScatteringChanged);
+  connect(m_uiLighting->cbShadows, &QCheckBox::toggled, this,
+          &VolumeSinkWidget::shadowsToggled);
+  connect(m_uiLighting->sliShadowReach, &DoubleSliderWidget::valueEdited, this,
+          &VolumeSinkWidget::shadowReachChanged);
+  connect(m_uiLighting->sliAnisotropy, &DoubleSliderWidget::valueEdited, this,
+          &VolumeSinkWidget::anisotropyChanged);
+  connect(m_uiLighting->cbSmoothNormals, &QCheckBox::toggled, this,
+          &VolumeSinkWidget::smoothNormalsToggled);
   connect(m_ui->soliditySlider, &DoubleSliderWidget::valueEdited, this,
           &VolumeSinkWidget::solidityChanged);
-
-  // TODO: multi-volume rendering is not yet implemented for VolumeSink.
-  // The legacy VolumeManager only works with ModuleVolume. When re-enabling,
-  // the per-volume scalar array selection must be fixed: the shared
-  // vtkGPUVolumeRayCastMapper in VolumeManager doesn't propagate each
-  // volume's SelectScalarArray() call, so multiple volumes on the same
-  // dataset all render whichever scalar was last set as active on the
-  // shared vtkImageData. Fix by giving each volume port a shallow-copied
-  // vtkImageData with the correct active scalar, or by using per-port
-  // SetInputArrayToProcess() on the shared mapper.
-  m_ui->cbMultiVolume->setVisible(false);
 
   // FIXME: staged for removal
   m_ui->cbTransferMode->setVisible(false);
@@ -128,7 +222,8 @@ void VolumeSinkWidget::setJittering(const bool enable)
 
 void VolumeSinkWidget::setBlendingMode(const int mode)
 {
-  m_uiLighting->gbLighting->setEnabled(usesLighting(mode));
+  m_uiLighting->gbLighting->setEnabled(usesLighting(mode) &&
+                                       !m_lightingShared);
   m_ui->cbBlending->setCurrentIndex(static_cast<int>(mode));
 }
 
@@ -139,7 +234,7 @@ void VolumeSinkWidget::setInterpolationType(const int type)
 
 void VolumeSinkWidget::setLighting(const bool enable)
 {
-  m_uiLighting->gbLighting->setChecked(enable);
+  m_uiLighting->cbShading->setChecked(enable);
 }
 
 void VolumeSinkWidget::setAmbient(const double value)
@@ -162,9 +257,115 @@ void VolumeSinkWidget::setSpecularPower(const double value)
   m_uiLighting->sliSpecularPower->setValue(value);
 }
 
+void VolumeSinkWidget::setVolumetricScattering(const double value)
+{
+  m_uiLighting->sliShadows->setValue(value);
+}
+
+void VolumeSinkWidget::setShadowsEnabled(const bool enable)
+{
+  m_uiLighting->cbShadows->setChecked(enable);
+  updateShadowControlsEnabled();
+}
+
+void VolumeSinkWidget::setScatteringOverBudget(const bool overBudget)
+{
+  m_uiLighting->laOverBudget->setVisible(overBudget);
+}
+
+void VolumeSinkWidget::updateShadowControlsEnabled()
+{
+  // Editing a value that cannot show up in the render is just confusing, so
+  // follow the switch - and the switch itself follows availability.
+  const bool enable = m_scatteringAvailable &&
+                      m_uiLighting->cbShadows->isChecked();
+  m_uiLighting->laShadows->setEnabled(enable);
+  m_uiLighting->sliShadows->setEnabled(enable);
+  m_uiLighting->laShadowReach->setEnabled(enable);
+  m_uiLighting->sliShadowReach->setEnabled(enable);
+  m_uiLighting->laAnisotropy->setEnabled(enable);
+  m_uiLighting->sliAnisotropy->setEnabled(enable);
+}
+
+void VolumeSinkWidget::setShadowReach(const double value)
+{
+  m_uiLighting->sliShadowReach->setValue(value);
+}
+
+void VolumeSinkWidget::setAnisotropy(const double value)
+{
+  m_uiLighting->sliAnisotropy->setValue(value);
+}
+
+void VolumeSinkWidget::setSmoothNormals(const bool enable)
+{
+  m_uiLighting->cbSmoothNormals->setChecked(enable);
+}
+
+void VolumeSinkWidget::setActiveLightingPreset(const int preset)
+{
+  const auto presets = presetButtons();
+  for (int i = 0; i < presets.size(); ++i) {
+    presets[i]->setChecked(i == preset);
+  }
+}
+
+void VolumeSinkWidget::refreshUserLightingPresets()
+{
+  QSignalBlocker blocker(m_userPresets);
+  auto current = m_userPresets->currentIndex() > 0
+                   ? m_userPresets->currentText()
+                   : QString();
+  m_userPresets->clear();
+  m_userPresets->addItem("Saved presets...");
+  for (const auto& preset : pipeline::LightingPresetStore::instance().presets()) {
+    m_userPresets->addItem(preset.name);
+  }
+  int idx = current.isEmpty() ? -1 : m_userPresets->findText(current);
+  m_userPresets->setCurrentIndex(idx < 0 ? 0 : idx);
+  m_renameUserPreset->setEnabled(m_userPresets->currentIndex() > 0);
+  m_deleteUserPreset->setEnabled(m_userPresets->currentIndex() > 0);
+}
+
+void VolumeSinkWidget::setActiveUserLightingPreset(const QString& name)
+{
+  QSignalBlocker blocker(m_userPresets);
+  int idx = name.isEmpty() ? -1 : m_userPresets->findText(name);
+  m_userPresets->setCurrentIndex(idx < 0 ? 0 : idx);
+  m_renameUserPreset->setEnabled(m_userPresets->currentIndex() > 0);
+  m_deleteUserPreset->setEnabled(m_userPresets->currentIndex() > 0);
+}
+
+QList<QPushButton*> VolumeSinkWidget::presetButtons() const
+{
+  return { m_uiLighting->btnFlat, m_uiLighting->btnSimple,
+           m_uiLighting->btnGentle, m_uiLighting->btnSoft,
+           m_uiLighting->btnFull };
+}
+
+void VolumeSinkWidget::setScatteringAvailable(const bool available,
+                                              const QString& reason)
+{
+  m_scatteringAvailable = available;
+  for (auto* w : scatteringWidgets()) {
+    setEnabledWithReason(w, available, reason);
+  }
+  updateShadowControlsEnabled();
+}
+
+QList<QWidget*> VolumeSinkWidget::scatteringWidgets() const
+{
+  // The presets that cast volumetric shadows, plus the Advanced controls
+  // that drive them. Everything else in the panel stays usable.
+  return { m_uiLighting->btnSoft, m_uiLighting->btnFull,
+           m_uiLighting->cbShadows, m_uiLighting->sliShadows,
+           m_uiLighting->sliShadowReach, m_uiLighting->sliAnisotropy };
+}
+
 void VolumeSinkWidget::onBlendingChanged(const int mode)
 {
-  m_uiLighting->gbLighting->setEnabled(usesLighting(mode));
+  m_uiLighting->gbLighting->setEnabled(usesLighting(mode) &&
+                                       !m_lightingShared);
   emit blendingChanged(mode);
 }
 
@@ -240,24 +441,27 @@ void VolumeSinkWidget::setRgbaMappingComponent(const QString& component)
   m_ui->rgbaMappingComponent->setCurrentText(component);
 }
 
-void VolumeSinkWidget::setAllowMultiVolume(const bool checked)
+void VolumeSinkWidget::setMultiVolumeMode(const bool active, const bool lead,
+                                          const QString& leadLabel)
 {
-  if (checked != m_ui->cbMultiVolume->isChecked()) {
-    m_ui->cbMultiVolume->setChecked(checked);
+  const QString reason =
+    tr("The volumes in this view are rendered together, which always "
+       "composites with ray jittering.");
+  setEnabledWithReason(m_ui->label_4, !active, reason);
+  setEnabledWithReason(m_ui->cbBlending, !active, reason);
+  setEnabledWithReason(m_ui->cbJittering, !active, reason);
+
+  m_lightingShared = active && !lead;
+  m_uiLighting->gbLighting->setEnabled(
+    usesLighting(m_ui->cbBlending->currentIndex()) && !m_lightingShared);
+  if (active) {
+    m_multiVolumeNote->setText(
+      lead ? tr("Applies to every volume rendered together in this view.")
+           : tr("Shared by the volumes rendered together in this view and "
+                "set on \"%1\".")
+               .arg(leadLabel));
   }
-
-  m_uiLighting->gbLighting->setEnabled(!checked ||
-                                       !m_ui->cbMultiVolume->isEnabled());
-}
-
-void VolumeSinkWidget::setEnableAllowMultiVolume(const bool enable)
-{
-  if (enable != m_ui->cbMultiVolume->isEnabled()) {
-    m_ui->cbMultiVolume->setEnabled(enable);
-  }
-
-  m_uiLighting->gbLighting->setEnabled(!enable ||
-                                       !m_ui->cbMultiVolume->isChecked());
+  m_multiVolumeNote->setVisible(active);
 }
 
 void VolumeSinkWidget::onRgbaMappingMinChanged(double v)
@@ -307,5 +511,29 @@ void VolumeSinkWidget::onRgbaMappingMaxChanged(double v)
 QFormLayout* VolumeSinkWidget::formLayout()
 {
   return m_ui->formLayout;
+}
+
+QVBoxLayout* VolumeSinkWidget::mainLayout()
+{
+  return qobject_cast<QVBoxLayout*>(QWidget::layout());
+}
+
+void VolumeSinkWidget::setCategoricalMode(const bool categorical)
+{
+  // Blending averages, maximizes or sums the scalars along the ray;
+  // done to label numbers that produces a label nothing in the data
+  // carries. Composite is the only mode that means anything here.
+  m_ui->label_4->setVisible(!categorical);
+  m_ui->cbBlending->setVisible(!categorical);
+  if (categorical) {
+    m_ui->cbBlending->setCurrentIndex(vtkVolumeMapper::COMPOSITE_BLEND);
+  }
+
+  // Linear interpolation samples between neighboring voxels, which for
+  // labels 2 and 6 yields 4 -- a different label's color, drawn along
+  // every boundary. VolumeSink pins the setting to nearest for a label
+  // map; hide the control rather than offer a choice that is wrong.
+  m_ui->label_5->setVisible(!categorical);
+  m_ui->cbInterpolation->setVisible(!categorical);
 }
 } // namespace tomviz

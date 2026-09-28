@@ -23,6 +23,8 @@ namespace tomviz {
 class AboutDialog;
 class DataSource;
 class Module;
+class CustomOperatorEditDialog;
+class CustomOperatorManagerDialog;
 struct OperatorDescription;
 class OperatorSearchDialog;
 class ProgressDialogManager;
@@ -59,6 +61,7 @@ protected:
   void closeEvent(QCloseEvent* event) override;
   void dragEnterEvent(QDragEnterEvent* event) override;
   void dropEvent(QDropEvent* event) override;
+  bool eventFilter(QObject* watched, QEvent* event) override;
 
   /// Check the system at runtime to see for an appropriate OpenGL version.
   bool checkOpenGL();
@@ -96,14 +99,22 @@ private slots:
   /// Load a custom pipeline template
   void findPipelineTemplates();
 
-  void setImageViewerMode(bool enabled);
-
 private:
   Q_DISABLE_COPY(MainWindow)
 
   /// Find and register any user defined operators
   static std::vector<OperatorDescription> findCustomOperators();
   void registerCustomOperators(std::vector<OperatorDescription> operators);
+  /// Handlers for the Custom Transforms menu's "Create New..." and
+  /// "Manage..." entries and for the Manage dialog's buttons.
+  void createCustomOperator();
+  void manageCustomOperators();
+  void cloneCustomOperator(const OperatorDescription& op);
+  void deleteCustomOperator(const OperatorDescription& op);
+  void editCustomOperator(const OperatorDescription& op);
+  void openCustomOperatorDirectory(const OperatorDescription& op);
+  /// Show @a dialog modeless, or report why it could not load.
+  void showCustomOperatorDialog(CustomOperatorEditDialog* dialog);
   static std::vector<OperatorDescription> initPython();
   void updateSaveStateEnableState();
   QString mostRecentStateFile() const;
@@ -128,6 +139,7 @@ private:
   void setPipelineMutationEnabled(bool enabled);
   QScopedPointer<Ui::MainWindow> m_ui;
   QMenu* m_customTransformsMenu = nullptr;
+  QPointer<CustomOperatorManagerDialog> m_customOperatorManager;
   QMenu* m_pipelineTemplates = nullptr;
   OperatorSearchDialog* m_operatorSearchDialog = nullptr;
   QTimer* m_timer = nullptr;

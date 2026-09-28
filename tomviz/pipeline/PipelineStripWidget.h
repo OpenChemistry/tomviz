@@ -212,6 +212,9 @@ private:
   QIcon stateIcon(Node* node) const;
   QIcon portTypeIcon(OutputPort* port) const;
   QRect breakpointRect(const QRect& cardRect) const;
+  /// One slot to the left of the breakpoint. Occupied — and clickable
+  /// — only while the node has periodic execution enabled.
+  QRect autoExecuteRect(const QRect& cardRect) const;
   QRect menuButtonRect(const QRect& cardRect) const;
   QRect actionButtonRect(const QRect& cardRect) const;
 
@@ -283,7 +286,10 @@ private:
   static constexpr int OutputSquareIconSize = 16;
   static constexpr int PortCardHeight = OutputSquareEdge; // match collapsed port square
   static constexpr int PortCardSpacing = CardSpacing + 2; // vertical gap between port cards
-  static constexpr int HeaderIconSize = 14; // icon size in node card header
+  // Icon size in node/member card headers. Capped by the group-member
+  // cards, which are PortCardHeight (20) tall and center these icons —
+  // anything above 16 leaves them less than 2 px of breathing room.
+  static constexpr int HeaderIconSize = 16;
   static constexpr int HeaderRightPad = 4;  // right padding in node card header
   static constexpr int HeaderExpandWidth = 16; // expand toggle width
   static constexpr int HeaderButtonGap = 8; // gap between button groups (with separator)

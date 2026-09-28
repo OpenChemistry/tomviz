@@ -3,8 +3,10 @@ import os
 try:
     from .ptycho import (
         gather_ptycho_info,
+        gather_sid_info,
         get_use_and_versions_from_csv,
         filter_sid_list,
+        list_ptycho_sids,
     )
     requirements_installed = True
 except ImportError:

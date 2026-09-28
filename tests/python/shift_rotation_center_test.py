@@ -5,7 +5,7 @@ import pytest
 
 from utils import load_operator_module
 
-from tomviz.external_dataset import LegacyDataset as Dataset
+from tomviz_pipeline.dataset import LegacyDataset as Dataset
 
 try:
     import tomopy

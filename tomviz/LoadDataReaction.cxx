@@ -20,6 +20,8 @@
 #include "Utilities.h"
 #include "vtkOMETiffReader.h"
 
+#include "animations/TimeSeriesAnimation.h"
+
 #include "pipeline/OutputPort.h"
 #include "pipeline/Pipeline.h"
 #include "pipeline/PortData.h"
@@ -176,13 +178,13 @@ QList<pipeline::SourceNode*> LoadDataReaction::loadData(bool isTimeSeries)
 {
   QStringList filters;
   filters << "Common file types (*.emd *.jpg *.jpeg *.png *.tiff *.tif *.h5 "
-             "*.hspy *.raw *.dat *.bin *.txt *.mhd *.mha *.vti *.mrc *.st "
-             "*.rec *.ali *.xmf *.xdmf *.npy *.mat *.dcm)"
+             "*.hspy *.nxs *.raw *.dat *.bin *.txt *.mhd *.mha *.vti *.mrc "
+             "*.st *.rec *.ali *.xmf *.xdmf *.npy *.mat *.dcm)"
           << "EMD (*.emd)"
           << "JPeg Image files (*.jpg *.jpeg)"
           << "PNG Image files (*.png)"
           << "TIFF Image files (*.tiff *.tif)"
-          << "HDF5 files (*.h5 *.hspy)"
+          << "HDF5 files (*.h5 *.hspy *.nxs)"
           << "OME-TIFF Image files (*.ome.tif)"
           << "Raw data files (*.raw *.dat *.bin)"
           << "Meta Image files (*.mhd *.mha)"
@@ -252,6 +254,10 @@ QList<pipeline::SourceNode*> LoadDataReaction::loadData(bool isTimeSeries)
       }
       firstVol->setTimeSteps(timeSteps);
       sources = { sources[0] };
+
+      // Drive step switching from the animation clock. Self-owned: it
+      // deletes itself when the source node goes away.
+      new TimeSeriesAnimation(sources[0]);
 
       // Set the animation time steps and change the play mode to
       // "Snap To TimeSteps".
@@ -587,17 +593,15 @@ void LoadDataReaction::sourceNodeAdded(pipeline::SourceNode* source,
   ActiveObjects::instance().clearActiveSelection();
 
   if (isFirstSource && createCameraOrbit && pip) {
-    // Create the camera orbit after the first execution completes so the
-    // camera has been reset to frame the data.
+    // Give the animation enough frames to show motion once the first
+    // execution completes. The opening spin itself is made when Play is
+    // pressed with nothing else set up (see AnimationSceneGuard), from
+    // whatever the user is looking at then.
     auto conn = std::make_shared<QMetaObject::Connection>();
     *conn = QObject::connect(
       pip, &pipeline::Pipeline::executionFinished, pip, [conn]() {
         QObject::disconnect(*conn);
         tomviz::setAnimationNumberOfFrames(200);
-        auto* rv = ActiveObjects::instance().activePqRenderView();
-        if (rv) {
-          tomviz::createCameraOrbit(rv->getRenderViewProxy());
-        }
       });
   }
 

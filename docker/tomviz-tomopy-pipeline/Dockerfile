@@ -6,10 +6,10 @@ ENV LANG=C.UTF-8
 # Install tomopy
 RUN conda install -c conda-forge tomopy
 
-COPY tomviz/python/ /tmp/python/
-
-RUN pip install /tmp/python/ && \
-  rm -rf /tmp/python/
+# The pipeline runtime is the standalone tomviz-pipeline package. scipy
+# is not a dependency of the engine but is widely used by operator
+# scripts.
+RUN pip install "tomviz-pipeline>=3.1.3" scipy
 
 ENTRYPOINT ["tomviz-pipeline"]
 

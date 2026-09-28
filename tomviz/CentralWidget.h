@@ -47,8 +47,6 @@ public slots:
   void onColorMapUpdated();
   void onColorLegendToggled(bool visibility);
 
-  void setImageViewerMode(bool b);
-
   /// Set the active sink node for color map editing.
   void setActiveSinkNode(pipeline::LegacyModuleSink* sink);
 

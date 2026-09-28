@@ -7,10 +7,12 @@
 #include <vtkDoubleArray.h>
 #include <vtkImageData.h>
 #include <vtkMath.h>
+#include <vtkPointData.h>
 
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <vector>
 
 namespace tomviz {
 
@@ -109,8 +111,11 @@ void calcHistogram(T*, const vtkIdType, uint64_t*)
 }
 
 /** Single component unsigned char covering 0 -> 255 range. */
-void calcHistogram(unsigned char* values, const vtkIdType numTuples,
-                   uint64_t* pops)
+// inline: unlike its neighbours this overload is not a template, so
+// without it the header cannot be included in more than one translation
+// unit.
+inline void calcHistogram(unsigned char* values, const vtkIdType numTuples,
+                          uint64_t* pops)
 {
   // unsigned char is always in [0, kBins-1], no clamp needed.
   for (vtkIdType j = 0; j < numTuples; ++j) {
@@ -286,6 +291,66 @@ void Calculate2DHistogram(T* values, const int* dim, const int numComp,
     std::swap(sliceLast, sliceCurrent);
     std::swap(sliceCurrent, sliceNext);
   }
+}
+
+/**
+ * Estimate the value below which @a fraction of the finite values (or
+ * magnitudes, for multi-component arrays) lie, from a fine histogram
+ * over @a range. Linear interpolation inside the bin holding the
+ * percentile keeps the estimate smooth for coarse integer data.
+ *
+ * With @a excludeMinimum the values equal to range[0] are left out of
+ * the count. A reconstruction is padded with its minimum (usually zero)
+ * wherever there is nothing, and that pile can be most of the volume,
+ * which drags every percentile down to the noise just above it.
+ */
+template <typename T>
+double ComputePercentile(const T* values, const vtkIdType numTuples,
+                         const vtkIdType numComponents, const double range[2],
+                         const double fraction,
+                         const bool excludeMinimum = false)
+{
+  constexpr int bins = 4096;
+  if (numTuples <= 0 || !(range[1] > range[0])) {
+    return range[0];
+  }
+  const double inv = bins / (range[1] - range[0]);
+  std::vector<uint64_t> pops(bins, 0);
+  uint64_t total = 0;
+  for (vtkIdType j = 0; j < numTuples; ++j) {
+    double value;
+    if (numComponents == 1) {
+      value = static_cast<double>(values[j]);
+    } else {
+      double squaredSum = 0.0;
+      for (vtkIdType c = 0; c < numComponents; ++c) {
+        double v = static_cast<double>(values[j * numComponents + c]);
+        squaredSum += v * v;
+      }
+      value = std::sqrt(squaredSum);
+    }
+    if (!vtkMath::IsFinite(value) || (excludeMinimum && value == range[0])) {
+      continue;
+    }
+    int idx = static_cast<int>((value - range[0]) * inv);
+    idx = std::min(std::max(idx, 0), bins - 1);
+    ++pops[idx];
+    ++total;
+  }
+  if (total == 0) {
+    return range[0];
+  }
+
+  const double target = std::min(std::max(fraction, 0.0), 1.0) * total;
+  uint64_t below = 0;
+  for (int i = 0; i < bins; ++i) {
+    if (below + pops[i] >= target) {
+      double within = pops[i] > 0 ? (target - below) / pops[i] : 0.0;
+      return range[0] + (i + within) / inv;
+    }
+    below += pops[i];
+  }
+  return range[1];
 }
 
 } // namespace tomviz

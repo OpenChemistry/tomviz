@@ -11,6 +11,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QMap>
+#include <QMutex>
 #include <QString>
 #include <QStringList>
 #include <QVariant>
@@ -97,6 +98,8 @@ public:
   /// Schema-v2 ``supportsComplete`` flag (default false). Shells use
   /// this to drive Node::setSupportsCompletion.
   bool supportsComplete() const;
+  /// The description's "inheritColorMap" (default true).
+  bool inheritsColorMap() const;
   /// Schema-v2 description shape: true if the JSON declared a
   /// non-empty ``inputs`` array. Used by the factory routing to
   /// validate that a transform-shape description is paired with the
@@ -114,9 +117,21 @@ public:
   bool externalOnly() const;
 
   // ---- parameters ---------------------------------------------------
+  /// Accessors copy / write under a lock: a running kernel may write
+  /// back parameters from the pipeline worker thread (see
+  /// applyParameterUpdates) while the GUI reads them.
   void setParameter(const QString& name, const QVariant& value);
   QVariant parameter(const QString& name) const;
   QMap<QString, QVariant> parameters() const;
+
+  /// Install values the kernel changed through `self.set_parameter`
+  /// (harvested after produce / transform / should_auto_execute, or
+  /// read back from an external run). Only entries whose value
+  /// actually differs are written; returns those, so the host shell
+  /// can emit Node::parametersUpdated. Never marks anything stale —
+  /// see Node::applyParameterUpdates for the rationale.
+  QMap<QString, QVariant> applyParameterUpdates(
+    const QMap<QString, QVariant>& updates);
 
   /// Bindings declared via the JSON `bindToSink` hint, parsed at
   /// description time. Resolved to live signal/slot wiring at
@@ -154,6 +169,14 @@ public:
   /// map.
   QMap<QString, PortData> runSource(Node* host);
 
+  /// Run the user's should_auto_execute hook (the auto-execute poll)
+  /// and return its answer. Same instantiation as runSource /
+  /// runTransform — the wrapper and the host's user-state bag are
+  /// injected, and state mutations made by the hook are harvested back
+  /// onto the host — but no inputs are converted and no outputs are
+  /// produced. Any error answers false.
+  bool runShouldAutoExecute(Node* host);
+
   // ---- input/output declarations (parsed from description) ----------
   /// Names of input ports declared in the description, in declaration
   /// order. Mirror of what was passed to addInput in
@@ -164,7 +187,9 @@ public:
   QString primaryOutputName() const;
 
 private:
-  void parseDescription();
+  /// Reparse m_jsonDescription into the parameter/spec/metadata
+  /// members. The caller must hold m_parametersMutex.
+  void parseDescriptionLocked();
   QMap<QString, PortData> runImpl(Node* host,
                                   const QMap<QString, PortData>& inputs,
                                   bool isSource);
@@ -181,6 +206,7 @@ private:
   QString m_customWidgetID;
   bool m_supportsCancel = false;
   bool m_supportsComplete = false;
+  bool m_inheritColorMap = true;
   QString m_externalPythonEnvPath;
   bool m_externalOnly = false;
 
@@ -202,7 +228,14 @@ private:
   QMap<QString, QVariant> m_parameters;
   QMap<QString, QString> m_parameterTypes;
   QMap<QString, QJsonArray> m_enumOptions;
+  // name -> the description's parameter entry, verbatim. Handed to the
+  // kernel instance as `_parameter_spec` so `self.set_parameter` can
+  // validate names and coerce values against the declared types.
+  QMap<QString, QJsonObject> m_parameterSpecs;
   QMap<QString, ParameterBinding> m_parameterBindings;
+  /// Guards m_parameters: executions write back kernel updates from a
+  /// worker thread while the GUI reads the current values.
+  mutable QMutex m_parametersMutex;
 };
 
 } // namespace pipeline

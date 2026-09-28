@@ -130,6 +130,10 @@ public:
   public:
     List(PyObject* obj);
     List(const List& other);
+    // Shares the reference. Without this overload a List built from an
+    // Object went through operator PyObject*() into List(PyObject*),
+    // which takes ownership of a reference the Object still owns.
+    List(const Object& obj);
     Object operator[](int index);
     int length();
     Variant toVariant() override;
@@ -217,6 +221,9 @@ struct OperatorDescription
   QString loadError;
   bool valid = true;
   Type type = Type::LegacyTransform;
+  /// True when the files live in the user data directory (userDataPath()),
+  /// the one place tomviz may edit or delete an operator's files itself.
+  bool userOwned = false;
 };
 
 std::vector<OperatorDescription> findCustomOperators(const QString& path);

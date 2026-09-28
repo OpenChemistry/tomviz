@@ -17,6 +17,9 @@ public:
   explicit AnimationHelperDialog(QWidget* parent);
   ~AnimationHelperDialog() override;
 
+protected:
+  void showEvent(QShowEvent* e) override;
+
 private:
   Q_DISABLE_COPY(AnimationHelperDialog)
 

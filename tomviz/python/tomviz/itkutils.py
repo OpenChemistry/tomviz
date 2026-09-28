@@ -6,17 +6,8 @@
 ###############################################################################
 
 from tomviz._internal import in_application
-from tomviz._internal import require_internal_mode
 from tomviz._internal import with_dataset
 from tomviz._internal import with_vtk_dataobject
-
-# Dictionary going from VTK array type to ITK type
-_vtk_to_itk_types = None
-
-# Dictionary mapping from VTK array numeric type to the VTK array numeric type
-# supported by the ITK wrapping. Used to cast data sets to a supported type
-# prior to converting them to ITK images.
-_vtk_cast_types = None
 
 # Dictionary mapping from ITK image type to Python numeric type.
 # Used for casting Python values to a suitable type for certain filters.
@@ -24,154 +15,6 @@ _itkctype_to_python_types = None
 
 # Map between VTK numeric type and Python numeric type
 _vtk_to_python_types = None
-
-
-def vtk_itk_type_map():
-    """Set up mappings between VTK image types and available ITK image
-    types."""
-    global _vtk_to_itk_types
-
-    if _vtk_to_itk_types is None:
-        import itk
-        _vtk_to_itk_types = {}
-
-        type_map = {
-            'vtkUnsignedCharArray': 'UC3',
-            'vtkCharArray': 'SC3',
-            'vtkUnsignedShortArray': 'US3',
-            'vtkShortArray': 'SS3',
-            'vtkUnsignedIntArray': 'UI3',
-            'vtkIntArray': 'SI3',
-            'vtkFloatArray': 'F3',
-            'vtkDoubleArray': 'D3'
-        }
-
-        for (vtk_type, image_type) in type_map.items():
-            try:
-                _vtk_to_itk_types[vtk_type] = getattr(itk.Image, image_type)
-            except AttributeError:
-                pass
-
-    return _vtk_to_itk_types
-
-
-def vtk_cast_map():
-    """Set up mapping between VTK array numeric types to VTK numeric types
-    that correspond to supported ITK numeric ctypes supported by the ITK
-    wrapping."""
-    require_internal_mode()
-
-    global _vtk_cast_types
-
-    if _vtk_cast_types is None:
-        import itk
-        _vtk_cast_types = {}
-
-        # Map from VTK array type to list of possible types to which they can be
-        # converted, listed in order of preference based on representability
-        # and memory size required.
-        from vtkmodules.util import vtkConstants
-        type_map = {
-            vtkConstants.VTK_UNSIGNED_CHAR: [
-                'unsigned char',
-                'unsigned short',
-                'unsigned int',
-                'unsigned long',
-                'signed short',
-                'signed int',
-                'signed long',
-                'float',
-                'double'
-            ],
-            vtkConstants.VTK_CHAR: [
-                'signed char',
-                'signed short',
-                'signed int',
-                'signed long',
-                'float',
-                'double'
-            ],
-            vtkConstants.VTK_SIGNED_CHAR: [
-                'signed char',
-                'signed short',
-                'signed int',
-                'signed long',
-                'float',
-                'double'
-            ],
-            vtkConstants.VTK_UNSIGNED_SHORT: [
-                'unsigned short',
-                'unsigned int',
-                'unsigned long',
-                'signed int',
-                'signed long',
-                'float',
-                'double'
-            ],
-            vtkConstants.VTK_SHORT: [
-                'signed short',
-                'signed int',
-                'signed long',
-                'float',
-                'double'
-            ],
-            vtkConstants.VTK_UNSIGNED_INT: [
-                'unsigned int',
-                'unsigned long',
-                'signed long',
-                'float',
-                'double'
-            ],
-            vtkConstants.VTK_INT: [
-                'signed int',
-                'signed long',
-                'float',
-                'double'
-            ],
-            vtkConstants.VTK_FLOAT: [
-                'float',
-                'double'
-            ],
-            vtkConstants.VTK_DOUBLE: [
-                'double',
-                'float'
-            ]
-        }
-
-        # Map ITK ctype back to VTK type
-        ctype_to_vtk = {
-            'unsigned char': vtkConstants.VTK_UNSIGNED_CHAR,
-            'signed char': vtkConstants.VTK_CHAR,
-            'unsigned short': vtkConstants.VTK_UNSIGNED_SHORT,
-            'signed short': vtkConstants.VTK_SHORT,
-            'unsigned int': vtkConstants.VTK_UNSIGNED_INT,
-            'signed int': vtkConstants.VTK_INT,
-            'unsigned long': vtkConstants.VTK_UNSIGNED_LONG,
-            'signed long': vtkConstants.VTK_LONG,
-            'float': vtkConstants.VTK_FLOAT,
-            'double': vtkConstants.VTK_DOUBLE
-        }
-
-        # Determine which scalar types are available in the ITK wrapping
-        # by checking which types can be used to instantiate itk.Image.
-        available_scalars = set()
-        for possible_type in ctype_to_vtk.keys():
-            try:
-                ct = itk.ctype(possible_type)
-                itk.Image[ct, 3]
-                available_scalars.add(ct)
-            except Exception:
-                pass
-
-        # Select the best supported type available in the wrapping.
-        for (vtk_type, possible_image_types) in type_map.items():
-            type_map[vtk_type] = None
-            for possible_type in possible_image_types:
-                if itk.ctype(possible_type) in available_scalars:
-                    _vtk_cast_types[vtk_type] = ctype_to_vtk[possible_type]
-                    break
-
-    return _vtk_cast_types
 
 
 def get_python_voxel_type(dataset):
@@ -239,98 +82,6 @@ def get_python_voxel_type(dataset):
         print("Could not get Python voxel type for dataset %s"
               % type(dataset))
         print(attribute_error)
-
-
-@with_vtk_dataobject
-def convert_vtk_to_itk_image(vtk_image_data, itk_pixel_type=None):
-    """Get an ITK image from the provided vtkImageData object.
-    This image can be passed to ITK filters."""
-
-    # Save the VTKGlue optimization for later
-    #------------------------------------------
-    #itk_import = itk.VTKImageToImageFilter[image_type].New()
-    #itk_import.SetInput(vtk_image_data)
-    #itk_import.Update()
-    #itk_image = itk_import.GetOutput()
-    #itk_image.DisconnectPipeline()
-    #------------------------------------------
-    import itk
-    from vtkmodules.util import vtkConstants
-    from vtkmodules.vtkImagingCore import vtkImageCast
-    from tomviz import internal_utils
-
-    itk_to_vtk_type_map = {
-        itk.F: vtkConstants.VTK_FLOAT,
-        itk.D: vtkConstants.VTK_DOUBLE,
-        itk.LD: vtkConstants.VTK_DOUBLE,
-        itk.UC: vtkConstants.VTK_UNSIGNED_CHAR,
-        itk.US: vtkConstants.VTK_UNSIGNED_SHORT,
-        itk.UI: vtkConstants.VTK_UNSIGNED_INT,
-        itk.UL: vtkConstants.VTK_UNSIGNED_LONG,
-        itk.SC: vtkConstants.VTK_CHAR,
-        itk.SS: vtkConstants.VTK_SHORT,
-        itk.SI: vtkConstants.VTK_INT,
-        itk.SL: vtkConstants.VTK_LONG,
-        itk.B: vtkConstants.VTK_INT
-    }
-
-    # See if we need to cast to a wrapped type in ITK.
-    src_type = vtk_image_data.GetScalarType()
-
-    if itk_pixel_type is None:
-        dst_type = vtk_cast_map()[src_type]
-    else:
-        dst_type = vtk_cast_map()[itk_to_vtk_type_map[itk_pixel_type]]
-    if src_type != dst_type:
-        caster = vtkImageCast()
-        caster.SetOutputScalarType(dst_type)
-        caster.ClampOverflowOn()
-        caster.SetInputData(vtk_image_data)
-        caster.Update()
-        vtk_image_data = caster.GetOutput()
-
-    array = internal_utils.get_array(vtk_image_data, order='C')
-
-    itk_image = itk.GetImageFromArray(array)
-    spacing = vtk_image_data.GetSpacing()
-    origin = vtk_image_data.GetOrigin()
-    itk_image.SetSpacing(spacing)
-    itk_image.SetOrigin(origin)
-
-    # Persist a reference to the source vtk_image_data, which is necessary since
-    # VTK and ITK are using Python Buffer-Protocol NumPy array views
-    itk_image.vtk_image_data = vtk_image_data
-
-    return itk_image
-
-
-@with_vtk_dataobject
-def set_array_from_itk_image(dataobject, itk_image):
-    """Set dataobject array from an ITK image."""
-    itk_output_image_type = type(itk_image)
-
-    # Save the VTKGlue optimization for later
-    #------------------------------------------
-    # Export the ITK image to a VTK image. No copying should take place.
-    #export_filter = itk.ImageToVTKImageFilter[itk_output_image_type].New()
-    #export_filter.SetInput(itk_image_data)
-    #export_filter.Update()
-
-    # Get scalars from the temporary image and copy them to the data set
-    #result_image = export_filter.GetOutput()
-    #filter_array = result_image.GetPointData().GetArray(0)
-
-    # Make a new instance of the array that will stick around after this
-    # filters in this script are garbage collected
-    #new_array = filter_array.NewInstance()
-    #new_array.DeepCopy(filter_array) # Should be able to shallow copy?
-    #new_array.SetName(name)
-    #------------------------------------------
-    import itk
-    from . import internal_utils
-    result = itk.GetArrayFromImage(itk_image)
-    result = result.copy()
-    internal_utils.set_array(dataobject, result, isFortran=False)
 
 
 @with_dataset
@@ -413,8 +164,6 @@ def label_object_principal_axes(dataset, label_value):
     evecs = evecs[:, idx]
     evals = evals[idx]
     return (evecs, center)
-
-
 
 
 @with_dataset
@@ -509,27 +258,6 @@ def connected_components(dataset, background_value=0, progress_callback=None):
     except Exception as exc:
         print("Problem encountered while running ConnectedComponents")
         raise exc
-
-
-@with_vtk_dataobject
-def _get_itk_image_type(vtk_image_data):
-    """
-    Get an ITK image type corresponding to the provided vtkImageData object.
-    """
-    image_type = None
-
-    # Get the scalars
-    pd = vtk_image_data.GetPointData()
-    scalars = pd.GetScalars()
-
-    vtk_class_name = scalars.GetClassName()
-
-    try:
-        image_type = vtk_itk_type_map()[vtk_class_name]
-    except KeyError:
-        raise Exception('No ITK type known for %s' % vtk_class_name)
-
-    return image_type
 
 
 def observe_filter_progress(transform, filter, start_pct, end_pct):

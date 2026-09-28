@@ -30,6 +30,16 @@ public:
   void getValues(QMap<QString, QVariant>& map) override;
   void setValues(const QMap<QString, QVariant>& map) override;
 
+  /// Grabs the upstream output port (for the live drag preview) and the
+  /// pipeline (to offer other volume ports as reference data).
+  void setNodeContext(pipeline::Node* node,
+                      pipeline::Pipeline* pipeline) override;
+
+  /// Called on Apply, before the node re-executes: clears the preview
+  /// transform from the upstream volume so the baked result is not
+  /// double-transformed.
+  void writeSettings() override;
+
 private:
   Q_DISABLE_COPY(ManualManipulationWidget)
   class Internal;

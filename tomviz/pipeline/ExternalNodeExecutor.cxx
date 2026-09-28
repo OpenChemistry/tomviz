@@ -11,11 +11,13 @@
 #include "Pipeline.h"
 #include "PortData.h"
 #include "PortDataMetadata.h"
+#include "PythonEnvironmentCheck.h"
 #include "ProgressReader.h"
 #include "ThreadUtils.h"
 #include "SourceNode.h"
 
 #include "Tvh5Format.h"
+#include "data/LabelMapData.h"
 #include "data/VolumeData.h"
 
 #include <vtkImageData.h>
@@ -26,7 +28,9 @@
 #include <QDebug>
 #include <QDir>
 #include <QEventLoop>
+#include <QFile>
 #include <QFileInfo>
+#include <QJsonDocument>
 #include <QJsonObject>
 #include <QMetaObject>
 #include <QProcess>
@@ -41,6 +45,11 @@ namespace {
 constexpr int kShimSourceId = 1;
 constexpr int kShimTargetId = 2;
 
+// Hard timeout for the should_auto_execute subprocess. Polls fire on a
+// timer, so unlike execute() a hung check would stall auto-execution
+// forever; kill it and answer false instead.
+constexpr int kCheckTimeoutMs = 10 * 60 * 1000;
+
 bool useSocketProgress()
 {
 #if defined(Q_OS_WIN) || defined(Q_OS_MAC)
@@ -48,6 +57,68 @@ bool useSocketProgress()
 #else
   return true;
 #endif
+}
+
+/// Write @a node's user-state bag as the `--node-state` sidecar the
+/// CLI reads: {"nodes": {"<nodeId>": {...}}}.
+bool writeNodeStateFile(Node* node, int nodeId, const QString& path)
+{
+  QJsonObject nodes;
+  nodes[QString::number(nodeId)] =
+    QJsonObject::fromVariantMap(node->userState());
+  QJsonObject root;
+  root[QStringLiteral("nodes")] = nodes;
+  QFile file(path);
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+    qWarning() << "ExternalNodeExecutor: failed to write node-state file"
+               << path;
+    return false;
+  }
+  file.write(QJsonDocument(root).toJson(QJsonDocument::Compact));
+  return true;
+}
+
+/// Read the node_state.json the CLI writes back and install the entry
+/// for @a nodeId as @a node's user-state bag. Missing file or entry is
+/// a no-op (e.g. the run failed before writing it, or the env's tomviz
+/// package predates the sidecar).
+void applyNodeStateFile(Node* node, int nodeId, const QString& path)
+{
+  QFile file(path);
+  if (!file.open(QIODevice::ReadOnly)) {
+    return;
+  }
+  QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
+  QJsonValue entry = doc.object()
+                       .value(QStringLiteral("nodes"))
+                       .toObject()
+                       .value(QString::number(nodeId));
+  if (entry.isObject()) {
+    node->setUserState(entry.toObject().toVariantMap());
+  }
+}
+
+/// Read the node_parameters.json the CLI writes when the child's kernel
+/// changed parameters through `self.set_parameter` (same
+/// {"nodes": {"<nodeId>": {...}}} shape as the state sidecar, written
+/// only when something changed) and install the entry for @a nodeId
+/// through Node::applyParameterUpdates — quietly, no staleness. Missing
+/// file or entry is a no-op: nothing changed, or the env's package
+/// predates the file.
+void applyNodeParametersFile(Node* node, int nodeId, const QString& path)
+{
+  QFile file(path);
+  if (!file.open(QIODevice::ReadOnly)) {
+    return;
+  }
+  QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
+  QJsonValue entry = doc.object()
+                       .value(QStringLiteral("nodes"))
+                       .toObject()
+                       .value(QString::number(nodeId));
+  if (entry.isObject() && !entry.toObject().isEmpty()) {
+    node->applyParameterUpdates(entry.toObject().toVariantMap());
+  }
 }
 
 } // namespace
@@ -100,19 +171,10 @@ bool ExternalNodeExecutor::deserialize(const QJsonObject& json)
 
 QString ExternalNodeExecutor::findCliExecutable() const
 {
-  if (m_envPath.isEmpty()) {
-    return QString();
-  }
-  QDir envDir(m_envPath);
-#if defined(Q_OS_WIN)
-  QFileInfo info(envDir.filePath(QStringLiteral("Scripts/tomviz-pipeline.exe")));
-#else
-  QFileInfo info(envDir.filePath(QStringLiteral("bin/tomviz-pipeline")));
-#endif
-  if (!info.exists() || !info.isExecutable()) {
-    return QString();
-  }
-  return info.absoluteFilePath();
+  // Resolved the same way the editor's environment check does, so a
+  // path that pointed at <env>/bin or the interpreter still runs.
+  return PythonEnvironmentCheck::findCliExecutable(
+    PythonEnvironmentCheck::resolveEnvironmentRoot(m_envPath));
 }
 
 QString ExternalNodeExecutor::writeShimTvh5(Node* target,
@@ -173,7 +235,7 @@ QString ExternalNodeExecutor::writeShimTvh5(Node* target,
           copy->DeepCopy(inputVol->imageData());
           copy->GetPointData()->SetActiveScalars(
             preferredActive.toUtf8().constData());
-          auto overriddenVol = std::make_shared<VolumeData>(copy.Get());
+          auto overriddenVol = makeVolumeData(copy.Get(), payload.type());
           payload = PortData(std::any(overriddenVol), payload.type());
         }
       } catch (const std::bad_any_cast&) {
@@ -196,9 +258,11 @@ QString ExternalNodeExecutor::writeShimTvh5(Node* target,
     return QString();
   }
   // Strip the "executor" block so the subprocess doesn't recurse into
-  // another ExternalNodeExecutor.
+  // another ExternalNodeExecutor, and "autoExecute" — timers are the
+  // parent app's business, not the child's.
   QJsonObject cloneJson = target->serialize();
   cloneJson.remove(QStringLiteral("executor"));
+  cloneJson.remove(QStringLiteral("autoExecute"));
   targetClone->deserialize(cloneJson);
   shim.addNode(targetClone);
   shim.setNodeId(targetClone, kShimTargetId);
@@ -222,6 +286,50 @@ QString ExternalNodeExecutor::writeShimTvh5(Node* target,
     return QString();
   }
   return shimPath;
+}
+
+QString ExternalNodeExecutor::writeCheckStateFile(Node* target,
+                                                  const QTemporaryDir& dir,
+                                                  int& targetNodeId) const
+{
+  if (!target) {
+    return QString();
+  }
+
+  QString typeName = NodeFactory::typeName(target);
+  if (typeName.isEmpty()) {
+    qWarning() << "ExternalNodeExecutor: target node has no registered "
+                  "type; cannot poll should_auto_execute.";
+    return QString();
+  }
+  Node* clone = NodeFactory::create(typeName);
+  if (!clone) {
+    qWarning() << "ExternalNodeExecutor: NodeFactory could not create"
+               << typeName;
+    return QString();
+  }
+
+  Pipeline check;
+  QJsonObject cloneJson = target->serialize();
+  cloneJson.remove(QStringLiteral("executor"));
+  cloneJson.remove(QStringLiteral("autoExecute"));
+  clone->deserialize(cloneJson);
+  // Drop pending per-port metadata stashed by deserialize — the check
+  // never touches port data, so nothing should look resumable.
+  for (auto* port : clone->outputPorts()) {
+    port->clearPendingData();
+  }
+  check.addNode(clone);
+  check.setNodeId(clone, kShimTargetId);
+  targetNodeId = kShimTargetId;
+
+  QString path = QDir(dir.path()).filePath(QStringLiteral("check.tvh5"));
+  if (!Tvh5Format::write(path.toStdString(), &check)) {
+    qWarning() << "ExternalNodeExecutor: failed to write check tvh5 at"
+               << path;
+    return QString();
+  }
+  return path;
 }
 
 QMap<QString, PortData> ExternalNodeExecutor::decodeTvh5Outputs(
@@ -330,13 +438,14 @@ bool ExternalNodeExecutor::execute(Node* node)
 
   QString cli = findCliExecutable();
   if (cli.isEmpty()) {
-    QString msg = m_envPath.isEmpty()
-      ? QStringLiteral("No external Python environment selected. Choose an "
-                       "environment containing tomviz-pipeline in the "
-                       "Execution tab.")
-      : QStringLiteral("tomviz-pipeline was not found in '%1'. Select a "
-                       "Python environment containing tomviz-pipeline in "
-                       "the Execution tab.").arg(m_envPath);
+    // check() needs no subprocess here: the CLI is missing, so it
+    // stops at the filesystem steps and says which one failed.
+    QString msg =
+      m_envPath.isEmpty()
+        ? QStringLiteral("No external Python environment selected. Choose "
+                         "one containing tomviz-pipeline in the Execution "
+                         "tab.")
+        : PythonEnvironmentCheck::check(m_envPath).message;
     qWarning() << "ExternalNodeExecutor:" << msg;
     node->setProgressMessage(msg);
     node->setExecState(NodeExecState::Failed);
@@ -430,12 +539,8 @@ bool ExternalNodeExecutor::execute(Node* node)
   QProcess process;
   m_process = &process;
 
-  QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-  env.remove(QStringLiteral("TOMVIZ_APPLICATION"));
-  env.remove(QStringLiteral("PYTHONHOME"));
-  env.remove(QStringLiteral("PYTHONPATH"));
-  env.insert(QStringLiteral("PYTHONUNBUFFERED"), QStringLiteral("ON"));
-  process.setProcessEnvironment(env);
+  process.setProcessEnvironment(
+    PythonEnvironmentCheck::childProcessEnvironment());
 
   QStringList args;
   args << QStringLiteral("-s") << shimPath
@@ -445,6 +550,20 @@ bool ExternalNodeExecutor::execute(Node* node)
        << (useSocketProgress() ? QStringLiteral("socket")
                                : QStringLiteral("files"))
        << QStringLiteral("-u") << progressPath;
+
+  // Round-trip the node's user-state bag through the child. Only when
+  // the node actually uses the feature — the flag is unknown to older
+  // tomviz packages, and passing it unconditionally would break every
+  // existing external env.
+  const bool passNodeState =
+    node->autoExecuteEnabled() || !node->userState().isEmpty();
+  if (passNodeState) {
+    QString nodeStateInPath =
+      QDir(tmpDir.path()).filePath(QStringLiteral("node_state_in.json"));
+    if (writeNodeStateFile(node, kShimTargetId, nodeStateInPath)) {
+      args << QStringLiteral("--node-state") << nodeStateInPath;
+    }
+  }
 
   QEventLoop loop;
   bool finishedCleanly = false;
@@ -520,6 +639,18 @@ bool ExternalNodeExecutor::execute(Node* node)
   bool failed = !finishedCleanly || exitStatus != QProcess::NormalExit ||
                 exitCode != 0;
 
+  // Pick up state mutations regardless of how the run ended: the CLI
+  // writes node_state.json after its runs, so a failed node execution
+  // can still have recorded state. Missing file is a no-op.
+  if (passNodeState) {
+    applyNodeStateFile(node, kShimTargetId,
+                       QDir(outDir).filePath(
+                         QStringLiteral("node_state.json")));
+  }
+  applyNodeParametersFile(
+    node, kShimTargetId,
+    QDir(outDir).filePath(QStringLiteral("node_parameters.json")));
+
   if (node->isCanceled()) {
     node->setExecState(NodeExecState::Canceled);
     return false;
@@ -528,6 +659,14 @@ bool ExternalNodeExecutor::execute(Node* node)
   if (failed) {
     qWarning() << "ExternalNodeExecutor: subprocess failed (exit=" << exitCode
                << ", status=" << exitStatus << ").";
+    // Only a failed run pays for an environment check: a stale or
+    // incompatible tomviz-pipeline is a likely cause the exit code
+    // alone doesn't name.
+    PythonEnvironmentInfo info = PythonEnvironmentCheck::check(m_envPath);
+    if (!info.ok()) {
+      qWarning() << "ExternalNodeExecutor:" << info.message;
+      node->setProgressMessage(info.message);
+    }
     node->setExecState(NodeExecState::Failed);
     return false;
   }
@@ -553,6 +692,105 @@ bool ExternalNodeExecutor::execute(Node* node)
   node->markCurrent();
   node->setExecState(NodeExecState::Idle);
   return true;
+}
+
+bool ExternalNodeExecutor::shouldAutoExecute(Node* node)
+{
+  if (!node) {
+    return false;
+  }
+
+  NodeFactory::registerBuiltins();
+
+  QString cli = findCliExecutable();
+  if (cli.isEmpty()) {
+    qWarning() << "ExternalNodeExecutor: cannot poll should_auto_execute —"
+               << "tomviz-pipeline was not found in" << m_envPath;
+    return false;
+  }
+
+  QTemporaryDir tmpDir;
+  if (!tmpDir.isValid()) {
+    qWarning() << "ExternalNodeExecutor: failed to create temp dir for "
+                  "the should_auto_execute poll.";
+    return false;
+  }
+
+  int targetNodeId = -1;
+  QString statePath = writeCheckStateFile(node, tmpDir, targetNodeId);
+  if (statePath.isEmpty()) {
+    return false;
+  }
+
+  QString nodeStateInPath =
+    QDir(tmpDir.path()).filePath(QStringLiteral("node_state_in.json"));
+  if (!writeNodeStateFile(node, targetNodeId, nodeStateInPath)) {
+    return false;
+  }
+
+  QString outDir = QDir(tmpDir.path()).filePath(QStringLiteral("out"));
+  QDir().mkpath(outDir);
+
+  // Deliberately local (not m_process/m_reader): a check may not
+  // interfere with the members an in-flight execute() is using.
+  QProcess process;
+  process.setProcessEnvironment(
+    PythonEnvironmentCheck::childProcessEnvironment());
+
+  QStringList args;
+  args << QStringLiteral("-s") << statePath
+       << QStringLiteral("-o") << outDir
+       << QStringLiteral("--check-auto-execute")
+       << QString::number(targetNodeId)
+       << QStringLiteral("--node-state") << nodeStateInPath;
+
+  process.start(cli, args);
+  if (!process.waitForStarted(30000)) {
+    qWarning() << "ExternalNodeExecutor: failed to start" << cli
+               << process.errorString();
+    return false;
+  }
+  if (!process.waitForFinished(kCheckTimeoutMs)) {
+    qWarning() << "ExternalNodeExecutor: should_auto_execute poll timed "
+                  "out; killing the subprocess.";
+    process.kill();
+    process.waitForFinished(5000);
+    return false;
+  }
+
+  auto childErr = QString::fromUtf8(process.readAllStandardError());
+  if (!childErr.isEmpty()) {
+    qDebug().noquote() << childErr.trimmed();
+  }
+
+  // State mutations made by the hook count even when it answered "no";
+  // so do parameter write-backs.
+  applyNodeStateFile(node, targetNodeId,
+                     QDir(outDir).filePath(
+                       QStringLiteral("node_state.json")));
+  applyNodeParametersFile(
+    node, targetNodeId,
+    QDir(outDir).filePath(QStringLiteral("node_parameters.json")));
+
+  if (process.exitStatus() != QProcess::NormalExit ||
+      process.exitCode() != 0) {
+    qWarning() << "ExternalNodeExecutor: should_auto_execute poll failed "
+                  "(exit code"
+               << process.exitCode()
+               << "). If the environment's tomviz package predates "
+                  "--check-auto-execute, update it.";
+    return false;
+  }
+
+  QFile resultFile(
+    QDir(outDir).filePath(QStringLiteral("auto_execute.json")));
+  if (!resultFile.open(QIODevice::ReadOnly)) {
+    qWarning() << "ExternalNodeExecutor: should_auto_execute poll wrote "
+                  "no auto_execute.json.";
+    return false;
+  }
+  QJsonDocument doc = QJsonDocument::fromJson(resultFile.readAll());
+  return doc.object().value(QStringLiteral("shouldExecute")).toBool(false);
 }
 
 void ExternalNodeExecutor::cancel(Node* /*node*/)

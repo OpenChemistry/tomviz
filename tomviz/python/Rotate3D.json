@@ -1,7 +1,7 @@
 {
   "name": "Rotate",
   "label": "Rotate",
-  "description": "Rotate dataset along a given axis.",
+  "description": "Rotate the dataset about one of its axes. The rotation is applied to the data itself, resampling it.",
   "parameters": [
     {
       "name": "rotation_angle",
@@ -15,7 +15,7 @@
     {
       "name": "rotation_axis",
       "label": "Axis",
-      "description": "Axis of rotation.",
+      "description": "Axis to rotate about. Z turns the data within the XY image plane, which is what aligns features seen in a slice. X and Y tip the volume through the slice stack instead, which moves features between slices: even 3 degrees shifts a feature 256 voxels off-center by 13 slices.",
       "type": "enumeration",
       "default": 0,
       "options": [
@@ -29,6 +29,13 @@
           "Z": 2
         }
       ]
+    },
+    {
+      "name": "expand",
+      "label": "Expand to Fit",
+      "description": "Grow the volume so no data is rotated outside it, padding the new corners with zeros. Turn this off to keep the original dimensions and let the corners be cropped instead, which is usually what small alignment rotations want.",
+      "type": "bool",
+      "default": true
     }
   ],
   "inputType": "ImageData",

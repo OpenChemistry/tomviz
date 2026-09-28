@@ -917,7 +917,8 @@ class FileDM:
 
         try:
             # open a text file to write out the tags
-            with open(out_directory / new_file_name, 'w') as fid_out:
+            with open(out_directory / new_file_name, 'w',
+                      encoding='utf-8') as fid_out:
                 for nn in sorted(self.allTags):
                     try:
                         combined_tag = '{} = {}'.format(nn, self.allTags[nn])

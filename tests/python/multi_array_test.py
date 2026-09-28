@@ -2,7 +2,7 @@ import numpy as np
 
 from utils import load_operator_class, load_operator_module
 
-from tomviz.external_dataset import LegacyDataset as Dataset
+from tomviz_pipeline.dataset import LegacyDataset as Dataset
 
 
 def test_multi_arrays(hxn_xrf_example_dataset: Dataset):

@@ -16,9 +16,12 @@
 #include <functional>
 #include <memory>
 
+class QCheckBox;
 class QComboBox;
 class QLineEdit;
 class QLabel;
+class QTimer;
+class QSpinBox;
 class QTabWidget;
 class QTextEdit;
 class QVBoxLayout;
@@ -33,6 +36,8 @@ class Node;
 class NodeDefinitionWidget;
 class NodePropertiesWidget;
 class Pipeline;
+class PythonEnvironmentCheck;
+struct PythonEnvironmentInfo;
 
 /// Everything one Apply/OK commits back to a Python node, in the order
 /// the node must apply it: the description first (it decides which
@@ -48,6 +53,12 @@ struct PythonNodeEdits
   QString executorType;
   /// Type-specific executor configuration (currently the env path).
   QString executorEnvPath;
+  /// True when the editor exposed the auto-execute controls (schema-v2
+  /// nodes only). The two fields below are meaningful only then; a
+  /// false value tells the node to leave its setting untouched.
+  bool autoExecuteEdited = false;
+  bool autoExecuteEnabled = false;
+  int autoExecuteIntervalSeconds = 30;
 };
 
 /// Tabbed editor widget for Python source / transform nodes.
@@ -107,18 +118,22 @@ public:
   /// directory and stem, ".json" instead of ".py".
   static QString descriptionPathFor(const QString& scriptPath);
 
-  /// Non-interactive save. Writes the script exactly as it stands in the
-  /// editor to @a scriptPath, and (when @a withDescription) the description
-  /// exactly as it stands in the Definition tab to descriptionPathFor().
-  /// Overwrites without asking; saveScript() is the interactive wrapper
-  /// that prompts and validates first. Returns false if the script could
-  /// not be written.
-  bool saveScriptTo(const QString& scriptPath, bool withDescription = true);
+  /// The editors' contents as they stand, unapplied edits included: what
+  /// "Save as Custom Transform" captures.
+  QString scriptText() const;
+  QString definitionText() const;
+  /// The Name field, i.e. the node label being edited.
+  QString nodeLabel() const;
 
 signals:
   /// Emitted by applyChangesToOperator() carrying everything the node
   /// should adopt.
   void applied(const PythonNodeEdits& edits);
+
+  /// Emitted whenever the parameter controls are (re)built, including
+  /// the deferred build once upstream data arrives, so callers can
+  /// re-wire anything attached to individual controls.
+  void parameterWidgetInstalled();
 
 private:
   void onRunRequested();
@@ -127,11 +142,25 @@ private:
   void installJsonFormWidget();
   void installNotReadyWidget();
   void rebuildParametersTab(const QString& json);
-  /// Write the script text to a user-chosen .py file, with the current
-  /// JSON description saved beside it as <name>.json. Both come from the
-  /// editor's widgets, so unapplied edits are included.
-  void saveScript();
+  /// Tear down whatever the Parameters tab holds (form or not-ready
+  /// widget) and install the right one for m_jsonDescription /
+  /// m_currentValues.
+  void reinstallParametersWidget();
+  /// The node wrote back to its own parameters while running (kernel
+  /// `self.set_parameter`): show the new values without discarding the
+  /// user's other in-progress edits.
+  void onNodeParametersUpdated(const QVariantMap& changed);
   bool inputsInMemory() const;
+  /// Debounced entry point for env-path edits: (re)starts the timer
+  /// that triggers runEnvironmentCheck(), or clears the status when
+  /// the Internal executor is selected.
+  void scheduleEnvironmentCheck();
+  /// Validate the env path asynchronously (PythonEnvironmentCheck)
+  /// and show "Checking..." meanwhile.
+  void runEnvironmentCheck();
+  /// Show the verdict under the env row. When the path pointed at
+  /// <env>/bin or the interpreter, rewrite it to the environment root.
+  void showEnvironmentStatus(const PythonEnvironmentInfo& info);
 
   Node* m_node;
   Pipeline* m_pipeline;
@@ -140,6 +169,10 @@ private:
   bool m_jsonFormNeedsData = false;
   // Description declared "externalOnly": Internal executor is disabled.
   bool m_externalOnly = false;
+  // Description declared "externalCompatible": false — the operator's
+  // imports only resolve in the application environment, so the
+  // External executor is disabled.
+  bool m_internalOnly = false;
   // JSON "name" field; keys the remembered external-env path.
   QString m_operatorName;
   QString m_jsonDescription;
@@ -160,6 +193,11 @@ private:
   QLabel* m_envPathLabel = nullptr;
   QWidget* m_envPathRow = nullptr;
   QLineEdit* m_envPathEdit = nullptr;
+  QLabel* m_envStatusLabel = nullptr;
+  PythonEnvironmentCheck* m_envCheck = nullptr;
+  QTimer* m_envCheckTimer = nullptr;
+  QCheckBox* m_autoExecCheck = nullptr;
+  QSpinBox* m_autoExecIntervalSpin = nullptr;
 
   /// Holds OnDisk-evicted upstream payloads in memory while the editor
   /// is shown, so the custom widget can read from the input ports.

@@ -3,6 +3,7 @@
 
 #include "VolumeData.h"
 
+#include "ComputeHistogram.h"
 #include "Utilities.h"
 
 #include <vtkColorTransferFunction.h>
@@ -29,6 +30,7 @@
 #include <QMetaObject>
 #include <QThread>
 
+#include <algorithm>
 #include <array>
 
 
@@ -287,6 +289,57 @@ std::array<double, 2> VolumeData::scalarRange() const
   return range;
 }
 
+double VolumeData::scalarPercentile(double fraction) const
+{
+  auto* s = scalars();
+  if (!s) {
+    return 0.0;
+  }
+  auto range = scalarRange();
+  double result = range[0];
+  switch (s->GetDataType()) {
+    vtkTemplateMacro(
+      result = ComputePercentile(
+        reinterpret_cast<VTK_TT*>(s->GetVoidPointer(0)),
+        s->GetNumberOfTuples(), s->GetNumberOfComponents(), range.data(),
+        fraction));
+    default:
+      break;
+  }
+  return result;
+}
+
+double VolumeData::thresholdSeed() const
+{
+  auto* s = scalars();
+  if (!s || s->GetNumberOfTuples() <= 0) {
+    return 0.0;
+  }
+  constexpr double kBudget = 250000.0;
+  const double count = static_cast<double>(s->GetNumberOfTuples());
+  const double fraction = std::max(0.95, 1.0 - kBudget / count);
+  auto range = scalarRange();
+  double result = range[0];
+  switch (s->GetDataType()) {
+    vtkTemplateMacro(
+      result = ComputePercentile(
+        reinterpret_cast<VTK_TT*>(s->GetVoidPointer(0)),
+        s->GetNumberOfTuples(), s->GetNumberOfComponents(), range.data(),
+        fraction, /*excludeMinimum=*/true));
+    default:
+      break;
+  }
+  return result;
+}
+
+std::array<double, 2> VolumeData::colorMapRange() const
+{
+  if (m_timeSteps.isEmpty()) {
+    return scalarRange();
+  }
+  return m_timeSeriesRange;
+}
+
 QString VolumeData::label() const
 {
   return m_label;
@@ -376,23 +429,22 @@ void VolumeData::syncColorMapToProxy()
     return;
   }
 
-  // Push CTF control points to the proxy's RGBPoints property.
+  // The functions were edited directly, so the VTK objects already
+  // hold these points; the proxies only need to record them, for state
+  // files and for vtkSMTransferFunctionProxy::RescaleTransferFunction,
+  // which reads the property. Without that the proxy keeps its stale
+  // default points and the next rescale wipes what was just written.
+  // Recording rather than pushing matters: a push replays AddRGBPoint
+  // per point, quadratic in their number, and a label map carries two
+  // per label. Use a contiguous 4*N buffer for the opacity Points,
+  // matching what RGBPoints does on the CTF side; per-element Set()
+  // leaves the property out of sync.
   if (m_ctf && m_ctf->GetSize() > 0) {
-    if (auto* prop = m_colorMap->GetProperty("RGBPoints")) {
-      vtkSMPropertyHelper(prop).Set(m_ctf->GetDataPointer(),
-                                    m_ctf->GetSize() * 4);
-    }
+    recordProxyValues(m_colorMap, "RGBPoints", m_ctf->GetDataPointer(),
+                      m_ctf->GetSize() * 4);
   }
   m_colorMap->UpdateVTKObjects();
 
-  // Push opacity control points to the ScalarOpacityFunction sub-proxy's
-  // Points property. Use a bulk Set() with a contiguous 4*N buffer to
-  // match what RGBPoints does on the CTF side. Per-element Set() via
-  // SetNumberOfElements + individual Set(i, v) calls leaves the proxy's
-  // property out of sync, which means a subsequent
-  // vtkSMTransferFunctionProxy::RescaleTransferFunction(omap, ...)
-  // rescales stale/zero values and, on UpdateVTKObjects, wipes out the
-  // client-side PWF.
   auto* omap =
     vtkSMPropertyHelper(m_colorMap, "ScalarOpacityFunction").GetAsProxy();
   if (omap && m_opacity && m_opacity->GetSize() > 0) {
@@ -401,8 +453,8 @@ void VolumeData::syncColorMapToProxy()
     for (int i = 0; i < n; ++i) {
       m_opacity->GetNodeValue(i, buffer.data() + 4 * i);
     }
-    vtkSMPropertyHelper(omap, "Points")
-      .Set(buffer.data(), static_cast<unsigned int>(buffer.size()));
+    recordProxyValues(omap, "Points", buffer.data(),
+                      static_cast<unsigned int>(buffer.size()));
     omap->UpdateVTKObjects();
   }
 }
@@ -413,7 +465,7 @@ void VolumeData::rescaleColorMap()
     return;
   }
 
-  auto range = scalarRange();
+  auto range = colorMapRange();
   double r[2] = { range[0], range[1] };
 
   vtkSMTransferFunctionProxy::RescaleTransferFunction(m_colorMap, r);
@@ -715,6 +767,28 @@ void VolumeData::setTimeSteps(const QList<TimeStep>& steps)
   if (!steps.isEmpty()) {
     m_currentTimeStep = 0;
     m_imageData = steps[0].image;
+  }
+
+  std::array<double, 2> range = { 0.0, 0.0 };
+  bool first = true;
+  for (const auto& step : steps) {
+    auto* scalars =
+      step.image ? step.image->GetPointData()->GetScalars() : nullptr;
+    if (!scalars) {
+      continue;
+    }
+    double r[2];
+    scalars->GetFiniteRange(r, -1);
+    range[0] = first ? r[0] : std::min(range[0], r[0]);
+    range[1] = first ? r[1] : std::max(range[1], r[1]);
+    first = false;
+  }
+
+  if (range != m_timeSeriesRange) {
+    m_timeSeriesRange = range;
+    // The color map was built for whichever image was loaded first; it
+    // now has to cover every step so the frames stay comparable.
+    rescaleColorMap();
   }
 }
 

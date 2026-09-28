@@ -1,0 +1,39 @@
+{
+  "name": "ClearVolume",
+  "label": "Clear Subvolume",
+  "description": "Set every voxel inside a box to a fill value, keeping the volume's shape. The complement of Crop: drag the box in the 3D view over the region to clear.",
+  "externalCompatible": false,
+  "widget": "SelectVolumeRangeWidget",
+  "parameters": [
+    {
+      "name": "XRANGE",
+      "label": "X Range",
+      "description": "Start (inclusive) and end (exclusive) voxel indices along X.",
+      "type": "int",
+      "default": [0, 0]
+    },
+    {
+      "name": "YRANGE",
+      "label": "Y Range",
+      "description": "Start (inclusive) and end (exclusive) voxel indices along Y.",
+      "type": "int",
+      "default": [0, 0]
+    },
+    {
+      "name": "ZRANGE",
+      "label": "Z Range",
+      "description": "Start (inclusive) and end (exclusive) voxel indices along Z.",
+      "type": "int",
+      "default": [0, 0]
+    },
+    {
+      "name": "fill_value",
+      "label": "Fill Value",
+      "description": "Value written to every voxel inside the box.",
+      "type": "double",
+      "default": 0.0
+    }
+  ],
+  "inputType": "ImageData",
+  "outputType": "ImageData"
+}

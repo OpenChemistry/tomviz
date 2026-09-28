@@ -63,6 +63,20 @@ inline bool isVolumeType(PortType type)
          baseType(type) == PortType::ImageData;
 }
 
+/// True if @a types accepts at least one volume-like type. Use this
+/// rather than testFlag(ImageData) when asking "does this input take a
+/// volume of some sort": an input narrowed to a single subtype (a
+/// LabelMap-only sink, say) accepts volumes without accepting the base.
+inline bool acceptsVolumeType(PortTypes types)
+{
+  for (PortType type : kAllPortTypes) {
+    if (isVolumeType(type) && types.testFlag(type)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /// Subtype-aware compatibility check.
 ///
 /// Returns true if an output of @a outputType can connect to an input that

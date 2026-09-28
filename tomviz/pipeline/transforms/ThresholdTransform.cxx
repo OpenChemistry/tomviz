@@ -3,9 +3,10 @@
 
 #include "ThresholdTransform.h"
 
+#include "data/LabelMapData.h"
 #include "data/VolumeData.h"
 
-#include <vtkFloatArray.h>
+#include <vtkUnsignedCharArray.h>
 #include <vtkImageData.h>
 #include <vtkNew.h>
 #include <vtkPointData.h>
@@ -16,7 +17,7 @@ namespace pipeline {
 ThresholdTransform::ThresholdTransform(QObject* parent) : TransformNode(parent)
 {
   addInput("volume", PortType::ImageData);
-  addOutput("mask", PortType::ImageData);
+  addOutput("mask", PortType::LabelMap);
   setLabel("Threshold");
 }
 
@@ -65,22 +66,24 @@ QMap<QString, PortData> ThresholdTransform::transform(
   outputImage->SetOrigin(inputImage->GetOrigin());
 
   vtkIdType numTuples = inputScalars->GetNumberOfTuples();
-  vtkNew<vtkFloatArray> mask;
+  // Integer-valued, so the two states are labels the label map can
+  // enumerate: 0 is background, 1 is the thresholded region.
+  vtkNew<vtkUnsignedCharArray> mask;
   mask->SetName("Mask");
   mask->SetNumberOfTuples(numTuples);
 
   for (vtkIdType i = 0; i < numTuples; ++i) {
     double val = inputScalars->GetTuple1(i);
-    mask->SetValue(i, (val >= m_minValue && val <= m_maxValue) ? 1.0f : 0.0f);
+    mask->SetValue(i, (val >= m_minValue && val <= m_maxValue) ? 1 : 0);
   }
 
   outputImage->GetPointData()->SetScalars(mask);
 
-  auto volume = std::make_shared<VolumeData>(outputImage.Get());
+  auto volume = makeVolumeData(outputImage.Get(), PortType::LabelMap);
   volume->setLabel("Threshold Mask");
   volume->setUnits(inputVolume->units());
 
-  result["mask"] = PortData(std::any(volume), PortType::ImageData);
+  result["mask"] = PortData(std::any(volume), PortType::LabelMap);
   return result;
 }
 

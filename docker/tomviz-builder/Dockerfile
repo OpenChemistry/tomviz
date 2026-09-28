@@ -15,6 +15,7 @@ RUN echo "#!/bin/bash" > build.sh && \
   echo "pip2 install -q -r ../tomviz/tests/python/requirements-dev.txt" >> build.sh && \
   echo "pip3 install -q -r ../tomviz/tests/python/requirements-dev.txt" >> build.sh && \
   echo "pip2 install -q -r ../tomviz/acquisition/requirements-dev.txt" >> build.sh  && \
+  echo "pip3 install -q \"tomviz-pipeline>=3.1.3\"" >> build.sh && \
   echo "pip3 install -q ../tomviz/tomviz/python/" >> build.sh && \
   echo "ctest -VV -S /tomviz/cmake/CircleContinuous.cmake" >> build.sh && \
   chmod u+x build.sh

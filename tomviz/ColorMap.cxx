@@ -23,6 +23,36 @@
 namespace tomviz
 {
 
+QColor segmentationLabelColor(int index)
+{
+  static const double goldenAngle = 137.508;
+  double hue = std::fmod(index * goldenAngle, 360.0) / 360.0;
+  double sat = 0.65 + 0.35 * ((index % 3) / 2.0);
+  double brightness = 0.75 + 0.25 * ((index + 1) % 2);
+
+  double c = brightness * sat;
+  double x = c * (1.0 - std::abs(std::fmod(hue * 6.0, 2.0) - 1.0));
+  double m = brightness - c;
+
+  double r, g, b;
+  double h6 = hue * 6.0;
+  if (h6 < 1.0) {
+    r = c; g = x; b = 0;
+  } else if (h6 < 2.0) {
+    r = x; g = c; b = 0;
+  } else if (h6 < 3.0) {
+    r = 0; g = c; b = x;
+  } else if (h6 < 4.0) {
+    r = 0; g = x; b = c;
+  } else if (h6 < 5.0) {
+    r = x; g = 0; b = c;
+  } else {
+    r = c; g = 0; b = x;
+  }
+
+  return QColor::fromRgbF(r + m, g + m, b + m);
+}
+
 QJsonObject buildSegmentationPreset(vtkDataArray* scalars)
 {
   if (!scalars || scalars->GetNumberOfTuples() == 0) {
@@ -42,34 +72,13 @@ QJsonObject buildSegmentationPreset(vtkDataArray* scalars)
     return QJsonObject();
   }
 
-  static const double goldenAngle = 137.508;
   QJsonArray colors;
   int idx = 0;
   const int lastIdx = static_cast<int>(uniqueValues.size()) - 1;
   for (double val : uniqueValues) {
-    double hue = std::fmod(idx * goldenAngle, 360.0) / 360.0;
-    double sat = 0.65 + 0.35 * ((idx % 3) / 2.0);
-    double brightness = 0.75 + 0.25 * ((idx + 1) % 2);
-
-    double c = brightness * sat;
-    double x = c * (1.0 - std::abs(std::fmod(hue * 6.0, 2.0) - 1.0));
-    double m = brightness - c;
-
-    double r, g, b;
-    double h6 = hue * 6.0;
-    if (h6 < 1.0) {
-      r = c; g = x; b = 0;
-    } else if (h6 < 2.0) {
-      r = x; g = c; b = 0;
-    } else if (h6 < 3.0) {
-      r = 0; g = c; b = x;
-    } else if (h6 < 4.0) {
-      r = 0; g = x; b = c;
-    } else if (h6 < 5.0) {
-      r = x; g = 0; b = c;
-    } else {
-      r = c; g = 0; b = x;
-    }
+    // By value, as LabelTable::reconcile colors, so a label keeps its
+    // color whichever path built the map
+    QColor color = segmentationLabelColor(static_cast<int>(std::lround(val)));
 
     // Two nodes per label at val -/+ 0.25 with the same color give each
     // integer label its own constant-color band under plain RGB
@@ -85,9 +94,9 @@ QJsonObject buildSegmentationPreset(vtkDataArray* scalars)
     double highOffset = (idx == lastIdx) ? 0.0 : 0.25;
     for (double offset : { lowOffset, highOffset }) {
       colors.append(val + offset);
-      colors.append(r + m);
-      colors.append(g + m);
-      colors.append(b + m);
+      colors.append(color.redF());
+      colors.append(color.greenF());
+      colors.append(color.blueF());
     }
     ++idx;
   }

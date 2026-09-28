@@ -12,6 +12,9 @@
 namespace tomviz {
 namespace pipeline {
 
+class Node;
+class Pipeline;
+
 /// Base class for custom parameter widgets that replace the
 /// auto-generated parameter UI for specific Python nodes (sources or
 /// transforms). Concrete subclasses are registered with
@@ -27,6 +30,20 @@ public:
 
   virtual void getValues(QMap<QString, QVariant>& map) = 0;
   virtual void setValues(const QMap<QString, QVariant>& map) = 0;
+
+  /// Optional context: the node whose editor hosts this widget and the
+  /// pipeline it belongs to. The editor factory calls this right after
+  /// construction, before setValues(). Widgets that interact with the
+  /// wider pipeline (e.g. to preview against an upstream port's sink,
+  /// or to enumerate other ports) override this; the default ignores
+  /// it. Both pointers outlive the widget for the editor's lifetime,
+  /// but @a node's links can change while the editor is open, so
+  /// consumers should re-resolve ports rather than cache them blindly.
+  virtual void setNodeContext(Node* node, Pipeline* pipeline)
+  {
+    Q_UNUSED(node)
+    Q_UNUSED(pipeline)
+  }
 
   /// Keep a copy of the current script (including edits) in case the
   /// custom widget needs to use it (e.g. for running test Python code).

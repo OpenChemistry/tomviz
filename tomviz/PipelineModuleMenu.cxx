@@ -8,10 +8,13 @@
 
 #include "pipeline/Link.h"
 #include "pipeline/Pipeline.h"
+#include "pipeline/PipelineUtils.h"
 #include "pipeline/OutputPort.h"
 #include "pipeline/InputPort.h"
 #include "pipeline/SinkGroupNode.h"
 #include "pipeline/sinks/LegacyModuleSink.h"
+#include "pipeline/data/LabelMapData.h"
+#include "pipeline/sinks/LabelMapSink.h"
 #include "pipeline/sinks/VolumeSink.h"
 #include "pipeline/sinks/SliceSink.h"
 #include "pipeline/sinks/ContourSink.h"
@@ -153,8 +156,9 @@ PipelineModuleMenu::~PipelineModuleMenu() = default;
 
 QList<QString> PipelineModuleMenu::sinkTypes()
 {
-  return { "Volume", "Outline", "Slice", "Contour", "Threshold", "Clip",
-           "Ruler", "Scale Cube", "Molecule", "Plot" };
+  return { "Volume", "Label Map", "Outline", "Slice", "Contour",
+           "Threshold", "Clip", "Ruler", "Scale Cube", "Molecule",
+           "Plot" };
 }
 
 QIcon PipelineModuleMenu::sinkIcon(const QString& type)
@@ -162,6 +166,7 @@ QIcon PipelineModuleMenu::sinkIcon(const QString& type)
   // Icon paths must match the legacy Module::icon() implementations
   static QMap<QString, QString> iconMap = {
     { "Volume", ":/icons/pqVolumeData.png" },
+    { "Label Map", ":/pipeline/port_labelmap.svg" },
     { "Outline", ":/pqWidgets/Icons/pqProbeLocation.svg" },
     { "Slice", ":/icons/orthoslice.svg" },
     { "Contour", ":pqWidgets/Icons/pqIsosurface.svg" },
@@ -182,7 +187,47 @@ pipeline::PortTypes PipelineModuleMenu::sinkAcceptedTypes(const QString& type)
     return pipeline::PortType::Table;
   if (type == "Molecule")
     return pipeline::PortType::Molecule;
+  if (type == "Label Map")
+    return pipeline::PortType::LabelMap;
   return pipeline::PortType::ImageData;
+}
+
+bool PipelineModuleMenu::sinkSuitsPort(const QString& type,
+                                       pipeline::OutputPort* port)
+{
+  if (!port) {
+    return false;
+  }
+
+  const auto portType = port->type();
+
+  // Label Map is worth offering for any volume whose values read as
+  // labels, not only for a port already typed as one. A segmentation
+  // loaded from a TIFF or an EMD arrives as an ordinary volume, since
+  // the reader has no way to know the numbers are labels, and there
+  // would otherwise be no way to say so.
+  if (type == "Label Map" && portType != pipeline::PortType::LabelMap) {
+    if (!pipeline::isVolumeType(portType) || !port->hasData()) {
+      return false;
+    }
+    return pipeline::canInterpretAsLabelMap(
+      port->data().value<pipeline::VolumeDataPtr>());
+  }
+
+  if (!pipeline::isPortTypeCompatible(portType, sinkAcceptedTypes(type))) {
+    return false;
+  }
+  // Volume accepts ImageData, and LabelMap is one of its subtypes, so
+  // the compatibility check alone would keep offering the plain volume
+  // rendering for a segmentation. Label Map is the one to reach for
+  // there: it renders the same way and adds the per-label controls.
+  //
+  // Only for a port actually typed as a label map: a plain volume that
+  // merely could be read as one is far more often just a volume.
+  if (type == "Volume" && portType == pipeline::PortType::LabelMap) {
+    return false;
+  }
+  return true;
 }
 
 bool PipelineModuleMenu::eventFilter(QObject* obj, QEvent* event)
@@ -213,9 +258,7 @@ void PipelineModuleMenu::updateEnableState()
       action->setEnabled(m_ctrlHeld);
       continue;
     }
-    action->setEnabled(
-      pipeline::isPortTypeCompatible(tipPort->type(),
-                                     sinkAcceptedTypes(type)));
+    action->setEnabled(sinkSuitsPort(type, tipPort));
   }
 }
 
@@ -223,6 +266,8 @@ pipeline::LegacyModuleSink* PipelineModuleMenu::createSink(const QString& type)
 {
   if (type == "Volume") {
     return new pipeline::VolumeSink();
+  } else if (type == "Label Map") {
+    return new pipeline::LabelMapSink();
   } else if (type == "Outline") {
     return new pipeline::OutlineSink();
   } else if (type == "Slice") {
@@ -308,44 +353,10 @@ void PipelineModuleMenu::triggered(QAction* maction)
       return;
     }
 
-    // Resolve which output port to connect the new sink to:
-    //   1. If the tip port already belongs to a SinkGroupNode (the group
-    //      is explicitly selected), connect directly to that port.
-    //   2. Else if a compatible SinkGroupNode is already linked to the
-    //      tip port, connect to its matching passthrough output.
-    //   3. Else create a new SinkGroupNode on the tip port.
-    pipeline::OutputPort* connectTo = nullptr;
-    if (qobject_cast<pipeline::SinkGroupNode*>(targetPort->node())) {
-      connectTo = targetPort;
-    }
-    if (!connectTo) {
-      for (auto* link : targetPort->links()) {
-        auto* sg = qobject_cast<pipeline::SinkGroupNode*>(
-          link->to()->node());
-        if (sg) {
-          // Find the group's output port corresponding to this input.
-          int idx = sg->inputPorts().indexOf(link->to());
-          if (idx >= 0 && idx < sg->outputPorts().size() &&
-              pipeline::isPortTypeCompatible(
-                sg->outputPorts()[idx]->type(), input->acceptedTypes())) {
-            connectTo = sg->outputPorts()[idx];
-            break;
-          }
-        }
-      }
-    }
-    if (!connectTo) {
-      auto* group = new pipeline::SinkGroupNode();
-      pipeline::PortType groupType =
-        pipeline::isVolumeType(targetPort->type())
-          ? pipeline::PortType::ImageData
-          : targetPort->type();
-      group->addPassthrough(targetPort->name(), groupType);
-      pip->addNode(group);
-      pip->createLink(targetPort, group->inputPorts()[0]);
-      connectTo = group->outputPorts()[0];
-    }
-    pip->createLink(connectTo, input);
+    // Hang the sink off the tip port's SinkGroupNode, creating one when
+    // the port has none yet.
+    pip->createLink(pipeline::sinkAttachPort(pip, targetPort, input),
+                    input);
   }
   pip->executeWhenIdle();
 }

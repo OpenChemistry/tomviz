@@ -56,8 +56,8 @@ QString findPyxrfUtilsCommand(const QString& savedCommand)
   }
 
   const QString absoluteFallback =
-    "/nsls2/data2/hxn/legacy/Hiran/tomviz/conda_envs/"
-    "tomviz-latest-wip/bin/run-pyxrf-utils";
+    "/nsls2/data/hxn/legacy/users/data_analysis/tomviz_utils/bin/"
+    "run-pyxrf-utils";
   if (executableExists(absoluteFallback)) {
     return absoluteFallback;
   }
@@ -119,6 +119,16 @@ public:
             &Internal::onLoadSidsFromTxt);
     connect(ui.applyFilter, &QPushButton::clicked, this,
             &Internal::applyFilter);
+
+    // Write the table out without running the operator, so a scan list
+    // can be prepared up front and shared with the ptycho workflow.
+    auto* saveScanListButton = new QPushButton("Save Scan List...", parent);
+    saveScanListButton->setToolTip(
+      "Save the listed scans as a CSV (Scan ID, Theta, Use) that this "
+      "dialog and the ptycho dialog can load back in.");
+    ui.filterLayout->addWidget(saveScanListButton);
+    connect(saveScanListButton, &QPushButton::clicked, this,
+            &Internal::saveScanList);
 
     connect(ui.startPyXRFGUI, &QPushButton::clicked, this,
             &Internal::startPyXRFGUI);
@@ -251,6 +261,38 @@ public:
       parent.data(), "Select parameters file", startPath, "*.json");
     if (!file.isEmpty()) {
       setParametersFile(file);
+    }
+  }
+
+  void saveScanList()
+  {
+    if (scanEntries.isEmpty()) {
+      QMessageBox::information(parent.data(), "Save Scan List",
+                               "There are no scans to save.");
+      return;
+    }
+    auto startPath =
+      csvOutput().isEmpty() ? workingDirectory() : csvOutput();
+    auto path = QFileDialog::getSaveFileName(parent.data(), "Save scan list",
+                                             startPath, "CSV Files (*.csv)");
+    if (path.isEmpty()) {
+      return;
+    }
+    QFile file(path);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+      QMessageBox::warning(parent.data(), "Save Scan List",
+                           QString("Could not write %1").arg(path));
+      return;
+    }
+    // No version column: PyXRF scans have no reconstruction versions.
+    // The ptycho dialog reads this file as scan ids plus Use flags.
+    QTextStream out(&file);
+    out << "Scan ID,Theta,Use\n";
+    for (const auto& entry : scanEntries) {
+      bool hasTheta = entry.status != "fail" && entry.status != "missing";
+      out << entry.scanId << ','
+          << (hasTheta ? QString::number(entry.theta, 'f', 3) : QString())
+          << ',' << (entry.use ? 1 : 0) << '\n';
     }
   }
 
@@ -447,15 +489,7 @@ public:
 
   void loadSidsFromTxt(QTextStream& reader)
   {
-    QStringList sids;
-    while (!reader.atEnd()) {
-      auto line = reader.readLine().trimmed();
-      if (line.isEmpty() || line.startsWith('#')) {
-        continue;
-      }
-      sids.append(line.split(' ')[0]);
-    }
-
+    auto sids = readSidsFromText(reader);
     ui.filterSidsString->setText(sids.join(", "));
   }
 
@@ -468,18 +502,31 @@ public:
       col = col.trimmed();
     }
 
-    int sidCol = columns.indexOf("Scan ID");
-    if (sidCol < 0) {
-      sidCol = columns.indexOf("Scan_ID");
+    // Match headers the way the ptycho scan list parser does: case-
+    // and punctuation-insensitive, so "Scan ID", "Scan_ID", and "SID"
+    // are all understood.
+    auto normalized = [](const QString& s) {
+      QString out;
+      for (auto ch : s.toLower()) {
+        if (ch.isLetterOrNumber()) {
+          out.append(ch);
+        }
+      }
+      return out;
+    };
+    int sidCol = -1;
+    int useCol = -1;
+    for (int i = 0; i < columns.size(); ++i) {
+      auto key = normalized(columns[i]);
+      if (sidCol < 0 && (key == "scanid" || key == "sid")) {
+        sidCol = i;
+      } else if (useCol < 0 && key == "use") {
+        useCol = i;
+      }
     }
     if (sidCol < 0) {
       qCritical() << "CSV file has no \"Scan ID\" column";
       return;
-    }
-
-    int useCol = columns.indexOf("Use");
-    if (useCol < 0) {
-      useCol = columns.indexOf("use");
     }
 
     QStringList sids;
@@ -500,7 +547,9 @@ public:
 
       if (useCol >= 0 && useCol < fields.size()) {
         auto val = fields[useCol].trimmed();
-        useFlags.append(val == "1" || val.toLower() == "x");
+        auto lower = val.toLower();
+        useFlags.append(lower == "1" || lower == "x" || lower == "true" ||
+                        lower == "yes");
       }
     }
 

@@ -2,7 +2,7 @@ import numpy as np
 
 from utils import load_operator_module
 
-from tomviz.external_dataset import Dataset
+from tomviz_pipeline.dataset import Dataset
 
 
 def test_pystackreg(hxn_xrf_example_dataset: Dataset,

@@ -79,7 +79,18 @@ NodeDefinitionWidget::NodeDefinitionWidget(const QString& json,
                                            NodeShape shape,
                                            DefinitionSchema schema,
                                            QWidget* parent)
-  : QWidget(parent), m_shape(shape), m_schema(schema), m_appliedJson(json)
+  : NodeDefinitionWidget(json, shape, schema, DefinitionTarget::LiveNode,
+                         parent)
+{
+}
+
+NodeDefinitionWidget::NodeDefinitionWidget(const QString& json,
+                                           NodeShape shape,
+                                           DefinitionSchema schema,
+                                           DefinitionTarget target,
+                                           QWidget* parent)
+  : QWidget(parent), m_shape(shape), m_schema(schema), m_target(target),
+    m_appliedJson(json)
 {
   m_renderedParameters = QJsonDocument::fromJson(json.toUtf8())
                            .object()
@@ -90,8 +101,12 @@ NodeDefinitionWidget::NodeDefinitionWidget(const QString& json,
 
   auto* headerRow = new QHBoxLayout;
   auto* header = new QLabel(
-    tr("Edits apply to this node only, and are saved with the state file. "
-       "Ports and the node's schema are fixed once it exists."),
+    m_target == DefinitionTarget::File
+      ? tr("Edits are written to the definition file when you save. Nodes "
+           "already in a pipeline keep the description they were created "
+           "with.")
+      : tr("Edits apply to this node only, and are saved with the state "
+           "file. Ports and the node's schema are fixed once it exists."),
     this);
   header->setWordWrap(true);
   header->setStyleSheet("QLabel { color: palette(mid); }");
@@ -108,10 +123,11 @@ NodeDefinitionWidget::NodeDefinitionWidget(const QString& json,
   m_stack = new QStackedWidget(this);
   layout->addWidget(m_stack, 1);
 
-  m_form = new NodeDefinitionFormWidget(shape, schema, m_stack);
+  m_form = new NodeDefinitionFormWidget(shape, schema, m_target, m_stack);
   m_stack->addWidget(m_form);
 
   m_editor = new QTextEdit(m_stack);
+  m_editor->setObjectName(QStringLiteral("definitionRawEditor"));
   m_editor->setLineWrapMode(QTextEdit::NoWrap);
   m_editor->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
   m_editor->setPlainText(json);
@@ -220,8 +236,8 @@ void NodeDefinitionWidget::markApplied(const QString& json)
 void NodeDefinitionWidget::revalidate()
 {
   const QString text = definitionText();
-  auto validation =
-    validateNodeDefinition(m_appliedJson, text, m_shape, m_schema);
+  auto validation = validateNodeDefinition(m_appliedJson, text, m_shape,
+                                           m_schema, m_target);
 
   renderIssues(validation);
 

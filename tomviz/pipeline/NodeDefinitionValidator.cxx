@@ -254,6 +254,16 @@ DefinitionSchema definitionSchema(const QString& json)
            : DefinitionSchema::V1;
 }
 
+NodeShape definitionShape(const QString& json)
+{
+  QJsonObject obj = parseObject(json, nullptr);
+  const bool v2 = obj.value(QStringLiteral("schemaVersion")).toInt(1) == 2;
+  if (v2 && obj.value(QStringLiteral("inputs")).toArray().isEmpty()) {
+    return NodeShape::Source;
+  }
+  return NodeShape::Transform;
+}
+
 QMap<QString, QString> parameterDeclaredTypes(const QString& json,
                                               bool includeDatasets)
 {
@@ -277,7 +287,8 @@ QMap<QString, QString> parameterDeclaredTypes(const QString& json,
 DefinitionValidation validateNodeDefinition(const QString& currentJson,
                                             const QString& candidateJson,
                                             NodeShape shape,
-                                            DefinitionSchema schema)
+                                            DefinitionSchema schema,
+                                            DefinitionTarget target)
 {
   DefinitionValidation result;
 
@@ -299,6 +310,14 @@ DefinitionValidation validateNodeDefinition(const QString& currentJson,
   }
   if (candidate.isEmpty()) {
     // Node never had a description and still doesn't, nothing to check.
+    return result;
+  }
+
+  if (target == DefinitionTarget::File) {
+    // A file is bound to no node class: schema, shape, ports and widget
+    // are all free to change. The parameter diff describes what happens
+    // to a live node's values, which a file doesn't have.
+    validateParameters(result, candidate);
     return result;
   }
 

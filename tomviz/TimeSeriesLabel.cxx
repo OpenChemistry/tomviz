@@ -34,6 +34,7 @@ public:
   vtkNew<vtkTextWidget> textWidget;
 
   QPointer<pqView> activeView;
+  QPointer<pipeline::OutputPort> watchedPort;
 
   Internal(QObject* p) : QObject(p)
   {
@@ -95,6 +96,21 @@ public:
 
   void activeDataChanged()
   {
+    // Follow the active port so in-place data mutations (time series
+    // playback switching steps) refresh the label text too.
+    auto* port = activeObjects().activeTipOutputPort();
+    if (port != watchedPort) {
+      if (watchedPort) {
+        disconnect(watchedPort, &pipeline::OutputPort::intermediateDataApplied,
+                   this, nullptr);
+      }
+      watchedPort = port;
+      if (port) {
+        connect(port, &pipeline::OutputPort::intermediateDataApplied, this,
+                &Internal::updateLabel);
+      }
+    }
+
     updateVisibility();
     updateLabel();
   }

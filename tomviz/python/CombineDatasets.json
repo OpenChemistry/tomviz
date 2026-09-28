@@ -1,0 +1,16 @@
+{
+  "name": "combine_datasets",
+  "label": "Combine Datasets",
+  "description": "Combine two datasets of the same shape into a single dataset with both scalar arrays. Errors if the shapes differ.",
+  "externalCompatible": false,
+  "parameters": [
+    {
+      "name": "second_dataset",
+      "label": "Second Dataset",
+      "description": "The dataset whose active array is added to the primary dataset",
+      "type": "dataset"
+    }
+  ],
+  "inputType": "ImageData",
+  "outputType": "ImageData"
+}

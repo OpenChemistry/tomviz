@@ -4,26 +4,33 @@
 # This source file is part of the Tomviz project, https://tomviz.org/.
 # It is released under the 3-Clause BSD License, see "LICENSE".
 ###############################################################################
-from types import MethodType
-from typing import Any, Callable
+from typing import Callable
 import fnmatch
 import inspect
 import json
 import os
-import sys
 import traceback
 
-import tomviz
-import tomviz.operators
+
+# Generic operator-runtime helpers now live in the standalone
+# tomviz-pipeline library; re-export them so C++ callers and operator
+# scripts keep finding them under tomviz._internal. find_operator_class
+# recognizes subclasses of both tomviz.operators.Operator and
+# tomviz_pipeline.operators.Operator (see tomviz_pipeline._compat).
+from tomviz_pipeline._internal import (  # noqa: F401
+    OperatorWrapper,
+    _find_function,
+    _operator_method_was_implemented,
+    apply_decorator,
+    find_operator_class,
+    find_transform_from_module,
+    find_transform_function,
+    has_decorator,
+)
 
 
 def in_application():
     return os.environ.get('TOMVIZ_APPLICATION', False)
-
-
-if in_application():
-    import tomviz._wrapping
-    from vtk import vtkDataObject
 
 
 def require_internal_mode():
@@ -32,153 +39,8 @@ def require_internal_mode():
         raise Exception('Cannot call ' + func_name + ' in external mode')
 
 
-def delete_module(name):
-    if name in sys.modules:
-        del sys.modules[name]
-
-
-class OperatorWrapper(object):
-    """Backs `self.canceled` / `self.completed` on operators running
-    under the pure-Python pipeline runtime. The flags can be flipped
-    out-of-band by the parent process via a transport-specific
-    ControlChannel, which is polled lazily on every getter access —
-    no reader thread needed on the subprocess side."""
-
-    def __init__(self, control_channel=None):
-        self._channel = control_channel
-        self._canceled = False
-        self._completed = False
-
-    @property
-    def canceled(self) -> bool:
-        if self._channel is not None:
-            self._channel.poll(self)
-        return self._canceled
-
-    @property
-    def completed(self) -> bool:
-        if self._channel is not None:
-            self._channel.poll(self)
-        return self._completed
-
-
-def find_operator_class(transform_module):
-    operator_class = None
-    classes = inspect.getmembers(transform_module, inspect.isclass)
-    for (name, cls) in classes:
-        if issubclass(cls, tomviz.operators.Operator):
-            if operator_class is not None:
-                raise Exception('Multiple operators define in module, only '
-                                'one operator can be defined per module.')
-
-            operator_class = cls
-
-    return operator_class
-
-
-def _find_function(module, function_name):
-    # Finds a function in the module with a given "function_name"
-    # Returns `None` if it is not found
-    functions = inspect.getmembers(module, inspect.isfunction)
-    for (name, func) in functions:
-        if name == function_name:
-            return func
-
-
-def find_transform_from_module(transform_module):
-    # This tries to first find transform(), and then transform_scalars()
-    f = _find_function(transform_module, 'transform')
-    if f is None:
-        f = _find_function(transform_module, 'transform_scalars')
-
-    return f
-
-
-def is_cancelable(transform_module):
-    cls = find_operator_class(transform_module)
-
-    if cls is None:
-        function = find_transform_from_module(transform_module)
-
-    if cls is None and function is None:
-        raise Exception('Unable to locate function or operator class.')
-
-    return cls is not None and issubclass(cls,
-                                          tomviz.operators.CancelableOperator)
-
-
-def is_completable(transform_module):
-    cls = find_operator_class(transform_module)
-
-    if cls is None:
-        function = find_transform_from_module(transform_module)
-        if not function:
-            raise Exception('Unable to locate function or operator class.')
-
-    return cls is not None and issubclass(
-        cls,
-        tomviz.operators.CompletableOperator
-    )
-
-
-def find_transform_function(transform_module, op=None):
-    # op is accepted for ABI compat with legacy OperatorPython but ignored.
-    del op
-
-    transform_function = find_transform_from_module(transform_module)
-    if transform_function is None:
-        cls = find_operator_class(transform_module)
-        if cls is None:
-            raise Exception('Unable to locate transform function.')
-
-        o = cls.__new__(cls)
-        # _operator_wrapper is read by CompletableOperator/CancelableOperator
-        # __init__ and during transform(); install the pure-Python fallback.
-        o._operator_wrapper = OperatorWrapper(None)
-        cls.__init__(o)
-
-        transform_function = None
-        if _operator_method_was_implemented(o, 'transform'):
-            transform_function = o.transform
-        elif _operator_method_was_implemented(o, 'transform_scalars'):
-            transform_function = o.transform_scalars
-
-    if transform_function is None:
-        raise Exception('Unable to locate transform function.')
-
-    return transform_function
-
-
-def has_decorator(func: Callable, decorator_marker: str = '_is_my_decorator') -> bool:
-    """Check if a function was already decorated with a decorator name"""
-    # Check the function itself
-    if getattr(func, decorator_marker, False):
-        return True
-
-    # Traverse the __wrapped__ chain
-    current = func
-    while hasattr(current, '__wrapped__'):
-        current = current.__wrapped__
-        if getattr(current, decorator_marker, False):
-            return True
-
-    return False
-
-
-def apply_decorator(func: Callable, decorator: Callable) -> Callable:
-    # Apply the decorator, taking into account different behavior for MethodType
-    # callables
-    if isinstance(func, MethodType):
-        # It's a bound method
-        tmp_func = decorator(func.__func__)
-        return MethodType(tmp_func, func.__self__)
-
-    # Unbound function
-    return decorator(func)
-
-
 def add_transform_decorators(transform_method: Callable,
-                             operator_dict: dict[str, Any]) -> Callable:
+                             operator_dict: dict) -> Callable:
     """Optionally add any transform wrappers that we need to add
 
     Currently, this adds `@apply_to_each_array` automatically if
@@ -203,7 +65,8 @@ def add_transform_decorators(transform_method: Callable,
         if not has_decorator(transform_method, 'apply_to_each_array'):
             # Decorate it!
             from tomviz.utils import apply_to_each_array
-            transform_method = apply_decorator(transform_method, apply_to_each_array)
+            transform_method = apply_decorator(transform_method,
+                                               apply_to_each_array)
 
     return transform_method
 
@@ -248,7 +111,7 @@ def _operator_description(operator_dir, filename):
     if os.path.exists(json_filepath):
         description['jsonPath'] = json_filepath
         try:
-            with open(json_filepath) as fp:
+            with open(json_filepath, encoding='utf-8') as fp:
                 operator_json = json.load(fp)
             description['label'] = operator_json.get('label', name)
             description['type'] = _classify_from_json(operator_json)
@@ -271,81 +134,74 @@ def find_operators(operator_dir):
     return operator_descriptions
 
 
-def _operator_method_was_implemented(obj, method):
-    # It would be nice if there were an easier way to do this, but
-    # I am not currently aware of an easier way.
-    bases = list(inspect.getmro(type(obj)))
-    # We know operator has this attribute, remove it
-    bases.remove(tomviz.operators.Operator)
-
-    for base in bases:
-        if method in vars(base):
-            return True
-
-    return False
-
-
 def convert_to_dataset(data):
     # This method will extract/convert certain data types to a dataset
 
-    if in_application():
-        from tomviz.internal_dataset import Dataset
-    else:
-        from tomviz.external_dataset import Dataset
+    from tomviz.dataset import Dataset
 
     if isinstance(data, Dataset):
         # It is already a dataset
         return data
 
-    if in_application():
-        if isinstance(data, vtkDataObject):
-            # Wrap the bare VTK object in a Dataset.
-            return Dataset(data)
+    if hasattr(data, 'IsA'):
+        # A bare VTK data object: wrap it in a numpy-backed
+        # LegacyDataset whose arrays are views over the VTK buffers.
+        from tomviz._boundary import wrap_vtk_image
+        return wrap_vtk_image(data, legacy=True)
 
     msg = 'Cannot convert type to Dataset: ' + str(type(data))
     raise Exception(msg)
 
 
 def convert_to_vtk_data_object(data):
-    # This method will extract/convert certain data types to a vtkDataObject
+    # This method will extract/convert certain data types to a
+    # vtkDataObject (VTK objects pass through untouched).
 
-    from tomviz.dataset import Dataset
+    from tomviz._boundary import payload_to_vtk
 
-    if isinstance(data, vtkDataObject):
-        # It is already a vtkDataObject
-        return data
-
-    if isinstance(data, Dataset):
-        # Should be stored in _data_object
-        return data._data_object
-
-    msg = 'Cannot convert type to vtkDataObject: ' + str(type(data))
-    raise Exception(msg)
+    converted = payload_to_vtk(data)
+    if converted is None:
+        msg = 'Cannot convert type to vtkDataObject: ' + str(type(data))
+        raise Exception(msg)
+    return converted
 
 
 def with_vtk_dataobject(f):
-    # A decorator to automatically convert the first argument to
-    # a vtkDataObject. This also confirms we are running internally.
+    # A decorator to automatically convert the first argument to a
+    # vtkDataObject; when it was a numpy-backed dataset, its views are
+    # refreshed afterwards so mutations made through VTK are visible.
+    # This also confirms we are running internally.
 
     def wrapped(*args, **kwargs):
         if not in_application():
             name = f.__name__
             raise Exception('Cannot call ' + name + ' in external mode')
 
-        dataobject = convert_to_vtk_data_object(args[0])
+        data = args[0]
+        dataobject = convert_to_vtk_data_object(data)
         args = (dataobject, *args[1:])
-        return f(*args, **kwargs)
+        result = f(*args, **kwargs)
+        if not hasattr(data, 'IsA'):
+            from tomviz._boundary import refresh_dataset
+            refresh_dataset(data)
+        return result
 
     return wrapped
 
 
 def with_dataset(f):
-    # A decorator to automatically convert the first argument to
-    # a Dataset.
+    # A decorator to automatically convert the first argument to a
+    # Dataset; when it was a bare VTK object, changes are flushed back
+    # into it afterwards.
 
     def wrapped(*args, **kwargs):
-        dataset = convert_to_dataset(args[0])
+        data = args[0]
+        dataset = convert_to_dataset(data)
         args = (dataset, *args[1:])
-        return f(*args, **kwargs)
+        result = f(*args, **kwargs)
+        if dataset is not data:
+            from tomviz._boundary import flush_dataset
+            flush_dataset(dataset)
+        return result
 
     return wrapped

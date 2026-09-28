@@ -16,6 +16,8 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 
+#include <algorithm>
+
 namespace tomviz {
 
 OperatorSearchDialog::OperatorSearchDialog(QWidget* parent)
@@ -112,6 +114,15 @@ void OperatorSearchDialog::collectActionsFromMenu(QMenu* menu,
   }
 }
 
+void OperatorSearchDialog::removeCategory(const QString& category)
+{
+  m_operators.erase(std::remove_if(m_operators.begin(), m_operators.end(),
+                                   [&category](const OperatorEntry& entry) {
+                                     return entry.category == category;
+                                   }),
+                    m_operators.end());
+}
+
 void OperatorSearchDialog::showEvent(QShowEvent* event)
 {
   QDialog::showEvent(event);
@@ -133,12 +144,18 @@ void OperatorSearchDialog::filterOperators(const QString& text)
   // Build name counts for duplicate detection
   QHash<QString, int> nameCounts;
   for (const auto& entry : m_operators) {
+    if (!entry.action) {
+      continue;
+    }
     QString name = entry.action->text().remove('&');
     nameCounts[name]++;
   }
 
   for (int i = 0; i < m_operators.size(); ++i) {
     const auto& entry = m_operators[i];
+    if (!entry.action) {
+      continue;
+    }
     QString currentName = entry.action->text().remove('&');
     if (!filter.isEmpty() &&
         !currentName.contains(filter, Qt::CaseInsensitive) &&
@@ -207,6 +224,9 @@ void OperatorSearchDialog::updateSelection(QListWidgetItem* item)
   }
 
   const auto& entry = m_operators[index];
+  if (!entry.action) {
+    return;
+  }
   QString currentName = entry.action->text().remove('&');
   m_createButton->setText(currentName);
 
@@ -227,7 +247,7 @@ void OperatorSearchDialog::activateCurrentProxy()
 
   int index = item->data(Qt::UserRole).toInt();
   if (index >= 0 && index < m_operators.size() &&
-      m_operators[index].action->isEnabled()) {
+      m_operators[index].action && m_operators[index].action->isEnabled()) {
     accept();
     m_operators[index].action->trigger();
   }

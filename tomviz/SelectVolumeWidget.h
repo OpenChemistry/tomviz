@@ -30,8 +30,16 @@ public:
   // without the origin and spacing factored in.
   void getExtentOfSelection(int extent[6]);
 
+  /// Show or hide the box in the 3D view. It follows this widget's own
+  /// visibility by default, so a hidden or closed dialog leaves no box.
+  void setBoxEnabled(bool enabled);
+
 public slots:
   void dataMoved(double newX, double newY, double newZ);
+
+protected:
+  void showEvent(QShowEvent* event) override;
+  void hideEvent(QHideEvent* event) override;
 
 private slots:
   void interactionEnd(vtkObject* caller);

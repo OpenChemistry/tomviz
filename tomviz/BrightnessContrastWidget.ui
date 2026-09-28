@@ -68,6 +68,16 @@
      </property>
     </widget>
    </item>
+   <item row="5" column="0" colspan="2">
+    <widget class="QPushButton" name="autoRegionButton">
+     <property name="toolTip">
+      <string>Auto-adjust the contrast using only the voxels inside a region you select, rather than the whole volume.</string>
+     </property>
+     <property name="text">
+      <string>Auto (Selected Region)...</string>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
  <customwidgets>

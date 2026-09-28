@@ -10,6 +10,7 @@
 #include <QSignalBlocker>
 #include <QVBoxLayout>
 
+#include <vtkCellData.h>
 #include <vtkCompositeRepresentation.h>
 #include <vtkDataArray.h>
 #include <vtkDataObject.h>
@@ -36,6 +37,40 @@ ThresholdSink::ThresholdSink(QObject* parent) : LegacyModuleSink(parent)
   addInput("volume", PortType::ImageData);
   setLabel("Threshold");
 }
+
+namespace {
+
+/// A voxel is a cell, not a point. Thresholding the point-centered image
+/// keeps a hexahedron only when all eight voxels around it pass, which
+/// erases thin features and isolated voxels that Binary Threshold still
+/// segments. Rebuild the grid one cell per voxel, sharing the arrays,
+/// so the surface shows exactly the voxels in range.
+vtkSmartPointer<vtkImageData> cellCenteredCopy(vtkImageData* image)
+{
+  vtkNew<vtkImageData> cells;
+  int dims[3];
+  double origin[3];
+  image->GetDimensions(dims);
+  cells->SetDimensions(dims[0] + 1, dims[1] + 1, dims[2] + 1);
+  cells->SetSpacing(image->GetSpacing());
+  cells->SetDirectionMatrix(image->GetDirectionMatrix());
+  // Half a voxel back along each of the image's own axes, so the cell
+  // centers land on the voxel centers whatever the direction matrix.
+  image->TransformContinuousIndexToPhysicalPoint(-0.5, -0.5, -0.5, origin);
+  cells->SetOrigin(origin);
+
+  auto* pointData = image->GetPointData();
+  auto* cellData = cells->GetCellData();
+  for (int i = 0; i < pointData->GetNumberOfArrays(); ++i) {
+    cellData->AddArray(pointData->GetAbstractArray(i));
+  }
+  if (auto* scalars = pointData->GetScalars(); scalars && scalars->GetName()) {
+    cellData->SetActiveScalars(scalars->GetName());
+  }
+  return cells;
+}
+
+} // namespace
 
 ThresholdSink::~ThresholdSink()
 {
@@ -111,7 +146,7 @@ bool ThresholdSink::consume(const QMap<QString, PortData>& inputs)
   }
 
   // Cache image and scalar range for the main-thread pipeline setup.
-  m_pendingImage = volume->imageData();
+  m_pendingImage = cellCenteredCopy(volume->imageData());
 
   auto range = volume->scalarRange();
   m_scalarRange[0] = range[0];
@@ -135,13 +170,12 @@ bool ThresholdSink::consume(const QMap<QString, PortData>& inputs)
     }
   }
 
-  // Auto-set to the middle 10% of range if not explicitly set
-  // (copied from old ModuleThreshold::initialize).
+  // Start at the brightest voxels if not explicitly set. Most voxels of
+  // a reconstruction are dim background, and thresholding into that
+  // noise produces a huge surface that is slow to render.
   if (!m_rangeSet) {
-    double delta = (range[1] - range[0]);
-    double mid = (range[0] + range[1]) / 2.0;
-    m_lower = mid - 0.1 * delta;
-    m_upper = mid + 0.1 * delta;
+    m_lower = volume->thresholdSeed();
+    m_upper = range[1];
   }
 
   // SM proxy work must happen on the GUI thread; consume() runs there
@@ -265,6 +299,7 @@ double ThresholdSink::upperThreshold() const
 
 void ThresholdSink::setThresholdRange(double lower, double upper)
 {
+  bool changed = lower != m_lower || upper != m_upper;
   m_lower = lower;
   m_upper = upper;
   m_rangeSet = true;
@@ -277,6 +312,9 @@ void ThresholdSink::setThresholdRange(double lower, double upper)
     QSignalBlocker blocker(m_controllers);
     m_controllers->setMinimum(lower);
     m_controllers->setMaximum(upper);
+  }
+  if (changed) {
+    emit thresholdRangeChanged(m_lower, m_upper);
   }
   emit renderNeeded();
 }
@@ -570,7 +608,7 @@ void ThresholdSink::applyActiveScalars()
   }
   if (selected && selected->GetName()) {
     vtkSMPropertyHelper(m_thresholdFilter, "SelectInputScalars")
-      .SetInputArrayToProcess(vtkDataObject::FIELD_ASSOCIATION_POINTS,
+      .SetInputArrayToProcess(vtkDataObject::FIELD_ASSOCIATION_CELLS,
                               selected->GetName());
     m_thresholdFilter->UpdateVTKObjects();
   }
@@ -633,7 +671,7 @@ void ThresholdSink::updateColorArray()
 
   if (!name.isEmpty()) {
     vtkSMPropertyHelper(m_thresholdRepresentation, "ColorArrayName")
-      .SetInputArrayToProcess(vtkDataObject::FIELD_ASSOCIATION_POINTS,
+      .SetInputArrayToProcess(vtkDataObject::FIELD_ASSOCIATION_CELLS,
                               name.toUtf8().constData());
     m_thresholdRepresentation->UpdateVTKObjects();
   }

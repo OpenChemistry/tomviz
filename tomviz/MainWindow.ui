@@ -82,7 +82,16 @@
      <bool>true</bool>
     </property>
     <addaction name="actionAcquisition"/>
+   </widget>
+   <widget class="QMenu" name="menuAnimation">
+    <property name="title">
+     <string>Animation</string>
+    </property>
+    <property name="toolTipsVisible">
+     <bool>true</bool>
+    </property>
     <addaction name="actionAnimationHelper"/>
+    <addaction name="actionSaveMovie"/>
    </widget>
    <widget class="QMenu" name="menuData">
     <property name="title">
@@ -125,6 +134,7 @@
    <addaction name="menuTomography"/>
    <addaction name="menuModules"/>
    <addaction name="menuView"/>
+   <addaction name="menuAnimation"/>
    <addaction name="menuTools"/>
    <addaction name="menuHelp"/>
   </widget>

@@ -6,6 +6,7 @@
 #include "ActiveObjects.h"
 #include "EmdFormat.h"
 #include "LoadDataReaction.h"
+#include "Utilities.h"
 
 #include "pipeline/InputPort.h"
 #include "pipeline/Link.h"
@@ -54,8 +55,10 @@
 #include <vtkNew.h>
 #include <vtkPVXMLElement.h>
 #include <vtkPVXMLParser.h>
+#include <vtkSMParaViewPipelineController.h>
 #include <vtkSMPropertyHelper.h>
 #include <vtkSMProxy.h>
+#include <vtkSMProxyIterator.h>
 #include <vtkSMProxyLocator.h>
 #include <vtkSMProxyManager.h>
 #include <vtkSMRenderViewProxy.h>
@@ -82,6 +85,64 @@ namespace tomviz {
 namespace pipeline {
 
 namespace {
+
+void addUniqueProxy(vtkSMProxy* proxy, const char* property, vtkSMProxy* value)
+{
+  vtkSMPropertyHelper helper(proxy, property);
+  for (unsigned int i = 0; i < helper.GetNumberOfElements(); ++i) {
+    if (helper.GetAsProxy(i) == value) {
+      return;
+    }
+  }
+  helper.Add(value);
+}
+
+// Re-do the part of vtkSMParaViewPipelineController::RegisterViewProxy()
+// that pqApplicationCore::loadState() skips.
+//
+// Views created through pqObjectBuilder::createView() are handed to the
+// controller, which adds them to the animation scene's "ViewModules" and
+// the time keeper's "Views". Views recreated from state are registered
+// straight with the proxy manager by vtkSMStateLoader, so neither list
+// gets them, and restoreViewsAndLayouts() resets the session first, so
+// both lists start out empty. vtkSMAnimationScene only updates and
+// still-renders the views in "ViewModules", which means every animation
+// (camera orbits, time series) ticks the cues but never redraws
+// anything: the viewport just sits there.
+void registerViewsWithSceneAndTimeKeeper(vtkSMSessionProxyManager* pxm)
+{
+  if (!pxm) {
+    return;
+  }
+
+  vtkNew<vtkSMParaViewPipelineController> controller;
+  auto* session = pxm->GetSession();
+  auto* scene = controller->GetAnimationScene(session);
+  auto* timeKeeper = controller->FindTimeKeeper(session);
+
+  vtkNew<vtkSMProxyIterator> iter;
+  iter->SetSessionProxyManager(pxm);
+  iter->SetModeToOneGroup();
+  for (iter->Begin("views"); !iter->IsAtEnd(); iter->Next()) {
+    auto* view = vtkSMViewProxy::SafeDownCast(iter->GetProxy());
+    if (!view) {
+      continue;
+    }
+    if (scene) {
+      addUniqueProxy(scene, "ViewModules", view);
+    }
+    if (timeKeeper) {
+      addUniqueProxy(timeKeeper, "Views", view);
+    }
+  }
+
+  if (scene) {
+    scene->UpdateVTKObjects();
+  }
+  if (timeKeeper) {
+    timeKeeper->UpdateVTKObjects();
+  }
+}
 
 // Unwrap the legacy module JSON — which nests per-module state under a
 // "properties" sub-object and carries colormap + detached-flag keys at
@@ -1214,6 +1275,15 @@ bool LegacyStateLoader::restoreViewsAndLayouts(const QJsonObject& state,
 
   auto* server = pqActiveObjects::instance().activeServer();
   appCore->loadState(parser->GetRootElement(), server);
+
+  registerViewsWithSceneAndTimeKeeper(server ? server->proxyManager()
+                                             : nullptr);
+
+  // The animation scene above is a brand new one, back on ParaView's
+  // 10 frame default. Re-apply the frame count tomviz uses for freshly
+  // loaded data, otherwise a camera orbit created after a state load is
+  // over in a blink and looks like it did nothing.
+  tomviz::setAnimationNumberOfFrames(200);
 
   // Make the "active" view (if any) the app's active view too.
   for (const auto& v : views) {

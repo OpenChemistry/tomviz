@@ -3,10 +3,15 @@
 
 #include "SliceSink.h"
 
+#include "ActiveObjects.h"
+#include "ClipSink.h"
 #include "DoubleSliderWidget.h"
 #include "IntSliderWidget.h"
+#include "Node.h"
+#include "Pipeline.h"
 #include "data/VolumeData.h"
 #include "vtkActiveScalarsProducer.h"
+#include "PlaneIndexing.h"
 #include "vtkNonOrthoImagePlaneWidget.h"
 
 #include <QCheckBox>
@@ -18,11 +23,15 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QScopedValueRollback>
 #include <QSignalBlocker>
 #include <QSlider>
 #include <QSpinBox>
 #include <QVBoxLayout>
 #include <QWidget>
+
+#include <cmath>
+#include <limits>
 
 #include <pqCoreUtilities.h>
 #include <vtkAlgorithmOutput.h>
@@ -44,10 +53,23 @@
 namespace tomviz {
 namespace pipeline {
 
+namespace {
+
+// Set while a linked slice pushes its state onto its peers, so their
+// change signals do not echo it back. GUI thread only.
+bool s_propagatingSliceLink = false;
+
+} // namespace
+
 SliceSink::SliceSink(QObject* parent) : LegacyModuleSink(parent)
 {
   addInput("volume", PortType::ImageData);
   setLabel("Slice");
+
+  connect(this, &SliceSink::sliceChanged,
+          this, &SliceSink::propagateToLinkedSinks);
+  connect(this, &SliceSink::directionChanged,
+          this, &SliceSink::propagateToLinkedSinks);
 }
 
 SliceSink::~SliceSink()
@@ -142,6 +164,15 @@ bool SliceSink::initialize(vtkSMViewProxy* view)
   // When the user drags the slice in the 3D view, update our state and UI.
   pqCoreUtilities::connect(m_widget, vtkCommand::InteractionEvent, this,
                            SLOT(onPlaneChanged()));
+  pqCoreUtilities::connect(m_widget, vtkCommand::StartInteractionEvent, this,
+                           SLOT(onInteractionStarted()));
+
+  // Report the voxel under the cursor (the widget picks it on a short
+  // timer while the mouse moves over the slice); the main window shows
+  // it in the status bar.
+  m_widget->SetVoxelValueFn([](const vtkVector3i& ijk, double value) {
+    emit ActiveObjects::instance().mouseOverVoxel(ijk, value);
+  });
 
   return true;
 }
@@ -211,10 +242,15 @@ bool SliceSink::consume(const QMap<QString, PortData>& inputs)
     }
   }
 
-  // Notify UI of the current state so sliders/combos initialize correctly
-  emit directionChanged(m_direction);
-  emit sliceChanged(m_slice);
-  emit planeChanged();
+  // Notify the UI of the current state. These are sync notifications,
+  // not user edits: hold the link guard so an execution never
+  // re-propagates a peer's clamped index back onto wider datasets.
+  {
+    QScopedValueRollback<bool> guard(s_propagatingSliceLink, true);
+    emit directionChanged(m_direction);
+    emit sliceChanged(m_slice);
+    emit planeChanged();
+  }
 
   auto vol = volumeData();
   if (vol && vol->isValid()) {
@@ -435,6 +471,103 @@ void SliceSink::setActiveScalars(int index)
   emit renderNeeded();
 }
 
+bool SliceSink::linked() const
+{
+  return m_linked;
+}
+
+void SliceSink::setLinked(bool linked)
+{
+  if (m_linked == linked) {
+    return;
+  }
+  m_linked = linked;
+  emit linkedChanged(m_linked);
+
+  if (m_linked) {
+    // Adopt this view's state everywhere as soon as linking turns on
+    propagateToLinkedSinks();
+  }
+}
+
+void SliceSink::propagateToLinkedSinks()
+{
+  if (!m_linked || s_propagatingSliceLink) {
+    return;
+  }
+
+  auto* pip = qobject_cast<Pipeline*>(parent());
+  if (!pip) {
+    return;
+  }
+
+  QScopedValueRollback<bool> guard(s_propagatingSliceLink, true);
+  for (auto* node : pip->nodes()) {
+    auto* other = qobject_cast<SliceSink*>(node);
+    if (!other || other == this || !other->linked()) {
+      continue;
+    }
+    // Direction first: changing it re-centers the peer's slice, which
+    // the position below then overwrites.
+    other->setDirection(m_direction);
+    if (isOrtho()) {
+      // Match by physical position so different voxel sizes line up;
+      // fall back to the raw index until both geometries are known.
+      if (!other->setSlicePosition(slicePosition())) {
+        other->setSlice(m_slice);
+      }
+    } else {
+      double c[3], n[3];
+      planeCenter(c);
+      planeNormal(n);
+      other->setPlaneNormal(n[0], n[1], n[2]);
+      other->setPlaneCenter(c[0], c[1], c[2]);
+    }
+  }
+}
+
+double SliceSink::slicePosition() const
+{
+  int axis = directionAxis();
+  if (axis < 0 || planeindex::spacing(m_dims, m_bounds, axis) <= 0.0) {
+    return std::numeric_limits<double>::quiet_NaN();
+  }
+  return planeindex::position(m_dims, m_bounds, axis, m_slice);
+}
+
+bool SliceSink::setSlicePosition(double position)
+{
+  int axis = directionAxis();
+  if (axis < 0 || std::isnan(position)) {
+    return false;
+  }
+  int index = planeindex::index(m_dims, m_bounds, axis, position);
+  if (index < 0) {
+    return false;
+  }
+  setSlice(index);
+  return true;
+}
+
+void SliceSink::onInteractionStarted()
+{
+  if (!m_widget || !isOrtho()) {
+    return;
+  }
+  // Grabbing the arrow (rotate) or the center sphere (move) is asking
+  // for a plane the axis-aligned directions cannot express, so switch
+  // to Custom from the plane's current placement.
+  int state = m_widget->GetWidgetState();
+  if (state != vtkNonOrthoImagePlaneWidget::Rotating &&
+      state != vtkNonOrthoImagePlaneWidget::Moving) {
+    return;
+  }
+  m_widget->GetCenter(m_planeCenter);
+  m_widget->GetNormal(m_planeNormal);
+  m_planeCenterSet = true;
+  setDirection(Custom);
+}
+
 void SliceSink::applyActiveScalars()
 {
   auto vol = volumeData();
@@ -515,19 +648,13 @@ void SliceSink::onPlaneChanged()
   // For orthogonal directions, update the slice index from the widget
   if (isOrtho()) {
     int axis = directionAxis();
-    if (axis >= 0 && m_dims[axis] > 0) {
-      double spacing = (m_bounds[2 * axis + 1] - m_bounds[2 * axis]) /
-                        (m_dims[axis] - 1);
-      if (spacing > 0) {
-        int newSlice = static_cast<int>(
-          (center[axis] - m_bounds[2 * axis]) / spacing + 0.5);
-        newSlice = qBound(0, newSlice, m_dims[axis] - 1);
-        if (newSlice != m_slice) {
-          m_slice = newSlice;
-          emit sliceChanged(m_slice);
-        }
-      }
+    int newSlice = planeindex::index(m_dims, m_bounds, axis, center[axis]);
+    if (newSlice >= 0 && newSlice != m_slice) {
+      m_slice = newSlice;
+      emit sliceChanged(m_slice);
     }
+  } else {
+    propagateToLinkedSinks();
   }
 
   emit planeChanged();
@@ -544,6 +671,7 @@ void SliceSink::setPlaneCenter(double x, double y, double z)
     m_widget->SetCenter(m_planeCenter);
     m_widget->UpdatePlacement();
   }
+  propagateToLinkedSinks();
   emit renderNeeded();
 }
 
@@ -567,6 +695,7 @@ void SliceSink::setPlaneNormal(double x, double y, double z)
     m_widget->SetNormal(m_planeNormal);
     m_widget->UpdatePlacement();
   }
+  propagateToLinkedSinks();
   emit renderNeeded();
 }
 
@@ -579,6 +708,44 @@ void SliceSink::planeNormal(double xyz[3]) const
     xyz[1] = m_planeNormal[1];
     xyz[2] = m_planeNormal[2];
   }
+}
+
+double SliceSink::planeDistance() const
+{
+  double n[3], c[3];
+  planeNormal(n);
+  planeCenter(c);
+  double length = std::sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
+  if (length == 0.0) {
+    return 0.0;
+  }
+  double distance = 0.0;
+  for (int i = 0; i < 3; ++i) {
+    double mid = (m_bounds[2 * i] + m_bounds[2 * i + 1]) / 2.0;
+    distance += (c[i] - mid) * n[i] / length;
+  }
+  return distance;
+}
+
+void SliceSink::setPlaneDistance(double distance)
+{
+  double n[3];
+  planeNormal(n);
+  double length = std::sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
+  if (length == 0.0) {
+    return;
+  }
+  setPlaneCenter((m_bounds[0] + m_bounds[1]) / 2.0 + distance * n[0] / length,
+                 (m_bounds[2] + m_bounds[3]) / 2.0 + distance * n[1] / length,
+                 (m_bounds[4] + m_bounds[5]) / 2.0 + distance * n[2] / length);
+}
+
+void SliceSink::planeDistanceRange(double& minDistance,
+                                   double& maxDistance) const
+{
+  double n[3];
+  planeNormal(n);
+  planeTravelRange(m_bounds, n, minDistance, maxDistance);
 }
 
 QWidget* SliceSink::createSinkPropertiesWidget(QWidget* parent)
@@ -674,6 +841,25 @@ QWidget* SliceSink::createSinkPropertiesWidget(QWidget* parent)
   }
   sliceSlider->setVisible(isOrtho());
   formLayout->addRow("Slice", sliceSlider);
+
+  // --- Link to other slice views ---
+  auto* linkCheck = new QCheckBox(widget);
+  linkCheck->setToolTip(
+    "Step through every linked slice view together. Turn this on in two or "
+    "more slice views (for example one per element of a simultaneously "
+    "acquired dataset) and changing the direction or slice in any of them "
+    "applies the same to the others.");
+  {
+    QSignalBlocker blocker(linkCheck);
+    linkCheck->setChecked(linked());
+  }
+  formLayout->addRow("Link Slices", linkCheck);
+  connect(linkCheck, &QCheckBox::toggled,
+          [this](bool on) { setLinked(on); });
+  connect(this, &SliceSink::linkedChanged, linkCheck, [linkCheck](bool on) {
+    QSignalBlocker blocker(linkCheck);
+    linkCheck->setChecked(on);
+  });
   // valueEdited fires on release / text commit → full-quality render
   connect(sliceSlider, &IntSliderWidget::valueEdited,
           [this](int v) { setSlice(v); });
@@ -864,10 +1050,16 @@ QWidget* SliceSink::createSinkPropertiesWidget(QWidget* parent)
             }
           });
 
-  // Update UI when direction/slice changes from the sink itself
+  // Update UI when direction/slice changes from the sink itself, e.g.
+  // grabbing the plane's arrow in the view switches it to Custom
   connect(this, &SliceSink::directionChanged, widget,
-          [sliceSlider, thickSpin, pointInputs, normalInputs,
+          [sliceSlider, thickSpin, pointInputs, normalInputs, dirCombo,
            this](Direction dir) {
+            int idx = dirCombo->findData(static_cast<int>(dir));
+            if (idx >= 0 && idx != dirCombo->currentIndex()) {
+              QSignalBlocker blocker(dirCombo);
+              dirCombo->setCurrentIndex(idx);
+            }
             bool isOrthoDir = (dir != Custom);
             sliceSlider->setVisible(isOrthoDir);
             for (int i = 0; i < 3; ++i) {
@@ -916,6 +1108,7 @@ QJsonObject SliceSink::serialize() const
   json["showArrow"] = m_showArrow;
   json["mapScalars"] = m_mapScalars;
   json["activeScalars"] = activeScalarsToName(m_activeScalars);
+  json["linked"] = m_linked;
 
   // Serialize plane geometry from widget if available
   double point[3];
@@ -954,6 +1147,9 @@ bool SliceSink::deserialize(const QJsonObject& json)
   }
   if (json.contains("slice")) {
     m_slice = json["slice"].toInt();
+  }
+  if (json.contains("linked")) {
+    m_linked = json["linked"].toBool();
   }
   if (json.contains("opacity")) {
     setOpacity(json["opacity"].toDouble());

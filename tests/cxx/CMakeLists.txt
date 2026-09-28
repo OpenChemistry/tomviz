@@ -51,25 +51,53 @@ set(_pythonpath "${_pythonpath}${_separator}$ENV{PYTHONPATH}")
 
 # Add the test cases
 add_cxx_test(Variant)
+add_cxx_test(Animation)
 add_cxx_test(ScanID)
 add_cxx_test(Utilities)
 add_cxx_test(VolumeBricking)
 add_cxx_test(SAM2SeedWidget)
 add_cxx_test(ExternalEnvPersistence)
+add_cxx_test(PythonEnvironmentCheck)
+add_cxx_test(AutoExecute)
 add_cxx_test(NodeDefinition)
+add_cxx_test(TiltSeriesSinogram)
+add_cxx_test(LabelSelection)
+add_cxx_test(LabelMapSurface)
+add_cxx_test(ExplodedGeometry)
+add_cxx_test(LightingPresetStore)
+add_cxx_test(CustomOperatorManagerDialog)
+add_cxx_test(OperatorSearchDialog)
+add_cxx_test(CustomOperatorEditDialog)
 # AcquisitionClient needs the `bottle` Python package (acquisition/requirements-dev.txt)
 # to start its test server; not part of the conda build env, so disabled here.
 # if(NOT WIN32)
 #   add_cxx_qtest(AcquisitionClient PYTHONPATH "${CMAKE_SOURCE_DIR}/acquisition")
 # endif()
+add_cxx_qtest(LabelMap)
+add_cxx_qtest(AnimationPlayback)
+add_cxx_qtest(AnimationHelperOrbit)
 add_cxx_qtest(SegmentationColorMap)
+add_cxx_qtest(ImageViewerMode)
+add_cxx_qtest(MultiVolume)
+add_cxx_qtest(LabelSurfaceRender)
+add_cxx_qtest(ClippingRange)
+add_cxx_qtest(HistogramRange)
+add_cxx_qtest(RecordedPlane)
 add_cxx_qtest(PtychoWorkflow PYTHONPATH ${_pythonpath})
-set_tests_properties(PtychoWorkflow PROPERTIES TIMEOUT 1800)
+# initTestCase downloads the test data; QtTest aborts any test function
+# after five minutes unless told otherwise, and a slow mirror can take
+# longer than that.
+set_tests_properties(PtychoWorkflow PROPERTIES TIMEOUT 1800
+  ENVIRONMENT "QTEST_FUNCTION_TIMEOUT=1800000")
 add_cxx_qtest(PyXRFWorkflow PYTHONPATH ${_pythonpath})
-set_tests_properties(PyXRFWorkflow PROPERTIES TIMEOUT 1800)
+set_tests_properties(PyXRFWorkflow PROPERTIES TIMEOUT 1800
+  ENVIRONMENT "QTEST_FUNCTION_TIMEOUT=1800000")
 
 # Generate the executable
 create_test_executable(tomvizTests)
+# tomviz's icons are compiled into the app executable, not the library;
+# tests that build widgets showing them need the same resources.
+target_sources(tomvizTests PRIVATE "${PROJECT_SOURCE_DIR}/tomviz/resources.qrc")
 
 target_link_libraries(tomvizTests Qt6::Test)
 
@@ -108,3 +136,6 @@ add_executable(pipelineDemo PipelineDemo.cxx ${PIPELINE_ICONS_QRC})
 target_compile_definitions(pipelineDemo PRIVATE
   "TOMVIZ_PYTHON_DIR=\"${PROJECT_SOURCE_DIR}/tomviz/python\"")
 target_link_libraries(pipelineDemo tomvizlib)
+
+
+

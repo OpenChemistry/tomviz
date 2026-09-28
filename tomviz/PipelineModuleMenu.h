@@ -36,6 +36,13 @@ public:
   static QList<QString> sinkTypes();
   static QIcon sinkIcon(const QString& type);
   static pipeline::PortTypes sinkAcceptedTypes(const QString& type);
+  /// Whether @a type is the right visualization to offer for @a port.
+  /// Narrower than isPortTypeCompatible(): a sink can accept a base
+  /// type but still not be what the menu should suggest for one of its
+  /// subtypes, and Label Map is offered for what a port's data holds
+  /// rather than only for how the port is typed.
+  static bool sinkSuitsPort(const QString& type,
+                            pipeline::OutputPort* port);
   static pipeline::LegacyModuleSink* createSink(const QString& type);
 
 protected:

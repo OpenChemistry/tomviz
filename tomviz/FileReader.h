@@ -43,7 +43,7 @@ struct ReadResult
 /// Format dispatch:
 ///   .tvh5              -> EmdFormat::readNode (options["tvh5NodePath"] required)
 ///   .emd               -> EmdFormat::read
-///   .h5 / .hspy        -> DataExchange / FXI / GenericHDF5Format (auto-detect)
+///   .h5 / .hspy / .nxs -> DataExchange / FXI / GenericHDF5Format (auto-detect)
 ///   *.ome.tif[f]       -> vtkOMETiffReader
 ///   .tif/.tiff/.png/.jpg/.jpeg/.vti/.mrc -> direct VTK readers
 ///   other              -> FileFormatManager Python reader if registered

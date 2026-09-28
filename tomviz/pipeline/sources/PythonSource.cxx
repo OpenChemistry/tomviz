@@ -75,6 +75,14 @@ QMap<QString, QVariant> PythonSource::parameters() const
   return m_backend.parameters();
 }
 
+void PythonSource::applyParameterUpdates(const QVariantMap& updates)
+{
+  auto changed = m_backend.applyParameterUpdates(updates);
+  if (!changed.isEmpty()) {
+    emit parametersUpdated(changed);
+  }
+}
+
 QString PythonSource::operatorName() const
 {
   return m_backend.operatorName();
@@ -97,10 +105,11 @@ EditNodeWidget* PythonSource::createPropertiesWidget(Pipeline* pipeline,
     // Sources have no inputs — needsData should be irrelevant here,
     // but honor the flag in case a registration unexpectedly sets it.
     customNeedsData = info->needsData;
-    factory = [this, info](QWidget* p) -> CustomPythonNodeWidget* {
+    factory = [this, info, pipeline](QWidget* p) -> CustomPythonNodeWidget* {
       auto* w = info->create(collectInputs(), p);
       if (w) {
         w->setScript(m_backend.scriptSource());
+        w->setNodeContext(this, pipeline);
       }
       return w;
     };
@@ -168,6 +177,16 @@ EditNodeWidget* PythonSource::createPropertiesWidget(Pipeline* pipeline,
               }
             }
 
+            // The auto-execute setting doesn't affect the node's data,
+            // so it deliberately doesn't set `changed` — no pipeline
+            // re-execution is warranted for toggling it. The setters
+            // emit autoExecuteChanged for the controller.
+            if (edits.autoExecuteEdited) {
+              setAutoExecuteEnabled(edits.autoExecuteEnabled);
+              setAutoExecuteIntervalSeconds(
+                edits.autoExecuteIntervalSeconds);
+            }
+
             if (changed) {
               emit parametersApplied();
             }
@@ -228,6 +247,11 @@ bool PythonSource::deserialize(const QJsonObject& json)
     }
   }
   return true;
+}
+
+bool PythonSource::queryShouldAutoExecute()
+{
+  return m_backend.runShouldAutoExecute(this);
 }
 
 } // namespace pipeline

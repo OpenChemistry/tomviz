@@ -6,6 +6,7 @@
 
 #include <QObject>
 
+#include <QColor>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QPixmap>
@@ -14,6 +15,13 @@ class vtkDataArray;
 class vtkSMProxy;
 
 namespace tomviz {
+
+/// The @a index'th color of the segmentation palette: golden-angle hue
+/// spacing with saturation and brightness cycling on short periods so
+/// that neighboring indices stay distinguishable. The sequence repeats
+/// once the hues wrap onto earlier ones, so very large label counts do
+/// see duplicate colors.
+QColor segmentationLabelColor(int index);
 
 /// Build a step-interpolated, distinct-color segmentation colormap
 /// preset from an integer-valued scalar array. Scans @a scalars for

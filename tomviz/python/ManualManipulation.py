@@ -135,6 +135,13 @@ def transform(dataset, scaling=None, rotation=None, shift=None,
               reference_shape=None):
     array = dataset.active_scalars
 
+    if rotation is None:
+        rotation = [0, 0, 0]
+
+    if scaling is None or any(x <= 0 for x in scaling):
+        # Spacing must be positive. Keep the current spacing.
+        scaling = dataset.spacing
+
     convert_to_float = (
         not all(np.isclose(x, 0) for x in rotation) and
         not array.dtype == np.float32

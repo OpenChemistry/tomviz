@@ -6,12 +6,15 @@ import argparse
 import json
 import sys
 
-from pyxrf_utils.make_hdf5 import make_hdf5
 from pyxrf_utils.process_projections import process_projections
 from pyxrf_utils.scan_range import expand_scan_range
 
 
 def make_hdf5_cmd(args: argparse.Namespace) -> None:
+    # Downloading needs the beamline stack (hxntools -> databroker ->
+    # pims). Import it here so process-projections works without it.
+    from pyxrf_utils.make_hdf5 import make_hdf5
+
     skip_ids = json.loads(args.skip) if args.skip else []
     scan_ids = expand_scan_range(args.range, skip_ids)
     if not scan_ids:

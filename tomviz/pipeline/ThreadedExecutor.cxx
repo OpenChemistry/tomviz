@@ -87,6 +87,11 @@ public slots:
         breakpointWasHit = true;
         continue;
       }
+      if (node->isHeld()) {
+        // Inserted but not applied yet: its dialog owns the first run.
+        // Skipped the same way, silently.
+        continue;
+      }
 
       // No "skip Current" filter here — see DefaultExecutor for the
       // rationale. The plan is trusted to contain only nodes that need

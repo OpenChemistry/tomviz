@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 2,
+  "name": "SimulatedLiveAcquisition",
+  "label": "Simulated Live Acquisition",
+  "description": "A pretend tomography scan: one new projection every few seconds, picked up by periodic execution. A template for live sources.",
+  "help": {
+    "url": "operators_development.html#periodic-execution"
+  },
+  "autoExecute": {
+    "enabled": true,
+    "intervalSeconds": 5
+  },
+  "outputs": [
+    {
+      "name": "tilt_series",
+      "type": "TiltSeries",
+      "persistent": true
+    }
+  ],
+  "parameters": [
+    {
+      "name": "size",
+      "label": "Object Size (voxels)",
+      "description": "Edge length of the test object that is scanned.",
+      "type": "int",
+      "default": 64,
+      "minimum": 16,
+      "maximum": 256
+    },
+    {
+      "name": "num_projections",
+      "label": "Projections",
+      "description": "Projections in the whole scan.",
+      "type": "int",
+      "default": 60,
+      "minimum": 1,
+      "maximum": 720
+    },
+    {
+      "name": "start_angle",
+      "label": "Start Angle (degrees)",
+      "type": "double",
+      "default": -60.0,
+      "minimum": -180.0,
+      "maximum": 180.0
+    },
+    {
+      "name": "end_angle",
+      "label": "End Angle (degrees)",
+      "type": "double",
+      "default": 60.0,
+      "minimum": -180.0,
+      "maximum": 180.0
+    },
+    {
+      "name": "seconds_per_projection",
+      "label": "Seconds per Projection",
+      "description": "How long the pretend instrument takes per projection.",
+      "type": "double",
+      "default": 5.0,
+      "minimum": 0.1,
+      "maximum": 3600.0,
+      "step": 1.0
+    },
+    {
+      "name": "acquired",
+      "label": "Projections Acquired",
+      "description": "Set by the source itself, to show progress.",
+      "type": "int",
+      "default": 0,
+      "minimum": 0
+    }
+  ]
+}

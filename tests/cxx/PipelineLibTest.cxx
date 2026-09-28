@@ -22,13 +22,20 @@
 #include "PipelineSettings.h"
 #include "PipelineStateIO.h"
 #include "PortDataWriter.h"
+#include "ParameterInterfaceBuilder.h"
+#include "PipelineUtils.h"
 #include "SaveDataDialog.h"
 #include "SinkGroupNode.h"
 #include "Tvh5Format.h"
 #include "data/VolumeData.h"
 #include "sinks/VolumeStatsSink.h"
 #include "sinks/LegacyModuleSink.h"
+#include "sinks/LightingPresetStore.h"
+#include "sinks/ExplodedGeometry.h"
 #include "sinks/VolumeSink.h"
+#include "sinks/LabelMapSink.h"
+#include "sinks/LabelMapSurface.h"
+#include "data/LabelMapData.h"
 #include "sinks/SliceSink.h"
 #include "sinks/ContourSink.h"
 #include "sinks/ThresholdSink.h"
@@ -45,11 +52,15 @@
 #include "sources/ReaderSourceNode.h"
 #include "transforms/ThresholdTransform.h"
 #include "transforms/LegacyPythonTransform.h"
+#include "AutoExecuteController.h"
 #include "ExternalNodeExecutor.h"
 #include "transforms/PythonTransform.h"
 #include "PipelineStripWidget.h"
 
 #include <QApplication>
+#include <QLabel>
+#include <QLineEdit>
+#include <QCheckBox>
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonArray>
@@ -58,7 +69,12 @@
 #include <QSignalSpy>
 #include <QTemporaryDir>
 #include <QTemporaryFile>
+
+#include <limits>
+#include <QTest>
 #include <QTextStream>
+
+#include <atomic>
 
 #include <h5cpp/h5readwrite.h>
 
@@ -76,8 +92,11 @@
 #include <vtkMolecule.h>
 #include <vtkPointData.h>
 #include <vtkSmartPointer.h>
+#include <vtkCellData.h>
+#include <vtkPolyData.h>
 #include <vtkStringArray.h>
 #include <vtkTable.h>
+#include <vtkUnsignedCharArray.h>
 #include <vtkXMLImageDataWriter.h>
 
 namespace py = pybind11;
@@ -462,6 +481,48 @@ TEST_F(PipelineLibTest, BreakpointStopsExecution)
   // t1 should not have been executed
   EXPECT_NE(t1->state(), NodeState::Current);
   EXPECT_NE(t2->state(), NodeState::Current);
+}
+
+TEST_F(PipelineLibTest, HeldNodeWaitsForItsDialog)
+{
+  // source -> t1 (held, as a freshly inserted transform whose dialog is
+  // open) -> t2, plus t3 on the source directly
+  auto* source = new SourceNode();
+  source->addOutput("out", PortType::ImageData);
+  pipeline->addNode(source);
+  auto* t1 = new DoubleTransform();
+  auto* t2 = new DoubleTransform();
+  auto* t3 = new DoubleTransform();
+  pipeline->addNode(t1);
+  pipeline->addNode(t2);
+  pipeline->addNode(t3);
+  pipeline->createLink(source->outputPort("out"), t1->inputPort("in"));
+  pipeline->createLink(t1->outputPort("out"), t2->inputPort("in"));
+  pipeline->createLink(source->outputPort("out"), t3->inputPort("in"));
+  source->setOutputData("out", PortData(std::any(5), PortType::ImageData));
+
+  t1->setHeld(true);
+  Node* reachedNode = nullptr;
+  QObject::connect(pipeline, &Pipeline::breakpointReached,
+                   [&reachedNode](Node* n) { reachedNode = n; });
+
+  // A global execute, as adding a module anywhere triggers, runs the
+  // rest of the pipeline and leaves the held node and its subtree alone
+  auto* future = pipeline->execute();
+  EXPECT_TRUE(future->isFinished());
+  EXPECT_TRUE(future->succeeded());
+  EXPECT_EQ(reachedNode, nullptr);
+  EXPECT_EQ(t3->state(), NodeState::Current);
+  EXPECT_NE(t1->state(), NodeState::Current);
+  EXPECT_NE(t2->state(), NodeState::Current);
+
+  // Released (the dialog's Apply), it runs like any other node
+  t1->setHeld(false);
+  future = pipeline->execute();
+  EXPECT_TRUE(future->isFinished());
+  EXPECT_EQ(t1->state(), NodeState::Current);
+  EXPECT_EQ(t2->state(), NodeState::Current);
+  EXPECT_EQ(t2->outputPort("out")->data().value<int>(), 20);
 }
 
 TEST_F(PipelineLibTest, TransientDataRelease)
@@ -1035,6 +1096,27 @@ TEST_F(PipelineLibTest, VolumeDataMetadata)
   vol.setUnits("nm");
   EXPECT_EQ(vol.label(), "Test Volume");
   EXPECT_EQ(vol.units(), "nm");
+}
+
+TEST_F(PipelineLibTest, VolumeDataPercentile)
+{
+  // 1000 voxels holding 0..999: the p-th percentile is about 10 * p
+  vtkNew<vtkImageData> image;
+  image->SetDimensions(10, 10, 10);
+  image->AllocateScalars(VTK_FLOAT, 1);
+  auto* values = static_cast<float*>(image->GetScalarPointer());
+  for (int i = 0; i < 1000; ++i) {
+    values[i] = static_cast<float>(i);
+  }
+  VolumeData vol;
+  vol.setImageData(image);
+
+  EXPECT_NEAR(vol.scalarPercentile(0.8), 800.0, 2.0);
+  EXPECT_NEAR(vol.scalarPercentile(0.0), 0.0, 1.0);
+  EXPECT_NEAR(vol.scalarPercentile(1.0), 999.0, 1.0);
+  // A NaN is ignored rather than poisoning the estimate
+  values[0] = std::numeric_limits<float>::quiet_NaN();
+  EXPECT_NEAR(vol.scalarPercentile(0.8), 800.0, 2.0);
 }
 
 // --- SphereSource tests ---
@@ -1734,6 +1816,378 @@ class MultiplyBy(tomviz.nodes.TransformNode):
   EXPECT_NEAR(outputRange[1], inputRange[1] * 2.0, 0.01);
 }
 
+TEST_F(PipelinePythonTest, ThreadedExecutorLegacyPythonTransform)
+{
+  // Mirror the application: the transform's Python code runs on a
+  // ThreadedExecutor worker thread while the main thread spins the
+  // event loop (which is also where intermediate updates land).
+  pipeline->setExecutor(new ThreadedExecutor(pipeline));
+
+  QString pythonDir = TOMVIZ_PYTHON_DIR;
+  QString jsonStr = readFile(pythonDir + "/AddConstant.json");
+  QString scriptStr = readFile(pythonDir + "/AddConstant.py");
+  ASSERT_FALSE(jsonStr.isEmpty());
+  ASSERT_FALSE(scriptStr.isEmpty());
+
+  auto* source = new SphereSource();
+  source->setDimensions(8, 8, 8);
+  pipeline->addNode(source);
+  source->execute();
+  auto inputRange =
+    source->outputPort("volume")->data().value<VolumeDataPtr>()
+      ->scalarRange();
+
+  auto* transform = new LegacyPythonTransform();
+  transform->setJSONDescription(jsonStr);
+  transform->setScript(scriptStr);
+  transform->setParameter("constant", 10.0);
+  pipeline->addNode(transform);
+  pipeline->createLink(source->outputPort("volume"),
+                       transform->inputPort("volume"));
+
+  // The worker thread needs the GIL; release it from the test (main)
+  // thread for the duration of the run, as the application does after
+  // initializing Python.
+  py::gil_scoped_release releaseGil;
+
+  auto* future = pipeline->execute();
+  QSignalSpy spy(future, &ExecutionFuture::finished);
+  if (!future->isFinished()) {
+    ASSERT_TRUE(spy.wait(30000));
+  }
+
+  EXPECT_TRUE(future->succeeded());
+  EXPECT_EQ(transform->state(), NodeState::Current);
+  auto outputData =
+    transform->outputPort("volume")->data().value<VolumeDataPtr>();
+  ASSERT_TRUE(outputData && outputData->isValid());
+  auto outputRange = outputData->scalarRange();
+  EXPECT_NEAR(outputRange[0], inputRange[0] + 10.0, 0.01);
+  EXPECT_NEAR(outputRange[1], inputRange[1] + 10.0, 0.01);
+
+  // Re-execute once more (the app re-runs transforms on parameter
+  // edits) to shake out lifetime bugs across runs.
+  transform->setParameter("constant", 20.0);
+  transform->markStale();
+  auto* future2 = pipeline->execute();
+  QSignalSpy spy2(future2, &ExecutionFuture::finished);
+  if (!future2->isFinished()) {
+    ASSERT_TRUE(spy2.wait(30000));
+  }
+  EXPECT_TRUE(future2->succeeded());
+}
+
+TEST_F(PipelinePythonTest, ThreadedExecutorReconStyleOperator)
+{
+  // The full recon-operator shape on the threaded executor: a v1
+  // class-based operator that creates a child dataset, publishes
+  // intermediate previews through progress.data while running, and
+  // returns the child as its declared output. This is the most
+  // Python↔VTK-boundary-intensive path the application exercises.
+  pipeline->setExecutor(new ThreadedExecutor(pipeline));
+
+  QString jsonStr = R"({
+    "name": "MiniRecon",
+    "label": "Mini Recon",
+    "children": [{"name": "recon", "label": "Reconstruction"}]
+  })";
+  QString scriptStr = R"(
+import numpy as np
+import tomviz.operators
+
+
+class MiniReconOperator(tomviz.operators.CancelableOperator):
+
+    def transform(self, dataset):
+        self.progress.maximum = 4
+        child = dataset.create_child_dataset()
+        recon = np.zeros((6, 6, 6), dtype=np.float32)
+        for i in range(4):
+            if self.canceled:
+                return
+            recon += float(i + 1)
+            child.set_scalars('recon', recon.copy())
+            self.progress.value = i + 1
+            self.progress.message = 'pass %d' % (i + 1)
+            self.progress.data = child
+        return {'recon': child}
+)";
+
+  auto* source = new SphereSource();
+  source->setDimensions(6, 6, 6);
+  pipeline->addNode(source);
+  source->execute();
+
+  auto* transform = new LegacyPythonTransform();
+  transform->setJSONDescription(jsonStr);
+  transform->setScript(scriptStr);
+  pipeline->addNode(transform);
+  pipeline->createLink(source->outputPort("volume"),
+                       transform->inputPort("volume"));
+
+  // The "children" declaration renames the primary output port.
+  auto* outPort = transform->outputPort("recon");
+  ASSERT_TRUE(outPort != nullptr);
+  int intermediateCount = 0;
+  QObject::connect(outPort, &OutputPort::intermediateDataApplied,
+                   [&intermediateCount]() { ++intermediateCount; });
+
+  py::gil_scoped_release releaseGil;
+
+  for (int run = 0; run < 2; ++run) {
+    auto* future = pipeline->execute();
+    QSignalSpy spy(future, &ExecutionFuture::finished);
+    if (!future->isFinished()) {
+      ASSERT_TRUE(spy.wait(30000));
+    }
+    EXPECT_TRUE(future->succeeded());
+    EXPECT_EQ(transform->state(), NodeState::Current);
+
+    auto outputData = outPort->data().value<VolumeDataPtr>();
+    ASSERT_TRUE(outputData && outputData->isValid());
+    // 1+2+3+4 accumulated into every voxel.
+    auto range = outputData->scalarRange();
+    EXPECT_NEAR(range[0], 10.0, 1e-4);
+    EXPECT_NEAR(range[1], 10.0, 1e-4);
+
+    transform->markStale();
+  }
+
+  EXPECT_EQ(transform->totalProgressSteps(), 4);
+  EXPECT_EQ(transform->progressStep(), 4);
+  EXPECT_GE(intermediateCount, 8);
+}
+
+TEST_F(PipelinePythonTest, ThreadedExecutorMultiArrayOperator)
+{
+  // Multi-array volume through an @apply_to_each_array operator on the
+  // threaded executor: apply_to_each_array deep-copies the dataset once
+  // per array, so a naive backing-image reference gets cloned into a
+  // pile of VTK objects that are then destroyed during Python GC on the
+  // worker thread. This reproduces the in-app SIGSEGV.
+  pipeline->setExecutor(new ThreadedExecutor(pipeline));
+
+  QString jsonStr = readFile(QString(TOMVIZ_PYTHON_DIR) +
+                             "/AddConstant.json");
+  // Inline AddConstant-shaped operator that also cranks the cyclic GC
+  // to its most aggressive setting, so any object corrupted by the
+  // Python↔VTK boundary is tripped over deterministically rather than
+  // "sometimes, later".
+  QString scriptStr = R"(
+import gc
+gc.set_threshold(1, 1, 1)
+
+
+def transform(dataset, constant=0.0):
+    import numpy as np
+    scalars = dataset.active_scalars
+    dataset.active_scalars = scalars + np.array([constant], dtype=scalars.dtype)
+)";
+
+  // A source with THREE scalar arrays on its output volume.
+  auto* source = new SphereSource();
+  source->setDimensions(12, 12, 12);
+  pipeline->addNode(source);
+  source->execute();
+  {
+    auto vol = source->outputPort("volume")->data().value<VolumeDataPtr>();
+    ASSERT_TRUE(vol && vol->imageData());
+    auto* image = vol->imageData();
+    auto* pd = image->GetPointData();
+    auto* base = pd->GetScalars();
+    for (const char* name : { "Second", "Third" }) {
+      vtkNew<vtkFloatArray> extra;
+      extra->DeepCopy(base);
+      extra->SetName(name);
+      pd->AddArray(extra);
+    }
+  }
+  auto* transform = new LegacyPythonTransform();
+  transform->setJSONDescription(jsonStr);
+  transform->setScript(scriptStr);
+  transform->setParameter("constant", 10.0);
+  pipeline->addNode(transform);
+  pipeline->createLink(source->outputPort("volume"),
+                       transform->inputPort("volume"));
+
+  py::gil_scoped_release releaseGil;
+
+  for (int run = 0; run < 3; ++run) {
+    auto* future = pipeline->execute();
+    QSignalSpy spy(future, &ExecutionFuture::finished);
+    if (!future->isFinished()) {
+      ASSERT_TRUE(spy.wait(30000));
+    }
+    EXPECT_TRUE(future->succeeded());
+    EXPECT_EQ(transform->state(), NodeState::Current);
+    auto outputData =
+      transform->outputPort("volume")->data().value<VolumeDataPtr>();
+    ASSERT_TRUE(outputData && outputData->isValid());
+    // Every one of the three arrays got the constant added.
+    EXPECT_EQ(outputData->imageData()->GetPointData()->GetNumberOfArrays(),
+              3);
+    transform->markStale();
+  }
+}
+
+TEST_F(PipelinePythonTest, ThreadedExecutorPythonTransformV2)
+{
+  // Schema-v2 PythonTransform on the threaded executor — the path that
+  // crashes in-app (PythonNodeBackend::runImpl on a worker thread).
+  // Multi-array input + a downstream sink that consumes on the main
+  // thread, run several times, to mirror the application.
+  pipeline->setExecutor(new ThreadedExecutor(pipeline));
+
+  QString jsonStr = R"({
+    "schemaVersion": 2,
+    "name": "MultiplyBy",
+    "label": "Multiply By",
+    "inputs":  [{"name": "volume", "type": "ImageData"}],
+    "outputs": [{"name": "volume", "type": "ImageData", "persistent": true}],
+    "parameters": [{"name": "factor", "type": "double", "default": 1.0}]
+  })";
+  QString scriptStr = R"(
+import tomviz.nodes
+
+class MultiplyBy(tomviz.nodes.TransformNode):
+    def transform(self, inputs, factor=1.0):
+        ds = inputs["volume"]
+        for name in list(ds.scalars_names):
+            ds.set_scalars(name, ds.scalars(name) * factor)
+        return {"volume": ds}
+)";
+
+  auto* source = new SphereSource();
+  source->setDimensions(10, 10, 10);
+  pipeline->addNode(source);
+  source->execute();
+  {
+    auto vol = source->outputPort("volume")->data().value<VolumeDataPtr>();
+    auto* pd = vol->imageData()->GetPointData();
+    auto* base = pd->GetScalars();
+    for (const char* name : { "Second", "Third" }) {
+      vtkNew<vtkFloatArray> extra;
+      extra->DeepCopy(base);
+      extra->SetName(name);
+      pd->AddArray(extra);
+    }
+  }
+
+  auto* transform = new PythonTransform();
+  transform->setJSONDescription(jsonStr);
+  transform->setScript(scriptStr);
+  transform->setParameter("factor", 2.0);
+  pipeline->addNode(transform);
+  pipeline->createLink(source->outputPort("volume"),
+                       transform->inputPort("volume"));
+
+  py::gil_scoped_release releaseGil;
+
+  for (int run = 0; run < 5; ++run) {
+    auto* future = pipeline->execute();
+    QSignalSpy spy(future, &ExecutionFuture::finished);
+    if (!future->isFinished()) {
+      ASSERT_TRUE(spy.wait(30000));
+    }
+    EXPECT_TRUE(future->succeeded());
+    EXPECT_EQ(transform->state(), NodeState::Current);
+    auto outputData =
+      transform->outputPort("volume")->data().value<VolumeDataPtr>();
+    ASSERT_TRUE(outputData && outputData->isValid());
+    transform->markStale();
+  }
+}
+
+TEST_F(PipelinePythonTest, PythonTransformV2ProgressUpdates)
+{
+  // Progress plumbing end to end on the numpy-dataset path: the script
+  // reports step count / value / message through self.progress, and
+  // publishes a live-preview payload — a fresh numpy Dataset — through
+  // self.progress.data. The preview must be converted to vtkImageData
+  // at the script boundary and applied to the output port as
+  // intermediate data while the transform is still running.
+  QString jsonStr = R"({
+    "schemaVersion": 2,
+    "name": "SlowMultiply",
+    "label": "Slow Multiply",
+    "inputs":  [{"name": "volume", "type": "ImageData"}],
+    "outputs": [{"name": "volume", "type": "ImageData", "persistent": true}],
+    "parameters": [
+      {"name": "factor", "type": "double", "default": 1.0}
+    ]
+  })";
+  QString scriptStr = R"(
+import tomviz.nodes
+import numpy as np
+
+class SlowMultiply(tomviz.nodes.TransformNode):
+    def transform(self, inputs, factor=1.0):
+        ds = inputs["volume"]
+        self.progress.maximum = 3
+        self.progress.value = 1
+        self.progress.message = "halfway"
+        preview = self.create_dataset()
+        preview.set_scalars("Scalars",
+                            np.full((2, 2, 2), 21.0, dtype=np.float32))
+        preview.spacing = (1.0, 1.0, 1.0)
+        self.progress.data = preview
+        self.progress.value = 2
+        ds.active_scalars = ds.active_scalars * factor
+        return {"volume": ds}
+)";
+
+  auto* source = new SphereSource();
+  source->setDimensions(4, 4, 4);
+  pipeline->addNode(source);
+  source->execute();
+  auto inputRange =
+    source->outputPort("volume")->data().value<VolumeDataPtr>()
+      ->scalarRange();
+
+  auto* transform = new PythonTransform();
+  transform->setJSONDescription(jsonStr);
+  transform->setScript(scriptStr);
+  transform->setParameter("factor", 2.0);
+  pipeline->addNode(transform);
+  pipeline->createLink(source->outputPort("volume"),
+                       transform->inputPort("volume"));
+
+  // Capture the live-preview payload the moment it is applied — the
+  // final output overwrites the port data afterwards.
+  auto* outPort = transform->outputPort("volume");
+  int intermediateCount = 0;
+  double intermediateValue = 0.0;
+  QObject::connect(outPort, &OutputPort::intermediateDataApplied,
+                   [&intermediateCount, &intermediateValue, outPort]() {
+                     ++intermediateCount;
+                     auto vol = outPort->data().value<VolumeDataPtr>();
+                     if (vol && vol->isValid()) {
+                       intermediateValue = vol->scalarRange()[0];
+                     }
+                   });
+
+  auto* future = pipeline->execute();
+  EXPECT_TRUE(future->isFinished());
+  EXPECT_EQ(transform->state(), NodeState::Current);
+
+  // Step-count / value / message reached the node.
+  EXPECT_EQ(transform->totalProgressSteps(), 3);
+  EXPECT_EQ(transform->progressStep(), 2);
+  EXPECT_EQ(transform->progressMessage(), "halfway");
+
+  // The preview Dataset was converted and applied exactly once, with
+  // the constant payload the script produced.
+  EXPECT_EQ(intermediateCount, 1);
+  EXPECT_NEAR(intermediateValue, 21.0, 1e-5);
+
+  // And the final output still reflects the real transform result.
+  auto outputData = outPort->data().value<VolumeDataPtr>();
+  ASSERT_TRUE(outputData && outputData->isValid());
+  auto outputRange = outputData->scalarRange();
+  EXPECT_NEAR(outputRange[0], inputRange[0] * 2.0, 0.01);
+  EXPECT_NEAR(outputRange[1], inputRange[1] * 2.0, 0.01);
+}
+
 TEST_F(PipelinePythonTest, PythonTransformV2DefaultsToTransformNodeDefault)
 {
   // Schema-v2 convention: an omitted `persistent` field defers to the
@@ -1841,19 +2295,14 @@ TEST_F(PipelinePythonTest, PythonSourceV2)
   QString scriptStr = R"(
 import tomviz.nodes
 import numpy as np
-from vtk import vtkImageData
-from vtk.util.numpy_support import numpy_to_vtk
-from tomviz.internal_dataset import Dataset
 
 class ConstantVolume(tomviz.nodes.SourceNode):
     def produce(self, value=0.0):
-        img = vtkImageData()
-        img.SetDimensions(3, 3, 3)
-        arr = np.full((3, 3, 3), value, dtype=np.float32).ravel(order='F')
-        vtk_arr = numpy_to_vtk(arr, deep=True)
-        vtk_arr.SetName("Scalars")
-        img.GetPointData().SetScalars(vtk_arr)
-        return {"volume": Dataset(img)}
+        ds = self.create_dataset()
+        ds.set_scalars("Scalars", np.full((3, 3, 3), value,
+                                          dtype=np.float32))
+        ds.spacing = (1.0, 1.0, 1.0)
+        return {"volume": ds}
 )";
 
   auto* source = new PythonSource();
@@ -2175,6 +2624,42 @@ TEST_F(PipelineLibTest, ThreadedExecutorCancellation)
   EXPECT_NE(t3->state(), NodeState::Current);
 }
 
+TEST_F(PipelineLibTest, ThreadedExecutorHeldNode)
+{
+  pipeline->setExecutor(new ThreadedExecutor(pipeline));
+
+  auto* source = new SourceNode();
+  source->addOutput("out", PortType::ImageData);
+  pipeline->addNode(source);
+  auto* t1 = new SlowTransform();
+  auto* t2 = new SlowTransform();
+  pipeline->addNode(t1);
+  pipeline->addNode(t2);
+  pipeline->createLink(source->outputPort("out"), t1->inputPort("in"));
+  pipeline->createLink(t1->outputPort("out"), t2->inputPort("in"));
+  source->setOutputData("out", PortData(std::any(5), PortType::ImageData));
+
+  t1->setHeld(true);
+  Node* reachedNode = nullptr;
+  QObject::connect(pipeline, &Pipeline::breakpointReached,
+                   [&reachedNode](Node* n) { reachedNode = n; });
+
+  auto* future = pipeline->execute();
+  QSignalSpy spy(future, &ExecutionFuture::finished);
+  ASSERT_TRUE(spy.wait(5000));
+  EXPECT_TRUE(future->succeeded());
+  EXPECT_EQ(reachedNode, nullptr);
+  EXPECT_NE(t1->state(), NodeState::Current);
+  EXPECT_NE(t2->state(), NodeState::Current);
+
+  t1->setHeld(false);
+  future = pipeline->execute();
+  QSignalSpy spy2(future, &ExecutionFuture::finished);
+  ASSERT_TRUE(spy2.wait(5000));
+  EXPECT_EQ(t1->state(), NodeState::Current);
+  EXPECT_EQ(t2->state(), NodeState::Current);
+}
+
 TEST_F(PipelineLibTest, ThreadedExecutorBreakpoint)
 {
   pipeline->setExecutor(new ThreadedExecutor(pipeline));
@@ -2320,6 +2805,87 @@ TEST_F(PipelineLibTest, SerializationRoundTrip)
 
   delete sink;
   delete sink2;
+}
+
+TEST_F(PipelineLibTest, LightingStateRoundTrip)
+{
+  using Preset = VolumeSink::LightingPreset;
+
+  auto* sink = new VolumeSink();
+  sink->applyLightingPreset(Preset::Soft);
+  // The shadow switch is independent of the preset: turning it off must not
+  // lose the scattering level the preset asked for, or the preset itself.
+  sink->setShadowsEnabled(false);
+  ASSERT_EQ(sink->currentLightingPreset(), Preset::Soft);
+  ASSERT_GT(sink->volumetricScattering(), 0.0);
+
+  QJsonObject json = sink->serialize();
+  auto light = json["lighting"].toObject();
+  EXPECT_FALSE(light["shadowsEnabled"].toBool());
+  EXPECT_GT(light["scattering"].toDouble(), 0.0);
+
+  auto* restored = new VolumeSink();
+  ASSERT_TRUE(restored->deserialize(json));
+  EXPECT_EQ(restored->lighting(), sink->lighting());
+  EXPECT_DOUBLE_EQ(restored->ambient(), sink->ambient());
+  EXPECT_DOUBLE_EQ(restored->diffuse(), sink->diffuse());
+  EXPECT_DOUBLE_EQ(restored->specular(), sink->specular());
+  EXPECT_DOUBLE_EQ(restored->specularPower(), sink->specularPower());
+  EXPECT_DOUBLE_EQ(restored->volumetricScattering(),
+                   sink->volumetricScattering());
+  EXPECT_DOUBLE_EQ(restored->shadowReach(), sink->shadowReach());
+  EXPECT_DOUBLE_EQ(restored->scatteringAnisotropy(),
+                   sink->scatteringAnisotropy());
+  EXPECT_EQ(restored->smoothNormals(), sink->smoothNormals());
+  EXPECT_FALSE(restored->shadowsEnabled());
+  // The panel derives the highlighted button from the values, so this is
+  // also what keeps Soft lit after a reload.
+  EXPECT_EQ(restored->currentLightingPreset(), Preset::Soft);
+
+  delete sink;
+  delete restored;
+}
+
+TEST_F(PipelineLibTest, LightingStateRoundTripGentle)
+{
+  using Preset = VolumeSink::LightingPreset;
+
+  auto* sink = new VolumeSink();
+  sink->applyLightingPreset(Preset::Gentle);
+  ASSERT_EQ(sink->currentLightingPreset(), Preset::Gentle);
+  // Gentle gets its look without shadows, so it must not be confused with
+  // Soft or Simple after a round trip.
+  ASSERT_DOUBLE_EQ(sink->volumetricScattering(), 0.0);
+
+  auto* restored = new VolumeSink();
+  ASSERT_TRUE(restored->deserialize(sink->serialize()));
+  EXPECT_EQ(restored->currentLightingPreset(), Preset::Gentle);
+
+  delete sink;
+  delete restored;
+}
+
+TEST_F(PipelineLibTest, LightingStatePredatesShadowSwitch)
+{
+  using Preset = VolumeSink::LightingPreset;
+
+  // A state file written before the shadow switch existed has no
+  // "shadowsEnabled" key, and its stored scattering level was always
+  // rendered. Those files must still come back with shadows on.
+  auto* sink = new VolumeSink();
+  sink->applyLightingPreset(Preset::Full);
+  QJsonObject json = sink->serialize();
+  auto light = json["lighting"].toObject();
+  light.remove("shadowsEnabled");
+  json["lighting"] = light;
+
+  auto* restored = new VolumeSink();
+  ASSERT_TRUE(restored->deserialize(json));
+  EXPECT_TRUE(restored->shadowsEnabled());
+  EXPECT_EQ(restored->currentLightingPreset(), Preset::Full);
+
+  delete sink;
+  delete restored;
 }
 
 TEST_F(PipelineLibTest, PipelineStateIOLinearRoundTrip)
@@ -3449,6 +4015,486 @@ TEST_F(PipelineLibTest, SliceSinkSerializationRoundTrip)
   EXPECT_FALSE(restored.mapScalars());
 }
 
+TEST_F(PipelineLibTest, SliceSinkLinkingPropagatesToLinkedPeers)
+{
+  auto* a = new SliceSink();
+  auto* b = new SliceSink();
+  auto* unlinked = new SliceSink();
+  pipeline->addNode(a);
+  pipeline->addNode(b);
+  pipeline->addNode(unlinked);
+
+  b->setLinked(true);
+  b->setSlice(5);
+  a->setSlice(9);
+  // Turning the link on adopts the newly linked view's state everywhere
+  a->setLinked(true);
+  EXPECT_EQ(b->slice(), 9);
+
+  // Changes reach the linked peer, in both directions, but not the
+  // unlinked sink; direction is linked too
+  a->setSlice(12);
+  EXPECT_EQ(b->slice(), 12);
+  EXPECT_NE(unlinked->slice(), 12);
+  b->setSlice(3);
+  EXPECT_EQ(a->slice(), 3);
+  a->setDirection(SliceSink::YZ);
+  EXPECT_EQ(b->direction(), SliceSink::YZ);
+  EXPECT_EQ(unlinked->direction(), SliceSink::XY);
+
+  // Unlinking stops propagation
+  b->setLinked(false);
+  a->setSlice(20);
+  EXPECT_NE(b->slice(), 20);
+}
+
+TEST_F(PipelineLibTest, ClipSinkLinkingPropagatesToLinkedPeers)
+{
+  auto* a = new ClipSink();
+  auto* b = new ClipSink();
+  pipeline->addNode(a);
+  pipeline->addNode(b);
+
+  a->setLinked(true);
+  b->setLinked(true);
+
+  a->setSlice(8);
+  EXPECT_EQ(b->slice(), 8);
+
+  a->setDirection(ClipSink::XZ);
+  EXPECT_EQ(b->direction(), ClipSink::XZ);
+}
+
+TEST_F(PipelineLibTest, SinkLinkFlagSurvivesSerialization)
+{
+  SliceSink slice;
+  slice.setLinked(true);
+  SliceSink restoredSlice;
+  EXPECT_TRUE(restoredSlice.deserialize(slice.serialize()));
+  EXPECT_TRUE(restoredSlice.linked());
+
+  ClipSink clip;
+  clip.setLinked(true);
+  ClipSink restoredClip;
+  EXPECT_TRUE(restoredClip.deserialize(clip.serialize()));
+  EXPECT_TRUE(restoredClip.linked());
+}
+
+// A volume with the given dimensions and spacing, for geometry tests.
+PortData makeVolumeWithGeometry(int nx, int ny, int nz, double sx, double sy,
+                                double sz)
+{
+  vtkNew<vtkImageData> image;
+  image->SetDimensions(nx, ny, nz);
+  image->SetSpacing(sx, sy, sz);
+  vtkNew<vtkFloatArray> array;
+  array->SetName("scalars");
+  array->SetNumberOfTuples(nx * ny * nz);
+  array->FillValue(1.0f);
+  image->GetPointData()->SetScalars(array);
+  return PortData(std::any(std::make_shared<VolumeData>(image)),
+                  PortType::ImageData);
+}
+
+TEST_F(PipelineLibTest, LinkedSlicesMatchByPhysicalPosition)
+{
+  struct OpenSliceSink : SliceSink
+  {
+    using SliceSink::consume;
+  };
+  auto* fine = new OpenSliceSink();
+  auto* coarse = new OpenSliceSink();
+  pipeline->addNode(fine);
+  pipeline->addNode(coarse);
+
+  // Same 20-unit extent along Z: 21 slices 1 apart vs 11 slices 2 apart
+  QMap<QString, PortData> inputs;
+  inputs["volume"] = makeVolumeWithGeometry(4, 4, 21, 1, 1, 1);
+  ASSERT_TRUE(fine->consume(inputs));
+  inputs["volume"] = makeVolumeWithGeometry(4, 4, 11, 1, 1, 2);
+  ASSERT_TRUE(coarse->consume(inputs));
+
+  fine->setLinked(true);
+  coarse->setLinked(true);
+  fine->setSlice(10);
+  EXPECT_EQ(coarse->slice(), 5);
+  coarse->setSlice(8);
+  EXPECT_EQ(fine->slice(), 16);
+  EXPECT_DOUBLE_EQ(fine->slicePosition(), coarse->slicePosition());
+
+  // A peer whose geometry is unknown still gets the raw index
+  auto* empty = new SliceSink();
+  pipeline->addNode(empty);
+  empty->setLinked(true);
+  fine->setSlice(4);
+  EXPECT_EQ(empty->slice(), 4);
+}
+
+TEST_F(PipelineLibTest, LinkedSlicesShareTheCustomPlane)
+{
+  auto* a = new SliceSink();
+  auto* b = new SliceSink();
+  pipeline->addNode(a);
+  pipeline->addNode(b);
+  a->setLinked(true);
+  b->setLinked(true);
+
+  a->setDirection(SliceSink::Custom);
+  a->setPlaneNormal(0, 1, 0);
+  a->setPlaneCenter(1, 2, 3);
+  EXPECT_EQ(b->direction(), SliceSink::Custom);
+  double n[3], c[3];
+  b->planeNormal(n);
+  b->planeCenter(c);
+  EXPECT_DOUBLE_EQ(n[1], 1.0);
+  EXPECT_DOUBLE_EQ(c[0], 1.0);
+  EXPECT_DOUBLE_EQ(c[2], 3.0);
+}
+
+TEST_F(PipelineLibTest, LinkedClipsMatchByPhysicalPosition)
+{
+  struct OpenClipSink : ClipSink
+  {
+    using ClipSink::consume;
+  };
+  auto* fine = new OpenClipSink();
+  auto* coarse = new OpenClipSink();
+  pipeline->addNode(fine);
+  pipeline->addNode(coarse);
+
+  QMap<QString, PortData> inputs;
+  inputs["volume"] = makeVolumeWithGeometry(4, 4, 21, 1, 1, 1);
+  ASSERT_TRUE(fine->consume(inputs));
+  inputs["volume"] = makeVolumeWithGeometry(4, 4, 11, 1, 1, 2);
+  ASSERT_TRUE(coarse->consume(inputs));
+
+  fine->setLinked(true);
+  coarse->setLinked(true);
+  fine->setSlice(10);
+  EXPECT_EQ(coarse->slice(), 5);
+
+  fine->setDirection(ClipSink::Custom);
+  EXPECT_EQ(coarse->direction(), ClipSink::Custom);
+}
+
+TEST_F(PipelineLibTest, VolumeSinkExplodedViewExcludesCutOut)
+{
+  struct OpenVolumeSink : VolumeSink
+  {
+    using VolumeSink::consume;
+  };
+  auto* sink = new OpenVolumeSink();
+  pipeline->addNode(sink);
+  QMap<QString, PortData> inputs;
+  inputs["volume"] = makeVolumeWithGeometry(8, 8, 16, 1, 1, 1);
+  ASSERT_TRUE(sink->consume(inputs));
+
+  sink->setCutOutEnabled(true);
+  sink->setExplodedEnabled(true);
+  EXPECT_TRUE(sink->explodedEnabled());
+  EXPECT_FALSE(sink->cutOutEnabled());
+  sink->setCutOutEnabled(true);
+  EXPECT_FALSE(sink->explodedEnabled());
+
+  // Parameters clamp to their supported ranges
+  sink->setExplodedChunks(100);
+  EXPECT_EQ(sink->explodedChunks(), 16);
+  sink->setExplodedGap(3.0);
+  EXPECT_DOUBLE_EQ(sink->explodedGap(), 1.0);
+  sink->setExplodedAxis(7);
+  EXPECT_EQ(sink->explodedAxis(), kExplodedCustomAxis);
+  sink->setExplodedAxis(-1);
+  EXPECT_EQ(sink->explodedAxis(), 0);
+}
+
+// A 12^3 label map: label 1 fills a 4^3 block, label 2 a 2^3 block
+// touching it, background 0 everywhere else.
+PortData makeTwoLabelVolume()
+{
+  vtkNew<vtkImageData> image;
+  image->SetDimensions(12, 12, 12);
+  image->AllocateScalars(VTK_UNSIGNED_CHAR, 1);
+  auto* p = static_cast<unsigned char*>(image->GetScalarPointer());
+  std::fill(p, p + 12 * 12 * 12, 0);
+  for (int z = 3; z < 7; ++z) {
+    for (int y = 3; y < 7; ++y) {
+      for (int x = 3; x < 7; ++x) {
+        p[(z * 12 + y) * 12 + x] = 1;
+      }
+      for (int x = 7; x < 9; ++x) {
+        if (y < 5 && z < 5) {
+          p[(z * 12 + y) * 12 + x] = 2;
+        }
+      }
+    }
+  }
+  image->GetPointData()->GetScalars()->SetName("labels");
+  return PortData(std::any(makeVolumeData(image, PortType::LabelMap)),
+                  PortType::LabelMap);
+}
+
+TEST_F(PipelineLibTest, LabelMapSurfaceExtractsOneClosedSurfacePerLabel)
+{
+  auto data = makeTwoLabelVolume();
+  auto labels = labelMapData(data.value<VolumeDataPtr>());
+  ASSERT_TRUE(labels);
+  labels->refreshLabels();
+  const auto& table = labels->labels();
+  ASSERT_EQ(table.count(), 3); // 0, 1, 2
+
+  auto regions = regionLabels(table, 0.0);
+  EXPECT_EQ(regions, (QVector<double>{ 1.0, 2.0 }));
+  // Label 0 is hidden by convention; 1 and 2 start visible
+  EXPECT_EQ(visibleLabels(table, 0.0), regions);
+
+  // Unsmoothed: the raw voxel faces. A 4^3 block has 6 faces of 16
+  // quads, minus the 2x2 patch label 2 covers on one of them; the
+  // shared patch is a face of label 2 too, so it is still output once.
+  auto surface =
+    extractLabelSurface(labels->imageData(), regions, regions, 0, 0.0);
+  ASSERT_TRUE(surface);
+  EXPECT_EQ(surface->GetNumberOfCells(), 6 * 16 + 6 * 4 - 4);
+  auto* boundary = surface->GetCellData()->GetArray("BoundaryLabels");
+  ASSERT_TRUE(boundary);
+  EXPECT_EQ(boundary->GetNumberOfComponents(), 2);
+
+  // Hiding label 2 drops its faces except the one it shares with 1,
+  // which now bounds 1 alone
+  auto only1 = extractLabelSurface(labels->imageData(), regions,
+                                   QVector<double>{ 1.0 }, 0, 0.0);
+  EXPECT_EQ(only1->GetNumberOfCells(), 6 * 16);
+
+  // Colors come from the table, per face
+  colorLabelSurface(surface, table, 0.0);
+  auto* colors = vtkUnsignedCharArray::SafeDownCast(
+    surface->GetCellData()->GetArray(kLabelColorsArrayName));
+  ASSERT_TRUE(colors);
+  EXPECT_EQ(colors->GetNumberOfTuples(), surface->GetNumberOfCells());
+  EXPECT_EQ(surface->GetCellData()->GetScalars(), colors);
+  int counted[3] = { 0, 0, 0 };
+  for (vtkIdType c = 0; c < surface->GetNumberOfCells(); ++c) {
+    unsigned char rgb[3];
+    colors->GetTypedTuple(c, rgb);
+    for (int i = 1; i <= 2; ++i) {
+      QColor expected = table.at(table.indexOfValue(i)).color;
+      if (rgb[0] == expected.red() && rgb[1] == expected.green() &&
+          rgb[2] == expected.blue()) {
+        ++counted[i];
+      }
+    }
+  }
+  EXPECT_EQ(counted[1] + counted[2], surface->GetNumberOfCells());
+  EXPECT_GE(counted[2], 6 * 4 - 4);
+
+  // Smoothing keeps the topology and adds point normals
+  auto smooth =
+    extractLabelSurface(labels->imageData(), regions, regions, 8, 0.0);
+  EXPECT_GT(smooth->GetNumberOfCells(), 0);
+  EXPECT_TRUE(smooth->GetPointData()->GetNormals());
+  EXPECT_TRUE(smooth->GetCellData()->GetArray("BoundaryLabels"));
+
+  // Selecting from the smoothed (triangle) mesh keeps exactly the faces
+  // that bound the chosen label, with their tags, on the shared points
+  auto smoothOnly1 = selectLabelFaces(smooth, QVector<double>{ 1.0 });
+  EXPECT_GT(smoothOnly1->GetNumberOfCells(), 0);
+  EXPECT_LT(smoothOnly1->GetNumberOfCells(), smooth->GetNumberOfCells());
+  EXPECT_EQ(smoothOnly1->GetPoints(), smooth->GetPoints());
+  auto* tags = smoothOnly1->GetCellData()->GetArray("BoundaryLabels");
+  ASSERT_TRUE(tags);
+  ASSERT_EQ(tags->GetNumberOfTuples(), smoothOnly1->GetNumberOfCells());
+  for (vtkIdType c = 0; c < tags->GetNumberOfTuples(); ++c) {
+    EXPECT_TRUE(tags->GetComponent(c, 0) == 1.0 ||
+                tags->GetComponent(c, 1) == 1.0);
+  }
+
+  // Nothing to draw: no visible labels, or a single slice
+  EXPECT_EQ(extractLabelSurface(labels->imageData(), regions, {}, 0, 0.0)
+              ->GetNumberOfCells(),
+            0);
+  vtkNew<vtkImageData> slice;
+  slice->SetDimensions(12, 12, 1);
+  slice->AllocateScalars(VTK_UNSIGNED_CHAR, 1);
+  EXPECT_EQ(extractLabelSurface(slice, regions, regions, 0, 0.0)
+              ->GetNumberOfCells(),
+            0);
+}
+
+TEST_F(PipelineLibTest, LabelMapSinkSurfaceFollowsLabelsAndRepresentation)
+{
+  struct OpenLabelMapSink : LabelMapSink
+  {
+    using LabelMapSink::prepareConsume;
+    using LabelMapSink::consume;
+  };
+  auto* sink = new OpenLabelMapSink();
+  pipeline->addNode(sink);
+  EXPECT_EQ(sink->representation(), LabelMapSink::Representation::Surface);
+  EXPECT_TRUE(sink->fineSampling());
+
+  // The trio SinkNode::runConsume runs; the payload in `inputs` is what
+  // the sink's volumeData() weakly refers to afterwards.
+  QMap<QString, PortData> inputs;
+  inputs["volume"] = makeTwoLabelVolume();
+  sink->prepareConsume(inputs);
+  ASSERT_TRUE(sink->consume(inputs));
+  ASSERT_TRUE(sink->surface());
+  const auto cells = sink->surface()->GetNumberOfCells();
+  EXPECT_GT(cells, 0);
+  // Ambient floor for the volume representation, applied once
+  EXPECT_GE(sink->ambient(), 0.3);
+
+  // A color edit only recolors. Hiding a label re-selects faces from
+  // the extracted mesh, whose points it keeps sharing: no new pass over
+  // the volume, which is what made a checkbox slow on a large
+  // segmentation.
+  auto labels = sink->labelMap();
+  ASSERT_TRUE(labels);
+  auto* before = sink->surface();
+  auto* meshPoints = before->GetPoints();
+  labels->labels().setColor(labels->labels().indexOfValue(1.0), Qt::cyan);
+  sink->applyLabels();
+  EXPECT_EQ(sink->surface(), before);
+  labels->labels().setVisible(labels->labels().indexOfValue(2.0), false);
+  sink->applyLabels();
+  EXPECT_NE(sink->surface(), before);
+  EXPECT_EQ(sink->surface()->GetPoints(), meshPoints);
+  EXPECT_LT(sink->surface()->GetNumberOfCells(), cells);
+  // Showing it again restores every face
+  labels->labels().setVisible(labels->labels().indexOfValue(2.0), true);
+  sink->applyLabels();
+  EXPECT_EQ(sink->surface()->GetNumberOfCells(), cells);
+  EXPECT_EQ(sink->surface()->GetPoints(), meshPoints);
+
+  // Switching to the volume representation keeps the mesh around, and
+  // smoothing changes rebuild it
+  sink->setRepresentation(LabelMapSink::Representation::Volume);
+  EXPECT_EQ(sink->representation(), LabelMapSink::Representation::Volume);
+  sink->setRepresentation(LabelMapSink::Representation::Surface);
+  auto* unsmoothed = sink->surface();
+  sink->setSurfaceSmoothing(0);
+  EXPECT_NE(sink->surface(), unsmoothed);
+  EXPECT_FALSE(sink->surface()->GetPointData()->GetNormals());
+
+  // Serialization round trip, and old files keep their volume look
+  sink->setSurfaceOpacity(0.4);
+  sink->setSurfaceSmoothing(3);
+  auto json = sink->serialize();
+  LabelMapSink restored;
+  ASSERT_TRUE(restored.deserialize(json));
+  EXPECT_EQ(restored.representation(),
+            LabelMapSink::Representation::Surface);
+  EXPECT_EQ(restored.surfaceSmoothing(), 3);
+  EXPECT_DOUBLE_EQ(restored.surfaceOpacity(), 0.4);
+  json.remove("representation");
+  LabelMapSink older;
+  ASSERT_TRUE(older.deserialize(json));
+  EXPECT_EQ(older.representation(), LabelMapSink::Representation::Volume);
+}
+
+TEST_F(PipelineLibTest, VolumeSinkExplodedViewSerializationRoundTrip)
+{
+  VolumeSink sink;
+  sink.setExplodedAxis(1);
+  sink.setExplodedChunks(5);
+  sink.setExplodedGap(0.4);
+  sink.setExplodedEnabled(true);
+
+  VolumeSink restored;
+  ASSERT_TRUE(restored.deserialize(sink.serialize()));
+  EXPECT_TRUE(restored.explodedEnabled());
+  EXPECT_EQ(restored.explodedAxis(), 1);
+  EXPECT_EQ(restored.explodedChunks(), 5);
+  EXPECT_DOUBLE_EQ(restored.explodedGap(), 0.4);
+}
+
+TEST_F(PipelineLibTest, UserLightingPresetsRoundTripAndApply)
+{
+  auto& store = LightingPresetStore::instance();
+  auto named = [&store](const QString& name) {
+    int n = 0;
+    for (const auto& p : store.presets()) {
+      n += p.name == name ? 1 : 0;
+    }
+    return n;
+  };
+  store.remove("Bench");
+
+  VolumeSink sink;
+  sink.setLighting(true);
+  sink.setAmbient(0.42);
+  sink.setDiffuse(0.6);
+  sink.setSpecularPower(12.0);
+  sink.setSmoothNormals(true);
+  auto preset = sink.currentLightingValues();
+  preset.name = "Bench";
+  store.save(preset);
+  EXPECT_EQ(sink.matchingUserLightingPreset(), "Bench");
+
+  // Saving under the same name replaces rather than duplicates
+  preset.ambient = 0.2;
+  store.save(preset);
+  EXPECT_EQ(named("Bench"), 1);
+  EXPECT_TRUE(sink.matchingUserLightingPreset().isEmpty());
+
+  VolumeSink other;
+  other.applyUserLightingPreset(UserLightingPreset::deserialize(
+    store.preset("Bench").serialize()));
+  EXPECT_DOUBLE_EQ(other.ambient(), 0.2);
+  EXPECT_DOUBLE_EQ(other.diffuse(), 0.6);
+  EXPECT_DOUBLE_EQ(other.specularPower(), 12.0);
+  EXPECT_TRUE(other.smoothNormals());
+  EXPECT_EQ(other.matchingUserLightingPreset(), "Bench");
+
+  store.remove("Bench");
+  EXPECT_EQ(named("Bench"), 0);
+}
+
+TEST_F(PipelineLibTest, VolumeSinkCutOutProperties)
+{
+  VolumeSink sink;
+  EXPECT_FALSE(sink.cutOutEnabled());
+  EXPECT_EQ(sink.cutOutCorner(), 0);
+  EXPECT_DOUBLE_EQ(sink.cutOutPosition(0), 0.5);
+
+  sink.setCutOutEnabled(true);
+  EXPECT_TRUE(sink.cutOutEnabled());
+
+  sink.setCutOutCorner(5);
+  EXPECT_EQ(sink.cutOutCorner(), 5);
+  // Out-of-range corners clamp rather than indexing a bogus region
+  sink.setCutOutCorner(99);
+  EXPECT_EQ(sink.cutOutCorner(), 7);
+  sink.setCutOutCorner(-3);
+  EXPECT_EQ(sink.cutOutCorner(), 0);
+
+  sink.setCutOutPosition(1, 0.25);
+  EXPECT_DOUBLE_EQ(sink.cutOutPosition(1), 0.25);
+  sink.setCutOutPosition(2, 5.0);
+  EXPECT_DOUBLE_EQ(sink.cutOutPosition(2), 1.0);
+
+  // Bad axes are ignored rather than writing out of bounds
+  sink.setCutOutPosition(7, 0.3);
+  EXPECT_DOUBLE_EQ(sink.cutOutPosition(7), 0.5);
+}
+
+TEST_F(PipelineLibTest, VolumeSinkCutOutSerializationRoundTrip)
+{
+  VolumeSink sink;
+  sink.setCutOutEnabled(true);
+  sink.setCutOutCorner(6);
+  sink.setCutOutPosition(0, 0.2);
+  sink.setCutOutPosition(1, 0.4);
+  sink.setCutOutPosition(2, 0.6);
+
+  VolumeSink restored;
+  EXPECT_TRUE(restored.deserialize(sink.serialize()));
+  EXPECT_TRUE(restored.cutOutEnabled());
+  EXPECT_EQ(restored.cutOutCorner(), 6);
+  EXPECT_DOUBLE_EQ(restored.cutOutPosition(0), 0.2);
+  EXPECT_DOUBLE_EQ(restored.cutOutPosition(1), 0.4);
+  EXPECT_DOUBLE_EQ(restored.cutOutPosition(2), 0.6);
+}
+
 TEST_F(PipelineLibTest, ThresholdSinkPropertyDefaults)
 {
   ThresholdSink sink;
@@ -3823,6 +4869,40 @@ void setVolumeData(OutputPort* port, const QStringList& arrayNames)
     PortData(std::any(makeVolume(arrayNames)), PortType::ImageData));
 }
 
+TEST_F(PipelineLibTest, SliceSinkConsumeDoesNotRePropagateLink)
+{
+  struct OpenSliceSink : SliceSink
+  {
+    using SliceSink::consume;
+  };
+
+  auto* a = new OpenSliceSink();
+  auto* b = new OpenSliceSink();
+  pipeline->addNode(a);
+  pipeline->addNode(b);
+  a->setLinked(true);
+  b->setLinked(true);
+  a->setSlice(3);
+  ASSERT_EQ(b->slice(), 3);
+
+  // Diverge b without the link noticing (deserialize sets the index
+  // directly), simulating a peer whose own extents clamped the index.
+  auto json = b->serialize();
+  json["slice"] = 1;
+  ASSERT_TRUE(b->deserialize(json));
+  ASSERT_EQ(b->slice(), 1);
+  ASSERT_EQ(a->slice(), 3);
+
+  // consume()'s UI-sync notifications must not push b's index onto the
+  // other linked views: only user edits propagate.
+  QMap<QString, PortData> inputs;
+  inputs["volume"] =
+    PortData(std::any(makeVolume({ "scalars" })), PortType::ImageData);
+  EXPECT_TRUE(b->consume(inputs));
+  EXPECT_EQ(b->slice(), 1);
+  EXPECT_EQ(a->slice(), 3);
+}
+
 // EMD holds every array of a volume in one file.
 QHash<PortType, tomviz::PortFormat> multiArrayFormats()
 {
@@ -3911,7 +4991,7 @@ TEST_F(PipelineLibTest, SaveDataLeafScopeIgnoresSinks)
   EXPECT_EQ(leaves.first(), transform->outputPort("out"));
 }
 
-TEST_F(PipelineLibTest, SaveDataPersistedScope)
+TEST_F(PipelineLibTest, SaveDataAllPortsScopeIncludesTransientData)
 {
   auto* source = new SourceNode();
   source->setLabel("Source");
@@ -3931,16 +5011,41 @@ TEST_F(PipelineLibTest, SaveDataPersistedScope)
   transform->outputPort("out")->setPersistent(false);
   setVolumeData(transform->outputPort("out"), { "A" });
 
-  auto persisted = tomviz::SaveDataDialog::candidatePorts(
-    pipeline, tomviz::SaveDataDialog::Scope::AllPersisted);
-  ASSERT_EQ(persisted.size(), 1);
-  EXPECT_EQ(persisted.first(), source->outputPort("volume"));
+  // A transient port still holding its data can be saved like any other:
+  // persistence is about how long data is kept, not whether it may be
+  // written out.
+  auto all = tomviz::SaveDataDialog::candidatePorts(
+    pipeline, tomviz::SaveDataDialog::Scope::AllPorts);
+  ASSERT_EQ(all.size(), 2);
+  EXPECT_TRUE(all.contains(source->outputPort("volume")));
+  EXPECT_TRUE(all.contains(transform->outputPort("out")));
+  EXPECT_TRUE(tomviz::SaveDataDialog::releasedPorts(
+                pipeline, tomviz::SaveDataDialog::Scope::AllPorts)
+                .isEmpty());
 
   // The transform is the only leaf, so the two scopes disagree here.
   auto leaves = tomviz::SaveDataDialog::candidatePorts(
     pipeline, tomviz::SaveDataDialog::Scope::LeafNodes);
   ASSERT_EQ(leaves.size(), 1);
   EXPECT_EQ(leaves.first(), transform->outputPort("out"));
+
+  // Once its data is released it cannot be saved, and the dialog is
+  // told so it can say why
+  transform->outputPort("out")->clearData();
+  all = tomviz::SaveDataDialog::candidatePorts(
+    pipeline, tomviz::SaveDataDialog::Scope::AllPorts);
+  ASSERT_EQ(all.size(), 1);
+  EXPECT_EQ(all.first(), source->outputPort("volume"));
+  auto released = tomviz::SaveDataDialog::releasedPorts(
+    pipeline, tomviz::SaveDataDialog::Scope::AllPorts);
+  ASSERT_EQ(released.size(), 1);
+  EXPECT_EQ(released.first(), transform->outputPort("out"));
+
+  // A persistent port with no data yet was never released
+  source->outputPort("volume")->clearData();
+  released = tomviz::SaveDataDialog::releasedPorts(
+    source, tomviz::SaveDataDialog::Scope::AllPorts);
+  EXPECT_TRUE(released.isEmpty());
 }
 
 TEST_F(PipelineLibTest, SaveDataNodeScopeSeesOnlyItsOwnPorts)
@@ -3961,22 +5066,27 @@ TEST_F(PipelineLibTest, SaveDataNodeScopeSeesOnlyItsOwnPorts)
 
   // The pipeline-wide view spans both nodes...
   EXPECT_EQ(tomviz::SaveDataDialog::candidatePorts(
-              pipeline, tomviz::SaveDataDialog::Scope::AllPersisted)
+              pipeline, tomviz::SaveDataDialog::Scope::AllPorts)
               .size(),
             2);
 
   // ...while a node-scoped export sees only that node, even though the
   // node is upstream of another and so is not a leaf.
   auto sourcePorts = tomviz::SaveDataDialog::candidatePorts(
-    source, tomviz::SaveDataDialog::Scope::AllPersisted);
+    source, tomviz::SaveDataDialog::Scope::AllPorts);
   ASSERT_EQ(sourcePorts.size(), 1);
   EXPECT_EQ(sourcePorts.first(), source->outputPort("volume"));
 
-  // Transient ports stay out of an AllPersisted export.
+  // Turning a published port transient releases its data: nothing to
+  // save, and the port is reported as released instead.
   transform->outputPort("out")->setPersistent(false);
   EXPECT_TRUE(tomviz::SaveDataDialog::candidatePorts(
-                transform, tomviz::SaveDataDialog::Scope::AllPersisted)
+                transform, tomviz::SaveDataDialog::Scope::AllPorts)
                 .isEmpty());
+  EXPECT_EQ(tomviz::SaveDataDialog::releasedPorts(
+              transform, tomviz::SaveDataDialog::Scope::AllPorts)
+              .size(),
+            1);
 }
 
 TEST_F(PipelineLibTest, SaveDataPortScopeSeesOnlyThatPort)
@@ -3991,13 +5101,13 @@ TEST_F(PipelineLibTest, SaveDataPortScopeSeesOnlyThatPort)
 
   // The node view spans both of its ports...
   EXPECT_EQ(tomviz::SaveDataDialog::candidatePorts(
-              source, tomviz::SaveDataDialog::Scope::AllPersisted)
+              source, tomviz::SaveDataDialog::Scope::AllPorts)
               .size(),
             2);
 
   // ...while the port view is just the one.
   auto ports = tomviz::SaveDataDialog::candidatePorts(
-    source->outputPort("mask"), tomviz::SaveDataDialog::Scope::AllPersisted);
+    source->outputPort("mask"), tomviz::SaveDataDialog::Scope::AllPorts);
   ASSERT_EQ(ports.size(), 1);
   EXPECT_EQ(ports.first(), source->outputPort("mask"));
 
@@ -4009,8 +5119,127 @@ TEST_F(PipelineLibTest, SaveDataPortScopeSeesOnlyThatPort)
   source->outputPort("mask")->clearData();
   EXPECT_TRUE(tomviz::SaveDataDialog::candidatePorts(
                 source->outputPort("mask"),
-                tomviz::SaveDataDialog::Scope::AllPersisted)
+                tomviz::SaveDataDialog::Scope::AllPorts)
                 .isEmpty());
+}
+
+TEST_F(PipelineLibTest, SaveDataDialogExplainsReleasedPorts)
+{
+  auto* source = new SourceNode();
+  source->setLabel("Source");
+  source->addOutput("volume", PortType::ImageData);
+  pipeline->addNode(source);
+  setVolumeData(source->outputPort("volume"), { "A" });
+
+  auto* transform =
+    new PassthroughTransform(PortType::ImageData, PortType::ImageData);
+  transform->setLabel("Remove Labels");
+  pipeline->addNode(transform);
+  pipeline->createLink(source->outputPort("volume"),
+                       transform->inputPort("in"));
+  transform->outputPort("out")->setPersistent(false);
+
+  // Still in memory: offered, and nothing to explain
+  setVolumeData(transform->outputPort("out"), { "A" });
+  {
+    tomviz::SaveDataDialog dialog(static_cast<Node*>(transform));
+    auto* note = dialog.findChild<QLabel*>("releasedNote");
+    ASSERT_NE(note, nullptr);
+    EXPECT_TRUE(note->isHidden());
+    EXPECT_EQ(dialog.selectedEntries().size(), 1);
+  }
+
+  // Released: nothing offered, and the note names the port and why
+  transform->outputPort("out")->clearData();
+  {
+    tomviz::SaveDataDialog dialog(static_cast<Node*>(transform));
+    auto* note = dialog.findChild<QLabel*>("releasedNote");
+    ASSERT_NE(note, nullptr);
+    EXPECT_FALSE(note->isHidden());
+    EXPECT_TRUE(note->text().contains("Remove Labels (out)"))
+      << note->text().toStdString();
+    EXPECT_TRUE(note->text().contains("transient"));
+    EXPECT_TRUE(dialog.selectedEntries().isEmpty());
+  }
+}
+
+// visible_if hides a parameter's label with its field, whichever the
+// label is attached to: a string's label is its field's buddy, a file's
+// is the row's.
+TEST_F(PipelineLibTest, VisibleIfHidesLabelsOfEveryParameterType)
+{
+  ParameterInterfaceBuilder builder;
+  builder.setJSONDescription(QString(R"({"parameters": [
+    {"name": "auto", "label": "Auto", "type": "bool", "default": true},
+    {"name": "centers", "label": "Centers", "type": "string",
+     "default": "", "visible_if": "auto == false"},
+    {"name": "centers_file", "label": "Centers CSV", "type": "file",
+     "default": "", "visible_if": "auto == false"}
+  ]})"));
+  QWidget parent;
+  auto* form = builder.buildWidget(&parent);
+  ASSERT_NE(form, nullptr);
+
+  auto labelFor = [&parent](const QString& text) -> QLabel* {
+    for (auto* label : parent.findChildren<QLabel*>()) {
+      if (label->text() == text) {
+        return label;
+      }
+    }
+    return nullptr;
+  };
+  auto* centers = labelFor("Centers");
+  auto* centersFile = labelFor("Centers CSV");
+  auto* autoCheck = parent.findChild<QCheckBox*>("auto");
+  ASSERT_NE(centers, nullptr);
+  ASSERT_NE(centersFile, nullptr);
+  ASSERT_NE(autoCheck, nullptr);
+  EXPECT_TRUE(centers->isHidden());
+  EXPECT_TRUE(centersFile->isHidden());
+  EXPECT_TRUE(parent.findChild<QLineEdit*>("centers")->isHidden() ||
+              parent.findChild<QLineEdit*>("centers")->parentWidget()
+                ->isHidden());
+
+  autoCheck->setChecked(false);
+  EXPECT_FALSE(centers->isHidden());
+  EXPECT_FALSE(centersFile->isHidden());
+}
+
+// Clone Data copies the source feeding the selected branch, which is
+// not always the first source in the pipeline
+TEST_F(PipelineLibTest, FeedingSourcePortWalksUpToTheBranchesSource)
+{
+  auto* first = new SourceNode();
+  first->addOutput("volume", PortType::ImageData);
+  pipeline->addNode(first);
+  auto* second = new SourceNode();
+  second->addOutput("volume", PortType::ImageData);
+  pipeline->addNode(second);
+
+  auto* blur =
+    new PassthroughTransform(PortType::ImageData, PortType::ImageData);
+  pipeline->addNode(blur);
+  pipeline->createLink(second->outputPort("volume"), blur->inputPort("in"));
+  auto* threshold =
+    new PassthroughTransform(PortType::ImageData, PortType::ImageData);
+  pipeline->addNode(threshold);
+  pipeline->createLink(blur->outputPort("out"), threshold->inputPort("in"));
+
+  // A visualization has no output; it is found through its input
+  auto* sink = new CollectorSink();
+  pipeline->addNode(sink);
+  pipeline->createLink(threshold->outputPort("out"), sink->inputPort("in"));
+
+  EXPECT_EQ(feedingSourcePort(threshold->outputPort("out")),
+            second->outputPort("volume"));
+  EXPECT_EQ(feedingSourcePort(sink), second->outputPort("volume"));
+  EXPECT_EQ(feedingSourcePort(first), first->outputPort("volume"));
+
+  // Fed by nothing
+  auto* orphan =
+    new PassthroughTransform(PortType::ImageData, PortType::ImageData);
+  pipeline->addNode(orphan);
+  EXPECT_EQ(feedingSourcePort(orphan), nullptr);
 }
 
 TEST_F(PipelineLibTest, SaveDataNodeScopeExcludesSinks)
@@ -4027,7 +5256,7 @@ TEST_F(PipelineLibTest, SaveDataNodeScopeExcludesSinks)
 
   EXPECT_TRUE(tomviz::SaveDataDialog::candidatePorts(
                 static_cast<Node*>(sink),
-                tomviz::SaveDataDialog::Scope::AllPersisted)
+                tomviz::SaveDataDialog::Scope::AllPorts)
                 .isEmpty());
 }
 
@@ -4225,6 +5454,365 @@ TEST_F(PipelineLibTest, SaveDataWritesTableAndMolecule)
   QFile xyz(entries.last().path);
   ASSERT_TRUE(xyz.open(QIODevice::ReadOnly | QIODevice::Text));
   EXPECT_TRUE(QString(xyz.readAll()).startsWith("2\n"));
+}
+
+// --- Periodic execution (should_auto_execute hook + controller) ---
+
+namespace {
+
+// Source whose poll/execute behavior the test scripts directly. The
+// poll runs on the controller's worker thread, so its bookkeeping is
+// atomic; execute() runs on the GUI thread via DefaultExecutor.
+class AutoAnswerSource : public SourceNode
+{
+public:
+  AutoAnswerSource() : SourceNode()
+  {
+    addOutput("out", PortType::ImageData);
+  }
+
+  bool execute() override
+  {
+    executeCount++;
+    // setOutputData marks this node Current and downstream stale.
+    setOutputData("out",
+                  PortData(std::any(executeCount), PortType::ImageData));
+    return true;
+  }
+
+  bool queryShouldAutoExecute() override
+  {
+    pollCount.fetch_add(1);
+    return answer.load();
+  }
+
+  int executeCount = 0;
+  std::atomic<int> pollCount{ 0 };
+  std::atomic<bool> answer{ false };
+};
+
+} // namespace
+
+TEST_F(PipelinePythonTest, ShouldAutoExecuteHookAndState)
+{
+  QString jsonStr = R"({
+    "schemaVersion": 2,
+    "name": "Watcher",
+    "outputs": [{"name": "volume", "type": "ImageData"}],
+    "parameters": [
+      {"name": "value", "type": "double", "default": 0.0}
+    ]
+  })";
+  // The hook counts its own invocations in self.state and starts
+  // answering True on the second poll; it also sees the current
+  // parameter values under their declared names.
+  QString scriptStr = R"(
+import tomviz.nodes
+
+class Watcher(tomviz.nodes.SourceNode):
+    def produce(self, value=0.0):
+        return None
+
+    def should_auto_execute(self, value=0.0):
+        if value != 7.5:
+            raise ValueError('parameters not forwarded')
+        polls = self.state.get('polls', 0) + 1
+        self.state['polls'] = polls
+        return polls >= 2
+)";
+
+  auto* source = new PythonSource();
+  source->setJSONDescription(jsonStr);
+  source->setScript(scriptStr);
+  source->setParameter("value", 7.5);
+  pipeline->addNode(source);
+
+  // First poll answers no, but its state mutation is kept.
+  EXPECT_FALSE(source->queryShouldAutoExecute());
+  EXPECT_EQ(source->userState().value("polls").toInt(), 1);
+
+  // Second poll sees polls==1 in state and answers yes.
+  EXPECT_TRUE(source->queryShouldAutoExecute());
+  EXPECT_EQ(source->userState().value("polls").toInt(), 2);
+}
+
+TEST_F(PipelinePythonTest, ShouldAutoExecuteDefaultsFalse)
+{
+  QString jsonStr = R"({
+    "schemaVersion": 2,
+    "name": "Quiet",
+    "outputs": [{"name": "volume", "type": "ImageData"}]
+  })";
+  // No should_auto_execute override: the tomviz.nodes.Node base
+  // answers False.
+  QString scriptStr = R"(
+import tomviz.nodes
+
+class Quiet(tomviz.nodes.SourceNode):
+    def produce(self):
+        return None
+)";
+
+  auto* source = new PythonSource();
+  source->setJSONDescription(jsonStr);
+  source->setScript(scriptStr);
+  pipeline->addNode(source);
+
+  EXPECT_FALSE(source->queryShouldAutoExecute());
+  EXPECT_TRUE(source->userState().isEmpty());
+}
+
+TEST_F(PipelinePythonTest, UserStatePersistsAcrossTransformRuns)
+{
+  QString jsonStr = R"({
+    "schemaVersion": 2,
+    "name": "CountingPass",
+    "inputs":  [{"name": "volume", "type": "ImageData"}],
+    "outputs": [{"name": "volume", "type": "ImageData", "persistent": true}]
+  })";
+  // A fresh instance runs each time, so the run counter only grows if
+  // self.state actually round-trips through the host node.
+  QString scriptStr = R"(
+import tomviz.nodes
+
+class CountingPass(tomviz.nodes.TransformNode):
+    def transform(self, inputs):
+        self.state['runs'] = self.state.get('runs', 0) + 1
+        return {"volume": inputs["volume"]}
+
+    def should_auto_execute(self):
+        return self.state.get('runs', 0) > 0
+)";
+
+  auto* source = new SphereSource();
+  source->setDimensions(4, 4, 4);
+  pipeline->addNode(source);
+
+  auto* transform = new PythonTransform();
+  transform->setJSONDescription(jsonStr);
+  transform->setScript(scriptStr);
+  pipeline->addNode(transform);
+  pipeline->createLink(source->outputPort("volume"),
+                       transform->inputPort("volume"));
+
+  pipeline->execute();
+  EXPECT_EQ(transform->state(), NodeState::Current);
+  EXPECT_EQ(transform->userState().value("runs").toInt(), 1);
+
+  transform->markStale();
+  pipeline->execute();
+  EXPECT_EQ(transform->userState().value("runs").toInt(), 2);
+
+  // The hook shares the same state the runs recorded.
+  EXPECT_TRUE(transform->queryShouldAutoExecute());
+}
+
+// --- Kernel parameter write-back (self.set_parameter) ---
+
+namespace {
+
+const char* kWriteBackDescription = R"({
+  "schemaVersion": 2,
+  "name": "WriteBack",
+  "outputs": [{"name": "volume", "type": "ImageData"}],
+  "parameters": [
+    {"name": "value", "type": "double", "default": 0.0},
+    {"name": "frame", "type": "int", "default": 0},
+    {"name": "mode", "type": "enumeration", "default": 0,
+     "options": [{"Fast": "fast"}, {"Slow": "slow"}]}
+  ]
+})";
+
+// produce() advances `frame` and publishes `value` (as a string, to
+// exercise coercion); the hook flips `mode` and answers from `frame`.
+const char* kWriteBackScript = R"(
+import numpy as np
+import tomviz.nodes
+
+
+class WriteBack(tomviz.nodes.SourceNode):
+    def produce(self, value=0.0, frame=0, mode='fast'):
+        self.set_parameter('frame', frame + 1)
+        self.set_parameter('value', '2.5')
+        if self.parameter('frame') != frame + 1:
+            raise AssertionError('parameter() does not see the update')
+        ds = self.create_dataset()
+        ds.set_scalars('Scalars', np.full((2, 2, 2), value, dtype=np.float32))
+        return {'volume': ds}
+
+    def should_auto_execute(self, value=0.0, frame=0, mode='fast'):
+        self.set_parameter('mode', 'slow')
+        return frame >= 1
+)";
+
+} // namespace
+
+TEST_F(PipelinePythonTest, SetParameterLandsOnNodeQuietly)
+{
+  auto* source = new PythonSource();
+  source->setJSONDescription(kWriteBackDescription);
+  source->setScript(kWriteBackScript);
+  pipeline->addNode(source);
+
+  QSignalSpy updated(source, &Node::parametersUpdated);
+  QSignalSpy applied(source, &Node::parametersApplied);
+
+  pipeline->execute();
+  EXPECT_EQ(source->state(), NodeState::Current);
+  EXPECT_EQ(source->parameter("frame").toInt(), 1);
+  EXPECT_DOUBLE_EQ(source->parameter("value").toDouble(), 2.5);
+  EXPECT_EQ(source->parameter("mode").toString(), QString("fast"));
+
+  ASSERT_EQ(updated.count(), 1);
+  auto changed = updated.takeFirst().at(0).toMap();
+  EXPECT_EQ(changed.size(), 2);
+  EXPECT_EQ(changed.value("frame").toInt(), 1);
+  EXPECT_DOUBLE_EQ(changed.value("value").toDouble(), 2.5);
+  // The quiet path: no editor-style apply, no re-execution.
+  EXPECT_EQ(applied.count(), 0);
+
+  // The next run receives the new values; `value` is 2.5 again and is
+  // not reported a second time.
+  source->markStale();
+  pipeline->execute();
+  EXPECT_EQ(source->parameter("frame").toInt(), 2);
+  ASSERT_EQ(updated.count(), 1);
+  changed = updated.takeFirst().at(0).toMap();
+  EXPECT_EQ(changed.keys(), QStringList{ "frame" });
+
+  // Serialized `arguments` carry the written-back values.
+  auto json = source->serialize();
+  EXPECT_EQ(json.value("arguments").toObject().value("frame").toInt(), 2);
+}
+
+TEST_F(PipelinePythonTest, SetParameterInShouldAutoExecute)
+{
+  auto* source = new PythonSource();
+  source->setJSONDescription(kWriteBackDescription);
+  source->setScript(kWriteBackScript);
+  pipeline->addNode(source);
+  QSignalSpy updated(source, &Node::parametersUpdated);
+
+  // The hook's write-back lands even when it answers "no"; the answer
+  // alone decides whether a run happens.
+  EXPECT_FALSE(source->queryShouldAutoExecute());
+  EXPECT_EQ(source->parameter("mode").toString(), QString("slow"));
+  EXPECT_EQ(updated.count(), 1);
+  EXPECT_EQ(source->state(), NodeState::New);
+
+  source->setParameter("frame", 3);
+  EXPECT_TRUE(source->queryShouldAutoExecute());
+  EXPECT_EQ(updated.count(), 1); // mode is already 'slow'
+}
+
+TEST_F(PipelinePythonTest, SetParameterUnknownNameFailsRunKeepsEarlier)
+{
+  QString scriptStr = R"(
+import tomviz.nodes
+
+class Bad(tomviz.nodes.SourceNode):
+    def produce(self, value=0.0, frame=0, mode='fast'):
+        self.set_parameter('frame', 5)
+        self.set_parameter('nope', 1)
+        return None
+)";
+  auto* source = new PythonSource();
+  source->setJSONDescription(kWriteBackDescription);
+  source->setScript(scriptStr);
+  pipeline->addNode(source);
+
+  EXPECT_FALSE(source->execute());
+  // Harvested even though produce() raised — parity with self.state
+  // under the Python runtime.
+  EXPECT_EQ(source->parameter("frame").toInt(), 5);
+  EXPECT_FALSE(source->parameters().contains("nope"));
+}
+
+TEST_F(PipelinePythonTest, SetParameterRejectsUndeclaredEnumValue)
+{
+  QString scriptStr = R"(
+import tomviz.nodes
+
+class Bad(tomviz.nodes.SourceNode):
+    def produce(self, value=0.0, frame=0, mode='fast'):
+        self.set_parameter('mode', 'medium')
+        return None
+)";
+  auto* source = new PythonSource();
+  source->setJSONDescription(kWriteBackDescription);
+  source->setScript(scriptStr);
+  pipeline->addNode(source);
+
+  EXPECT_FALSE(source->execute());
+  EXPECT_EQ(source->parameter("mode").toString(), QString("fast"));
+}
+
+TEST_F(PipelineLibTest, ApplyParameterUpdatesIsQuiet)
+{
+  auto* source = new PythonSource();
+  source->setJSONDescription(kWriteBackDescription);
+  pipeline->addNode(source);
+  QSignalSpy updated(source, &Node::parametersUpdated);
+  QSignalSpy applied(source, &Node::parametersApplied);
+
+  // Only values that differ are written and reported; nothing goes
+  // stale (the external executor takes this path after a child run).
+  source->applyParameterUpdates({ { "frame", 0 }, { "value", 1.0 } });
+  EXPECT_EQ(source->state(), NodeState::New);
+  EXPECT_DOUBLE_EQ(source->parameter("value").toDouble(), 1.0);
+  ASSERT_EQ(updated.count(), 1);
+  EXPECT_EQ(updated.takeFirst().at(0).toMap().keys(), QStringList{ "value" });
+  EXPECT_EQ(applied.count(), 0);
+
+  source->applyParameterUpdates({ { "value", 1.0 } });
+  EXPECT_EQ(updated.count(), 0);
+
+  // Nodes without parameters ignore the map.
+  auto* plain = new SourceNode();
+  pipeline->addNode(plain);
+  QSignalSpy plainUpdated(plain, &Node::parametersUpdated);
+  plain->applyParameterUpdates({ { "x", 1 } });
+  EXPECT_EQ(plainUpdated.count(), 0);
+}
+
+TEST_F(PipelineLibTest, AutoExecuteControllerTriggersExecution)
+{
+  auto* source = new AutoAnswerSource();
+  pipeline->addNode(source);
+  auto* controller = new AutoExecuteController(pipeline, pipeline);
+
+  source->execute();
+  EXPECT_EQ(source->executeCount, 1);
+  EXPECT_EQ(source->state(), NodeState::Current);
+
+  // Enabled with a "no" answer: polls happen, nothing re-executes.
+  source->setAutoExecuteEnabled(true);
+  source->setAutoExecuteIntervalSeconds(1);
+  for (int i = 0; i < 100 && source->pollCount.load() < 1; ++i) {
+    QTest::qWait(100);
+  }
+  ASSERT_GE(source->pollCount.load(), 1);
+  QTest::qWait(200); // let a (wrong) execution land before checking
+  EXPECT_EQ(source->executeCount, 1);
+
+  // Flip to "yes": the next poll marks the node stale and re-executes.
+  source->answer.store(true);
+  for (int i = 0; i < 100 && source->executeCount < 2; ++i) {
+    QTest::qWait(100);
+  }
+  EXPECT_GE(source->executeCount, 2);
+  EXPECT_EQ(source->state(), NodeState::Current);
+
+  // Disabling tears the timer down; polling stops.
+  source->setAutoExecuteEnabled(false);
+  QTest::qWait(300); // drain any in-flight poll
+  int polls = source->pollCount.load();
+  int executions = source->executeCount;
+  QTest::qWait(1500);
+  EXPECT_EQ(source->pollCount.load(), polls);
+  EXPECT_EQ(source->executeCount, executions);
+
+  delete controller; // joins the worker thread
 }
 
 int main(int argc, char** argv)

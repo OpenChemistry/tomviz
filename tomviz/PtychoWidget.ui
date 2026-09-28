@@ -34,6 +34,19 @@
      </attribute>
     </widget>
    </item>
+   <item row="9" column="0" colspan="3">
+    <widget class="QProgressBar" name="scanProgressBar">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Progress of the ptycho directory scan. SIDs appear in the table above as they are scanned.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="format">
+      <string>Scanning SIDs: %v of %m</string>
+     </property>
+     <property name="textVisible">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
    <item row="4" column="1">
     <widget class="QLineEdit" name="loadFromCSVFile">
      <property name="toolTip">
@@ -95,7 +108,7 @@
    <item row="11" column="2">
     <widget class="QPushButton" name="selectOutputInfoFile">
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Optional path to write a summary text file with scan IDs, angles, and versions. Leave empty to skip.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Optional path to write a summary file with scan IDs, angles, and versions. A .csv file can be loaded back into this dialog or into the PyXRF dialog; a .txt file uses the legacy text format. Leave empty to skip.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="text">
       <string>Select</string>
@@ -115,7 +128,7 @@
    <item row="11" column="0">
     <widget class="QLabel" name="outputInfoFileLabel">
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Optional path to write a summary text file with scan IDs, angles, and versions. Leave empty to skip.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Optional path to write a summary file with scan IDs, angles, and versions. A .csv file can be loaded back into this dialog or into the PyXRF dialog; a .txt file uses the legacy text format. Leave empty to skip.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="text">
       <string>Output Info File:</string>
@@ -161,7 +174,7 @@
    <item row="11" column="1">
     <widget class="QLineEdit" name="outputInfoFile">
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Optional path to write a summary text file with scan IDs, angles, and versions. Leave empty to skip.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Optional path to write a summary file with scan IDs, angles, and versions. A .csv file can be loaded back into this dialog or into the PyXRF dialog; a .txt file uses the legacy text format. Leave empty to skip.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
     </widget>
    </item>

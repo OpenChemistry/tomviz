@@ -12,6 +12,7 @@
 #include <pybind11/pybind11.h>
 #pragma pop_macro("slots")
 
+#include "EnumOptions.h"
 #include "PortData.h"
 
 #include <QJsonArray>
@@ -43,14 +44,6 @@ namespace PythonNodeUtils {
 QVariant coerceJsonByDeclaredType(const QJsonValue& value,
                                   const QString& type);
 
-/// Resolve an enumeration parameter's stored form to the option value
-/// the operator actually receives. The state-file convention is to
-/// persist the option value (so a saved file is self-describing); this
-/// helper accepts either form so older files that persisted the index
-/// also load. Returns an invalid QVariant when no resolution is
-/// possible — the caller falls back to its usual coercion path.
-QVariant resolveEnumValue(const QJsonValue& value,
-                          const QJsonArray& options);
 
 /// Convert a QVariant to a Python object. Preserves int/double/bool
 /// distinctions that QJsonValue::toVariant collapses (a JSON ``2``
@@ -60,6 +53,22 @@ QVariant resolveEnumValue(const QJsonValue& value,
 /// element-wise; unknown scalar types fall back to a string conversion
 /// matching the legacy behavior.
 pybind11::object qvariantToPython(const QVariant& value);
+
+/// Convert a Python value into a QVariant restricted to the
+/// JSON-compatible types the node user-state bag supports (None, bool,
+/// int, float, str, plus lists/tuples and string-keyed dicts thereof).
+/// When the value — or anything nested in it — has no mapping, @a ok
+/// (if given) is set to false and an invalid QVariant is returned.
+QVariant pythonToQVariant(pybind11::handle value, bool* ok = nullptr);
+
+/// Convert a Python dict into a QVariantMap via pythonToQVariant.
+/// Entries with non-string keys or non-convertible values are dropped
+/// with a warning naming the key.
+QVariantMap pyDictToVariantMap(pybind11::dict dict);
+
+/// Convert a QVariantMap into a Python dict via qvariantToPython.
+/// Invalid QVariants map to None.
+pybind11::dict variantMapToPyDict(const QVariantMap& map);
 
 /// Load Python source code as a fresh ModuleType and exec the source
 /// inside the module's namespace. @a name is stamped onto the module's

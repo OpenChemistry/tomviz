@@ -7,6 +7,7 @@
 namespace tomviz {
 namespace pipeline {
 
+class InputPort;
 class Node;
 class OutputPort;
 class Pipeline;
@@ -21,6 +22,23 @@ OutputPort* findBranchTip(Node* node);
 /// If contextNode is null, falls back to the first source in the pipeline.
 OutputPort* findTipOutputPort(
   Pipeline* pipeline, Node* contextNode);
+
+/// The output port of the source whose data reaches @a port, found by
+/// walking upstream along each node's first linked input: @a port itself
+/// when its node is a source, nullptr when no source feeds it.
+OutputPort* feedingSourcePort(OutputPort* port);
+
+/// The same for a whole node, whether or not it has outputs: a source's
+/// first output, or the source feeding the node's first linked input.
+OutputPort* feedingSourcePort(Node* node);
+
+/// The output port a new sink's @a input should be linked to so the sink
+/// hangs off a SinkGroupNode on @a targetPort: the port itself when it
+/// already belongs to a group, the matching passthrough of a compatible
+/// group already linked to it, or otherwise a new group created on it.
+/// Returns nullptr when @a input does not accept @a targetPort's type.
+OutputPort* sinkAttachPort(Pipeline* pipeline, OutputPort* targetPort,
+                           InputPort* input);
 
 } // namespace pipeline
 } // namespace tomviz

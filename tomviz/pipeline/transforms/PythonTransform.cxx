@@ -83,6 +83,14 @@ QMap<QString, QVariant> PythonTransform::parameters() const
   return m_backend.parameters();
 }
 
+void PythonTransform::applyParameterUpdates(const QVariantMap& updates)
+{
+  auto changed = m_backend.applyParameterUpdates(updates);
+  if (!changed.isEmpty()) {
+    emit parametersUpdated(changed);
+  }
+}
+
 QString PythonTransform::operatorName() const
 {
   return m_backend.operatorName();
@@ -108,10 +116,11 @@ EditNodeWidget* PythonTransform::createPropertiesWidget(Pipeline* pipeline,
     widgetID.isEmpty() ? nullptr : findCustomNodeWidget(widgetID);
   if (info && info->create) {
     customNeedsData = info->needsData;
-    factory = [this, info](QWidget* p) -> CustomPythonNodeWidget* {
+    factory = [this, info, pipeline](QWidget* p) -> CustomPythonNodeWidget* {
       auto* w = info->create(collectInputs(), p);
       if (w) {
         w->setScript(m_backend.scriptSource());
+        w->setNodeContext(this, pipeline);
       }
       return w;
     };
@@ -180,12 +189,30 @@ EditNodeWidget* PythonTransform::createPropertiesWidget(Pipeline* pipeline,
               }
             }
 
+            // The auto-execute setting doesn't affect the node's data,
+            // so it deliberately doesn't set `changed` — no pipeline
+            // re-execution is warranted for toggling it. The setters
+            // emit autoExecuteChanged for the controller.
+            if (edits.autoExecuteEdited) {
+              setAutoExecuteEnabled(edits.autoExecuteEnabled);
+              setAutoExecuteIntervalSeconds(
+                edits.autoExecuteIntervalSeconds);
+            }
+
             if (changed) {
               emit parametersApplied();
             }
           });
 
+  // Controls may be built late (once upstream data is in memory) or
+  // rebuilt on Apply; bindings live on the controls, so re-wiring after
+  // each build is safe. Same as LegacyPythonTransform.
   wireParameterBindings(this, widget, m_backend.parameterBindings());
+  connect(widget, &PythonNodeEditorWidget::parameterWidgetInstalled, this,
+          [this, widget]() {
+            wireParameterBindings(this, widget,
+                                  m_backend.parameterBindings());
+          });
 
   return widget;
 }
@@ -230,6 +257,11 @@ QMap<QString, PortData> PythonTransform::transform(
   const QMap<QString, PortData>& inputs)
 {
   return m_backend.runTransform(this, inputs);
+}
+
+bool PythonTransform::queryShouldAutoExecute()
+{
+  return m_backend.runShouldAutoExecute(this);
 }
 
 } // namespace pipeline

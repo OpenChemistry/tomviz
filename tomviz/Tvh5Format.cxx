@@ -12,6 +12,7 @@
 #include "pipeline/PortData.h"
 #include "pipeline/PortType.h"
 #include "pipeline/SourceNode.h"
+#include "pipeline/data/LabelMapData.h"
 #include "pipeline/data/VolumeData.h"
 
 #include <h5cpp/h5readwrite.h>
@@ -706,7 +707,7 @@ void Tvh5Format::populatePayloadData(pipeline::Pipeline* pipeline,
                      << QString::fromStdString(path);
           continue;
         }
-        auto volume = std::make_shared<pipeline::VolumeData>(image.Get());
+        auto volume = pipeline::makeVolumeData(image.Get(), type);
         port->setData(pipeline::PortData(std::any(volume), type));
         node->markCurrent();
       } else if (type == pipeline::PortType::Table) {

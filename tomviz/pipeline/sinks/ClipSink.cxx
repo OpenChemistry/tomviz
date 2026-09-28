@@ -9,6 +9,7 @@
 #include "Link.h"
 #include "OutputPort.h"
 #include "Pipeline.h"
+#include "PlaneIndexing.h"
 #include "Port.h"
 #include "data/VolumeData.h"
 #include "vtkNonOrthoImagePlaneWidget.h"
@@ -24,9 +25,13 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QScopedValueRollback>
 #include <QSignalBlocker>
 #include <QVBoxLayout>
 #include <QWidget>
+
+#include <cmath>
+#include <limits>
 
 #include <vtkCallbackCommand.h>
 #include <vtkCamera.h>
@@ -43,8 +48,50 @@
 #include <vtkTransform.h>
 #include <vtkTrivialProducer.h>
 
+#include <algorithm>
+#include <cmath>
+
 namespace tomviz {
 namespace pipeline {
+
+void planeTravelRange(const double bounds[6], const double normal[3],
+                      double& minDistance, double& maxDistance)
+{
+  minDistance = 0.0;
+  maxDistance = 0.0;
+
+  double length = std::sqrt(normal[0] * normal[0] + normal[1] * normal[1] +
+                            normal[2] * normal[2]);
+  if (length == 0.0) {
+    return;
+  }
+
+  double n[3] = { normal[0] / length, normal[1] / length,
+                  normal[2] / length };
+  double center[3] = { (bounds[0] + bounds[1]) / 2.0,
+                       (bounds[2] + bounds[3]) / 2.0,
+                       (bounds[4] + bounds[5]) / 2.0 };
+
+  // The extreme distances are always reached at corners, so the eight of
+  // them bound every point in the box.
+  for (int i = 0; i < 8; ++i) {
+    double corner[3] = { bounds[i & 1], bounds[2 + ((i >> 1) & 1)],
+                         bounds[4 + ((i >> 2) & 1)] };
+    double d = (corner[0] - center[0]) * n[0] +
+               (corner[1] - center[1]) * n[1] +
+               (corner[2] - center[2]) * n[2];
+    minDistance = std::min(minDistance, d);
+    maxDistance = std::max(maxDistance, d);
+  }
+}
+
+namespace {
+
+// Set while a linked clip is pushing its state onto its peers, so their
+// own change signals do not echo it back. GUI thread only.
+bool s_propagatingClipLink = false;
+
+} // namespace
 
 ClipSink::ClipSink(QObject* parent) : LegacyModuleSink(parent)
 {
@@ -54,6 +101,8 @@ ClipSink::ClipSink(QObject* parent) : LegacyModuleSink(parent)
   connect(inputPort("volume"), &Port::connectionChanged,
           this, &ClipSink::onInputConnectionChanged);
 
+  connect(this, &ClipSink::sliceChanged,
+          this, &ClipSink::propagateToLinkedSinks);
 }
 
 ClipSink::~ClipSink()
@@ -72,8 +121,10 @@ void ClipSink::setVisibility(bool visible)
   if (m_widget) {
     m_widget->SetEnabled(visible ? 1 : 0);
     if (visible) {
-      m_widget->SetArrowVisibility(m_showArrow ? 1 : 0);
-      m_widget->SetInteraction(m_showArrow ? 1 : 0);
+      // A hidden plane hides its arrow too, whatever Show Arrow says
+      const bool arrow = m_showPlane && m_showArrow;
+      m_widget->SetArrowVisibility(arrow ? 1 : 0);
+      m_widget->SetInteraction(arrow ? 1 : 0);
     }
   }
 
@@ -117,6 +168,15 @@ void ClipSink::setupWidget()
   });
   m_interactionTag =
     m_widget->AddObserver(vtkCommand::InteractionEvent, callback);
+
+  vtkNew<vtkCallbackCommand> startCallback;
+  startCallback->SetClientData(this);
+  startCallback->SetCallback(
+    [](vtkObject*, unsigned long, void* clientData, void*) {
+      static_cast<ClipSink*>(clientData)->onWidgetInteractionStarted();
+    });
+  m_startInteractionTag =
+    m_widget->AddObserver(vtkCommand::StartInteractionEvent, startCallback);
 }
 
 bool ClipSink::initialize(vtkSMViewProxy* view)
@@ -146,7 +206,7 @@ bool ClipSink::initialize(vtkSMViewProxy* view)
 
       m_widget->On();
       m_widget->InteractionOn();
-      m_widget->SetArrowVisibility(m_showArrow ? 1 : 0);
+      m_widget->SetArrowVisibility(m_showPlane && m_showArrow ? 1 : 0);
     }
   }
 
@@ -159,6 +219,10 @@ bool ClipSink::finalize()
     if (m_interactionTag) {
       m_widget->RemoveObserver(m_interactionTag);
       m_interactionTag = 0;
+    }
+    if (m_startInteractionTag) {
+      m_widget->RemoveObserver(m_startInteractionTag);
+      m_startInteractionTag = 0;
     }
     // Order matters: InteractionOff/Off require a valid interactor,
     // so call them before clearing it.
@@ -276,11 +340,16 @@ ClipSink::Direction ClipSink::direction() const
 
 void ClipSink::setDirection(Direction dir)
 {
+  if (m_direction == dir) {
+    return;
+  }
   m_direction = dir;
   applyDirection();
   syncClippingPlane();
+  emit directionChanged(dir);
   emit clipPlaneUpdated();
   emit renderNeeded();
+  propagateToLinkedSinks();
 }
 
 int ClipSink::slice() const
@@ -324,10 +393,16 @@ bool ClipSink::showArrow() const
 void ClipSink::setShowArrow(bool show)
 {
   m_showArrow = show;
-  if (m_widget) {
-    m_widget->SetArrowVisibility(show ? 1 : 0);
+  if (m_widget && m_widget->GetEnabled()) {
+    m_widget->SetArrowVisibility(m_showPlane && show ? 1 : 0);
   }
   emit renderNeeded();
+}
+
+bool ClipSink::arrowVisible() const
+{
+  return m_widget && m_widget->GetEnabled() &&
+         m_widget->GetArrowVisibility() != 0;
 }
 
 bool ClipSink::showPlane() const
@@ -340,10 +415,10 @@ void ClipSink::setShowPlane(bool show)
   m_showPlane = show;
   if (m_widget) {
     m_widget->SetTextureVisibility(show ? 1 : 0);
-    if (!show) {
-      m_widget->SetArrowVisibility(0);
-    } else {
-      m_widget->SetArrowVisibility(m_showArrow ? 1 : 0);
+    // The widget ignores (and warns about) arrow changes while it is
+    // off; setVisibility applies them when it comes back on
+    if (m_widget->GetEnabled()) {
+      m_widget->SetArrowVisibility(show && m_showArrow ? 1 : 0);
     }
   }
   emit renderNeeded();
@@ -449,6 +524,7 @@ void ClipSink::setPlaneOrigin(double x, double y, double z)
     m_widget->SetCenter(c);
   }
   syncClippingPlane();
+  propagateToLinkedSinks();
   emit clipPlaneUpdated();
   emit renderNeeded();
 }
@@ -460,13 +536,144 @@ void ClipSink::setPlaneNormal(double nx, double ny, double nz)
     m_widget->SetNormal(n);
   }
   syncClippingPlane();
+  propagateToLinkedSinks();
   emit clipPlaneUpdated();
   emit renderNeeded();
+}
+
+void ClipSink::planeNormalInData(double normal[3]) const
+{
+  if (m_widget) {
+    m_widget->GetNormal(normal);
+    return;
+  }
+
+  double* n = m_clippingPlane->GetNormal();
+  normal[0] = n[0];
+  normal[1] = n[1];
+  normal[2] = n[2];
+}
+
+void ClipSink::setPlaneDistance(double distance)
+{
+  double n[3];
+  planeNormalInData(n);
+  double length = std::sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
+  if (length == 0.0) {
+    return;
+  }
+
+  double boundsCenter[3] = { (m_bounds[0] + m_bounds[1]) / 2.0,
+                             (m_bounds[2] + m_bounds[3]) / 2.0,
+                             (m_bounds[4] + m_bounds[5]) / 2.0 };
+
+  setPlaneOrigin(boundsCenter[0] + distance * n[0] / length,
+                 boundsCenter[1] + distance * n[1] / length,
+                 boundsCenter[2] + distance * n[2] / length);
+}
+
+void ClipSink::planeDistanceRange(double& minDistance,
+                                  double& maxDistance) const
+{
+  double n[3];
+  planeNormalInData(n);
+  planeTravelRange(m_bounds, n, minDistance, maxDistance);
 }
 
 vtkPlane* ClipSink::clippingPlane() const
 {
   return m_clippingPlane;
+}
+
+bool ClipSink::linked() const
+{
+  return m_linked;
+}
+
+void ClipSink::setLinked(bool linked)
+{
+  if (m_linked == linked) {
+    return;
+  }
+  m_linked = linked;
+  emit linkedChanged(m_linked);
+
+  if (m_linked) {
+    propagateToLinkedSinks();
+  }
+}
+
+void ClipSink::propagateToLinkedSinks()
+{
+  if (!m_linked || s_propagatingClipLink) {
+    return;
+  }
+
+  auto* pip = qobject_cast<Pipeline*>(parent());
+  if (!pip) {
+    return;
+  }
+
+  QScopedValueRollback<bool> guard(s_propagatingClipLink, true);
+  for (auto* node : pip->nodes()) {
+    auto* other = qobject_cast<ClipSink*>(node);
+    if (!other || other == this || !other->linked()) {
+      continue;
+    }
+    other->setDirection(m_direction);
+    if (isOrtho()) {
+      // Match by physical position so different voxel sizes line up;
+      // fall back to the raw index until both geometries are known.
+      if (!other->setSlicePosition(slicePosition())) {
+        other->setSlice(m_slice);
+      }
+    } else if (m_widget) {
+      // The widget holds the custom plane in data coordinates, which is
+      // what the peer's setters take.
+      double* n = m_widget->GetNormal();
+      double* c = m_widget->GetCenter();
+      other->setPlaneNormal(n[0], n[1], n[2]);
+      other->setPlaneOrigin(c[0], c[1], c[2]);
+    }
+  }
+}
+
+double ClipSink::slicePosition() const
+{
+  int axis = directionAxis();
+  if (axis < 0 || planeindex::spacing(m_dims, m_bounds, axis) <= 0.0) {
+    return std::numeric_limits<double>::quiet_NaN();
+  }
+  return planeindex::position(m_dims, m_bounds, axis, m_slice);
+}
+
+bool ClipSink::setSlicePosition(double position)
+{
+  int axis = directionAxis();
+  if (axis < 0 || std::isnan(position)) {
+    return false;
+  }
+  int index = planeindex::index(m_dims, m_bounds, axis, position);
+  if (index < 0) {
+    return false;
+  }
+  setSlice(index);
+  return true;
+}
+
+void ClipSink::onWidgetInteractionStarted()
+{
+  if (!m_widget || !isOrtho()) {
+    return;
+  }
+  // Grabbing the arrow (rotate) or the center sphere (move) asks for a
+  // plane the axis-aligned directions cannot express: switch to Custom,
+  // keeping the plane where it is.
+  int state = m_widget->GetWidgetState();
+  if (state == vtkNonOrthoImagePlaneWidget::Rotating ||
+      state == vtkNonOrthoImagePlaneWidget::Moving) {
+    setDirection(Custom);
+  }
 }
 
 QJsonObject ClipSink::serialize() const
@@ -478,6 +685,7 @@ QJsonObject ClipSink::serialize() const
   json["showPlane"] = m_showPlane;
   json["showArrow"] = m_showArrow;
   json["invertPlane"] = m_invertPlane;
+  json["linked"] = m_linked;
   json["selectedColor"] = QJsonArray{ m_planeColor[0], m_planeColor[1],
                                       m_planeColor[2] };
 
@@ -520,6 +728,9 @@ bool ClipSink::deserialize(const QJsonObject& json)
       setPlaneColor(arr.at(0).toDouble(), arr.at(1).toDouble(),
                     arr.at(2).toDouble());
     }
+  }
+  if (json.contains("linked")) {
+    m_linked = json["linked"].toBool();
   }
   if (json.contains("invertPlane")) {
     setInvertPlane(json["invertPlane"].toBool());
@@ -658,6 +869,25 @@ QWidget* ClipSink::createSinkPropertiesWidget(QWidget* parent)
             }
           });
 
+  // --- Link to other clips ---
+  auto* linkCheck = new QCheckBox(widget);
+  linkCheck->setToolTip(
+    "Move every linked clip together. Turn this on in two or more clips "
+    "(for example one per element of a simultaneously acquired dataset) and "
+    "changing the direction or plane in any of them applies the same to the "
+    "others.");
+  {
+    QSignalBlocker blocker(linkCheck);
+    linkCheck->setChecked(linked());
+  }
+  formLayout->addRow("Link Clips", linkCheck);
+  connect(linkCheck, &QCheckBox::toggled,
+          [this](bool on) { setLinked(on); });
+  connect(this, &ClipSink::linkedChanged, linkCheck, [linkCheck](bool on) {
+    QSignalBlocker blocker(linkCheck);
+    linkCheck->setChecked(on);
+  });
+
   // --- Separator ---
   auto* line = new QFrame(widget);
   line->setFrameShape(QFrame::HLine);
@@ -743,6 +973,16 @@ QWidget* ClipSink::createSinkPropertiesWidget(QWidget* parent)
             for (int i = 0; i < 3; ++i) {
               QSignalBlocker b(normalInputs[i]);
               normalInputs[i]->setText(QString::number(n[i]));
+            }
+          });
+
+  // Follow direction changes made from the sink itself (arrow drag,
+  // linked peer); the combo handler below then updates the rest.
+  connect(this, &ClipSink::directionChanged, widget,
+          [dirCombo](Direction dir) {
+            int idx = dirCombo->findData(static_cast<int>(dir));
+            if (idx >= 0 && idx != dirCombo->currentIndex()) {
+              dirCombo->setCurrentIndex(idx);
             }
           });
 
@@ -850,20 +1090,14 @@ void ClipSink::onWidgetInteraction()
   // For orthogonal directions, update the slice index from the widget
   if (isOrtho()) {
     int axis = directionAxis();
-    if (axis >= 0 && m_dims[axis] > 1) {
-      double* widgetCenter = m_widget->GetCenter();
-      double spacing = (m_bounds[2 * axis + 1] - m_bounds[2 * axis]) /
-                        (m_dims[axis] - 1);
-      if (spacing > 0) {
-        int newSlice = static_cast<int>(
-          (widgetCenter[axis] - m_bounds[2 * axis]) / spacing + 0.5);
-        newSlice = qBound(0, newSlice, m_dims[axis] - 1);
-        if (newSlice != m_slice) {
-          m_slice = newSlice;
-          emit sliceChanged(m_slice);
-        }
-      }
+    int newSlice = planeindex::index(m_dims, m_bounds, axis,
+                                     m_widget->GetCenter()[axis]);
+    if (newSlice >= 0 && newSlice != m_slice) {
+      m_slice = newSlice;
+      emit sliceChanged(m_slice);
     }
+  } else {
+    propagateToLinkedSinks();
   }
 
   emit clipPlaneUpdated();

@@ -45,6 +45,7 @@ void DataTransformMenu::buildTransforms()
   auto arrayWranglerAction = dataManagement->addAction("Convert Type");
   auto transposeDataAction = dataManagement->addAction("Transpose Data");
   auto removeArraysAction = dataManagement->addAction("Remove Arrays");
+  auto combineDatasetsAction = dataManagement->addAction("Combine Datasets");
   auto reinterpretSignedToUnignedAction =
     dataManagement->addAction("Reinterpret Signed to Unsigned");
   dataManagement->addSeparator();
@@ -55,10 +56,8 @@ void DataTransformMenu::buildTransforms()
 
   // === Volume Manipulation submenu ===
   QMenu* volumeManip = menu->addMenu("Volume Manipulation");
-  // FIXME: staged for removal
   auto manualManipulationAction =
     volumeManip->addAction("Manual Manipulation");
-  manualManipulationAction->setVisible(false);
   auto shiftUniformAction = volumeManip->addAction("Shift Volume");
   auto deleteSliceAction = volumeManip->addAction("Delete Slices");
   auto padVolumeAction = volumeManip->addAction("Pad Volume");
@@ -67,9 +66,7 @@ void DataTransformMenu::buildTransforms()
   auto rotateAction = volumeManip->addAction("Rotate");
   auto clearAction = volumeManip->addAction("Clear Subvolume");
   auto swapAction = volumeManip->addAction("Swap Axes");
-  // FIXME: staged for removal
   auto registrationAction = volumeManip->addAction("Registration");
-  registrationAction->setVisible(false);
 
   // === Math Operations submenu ===
   QMenu* mathOps = menu->addMenu("Math Operations");
@@ -80,7 +77,12 @@ void DataTransformMenu::buildTransforms()
   auto squareRootAction = mathOps->addAction("Square Root Data");
   auto cropEdgesAction = mathOps->addAction("Clip Edges");
   auto hannWindowAction = mathOps->addAction("Hann Window");
-  auto fftAbsLogAction = mathOps->addAction("FFT (abs log)");
+  // "Fourier" and "FFT" both find it in the operator search
+  auto fftAbsLogAction = mathOps->addAction("Fast Fourier Transform (FFT)");
+  auto fourierFilterAction = mathOps->addAction("Fourier Filter");
+  auto fourierPeakMaskAction = mathOps->addAction("Fourier Peak Mask");
+  auto fourierMaskAction = mathOps->addAction("Fourier Mask");
+  auto imageMathAction = mathOps->addAction("Image Math");
 
   // === Filters & Smoothing submenu ===
   QMenu* filters = menu->addMenu("Filters && Smoothing");
@@ -129,6 +131,10 @@ void DataTransformMenu::buildTransforms()
     readInPythonScript("RemoveArrays"),
     readInJSONDescription("RemoveArrays"));
   new AddPythonTransformReaction(
+    combineDatasetsAction, "Combine Datasets",
+    readInPythonScript("CombineDatasets"),
+    readInJSONDescription("CombineDatasets"));
+  new AddPythonTransformReaction(
     reinterpretSignedToUnignedAction, "Reinterpret Signed to Unsigned",
     readInPythonScript("ReinterpretSignedToUnsigned"));
 
@@ -154,8 +160,9 @@ void DataTransformMenu::buildTransforms()
   new AddPythonTransformReaction(rotateAction, "Rotate",
                                  readInPythonScript("Rotate3D"),
                                  readInJSONDescription("Rotate3D"));
-  new AddPythonTransformReaction(clearAction, "Clear Volume",
-                                 readInPythonScript("ClearVolume"));
+  new AddPythonTransformReaction(clearAction, "Clear Subvolume",
+                                 readInPythonScript("ClearVolume"),
+                                 readInJSONDescription("ClearVolume"));
   new AddPythonTransformReaction(swapAction, "Swap Axes",
                                  readInPythonScript("SwapAxes"),
                                  readInJSONDescription("SwapAxes"));
@@ -178,8 +185,21 @@ void DataTransformMenu::buildTransforms()
                                  readInJSONDescription("ClipEdges"));
   new AddPythonTransformReaction(hannWindowAction, "Hann Window",
                                  readInPythonScript("HannWindow3D"));
-  new AddPythonTransformReaction(fftAbsLogAction, "FFT (ABS LOG)",
-                                 readInPythonScript("FFT_AbsLog"));
+  new AddPythonTransformReaction(fftAbsLogAction, "FFT",
+                                 readInPythonScript("FFT_AbsLog"),
+                                 readInJSONDescription("FFT_AbsLog"));
+  new AddPythonTransformReaction(fourierFilterAction, "Fourier Filter",
+                                 readInPythonScript("FourierFilter"),
+                                 readInJSONDescription("FourierFilter"));
+  new AddPythonTransformReaction(fourierPeakMaskAction, "Fourier Peak Mask",
+                                 readInPythonScript("FourierPeakMask"),
+                                 readInJSONDescription("FourierPeakMask"));
+  new AddPythonTransformReaction(fourierMaskAction, "Fourier Mask",
+                                 readInPythonScript("FourierMask"),
+                                 readInJSONDescription("FourierMask"));
+  new AddPythonTransformReaction(imageMathAction, "Image Math",
+                                 readInPythonScript("ImageMath"),
+                                 readInJSONDescription("ImageMath"));
   new AddPythonTransformReaction(gradientMagnitudeSobelAction,
                                  "Gradient Magnitude",
                                  readInPythonScript("GradientMagnitude_Sobel"));
@@ -256,6 +276,7 @@ void DataTransformMenu::buildSegmentation()
     thresholding->addAction("Otsu Multiple Threshold");
   auto connectedComponentsAction =
     thresholding->addAction("Connected Components");
+  auto removeLabelsAction = thresholding->addAction("Remove Labels");
 
   // === Morphology submenu ===
   QMenu* morphology = menu->addMenu("Morphology");
@@ -301,6 +322,9 @@ void DataTransformMenu::buildSegmentation()
     connectedComponentsAction, "Connected Components",
     readInPythonScript("ConnectedComponents"),
     readInJSONDescription("ConnectedComponents"));
+  new AddPythonTransformReaction(removeLabelsAction, "Remove Labels",
+                                 readInPythonScript("RemoveLabels"),
+                                 readInJSONDescription("RemoveLabels"));
   new AddPythonTransformReaction(
     binaryDilateAction, "Binary Dilate", readInPythonScript("BinaryDilate"),
     readInJSONDescription("BinaryDilate"));

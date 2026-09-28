@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.11, 3.12, 3.13]
+        python-version: [3.11, 3.12, 3.13, 3.14]
         config:
         - {
             name: Linux,
@@ -77,6 +77,10 @@ jobs:
     - name: Install Test Requirements
       run: |
         conda install -y --override-channels -c conda-forge --file tomviz/tests/python/requirements-dev.txt
+        # The pipeline engine is the standalone tomviz-pipeline package
+        # from PyPI; the compatible range comes from the one place it is
+        # defined, and its dependencies come from runtime_requirements.txt.
+        pip install --no-deps -U "$(python tomviz/tomviz/python/tomviz/_pipeline_requirement.py)"
         pip install --no-build-isolation --no-deps -U tomviz/tomviz/python
         pip install --no-build-isolation --no-deps -U tomviz/acquisition
         # These do not have to be in the same environment as Tomviz, but the dependencies

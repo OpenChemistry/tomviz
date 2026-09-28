@@ -979,6 +979,8 @@ void PipelineStripWidget::connectPipeline()
             QOverload<>::of(&QWidget::update));
     connect(node, &Node::breakpointChanged, this,
             QOverload<>::of(&QWidget::update));
+    connect(node, &Node::autoExecuteChanged, this,
+            QOverload<>::of(&QWidget::update));
     // Port-level badges (persistent pin, data-location memory/disk)
     // depend on OutputPort state that the existing node-level signals
     // don't surface — subscribe directly so the badges refresh when
@@ -1215,6 +1217,13 @@ QString PipelineStripWidget::tooltipAt(const QPoint& pos) const
     if (item.type == LayoutItem::PortCard && item.port) {
       return tr("Output port: %1").arg(portTypeToString(item.port->type()));
     }
+    // Periodic-execution button in the node header.
+    if (item.type == LayoutItem::NodeCard && item.node &&
+        item.node->autoExecuteEnabled() &&
+        autoExecuteRect(item.rect).contains(pos)) {
+      return tr("Disable periodic execution (re-enable in the node "
+                "editor's Execution tab)");
+    }
     // Breakpoint button in the node header.
     if (item.type == LayoutItem::NodeCard && item.node &&
         canHaveBreakpoint(item.node) &&
@@ -1335,7 +1344,7 @@ void PipelineStripWidget::paintNodeCard(QPainter& painter,
 
   // Node icon
   QIcon nodeIcon = node->icon();
-  int iconPaintSize = 14;
+  int iconPaintSize = 16;
   QRect iconRect(x + (BadgeSize - iconPaintSize) / 2,
                  cy - iconPaintSize / 2,
                  iconPaintSize, iconPaintSize);
@@ -1363,12 +1372,16 @@ void PipelineStripWidget::paintNodeCard(QPainter& painter,
   // reclaims its width.)
   auto outputs = node->outputPorts();
   bool showBreakpoint = canHaveBreakpoint(node);
+  // The auto-execute slot only exists while the feature is on, so the
+  // label reclaims its width the moment it is disabled.
+  bool showAutoExec = node->autoExecuteEnabled();
   int toggleX = r.right() - HeaderExpandWidth - HeaderRightPad;
   int sepX = toggleX - HeaderButtonGap / 2;
   int menuX = toggleX - HeaderButtonGap - HeaderIconSize;
   int stateX = menuX - HeaderButtonSpacing - HeaderIconSize;
   int bpX = stateX - HeaderButtonSpacing - HeaderIconSize;
-  int labelEndX = showBreakpoint ? bpX : stateX;
+  int aeX = bpX - HeaderButtonSpacing - HeaderIconSize;
+  int labelEndX = showAutoExec ? aeX : (showBreakpoint ? bpX : stateX);
 
   int labelWidth = labelEndX - x - 2;
   QString elidedLabel =
@@ -1400,6 +1413,24 @@ void PipelineStripWidget::paintNodeCard(QPainter& painter,
       painter.setOpacity(0.25);
       bpIcon.paint(&painter, bpRect);
       painter.setOpacity(1.0);
+    }
+  }
+
+  // Periodic-execution indicator. Shown only while the feature is on;
+  // clicking it disables auto-execution (see mousePressEvent), and
+  // re-enabling is deliberately only offered in the editor's
+  // Execution tab — hence no hover hint on nodes that don't have it.
+  if (showAutoExec) {
+    QRect aeRect = autoExecuteRect(r);
+    QIcon aeIcon(QStringLiteral(":/pipeline/autoexecute.svg"));
+    if (selected) {
+      paintTintedIcon(painter, aeIcon, aeRect, fg);
+    } else if (isDim) {
+      painter.setOpacity(1.0 - m_dimLevel);
+      aeIcon.paint(&painter, aeRect);
+      painter.setOpacity(1.0);
+    } else {
+      aeIcon.paint(&painter, aeRect);
     }
   }
 
@@ -1465,7 +1496,7 @@ void PipelineStripWidget::paintNodeCard(QPainter& painter,
     painter.setBrush(Qt::NoBrush);
     painter.setPen(QPen(arrowColor, 1.5, Qt::SolidLine, Qt::RoundCap,
                         Qt::RoundJoin));
-    int arrowSize = 4;
+    int arrowSize = 5;
     int arrowCX = toggleX + HeaderExpandWidth / 2;
     int halfW = 2 * arrowSize / 3;
     if (expanded) {
@@ -2738,6 +2769,13 @@ QRect PipelineStripWidget::breakpointRect(const QRect& cardRect) const
   return QRect(bpX, bpY, HeaderIconSize, HeaderIconSize);
 }
 
+QRect PipelineStripWidget::autoExecuteRect(const QRect& cardRect) const
+{
+  // Layout: [auto-execute] [breakpoint] [state] [menu] | [expand/action]
+  return breakpointRect(cardRect)
+    .translated(-(HeaderButtonSpacing + HeaderIconSize), 0);
+}
+
 QRect PipelineStripWidget::menuButtonRect(const QRect& cardRect) const
 {
   // Layout: [breakpoint] [state] [menu] | [expand/action]
@@ -2839,6 +2877,17 @@ void PipelineStripWidget::mousePressEvent(QMouseEvent* event)
     if (idx >= 0 && m_layout[idx].type == LayoutItem::NodeCard) {
       auto* node = m_layout[idx].node;
       auto& cardRect = m_layout[idx].rect;
+
+      // Periodic-execution indicator doubles as a quick-disable button.
+      // One-way on purpose: re-enabling requires the editor's
+      // Execution tab, so a stray click can't silently re-arm
+      // periodic execution.
+      if (node->autoExecuteEnabled() &&
+          autoExecuteRect(cardRect).contains(event->pos())) {
+        node->setAutoExecuteEnabled(false);
+        update();
+        return;
+      }
 
       // Breakpoint area. When the breakpoint has been reached, the
       // icon is repurposed as a resume button: clear the flag and

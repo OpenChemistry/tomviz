@@ -64,6 +64,14 @@ public:
   /// Maximum slice index for the current direction.
   int maxSlice() const;
 
+  /// Physical coordinate of the current slice along its axis, so views
+  /// of datasets with different voxel sizes can be kept at the same
+  /// place. NaN when the direction is Custom or no data has arrived.
+  double slicePosition() const;
+  /// Move to the slice nearest a physical coordinate; false if the
+  /// geometry is not known yet.
+  bool setSlicePosition(double position);
+
   /// Opacity of the slice plane.
   double opacity() const;
   void setOpacity(double value);
@@ -92,6 +100,12 @@ public:
   int activeScalars() const;
   void setActiveScalars(int index);
 
+  /// Whether this slice follows, and is followed by, the other linked
+  /// slice views, so datasets acquired together step through as one.
+  /// The slice index is clamped to each sink's own extents.
+  bool linked() const;
+  void setLinked(bool linked);
+
   /// Set the center (point on the plane) for Custom direction.
   void setPlaneCenter(double x, double y, double z);
   void planeCenter(double xyz[3]) const;
@@ -99,6 +113,15 @@ public:
   /// Set the normal for Custom direction.
   void setPlaneNormal(double x, double y, double z);
   void planeNormal(double xyz[3]) const;
+
+  /// Where a Custom plane sits along its own normal, as a signed
+  /// distance from the center of the data; the unit the Animation
+  /// Helper sweeps a custom slice in, as it does a custom clip.
+  double planeDistance() const;
+  void setPlaneDistance(double distance);
+  /// The range planeDistance() can cover while the plane still crosses
+  /// the data.
+  void planeDistanceRange(double& minDistance, double& maxDistance) const;
 
   void addClippingPlane(vtkPlane* plane) override;
   void removeClippingPlane(vtkPlane* plane) override;
@@ -109,6 +132,7 @@ signals:
   void sliceChanged(int slice);
   void directionChanged(Direction direction);
   void planeChanged();
+  void linkedChanged(bool linked);
 
 protected:
   bool consume(const QMap<QString, PortData>& inputs) override;
@@ -116,6 +140,11 @@ protected:
 
 private slots:
   void onPlaneChanged();
+  void onInteractionStarted();
+  /// Push this slice's direction and index onto the other linked
+  /// slice views. Driven by sliceChanged/directionChanged; the
+  /// slider's drag ticks emit neither, so peers follow on release.
+  void propagateToLinkedSinks();
 
 private:
   void setupWidget();
@@ -135,6 +164,7 @@ private:
   bool m_showArrow = true;
   bool m_mapScalars = true;
   int m_activeScalars = -1;
+  bool m_linked = false;
 
   // For custom direction
   double m_planeCenter[3] = { 0, 0, 0 };

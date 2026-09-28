@@ -130,6 +130,14 @@ public:
   /// data types; the default implementation is a no-op.
   virtual void setIntermediateData(const PortData& data);
 
+  /// Announce that the current payload changed in place (e.g. a
+  /// time-series step switch swapped the VolumeData's image) without
+  /// republishing it. Runs the same refresh path as an
+  /// intermediate-data push - linked sinks re-consume and views
+  /// re-render - but skips the payload replacement and deep copy.
+  /// Thread-safe: the emission is marshaled to the port's thread.
+  void notifyDataMutated();
+
   virtual bool isStale() const;
   void setStale(bool stale);
 
@@ -188,6 +196,14 @@ private:
   friend class Link;
   void addLink(Link* link);
   void removeLink(Link* link);
+
+  /// Hand the label table of the payload being replaced to @a incoming,
+  /// when both are label maps. A label map's per-label colors and
+  /// visibility are the user's choices, not the data's, and every
+  /// execution publishes a fresh payload that would otherwise start
+  /// from defaults. Data-only: no ParaView proxies are touched, so this
+  /// is safe on whichever thread published.
+  void carryOverLabelTable(const PortData& incoming);
 
   /// For OnDisk-mode persistence: when the last shared_ptr to this
   /// port's PortData is destroyed, the universal deleter calls this to

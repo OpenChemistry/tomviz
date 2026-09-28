@@ -6,6 +6,7 @@
 #include "Link.h"
 #include "PortDataDiskCache.h"
 #include "ThreadUtils.h"
+#include "data/LabelMapData.h"
 #include "data/VolumeData.h"
 
 #include <QDebug>
@@ -197,6 +198,7 @@ std::shared_ptr<PortData> OutputPort::materialize()
 
 void OutputPort::setData(const PortData& data)
 {
+  carryOverLabelTable(data);
   {
     std::lock_guard<std::mutex> lock(m_diskMutex);
     // Bumping the generation invalidates the deleter of any earlier
@@ -422,6 +424,11 @@ void OutputPort::setIntermediateData(const PortData& data)
   runOnThread(this, apply);
 }
 
+void OutputPort::notifyDataMutated()
+{
+  runOnThread(this, [this]() { emit intermediateDataApplied(); });
+}
+
 bool OutputPort::isStale() const
 {
   return m_stale;
@@ -455,6 +462,27 @@ void OutputPort::removeLink(Link* link)
 bool OutputPort::canAcceptLink(InputPort* /*to*/) const
 {
   return true;
+}
+
+void OutputPort::carryOverLabelTable(const PortData& incoming)
+{
+  auto previous = m_weak.lock();
+  if (!previous) {
+    return;
+  }
+  auto* oldVolume = std::any_cast<VolumeDataPtr>(&previous->data());
+  auto* newVolume = std::any_cast<VolumeDataPtr>(&incoming.data());
+  // A node that forwards its input untouched republishes the very same
+  // payload; there is nothing to carry over, and adopting from itself
+  // would force a needless rescan.
+  if (!oldVolume || !newVolume || *oldVolume == *newVolume) {
+    return;
+  }
+  auto oldLabels = labelMapData(*oldVolume);
+  auto newLabels = labelMapData(*newVolume);
+  if (oldLabels && newLabels) {
+    newLabels->adoptLabelsFrom(*oldLabels);
+  }
 }
 
 QJsonObject OutputPort::serialize() const

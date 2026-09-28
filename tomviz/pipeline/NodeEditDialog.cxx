@@ -3,6 +3,9 @@
 
 #include "NodeEditDialog.h"
 
+#include "CustomOperatorEditDialog.h"
+#include "PythonNodeEditorWidget.h"
+
 #include "EditNodeWidget.h"
 #include "InputPort.h"
 #include "Link.h"
@@ -17,8 +20,12 @@
 #include <pqSettings.h>
 
 #include <QDialogButtonBox>
+#include <QHBoxLayout>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QPushButton>
 #include <QScreen>
+#include <QCloseEvent>
 #include <QShowEvent>
 #include <QVBoxLayout>
 
@@ -50,6 +57,7 @@ NodeEditDialog::~NodeEditDialog()
   // mode).
   if (m_node && m_pipeline && m_pipeline->nodes().contains(m_node)) {
     m_node->setEditing(false);
+    m_node->setHeld(false);
     connect(m_node, &Node::parametersApplied, m_pipeline,
             [pip = m_pipeline]() { pip->execute(); });
   }
@@ -70,6 +78,13 @@ void NodeEditDialog::init()
 
   // Suppress the auto-execute wiring so the dialog controls execution.
   QObject::disconnect(m_node, &Node::parametersApplied, m_pipeline, nullptr);
+  // That only covers the node's own trigger. A node that has never run
+  // (an eagerly spliced insertion, or one the strip linked up and handed
+  // to this dialog) is New, so any global execute would still pick it
+  // up and run it with default parameters; hold it until Apply commits.
+  if (m_isNewInsertion || m_node->state() == NodeState::New) {
+    m_node->setHeld(true);
+  }
 
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(5, 5, 5, 5);
@@ -88,6 +103,7 @@ void NodeEditDialog::init()
   connect(m_buttonBox->button(QDialogButtonBox::Apply), &QPushButton::clicked,
           this, &NodeEditDialog::onApply);
 
+  QPushButton* saveAsButton = nullptr;
   m_editWidget = m_node->createPropertiesWidget(m_pipeline, this);
   if (m_editWidget) {
     layout->addWidget(m_editWidget, 1);
@@ -100,9 +116,26 @@ void NodeEditDialog::init()
       connect(helpButton, &QPushButton::clicked, this,
               [helpUrl]() { openHelpUrl(helpUrl); });
     }
+
+    // A Python node can become a custom operator in the user's directory,
+    // script and description as they stand in the editor.
+    if (qobject_cast<PythonNodeEditorWidget*>(m_editWidget)) {
+      saveAsButton = new QPushButton(tr("Save as Custom Transform..."), this);
+      saveAsButton->setObjectName(
+        QStringLiteral("saveAsCustomOperatorButton"));
+      connect(saveAsButton, &QPushButton::clicked, this,
+              &NodeEditDialog::saveAsCustomOperator);
+    }
   }
 
-  layout->addWidget(m_buttonBox);
+  // The button box keeps the platform's Apply/OK/Cancel arrangement to
+  // itself; the extra action sits at the left end of the same row.
+  auto* buttonRow = new QHBoxLayout;
+  if (saveAsButton) {
+    buttonRow->addWidget(saveAsButton);
+  }
+  buttonRow->addWidget(m_buttonBox, 1);
+  layout->addLayout(buttonRow);
 
   restoreGeometry();
 
@@ -123,6 +156,47 @@ void NodeEditDialog::init()
   refreshButtonEnablement();
 }
 
+void NodeEditDialog::saveAsCustomOperator()
+{
+  auto* python = qobject_cast<PythonNodeEditorWidget*>(m_editWidget);
+  if (!python) {
+    return;
+  }
+  const QString directory = tomviz::userDataPath();
+  if (directory.isEmpty()) {
+    return; // userDataPath() has already told the user why
+  }
+
+  // The description's "name" is the natural file stem; a node without
+  // one is named after its label.
+  QString base = QJsonDocument::fromJson(python->definitionText().toUtf8())
+                   .object()
+                   .value(QStringLiteral("name"))
+                   .toString();
+  if (base.isEmpty()) {
+    base = python->nodeLabel();
+  }
+
+  tomviz::CustomOperatorDraft draft;
+  draft.directory = directory;
+  draft.stem = tomviz::uniqueOperatorStem(directory, base);
+  draft.script = python->scriptText();
+  draft.description = python->definitionText();
+
+  // Parented to the main window rather than this dialog, so closing the
+  // node editor does not take the draft with it.
+  auto* dialog =
+    new tomviz::CustomOperatorEditDialog(draft, tomviz::mainWidget());
+  dialog->setAttribute(Qt::WA_DeleteOnClose);
+  dialog->show();
+  dialog->raise();
+  dialog->activateWindow();
+
+  // The draft has everything it needs; this editor is done, the same as
+  // a cancel (an insertion still in progress is rolled back).
+  reject();
+}
+
 void NodeEditDialog::refreshButtonEnablement()
 {
   bool canCommit = m_editWidget && m_editWidget->canApply() &&
@@ -133,43 +207,74 @@ void NodeEditDialog::refreshButtonEnablement()
 
 void NodeEditDialog::onApply()
 {
-  if (!m_node) {
+  if (!m_node || m_applying) {
     return;
   }
 
+  m_applying = true;
   if (m_editWidget) {
     m_editWidget->applyChangesToOperator();
+  }
+  m_applying = false;
+
+  if (!m_node) {
+    // The node was removed while apply was blocked in a nested event
+    // loop; the deferred close was refused, so close now.
+    close();
+    return;
   }
 
   if (m_isNewInsertion && !m_insertionCompleted) {
     completeInsertion();
   }
 
+  m_node->setHeld(false);
   m_node->markStale();
   m_pipeline->execute();
 }
 
 void NodeEditDialog::onOkay()
 {
-  if (!m_node) {
+  if (!m_node || m_applying) {
     return;
   }
 
+  m_applying = true;
   if (m_editWidget) {
     m_editWidget->applyChangesToOperator();
+  }
+  m_applying = false;
+
+  if (!m_node) {
+    close();
+    return;
   }
 
   if (m_isNewInsertion && !m_insertionCompleted) {
     completeInsertion();
   }
 
+  m_node->setHeld(false);
   m_node->markStale();
   m_pipeline->execute();
   accept();
 }
 
+void NodeEditDialog::closeEvent(QCloseEvent* event)
+{
+  if (m_applying) {
+    event->ignore();
+    return;
+  }
+  QDialog::closeEvent(event);
+}
+
 void NodeEditDialog::reject()
 {
+  if (m_applying) {
+    return;
+  }
+
   if (m_isNewInsertion && !m_insertionCompleted) {
     // The insertion was applied eagerly when the dialog opened.  Undo it so
     // that cancel is a true no-op.  Removing the new node also drops its own
@@ -250,10 +355,12 @@ void NodeEditDialog::showEvent(QShowEvent* event)
 
 void NodeEditDialog::saveGeometry()
 {
-  if (!m_node) {
+  // No application core in test harnesses: nothing to remember into.
+  auto* core = pqApplicationCore::instance();
+  if (!m_node || !core) {
     return;
   }
-  QSettings* settings = pqApplicationCore::instance()->settings();
+  QSettings* settings = core->settings();
   QString key =
     QString("Edit%1NodeDialogGeometry").arg(m_node->label());
   settings->setValue(key, QVariant(geometry()));
@@ -264,10 +371,11 @@ void NodeEditDialog::restoreGeometry()
   if (!m_node) {
     return;
   }
-  QSettings* settings = pqApplicationCore::instance()->settings();
-  QString key =
-    QString("Edit%1NodeDialogGeometry").arg(m_node->label());
-  QVariant saved = settings->value(key);
+  auto* core = pqApplicationCore::instance();
+  QVariant saved = core ? core->settings()->value(
+                            QString("Edit%1NodeDialogGeometry")
+                              .arg(m_node->label()))
+                        : QVariant();
   if (!saved.isNull()) {
     resize(saved.toRect().size());
   } else {

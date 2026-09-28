@@ -4,6 +4,8 @@
 #include "SaveLoadStateReaction.h"
 
 #include "ActiveObjects.h"
+#include "AnimationSerializer.h"
+#include "animations/AnimationSceneGuard.h"
 #include "MainWindow.h"
 #include "pipeline/LegacyStateLoader.h"
 #include "pipeline/Pipeline.h"
@@ -126,8 +128,12 @@ bool SaveLoadStateReaction::loadState(const QString& filename)
   if (success) {
     RecentFilesMenu::pushStateFile(filename);
     // Set the most recent state file if we successfully loaded a
-    // state, whether it was done programmatically or via file dialog
-    MainWindow::instance()->setMostRecentStateFile(filename);
+    // state, whether it was done programmatically or via file dialog.
+    // There is no main window to tell when a state file is loaded
+    // headlessly, which is how the load path is tested.
+    if (auto* window = MainWindow::instance()) {
+      window->setMostRecentStateFile(filename);
+    }
   }
 
   return success;
@@ -227,6 +233,9 @@ bool SaveLoadStateReaction::loadTvh5(const QString& filename,
     return false;
   }
 
+  // A playback still running would tear down its own scene from
+  // inside a tick
+  interruptAnimationPlayback(/*rewind=*/false);
   pipeline->clear();
 
   QMap<int, vtkSMViewProxy*> viewIdMap;
@@ -247,6 +256,7 @@ bool SaveLoadStateReaction::loadTvh5(const QString& filename,
   }
 
   bindFallbackView(pipeline);
+  AnimationSerializer::restore(state, pipeline);
   finalizeNewFormatLoad(pipeline, executePipelines);
   return true;
 }
@@ -287,6 +297,9 @@ bool SaveLoadStateReaction::loadTvsm(const QString& filename,
       }
       // Drop whatever was in the pipeline (matching the confirmation
       // dialog we already showed the user in loadState()).
+      // A playback still running would tear down its own scene from
+      // inside a tick
+      interruptAnimationPlayback(/*rewind=*/false);
       pipeline->clear();
 
       // Order matters: restore views first so sinks can bind to them
@@ -300,6 +313,7 @@ bool SaveLoadStateReaction::loadTvsm(const QString& filename,
         return false;
       }
       bindFallbackView(pipeline);
+      AnimationSerializer::restore(object, pipeline);
       finalizeNewFormatLoad(pipeline, executePipelines);
       return true;
     }
@@ -336,6 +350,7 @@ bool SaveLoadStateReaction::saveTvh5(const QString& fileName)
   }
   QJsonObject extraState;
   ViewsLayoutsSerializer::saveActive(extraState);
+  AnimationSerializer::save(extraState);
   return Tvh5Format::write(fileName.toStdString(), pip, extraState);
 }
 
@@ -360,6 +375,7 @@ bool SaveLoadStateReaction::saveTvsm(const QString& fileName, bool /*interactive
   // PipelineStateIO leaves views/layouts/palette to the caller;
   // append them via the shared helper.
   ViewsLayoutsSerializer::saveActive(state);
+  AnimationSerializer::save(state);
 
   QJsonDocument doc(state);
   return saveFile.write(doc.toJson()) != -1;

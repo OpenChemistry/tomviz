@@ -8,6 +8,7 @@
 #include "SourceNode.h"
 #include "sinks/ClipSink.h"
 #include "sinks/ContourSink.h"
+#include "sinks/LabelMapSink.h"
 #include "sinks/MoleculeSink.h"
 #include "sinks/OutlineSink.h"
 #include "sinks/PlotSink.h"
@@ -107,6 +108,7 @@ void NodeFactory::registerBuiltins()
 
   registerType<ClipSink>(QStringLiteral("sink.clip"));
   registerType<ContourSink>(QStringLiteral("sink.contour"));
+  registerType<LabelMapSink>(QStringLiteral("sink.labelMap"));
   registerType<MoleculeSink>(QStringLiteral("sink.molecule"));
   registerType<OutlineSink>(QStringLiteral("sink.outline"));
   registerType<PlotSink>(QStringLiteral("sink.plot"));

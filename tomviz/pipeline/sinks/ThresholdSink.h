@@ -53,6 +53,13 @@ public:
   double upperThreshold() const;
   void setThresholdRange(double lower, double upper);
 
+signals:
+  /// Emitted whenever the threshold range changes, from the panel, a
+  /// state file, or a bound operator parameter.
+  void thresholdRangeChanged(double lower, double upper);
+
+public:
+
   double opacity() const;
   void setOpacity(double value);
 

@@ -1,24 +1,6 @@
 find_package(TBB REQUIRED)
 
 set(CMAKE_MODULE_LINKER_FLAGS "")
-pybind11_add_module(_wrapping
-  PythonTypeConversions.cxx
-  Wrapping.cxx)
-target_include_directories(_wrapping PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}/../core)
-target_link_libraries(_wrapping
-  PRIVATE tomvizcore VTK::CommonDataModel VTK::WrappingPythonCore)
-
-set_target_properties(_wrapping PROPERTIES
-  LIBRARY_OUTPUT_DIRECTORY "${tomviz_python_binary_dir}/tomviz"
-  LIBRARY_OUTPUT_DIRECTORY_RELEASE "${tomviz_python_binary_dir}/tomviz"
-  LIBRARY_OUTPUT_DIRECTORY_DEBUG "${tomviz_python_binary_dir}/tomviz"
-)
-
-target_compile_options(_wrapping PRIVATE -D__TBB_NO_IMPLICIT_LINKAGE=1)
-install(TARGETS _wrapping
-    DESTINATION "${tomviz_python_install_dir}/tomviz"
-    COMPONENT runtime)
 
 pybind11_add_module(ctvlib
   ctvlib/ctvlib.cxx

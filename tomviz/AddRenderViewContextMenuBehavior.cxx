@@ -6,6 +6,7 @@
 #include <pqActiveObjects.h>
 #include <pqApplicationCore.h>
 #include <pqCameraLinkReaction.h>
+#include <pqLinkViewWidget.h>
 #include <pqManageLinksReaction.h>
 #include <pqRenderView.h>
 #include <pqServerManagerModel.h>
@@ -18,11 +19,56 @@
 #include <QAction>
 #include <QColor>
 #include <QColorDialog>
+#include <QEvent>
 #include <QMenu>
 #include <QMouseEvent>
 #include <QWidget>
 
 namespace tomviz {
+
+namespace {
+
+// ParaView's pqRenderView::linkToOtherView() connects QWidget::close, a
+// slot, as if it were a signal, which warns "signal not found" on every
+// link and never frees the widget. Show the widget here instead, and free
+// it once it hides.
+class LinkViewWidget : public pqLinkViewWidget
+{
+public:
+  using pqLinkViewWidget::pqLinkViewWidget;
+
+protected:
+  bool event(QEvent* e) override
+  {
+    bool handled = pqLinkViewWidget::event(e);
+    if (e->type() == QEvent::Hide) {
+      deleteLater();
+    }
+    return handled;
+  }
+};
+
+class CameraLinkReaction : public pqCameraLinkReaction
+{
+public:
+  using pqCameraLinkReaction::pqCameraLinkReaction;
+
+protected:
+  void onTriggered() override
+  {
+    auto* view =
+      qobject_cast<pqRenderView*>(pqActiveObjects::instance().activeView());
+    if (!view) {
+      return;
+    }
+    auto* widget = new LinkViewWidget(view);
+    widget->move(view->widget()->mapToGlobal(QPoint(2, 2)));
+    widget->show();
+  }
+};
+
+} // namespace
+
 AddRenderViewContextMenuBehavior::AddRenderViewContextMenuBehavior(QObject* p)
   : QObject(p)
 {
@@ -38,7 +84,7 @@ AddRenderViewContextMenuBehavior::AddRenderViewContextMenuBehavior(QObject* p)
   m_menu->addSeparator();
 
   // Support camera linking/unlinking
-  new pqCameraLinkReaction(m_menu->addAction("Add Camera Link...")
+  new CameraLinkReaction(m_menu->addAction("Add Camera Link...")
                            << pqSetName("actionToolsAddCameraLink"));
   new pqManageLinksReaction(m_menu->addAction("Manage Camera Links...")
                             << pqSetName("actionToolsManageCameraLinks"));

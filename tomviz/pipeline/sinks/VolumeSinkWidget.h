@@ -8,6 +8,10 @@
 #include <QWidget>
 
 class QFormLayout;
+class QComboBox;
+class QLabel;
+class QPushButton;
+class QVBoxLayout;
 
 /**
  * \brief UI layer of VolumeSink.
@@ -18,7 +22,7 @@ class QFormLayout;
 
 namespace Ui {
 class VolumeSinkWidget;
-class LightingParametersForm;
+class VolumeLightingForm;
 } // namespace Ui
 
 namespace tomviz {
@@ -46,6 +50,22 @@ public:
   void setDiffuse(const double value);
   void setSpecular(const double value);
   void setSpecularPower(const double value);
+  void setVolumetricScattering(const double value);
+  void setShadowsEnabled(const bool enable);
+  /// Show or hide the explanation for the frame guard having switched
+  /// volumetric shadows off.
+  void setScatteringOverBudget(const bool overBudget);
+  void setShadowReach(const double value);
+  void setAnisotropy(const double value);
+  void setSmoothNormals(const bool enable);
+  /// Highlight the preset button matching the sink's current lighting
+  /// state (VolumeSink::LightingPreset); -1 (Custom) unchecks them all.
+  void setActiveLightingPreset(const int preset);
+  /// Select @a name in the saved-presets combo (empty for none).
+  void setActiveUserLightingPreset(const QString& name);
+  /// Enable or disable the presets and controls that cast volumetric
+  /// shadows. When disabling, @a reason is shown as their tool tip.
+  void setScatteringAvailable(const bool available, const QString& reason);
   void setTransferMode(const int transferMode);
   void setSolidity(const double value);
   void setRgbaMappingAllowed(const bool allowed);
@@ -56,9 +76,22 @@ public:
   void setRgbaMappingCombineComponents(const bool b);
   void setRgbaMappingComponentOptions(const QStringList& list);
   void setRgbaMappingComponent(const QString& component);
-  void setAllowMultiVolume(const bool allow);
-  void setEnableAllowMultiVolume(const bool enable);
+  /// Reflect the sink being drawn as part of its view's multi-volume.
+  /// That path always composites with ray jittering, so those controls
+  /// are greyed out while @a active; and it takes its lighting from one
+  /// member, so the lighting group is editable only for the @a lead, with
+  /// a note naming @a leadLabel on the others.
+  void setMultiVolumeMode(const bool active, const bool lead,
+                          const QString& leadLabel);
   QFormLayout* formLayout();
+  /// The top-level vertical layout, so a sink can slot controls of its
+  /// own in among the volume ones.
+  QVBoxLayout* mainLayout();
+  /// Hide the controls that only make sense for a continuous scalar
+  /// field, for a sink rendering categorical data (a label map):
+  /// blending, which averages or maximizes label numbers, and
+  /// interpolation, whose linear setting invents values between labels.
+  void setCategoricalMode(const bool categorical);
   //@}
 
 signals:
@@ -74,6 +107,16 @@ signals:
   void diffuseChanged(const double value);
   void specularChanged(const double value);
   void specularPowerChanged(const double value);
+  void volumetricScatteringChanged(const double value);
+  void shadowsToggled(const bool state);
+  void shadowReachChanged(const double value);
+  void anisotropyChanged(const double value);
+  void smoothNormalsToggled(const bool state);
+  void lightingPresetClicked(const int preset);
+  void userLightingPresetSelected(const QString& name);
+  void saveUserLightingPresetRequested();
+  void renameUserLightingPresetRequested(const QString& name);
+  void deleteUserLightingPresetRequested(const QString& name);
   void transferModeChanged(const int mode);
   void solidityChanged(const double value);
   void useRgbaMappingToggled(const bool b);
@@ -81,7 +124,6 @@ signals:
   void rgbaMappingMinChanged(const double value);
   void rgbaMappingMaxChanged(const double value);
   void rgbaMappingComponentChanged(const QString& component);
-  void allowMultiVolumeToggled(const bool state);
   //@}
 
 private:
@@ -89,9 +131,35 @@ private:
   void operator=(const VolumeSinkWidget&) = delete;
 
   bool usesLighting(const int mode) const;
+  /// The preset buttons, indexed by VolumeSink::LightingPreset.
+  QList<QPushButton*> presetButtons() const;
+  /// Rebuild the saved-presets combo from the store.
+  void refreshUserLightingPresets();
+  /// Grey out the Advanced shadow controls whenever they cannot do
+  /// anything: shadows switched off, or scattering unavailable entirely.
+  void updateShadowControlsEnabled();
+  /// Controls that only do anything when volumetric scattering is available.
+  QList<QWidget*> scatteringWidgets() const;
+
+  // Mirrors the last setScatteringAvailable() call. Read back from the
+  // check box instead and a disabled parent (non-composite blending
+  // greys the whole group) would latch the shadow controls off.
+  bool m_scatteringAvailable = true;
+  // The sink is in its view's multi-volume without being its lead, so its
+  // lighting is not what renders. Kept here so a blending change does not
+  // re-enable the group.
+  bool m_lightingShared = false;
+  // Explains, at the top of the lighting group, whose lighting applies
+  // while the view's volumes are rendered together.
+  QLabel* m_multiVolumeNote = nullptr;
+
+  QComboBox* m_userPresets = nullptr;
+
+  QPushButton* m_renameUserPreset = nullptr;
+  QPushButton* m_deleteUserPreset = nullptr;
 
   QScopedPointer<Ui::VolumeSinkWidget> m_ui;
-  QScopedPointer<Ui::LightingParametersForm> m_uiLighting;
+  QScopedPointer<Ui::VolumeLightingForm> m_uiLighting;
 
 private slots:
   void onBlendingChanged(const int mode);

@@ -9,6 +9,7 @@
     <file alias="spinner.png">../icons/spinner.png</file>
     <file alias="spinner@2x.png">../icons/spinner@2x.png</file>
     <file alias="breakpoint.svg">../icons/breakpoint.svg</file>
+    <file alias="autoexecute.svg">../icons/autoexecute.svg</file>
     <file alias="error.png">../icons/error_notification.png</file>
     <file alias="error@2x.png">../icons/error_notification@2x.png</file>
     <file alias="canceled.png">../icons/red_cross.png</file>

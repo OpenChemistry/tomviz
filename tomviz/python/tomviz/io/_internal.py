@@ -4,6 +4,7 @@
 # This source file is part of the Tomviz project, https://tomviz.org/.
 # It is released under the 3-Clause BSD License, see "LICENSE".
 ###############################################################################
+import importlib
 import inspect
 import pkgutil
 
@@ -16,7 +17,7 @@ def list_python_readers():
     readers = []
     for importer, name, _ in pkgutil.iter_modules(tomviz.io.formats.__path__,
                                                   prefix='tomviz.io.formats.'):
-        m = importer.find_spec(name).loader.load_module()
+        m = importlib.import_module(name)
         for _, c in inspect.getmembers(m, inspect.isclass):
             if inspect.getmodule(c) is m:
                 if issubclass(c, tomviz.io.Reader):
@@ -42,7 +43,7 @@ def list_python_writers():
     writers = []
     for importer, name, _ in pkgutil.iter_modules(tomviz.io.formats.__path__,
                                                   prefix='tomviz.io.formats.'):
-        m = importer.find_spec(name).loader.load_module()
+        m = importlib.import_module(name)
         for _, c in inspect.getmembers(m, inspect.isclass):
             if inspect.getmodule(c) is m:
                 if issubclass(c, tomviz.io.Writer):

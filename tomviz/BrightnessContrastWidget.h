@@ -42,6 +42,9 @@ public:
 signals:
   void autoPressed();
   void resetPressed();
+  /// Auto-contrast using only the voxels inside a region the user
+  /// picks, rather than the whole volume.
+  void autoRegionPressed();
 
 private:
   class Internals;

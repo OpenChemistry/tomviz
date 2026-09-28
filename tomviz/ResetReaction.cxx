@@ -5,6 +5,8 @@
 
 #include "ActiveObjects.h"
 #include "HistogramManager.h"
+#include "animations/CameraViewpoints.h"
+#include "animations/ModuleAnimations.h"
 #include "pipeline/Pipeline.h"
 #include "Utilities.h"
 
@@ -37,6 +39,12 @@ void ResetReaction::reset()
   if (pipeline) {
     pipeline->clear();
   }
+  // The animations describe the data that just went: the viewpoints
+  // framed it and their recorded state names its nodes. Clearing them
+  // also stops the camera path, and lets the next dataset start with
+  // its own opening orbit.
+  CameraViewpoints::instance().clear();
+  ModuleAnimations::instance().clear();
   HistogramManager::instance().clearCaches();
 }
 } // namespace tomviz

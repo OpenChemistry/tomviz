@@ -33,6 +33,15 @@ enum class DefinitionSchema
   V2
 };
 
+/// What a candidate description is meant for. A live node's schema,
+/// shape, ports and custom widget are frozen; a definition file on disk
+/// is bound to no node class, so only the description itself is checked.
+enum class DefinitionTarget
+{
+  LiveNode,
+  File
+};
+
 struct DefinitionIssue
 {
   enum class Severity
@@ -70,6 +79,11 @@ struct DefinitionValidation
 /// AddPythonTransformReaction.
 DefinitionSchema definitionSchema(const QString& json);
 
+/// The shape a description implies: v2 with ``inputs`` is a transform, v2
+/// without is a source, and v1 is always a transform. Matches the routing
+/// in AddPythonTransformReaction and tomviz._internal.
+NodeShape definitionShape(const QString& json);
+
 /// Check @a candidateJson as a replacement for @a currentJson on a live
 /// node of the given shape and schema.
 ///
@@ -80,10 +94,15 @@ DefinitionSchema definitionSchema(const QString& json);
 /// help text, cancel/complete support, external-execution flags) is
 /// free to change, with the parameter consequences reported as
 /// warnings.
-DefinitionValidation validateNodeDefinition(const QString& currentJson,
-                                            const QString& candidateJson,
-                                            NodeShape shape,
-                                            DefinitionSchema schema);
+///
+/// With DefinitionTarget::File none of the identity or port checks
+/// apply, and the parameter diff (phrased for a live node's values) is
+/// skipped; the description still has to parse and declare its
+/// parameters properly, and an existing one cannot be blanked.
+DefinitionValidation validateNodeDefinition(
+  const QString& currentJson, const QString& candidateJson, NodeShape shape,
+  DefinitionSchema schema,
+  DefinitionTarget target = DefinitionTarget::LiveNode);
 
 /// Parse a description's ``parameters`` array into name → declared
 /// type. Nameless layout entries (``xyz_header``) are skipped, as are

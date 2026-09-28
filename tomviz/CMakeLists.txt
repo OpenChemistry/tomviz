@@ -24,6 +24,8 @@ set(SOURCES
   AlignWidget.h
   AnimationHelperDialog.cxx
   AnimationHelperDialog.h
+  AnimationSerializer.cxx
+  AnimationSerializer.h
   ArrayWranglerReaction.cxx
   ArrayWranglerReaction.h
   AxesReaction.cxx
@@ -31,6 +33,8 @@ set(SOURCES
   Behaviors.cxx
   Behaviors.h
   BrightnessContrastWidget.cxx
+  OpacityPresetWidget.cxx
+  OpacityPresetWidget.h
   BrightnessContrastWidget.h
   CameraReaction.cxx
   CameraReaction.h
@@ -48,10 +52,22 @@ set(SOURCES
   ConvertToFloatReaction.h
   CropReaction.cxx
   CropReaction.h
+  CustomOperatorEditDialog.cxx
+  CustomOperatorEditDialog.h
+  CustomOperatorManagerDialog.cxx
+  CustomOperatorManagerDialog.h
   SAM2SeedWidget.cxx
   SAM2SeedWidget.h
   SelectCylinderWidget.cxx
   SelectCylinderWidget.h
+  SelectVolumeRangeWidget.cxx
+  SelectVolumeRangeWidget.h
+  ThresholdRangeWidget.cxx
+  ThresholdRangeWidget.h
+  LabelSelection.cxx
+  LabelSelection.h
+  LabelSelectionWidget.cxx
+  LabelSelectionWidget.h
   SelectVolumeWidget.cxx
   SelectVolumeWidget.h
   DataBroker.cxx
@@ -98,10 +114,12 @@ set(SOURCES
   Histogram2DWidget.cxx
   ImageStackDialog.h
   ImageStackDialog.cxx
+  ClippingRangeBehavior.cxx
+  ClippingRangeBehavior.h
+  ImageViewerModeBehavior.cxx
+  ImageViewerModeBehavior.h
   ImageStackModel.h
   ImageStackModel.cxx
-  InternalPythonHelper.h
-  InternalPythonHelper.cxx
   IntSliderWidget.cxx
   IntSliderWidget.h
   ListEditorWidget.cxx
@@ -122,6 +140,8 @@ set(SOURCES
   OperatorSearchDialog.h
   MoleculeProperties.cxx
   MoleculeProperties.h
+  MovieExportDialog.cxx
+  MovieExportDialog.h
   InteractiveTransformWidget.cxx
   InteractiveTransformWidget.h
   PortDataWriter.cxx
@@ -196,6 +216,8 @@ set(SOURCES
   TomographyReconstruction.cxx
   TomographyTiltSeries.h
   TomographyTiltSeries.cxx
+  TrackpadTouchFix.h
+  TrackpadTouchFix.cxx
   TransformUtils.h
   TransformUtils.cxx
   TransposeDataReaction.h
@@ -255,12 +277,18 @@ set(SOURCES
   pipeline/InternalNodeExecutor.h
   pipeline/ExternalNodeExecutor.cxx
   pipeline/ExternalNodeExecutor.h
+  pipeline/PythonEnvironmentCheck.cxx
+  pipeline/PythonEnvironmentCheck.h
   pipeline/NodeExecutorFactory.cxx
   pipeline/NodeExecutorFactory.h
+  pipeline/AutoExecuteController.cxx
+  pipeline/AutoExecuteController.h
   pipeline/ProgressReader.cxx
   pipeline/ProgressReader.h
   pipeline/PythonNodeWrapper.cxx
   pipeline/PythonNodeWrapper.h
+  pipeline/EnumOptions.cxx
+  pipeline/EnumOptions.h
   pipeline/PythonNodeUtils.cxx
   pipeline/PythonNodeUtils.h
   pipeline/PythonNodeBackend.cxx
@@ -275,6 +303,8 @@ set(SOURCES
   pipeline/ThreadedExecutor.h
   pipeline/data/VolumeData.cxx
   pipeline/data/VolumeData.h
+  pipeline/data/LabelMapData.cxx
+  pipeline/data/LabelMapData.h
   pipeline/sources/SphereSource.cxx
   pipeline/sources/SphereSource.h
   pipeline/sources/ReaderSourceNode.cxx
@@ -307,8 +337,20 @@ set(SOURCES
   pipeline/sinks/VolumeStatsSink.h
   pipeline/sinks/LegacyModuleSink.cxx
   pipeline/sinks/LegacyModuleSink.h
+  pipeline/sinks/ExplodedGeometry.cxx
+  pipeline/sinks/ExplodedGeometry.h
   pipeline/sinks/VolumeSink.cxx
   pipeline/sinks/VolumeSink.h
+  pipeline/sinks/LabelMapSink.cxx
+  pipeline/sinks/LabelMapSink.h
+  pipeline/sinks/MultiVolumeCoordinator.cxx
+  pipeline/sinks/MultiVolumeCoordinator.h
+  pipeline/sinks/LabelMapSurface.cxx
+  pipeline/sinks/LabelMapSurface.h
+  pipeline/sinks/LabelTableWidget.cxx
+  pipeline/sinks/LabelTableWidget.h
+  pipeline/sinks/LightingPresetStore.cxx
+  pipeline/sinks/LightingPresetStore.h
   pipeline/sinks/VolumeBricking.cxx
   pipeline/sinks/VolumeBricking.h
   pipeline/sinks/SliceSink.cxx
@@ -363,6 +405,8 @@ set(SOURCES
   pipeline/NodeDefinitionWidget.h
   pipeline/PythonNodeEditorWidget.cxx
   pipeline/PythonNodeEditorWidget.h
+  pipeline/PythonScriptEdit.cxx
+  pipeline/PythonScriptEdit.h
   pipeline/NodePropertiesPanel.cxx
   pipeline/NodePropertiesPanel.h
   pipeline/NodeEditDialog.cxx
@@ -460,8 +504,30 @@ list(APPEND SOURCES
 # animations/
 list(APPEND SOURCES
   animations/ModuleAnimation.h
+  animations/ModuleAnimations.cxx
+  animations/ModuleAnimations.h
+  animations/OpacityInterpolation.cxx
+  animations/OpacityInterpolation.h
+  animations/ScalarOpacityAnimation.h
+  animations/CameraAnimation.h
+  animations/AnimationSceneGuard.cxx
+  animations/CameraViewpoints.cxx
+  animations/CameraViewpoints.h
+  animations/RecordedAnimations.cxx
+  animations/RecordedAnimations.h
+  animations/SceneSnapshot.cxx
+  animations/SceneSnapshot.h
+  animations/AnimatableProperties.cxx
+  animations/AnimatableProperties.h
+  animations/ClipAnimation.h
   animations/ContourAnimation.h
+  animations/CutOutAnimation.h
+  animations/ExplodedAnimation.h
+  animations/OpacityAnimation.h
   animations/SliceAnimation.h
+  animations/SolidityAnimation.h
+  animations/ThresholdAnimation.h
+  animations/TimeSeriesAnimation.h
 )
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/animations)
 
@@ -486,7 +552,13 @@ set(python_files
   AddPoissonNoise.py
   BinaryThreshold.py
   CircleMask.py
+  CombineDatasets.py
+  FourierFilter.py
+  FourierPeakMask.py
+  FourierMask.py
+  ImageMath.py
   ConnectedComponents.py
+  RemoveLabels.py
   ClipEdges.py
   OtsuMultipleThreshold.py
   BinaryDilate.py
@@ -544,11 +616,13 @@ set(python_files
   SetNegativeVoxelsToZero.py
   ShiftTiltSeriesRandomly.py
   STEM_probe.py
+  SimulatedLiveAcquisition.py
   InvertData.py
   Pad_Data.py
   BinVolumeByTwo.py
   BinTiltSeriesByTwo.py
   DefaultCustomTransform.py
+  NewCustomTransform.py
   DefaultITKTransform.py
   BinaryMinMaxCurvatureFlow.py
   ReinterpretSignedToUnsigned.py
@@ -572,6 +646,7 @@ set(python_files
 
 set(json_files
   AddPoissonNoise.json
+  NewCustomTransform.json
   AutoCenterOfMassTiltImageAlignment.json
   AutoCrossCorrelationTiltImageAlignment.json
   AutoTiltAxisRotationAlignment.json
@@ -579,8 +654,15 @@ set(json_files
   PyStackRegImageAlignment.json
   BinaryThreshold.json
   CircleMask.json
+  CombineDatasets.json
+  FourierFilter.json
+  FourierPeakMask.json
+  FourierMask.json
+  ImageMath.json
   ConnectedComponents.json
+  RemoveLabels.json
   ClipEdges.json
+  ClearVolume.json
   OtsuMultipleThreshold.json
   BinaryDilate.json
   BinaryErode.json
@@ -598,6 +680,7 @@ set(json_files
   Pad_Data.json
   Resample.json
   DeleteSlices.json
+  FFT_AbsLog.json
   GaussianFilter.json
   GaussianFilterTiltSeries.json
   PeronaMalikAnisotropicDiffusion.json
@@ -639,6 +722,7 @@ set(json_files
   PtychoSource.json
   PyXRFSource.json
   STEM_probe.json
+  SimulatedLiveAcquisition.json
   )
 
 set(resource_files
@@ -711,20 +795,22 @@ foreach(file ${template_files})
     COMPONENT runtime)
 endforeach()
 
+# The generic pipeline engine lives in the external tomviz-pipeline
+# package (import name tomviz_pipeline), installed alongside this
+# package's Python dependencies. Only the app-side layer is staged here.
 set(tomviz_python_modules
   __init__.py
+  _boundary.py
   _internal.py
+  _pipeline_requirement.py
   dataset.py
-  external_dataset.py
   fix_pdb.py
   nodes.py
   operators.py
-  internal_dataset.py
   internal_utils.py
   itkutils.py
   utils.py
   web.py
-  modules.py
 )
 
 file(MAKE_DIRECTORY "${tomviz_python_binary_dir}/tomviz")
@@ -794,15 +880,6 @@ foreach(file ${tomviz_python_ptycho_modules})
     "${tomviz_python_binary_dir}/tomviz/ptycho/${file}")
 endforeach()
 
-file(GLOB tomviz_python_state_modules "${tomviz_SOURCE_DIR}/tomviz/python/tomviz/state/*.py")
-file(MAKE_DIRECTORY "${tomviz_python_binary_dir}/tomviz/state")
-foreach(file_ ${tomviz_python_state_modules})
-  get_filename_component(file ${file_} NAME)
-  execute_process(COMMAND ${CMAKE_COMMAND} -E ${script_cmd}
-    "${tomviz_SOURCE_DIR}/tomviz/python/tomviz/state/${file}"
-    "${tomviz_python_binary_dir}/tomviz/state/${file}")
-endforeach()
-
 # Autodiscover python reader/writers added to tomviz/python/tomviz/io/formats
 file(GLOB tomviz_python_io_formats "${tomviz_SOURCE_DIR}/tomviz/python/tomviz/io/formats/*.py")
 file(MAKE_DIRECTORY "${tomviz_python_binary_dir}/tomviz/io/formats")
@@ -844,6 +921,24 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/core
   ${CMAKE_CURRENT_SOURCE_DIR}/pipeline)
 
+# The tomviz-pipeline version this app depends on lives in
+# python/tomviz/_pipeline_requirement.py (also read by setup.py) and is
+# surfaced to the C++ external-environment check via tomvizConfig.h.
+set(_pipeline_requirement_py
+  "${CMAKE_CURRENT_SOURCE_DIR}/python/tomviz/_pipeline_requirement.py")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+  "${_pipeline_requirement_py}")
+file(STRINGS "${_pipeline_requirement_py}" _pipeline_requirement_line
+  REGEX "^TOMVIZ_PIPELINE_MIN_VERSION[ ]*=[ ]*['\"]")
+string(REGEX REPLACE
+  "^TOMVIZ_PIPELINE_MIN_VERSION[ ]*=[ ]*['\"]([^'\"]+)['\"].*$" "\\1"
+  tomviz_pipeline_min_version "${_pipeline_requirement_line}")
+if(NOT tomviz_pipeline_min_version MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+")
+  message(FATAL_ERROR
+    "Could not read TOMVIZ_PIPELINE_MIN_VERSION from ${_pipeline_requirement_py}")
+endif()
+message(STATUS "Required tomviz-pipeline version: ${tomviz_pipeline_min_version}")
+
 configure_file(tomvizConfig.h.in tomvizConfig.h @ONLY)
 configure_file(tomvizPythonConfig.h.in tomvizPythonConfig.h @ONLY)
 
@@ -881,6 +976,7 @@ target_link_libraries(tomvizlib
     tomvizcore
     ParaView::pqApplicationComponents
     ParaView::pqPython
+    ParaView::RemotingAnimation
     ParaView::RemotingExport
     ParaView::RemotingViews
     VTK::jsoncpp

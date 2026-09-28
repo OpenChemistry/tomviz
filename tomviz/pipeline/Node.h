@@ -13,6 +13,7 @@
 #include <QJsonObject>
 #include <QList>
 #include <QMap>
+#include <QMutex>
 #include <QObject>
 #include <QString>
 #include <QVariant>
@@ -55,6 +56,17 @@ public:
 
   bool isEditing() const;
   void setEditing(bool editing);
+
+  /// A held node is skipped by the executors, and everything fed by it
+  /// waits, exactly as at a breakpoint but without the stop being
+  /// reported. NodeEditDialog holds a newly inserted node until its
+  /// first Apply: the insertion is spliced into the pipeline eagerly so
+  /// the strip can preview it, and without the hold any global execute
+  /// (adding a module, a periodic source, the histogram) would run the
+  /// node with its default parameters before the user finished. Not
+  /// serialized.
+  bool isHeld() const;
+  void setHeld(bool held);
 
   bool hasBreakpoint() const;
   void setBreakpoint(bool enabled);
@@ -100,6 +112,12 @@ public:
 
   virtual bool execute();
 
+  /// Whether a new volume output takes its color map from an input
+  /// (see colorMapSource). Nodes whose output values mean something
+  /// else entirely, like a Fourier spectrum, return false so the output
+  /// starts from the default color map.
+  virtual bool inheritsColorMap() const { return true; }
+
   /// Whether this node provides an editor widget (script + parameters
   /// + execution settings) usable from the properties panel and the
   /// edit dialog. Defaults to false; subclasses that have user-editable
@@ -123,6 +141,46 @@ public:
   /// executor's lifetime.
   NodeExecutor* nodeExecutor() const;
   void setNodeExecutor(NodeExecutor* executor);
+
+  static constexpr int kDefaultAutoExecuteIntervalSeconds = 30;
+
+  /// Periodic execution (schema-v2 Python nodes). When enabled, the
+  /// application polls queryShouldAutoExecute() every intervalSeconds
+  /// — through the node's executor, so external nodes are asked in
+  /// their external environment — and re-executes the pipeline when
+  /// the answer is true. Off by default.
+  bool autoExecuteEnabled() const;
+  void setAutoExecuteEnabled(bool enabled);
+  int autoExecuteIntervalSeconds() const;
+  void setAutoExecuteIntervalSeconds(int seconds);
+
+  /// Ask the node's implementation whether a periodic execution
+  /// should happen now. Runs user code (the schema-v2 Python
+  /// should_auto_execute hook), so call it from a worker thread, never
+  /// while the node is executing. The base implementation never
+  /// requests a re-run.
+  virtual bool queryShouldAutoExecute();
+
+  /// Free-form state bag surfaced to schema-v2 Python node code as
+  /// `self.state`. Preserved across executions within a session but
+  /// deliberately not serialized. Values are restricted to the
+  /// JSON-compatible types so the bag can cross the external-executor
+  /// process boundary. Thread-safe (accessors copy under a lock).
+  QVariantMap userState() const;
+  void setUserState(const QVariantMap& state);
+
+  /// Install parameter values the node's *own implementation* changed
+  /// while running — a schema-v2 kernel's `self.set_parameter()`,
+  /// harvested by PythonNodeBackend after the user method returns, or
+  /// read back from an external run's node_parameters.json. The quiet
+  /// counterpart of the editor's apply path: nothing is marked stale
+  /// and parametersApplied is NOT emitted (that one re-executes the
+  /// pipeline, which from inside a run would cancel the run itself).
+  /// The run that made the change is deemed to have consumed it; the
+  /// node's next run receives the new values. Implementations emit
+  /// parametersUpdated for the values that actually differ. The base
+  /// implementation (nodes without parameters) ignores the map.
+  virtual void applyParameterUpdates(const QVariantMap& updates);
 
   /// Apply a batch of intermediate (live preview) updates to this
   /// node's output ports. Each entry maps an output port name to the
@@ -221,6 +279,18 @@ signals:
   /// connect this to pipeline re-execution.
   void parametersApplied();
 
+  /// Emitted when the auto-execute setting (enabled flag or interval)
+  /// changes. The AutoExecuteController re-syncs its timer for this
+  /// node on it.
+  void autoExecuteChanged();
+
+  /// Emitted by applyParameterUpdates() with the values that changed:
+  /// the node's own implementation wrote back to its parameters during
+  /// a run. Nothing is stale and no re-execution is warranted — an
+  /// editor showing this node refreshes its Parameters tab. May be
+  /// emitted from a pipeline worker thread.
+  void parametersUpdated(const QVariantMap& changed);
+
 public:
   /// Reset the canceled/completed flags. Public so a NodeExecutor can
   /// prime them at the start of an execution.
@@ -254,6 +324,7 @@ private:
   NodeState m_state = NodeState::New;
   NodeExecState m_execState = NodeExecState::Idle;
   bool m_editing = false;
+  bool m_held = false;
   bool m_breakpoint = false;
   QList<InputPort*> m_inputPorts;
   QList<OutputPort*> m_outputPorts;
@@ -267,6 +338,12 @@ private:
   std::atomic<bool> m_canceled{false};
   std::atomic<bool> m_completed{false};
   NodeExecutor* m_nodeExecutor = nullptr;
+  bool m_autoExecuteEnabled = false;
+  int m_autoExecuteIntervalS = kDefaultAutoExecuteIntervalSeconds;
+  /// Guards m_userState: executions and auto-execute queries touch it
+  /// from worker threads.
+  mutable QMutex m_userStateMutex;
+  QVariantMap m_userState;
 };
 
 } // namespace pipeline

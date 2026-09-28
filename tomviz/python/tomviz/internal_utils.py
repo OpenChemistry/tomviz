@@ -26,11 +26,6 @@ def get_scalars(dataobject, name=None):
     return vtkarray
 
 
-@with_vtk_dataobject
-def get_active_scalars_name(dataobject):
-    return dataobject.GetPointData().GetScalars().GetName()
-
-
 def is_numpy_vtk_type(newscalars):
     # Indicate whether the type is known/supported by VTK to NumPy routines.
     require_internal_mode()
@@ -41,23 +36,6 @@ def is_numpy_vtk_type(newscalars):
         return False
     else:
         return True
-
-
-@with_vtk_dataobject
-def set_scalars(dataobject, newscalars):
-    do = dsa.WrapDataObject(dataobject)
-    oldscalars = do.PointData.GetScalars()
-    if oldscalars is None:
-        name = "scalars"
-    else:
-        name = oldscalars.GetName()
-        del oldscalars
-
-    if not is_numpy_vtk_type(newscalars):
-        newscalars = newscalars.astype(np.float32)
-
-    do.PointData.append(newscalars, name)
-    do.PointData.SetActiveScalars(name)
 
 
 @with_vtk_dataobject
@@ -72,36 +50,6 @@ def get_array(dataobject, name=None, order='F'):
                                      (dataobject.GetDimensions()[::-1]),
                                      order=order)
     return scalars_array3d
-
-
-@with_vtk_dataobject
-def array_names(dataobject):
-    do = dsa.WrapDataObject(dataobject)
-    num_arrays = do.PointData.GetNumberOfArrays()
-    return [do.PointData.GetArrayName(i) for i in range(num_arrays)]
-
-
-@with_vtk_dataobject
-def arrays(dataobject):
-    """
-    Iterate over (name, array) for the arrays in this dataset.
-
-    :param dataobject The incoming dataset
-    :type: vtkDataObject
-    """
-    for name in array_names(dataobject):
-        yield (name, get_array(dataobject, name))
-
-
-@with_vtk_dataobject
-def remove_array(dataobject, name):
-    pd = dataobject.GetPointData()
-    if pd.GetAbstractArray(name) is None:
-        raise KeyError(f"No scalar array named '{name}'")
-    pd.RemoveArray(name)
-    # If the active scalars were removed, set the first remaining array active
-    if pd.GetScalars() is None and pd.GetNumberOfArrays() > 0:
-        pd.SetActiveScalars(pd.GetArrayName(0))
 
 
 @with_vtk_dataobject
@@ -189,34 +137,6 @@ def set_tilt_angles(dataobject, newarray):
 
 
 @with_vtk_dataobject
-def get_scan_ids(dataobject):
-    # Get the scan IDs array
-    do = dsa.WrapDataObject(dataobject)
-    rawarray = do.FieldData.GetArray('scan_ids')
-    if isinstance(rawarray, dsa.VTKNoneArray):
-        return None
-    vtkarray = dsa.vtkDataArrayToVTKArray(rawarray, do)
-    vtkarray.Association = dsa.ArrayAssociation.FIELD
-    return vtkarray
-
-
-@with_vtk_dataobject
-def set_scan_ids(dataobject, newarray):
-    # replace the scan IDs with the new array
-    from vtkmodules.util.vtkConstants import VTK_INT
-    if newarray is None:
-        do = dsa.WrapDataObject(dataobject)
-        do.FieldData.RemoveArray('scan_ids')
-        return
-    vtkarray = np_s.numpy_to_vtk(newarray, deep=1, array_type=VTK_INT)
-    vtkarray.Association = dsa.ArrayAssociation.FIELD
-    vtkarray.SetName('scan_ids')
-    do = dsa.WrapDataObject(dataobject)
-    do.FieldData.RemoveArray('scan_ids')
-    do.FieldData.AddArray(vtkarray)
-
-
-@with_vtk_dataobject
 def get_coordinate_arrays(dataobject):
     """Returns a triple of Numpy arrays containing x, y, and z coordinates for
     each point in the dataset. This can be used to evaluate a function at each
@@ -236,113 +156,3 @@ def get_coordinate_arrays(dataobject):
     yy, xx, zz = np.meshgrid(y, x, z)
 
     return (xx, yy, zz)
-
-
-@with_vtk_dataobject
-def make_child_dataset(dataobject):
-    """Creates a child dataset with the same size as the reference_dataset.
-    """
-    from vtk import vtkImageData
-    new_child = vtkImageData()
-    new_child.CopyStructure(dataobject)
-    input_spacing = dataobject.GetSpacing()
-    # For a reconstruction we copy the X spacing from the input dataset
-    child_spacing = (input_spacing[0], input_spacing[1], input_spacing[0])
-    new_child.SetSpacing(child_spacing)
-
-    return new_child
-
-
-def make_dataset(x, y, z, dataobject, generate_data_function, **kwargs):
-    from vtk import VTK_DOUBLE
-    array = np.zeros((x, y, z), order='F')
-    generate_data_function(array, **kwargs)
-    dataobject.SetOrigin(0, 0, 0)
-    dataobject.SetSpacing(1, 1, 1)
-    dataobject.SetExtent(0, x - 1, 0, y - 1, 0, z - 1)
-    flat_array = array.reshape(-1, order='F')
-    vtkarray = np_s.numpy_to_vtk(flat_array, deep=1, array_type=VTK_DOUBLE)
-    vtkarray.SetName("generated_scalars")
-    dataobject.GetPointData().SetScalars(vtkarray)
-
-
-@with_vtk_dataobject
-def mark_as_volume(dataobject):
-    from vtk import vtkTypeInt8Array
-    fd = dataobject.GetFieldData()
-    arr = fd.GetArray("tomviz_data_source_type")
-    if arr is None:
-        arr = vtkTypeInt8Array()
-        arr.SetNumberOfComponents(1)
-        arr.SetNumberOfTuples(1)
-        arr.SetName("tomviz_data_source_type")
-        fd.AddArray(arr)
-    arr.SetTuple1(0, 0)
-
-
-@with_vtk_dataobject
-def mark_as_tiltseries(dataobject):
-    from vtk import vtkTypeInt8Array
-    fd = dataobject.GetFieldData()
-    arr = fd.GetArray("tomviz_data_source_type")
-    if arr is None:
-        arr = vtkTypeInt8Array()
-        arr.SetNumberOfComponents(1)
-        arr.SetNumberOfTuples(1)
-        arr.SetName("tomviz_data_source_type")
-        fd.AddArray(arr)
-    arr.SetTuple1(0, 1)
-
-
-@with_vtk_dataobject
-def set_size(dataobject, x=None, y=None, z=None):
-    axes = []
-    lengths = []
-    if x is not None:
-        axes.append(0)
-        lengths.append(x)
-    if y is not None:
-        axes.append(1)
-        lengths.append(y)
-    if z is not None:
-        axes.append(2)
-        lengths.append(z)
-
-    extent = dataobject.GetExtent()
-    spacing = list(dataobject.GetSpacing())
-    for axis, new_length in zip(axes, lengths):
-        spacing[axis] = \
-            new_length / (extent[2 * axis + 1] - extent[2 * axis] + 1)
-
-    dataobject.SetSpacing(spacing)
-
-
-@with_vtk_dataobject
-def get_spacing(dataobject):
-    return dataobject.GetSpacing()
-
-
-@with_vtk_dataobject
-def set_spacing(dataobject, x=None, y=None, z=None):
-    spacing = list(dataobject.GetSpacing())
-    if x is not None:
-        spacing[0] = x
-    if y is not None:
-        spacing[1] = y
-    if z is not None:
-        spacing[2] = z
-
-    dataobject.SetSpacing(spacing)
-
-
-def _minmax(coor, minc, maxc):
-    if coor[0] < minc[0]:
-        minc[0] = coor[0]
-    if coor[0] > maxc[0]:
-        maxc[0] = coor[0]
-    if coor[1] < minc[1]:
-        minc[1] = coor[1]
-    if coor[1] > maxc[1]:
-        maxc[1] = coor[1]
-
-    return minc, maxc

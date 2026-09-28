@@ -118,6 +118,7 @@ protected:
   bool applyActiveScalars();
   void updateColorArray();
   void updateColorArrayProducer();
+  void updateMapperInput();
   void updateScalarArrayOptions();
 
 private:

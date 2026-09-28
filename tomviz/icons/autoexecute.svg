@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 64 64"
+   version="1.1"
+   xmlns="http://www.w3.org/2000/svg">
+  <!-- Circular band open at 3 o'clock with an integrated arrowhead
+       pointing clockwise, watch hands in the middle. Fill is the
+       persistence icons' yellow (port_persistent_ram.svg), outline the
+       shared grey of filter.svg / breakpoint.svg.
+       The minute hand is drawn thinner than the hour hand on purpose:
+       a perfectly vertical stroke rasterizes crisp while the diagonal
+       one antialiases, so equal widths render visibly unequal at the
+       14 px header size. -->
+  <path
+     d="M 58.49 43.79
+        A 29 29 0 1 1 56.32 16.21
+        L 61.36 12.93
+        L 61.14 30.96
+        L 44.58 23.83
+        L 49.61 20.56
+        A 21 21 0 1 0 51.18 40.54
+        Z"
+     style="fill:#f3c017;stroke:#6f6f59;stroke-width:2.25;stroke-linecap:round;stroke-linejoin:round" />
+  <path
+     d="M 32 32 V 17.5"
+     style="fill:none;stroke:#6f6f59;stroke-width:3.8;stroke-linecap:round" />
+  <path
+     d="M 32 32 L 41.4 38.6"
+     style="fill:none;stroke:#6f6f59;stroke-width:5.6;stroke-linecap:round" />
+</svg>

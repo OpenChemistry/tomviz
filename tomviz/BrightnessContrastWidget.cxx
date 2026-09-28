@@ -403,6 +403,11 @@ BrightnessContrastWidget::BrightnessContrastWidget(
     emit resetPressed();
   });
 
+  connect(ui.autoRegionButton, &QPushButton::pressed, this, [this]() {
+    m_internals->reset();
+    emit autoRegionPressed();
+  });
+
   updateGui();
 }
 

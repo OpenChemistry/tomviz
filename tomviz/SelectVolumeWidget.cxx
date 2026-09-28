@@ -22,6 +22,8 @@
 #include <vtkSMSourceProxy.h>
 #include <vtkSMViewProxy.h>
 
+#include <QHideEvent>
+#include <QShowEvent>
 #include <QHBoxLayout>
 #include <QSettings>
 
@@ -152,6 +154,28 @@ SelectVolumeWidget::SelectVolumeWidget(const double origin[3],
   this->connect(ui.endZ, &QSpinBox::editingFinished, this, &SelectVolumeWidget::valueChanged);
   // force through the current values pulled from the operator and set above
   this->valueChanged();
+}
+
+void SelectVolumeWidget::setBoxEnabled(bool enabled)
+{
+  auto* box = this->Internals->boxWidget.GetPointer();
+  if (!box->GetInteractor() || (box->GetEnabled() != 0) == enabled) {
+    return;
+  }
+  box->SetEnabled(enabled ? 1 : 0);
+  this->Internals->interactor->GetRenderWindow()->Render();
+}
+
+void SelectVolumeWidget::showEvent(QShowEvent* event)
+{
+  QWidget::showEvent(event);
+  setBoxEnabled(true);
+}
+
+void SelectVolumeWidget::hideEvent(QHideEvent* event)
+{
+  QWidget::hideEvent(event);
+  setBoxEnabled(false);
 }
 
 SelectVolumeWidget::~SelectVolumeWidget()

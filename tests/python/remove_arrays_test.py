@@ -2,7 +2,7 @@ import numpy as np
 
 from utils import load_operator_module
 
-from tomviz.external_dataset import Dataset
+from tomviz_pipeline.dataset import Dataset
 
 
 def _make_dataset(num_arrays=3, shape=(10, 10, 5)):

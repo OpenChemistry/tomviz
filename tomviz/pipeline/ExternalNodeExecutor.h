@@ -47,6 +47,15 @@ public:
   void cancel(Node* node) override;
   void complete(Node* node) override;
 
+  /// Auto-execute poll: spawns `tomviz-pipeline --check-auto-execute`
+  /// in the configured env so the node's should_auto_execute hook runs
+  /// with the same imports execute() would have. The node's user-state
+  /// bag rides a JSON sidecar in both directions. Blocks (bounded by a
+  /// kill timeout) — call from a worker thread. Any failure — missing
+  /// CLI, an env whose tomviz package predates the check mode, a
+  /// timeout — answers false.
+  bool shouldAutoExecute(Node* node) override;
+
   QString type() const override;
   QJsonObject serialize() const override;
   bool deserialize(const QJsonObject& json) override;
@@ -66,6 +75,13 @@ private:
   QString writeShimTvh5(Node* target, const QTemporaryDir& dir,
                         int& targetNodeId) const;
 
+  /// Minimal state file for the auto-execute poll: just a clone of
+  /// @a target (no inputs, no payloads — the hook receives neither),
+  /// so polling never serializes input volumes to disk. Returns the
+  /// absolute path on success, an empty string on failure.
+  QString writeCheckStateFile(Node* target, const QTemporaryDir& dir,
+                              int& targetNodeId) const;
+
   /// Read `output_state.tvh5` produced by the subprocess and copy each
   /// output port payload onto the matching port of @a target.
   bool populateOutputs(Node* target, int targetNodeId,
@@ -84,8 +100,9 @@ private:
   QMap<QString, PortData> decodeTvh5Outputs(Node* target, int targetNodeId,
                                             const QString& tvh5Path) const;
 
-  /// Locate the `tomviz-pipeline` script next to the configured
-  /// interpreter. Returns an empty string if missing.
+  /// Locate the `tomviz-pipeline` script in the configured environment
+  /// (see PythonEnvironmentCheck::resolveEnvironmentRoot). Returns an
+  /// empty string if missing.
   QString findCliExecutable() const;
 
   /// Forward a control message ("cancel" / "complete") to the
