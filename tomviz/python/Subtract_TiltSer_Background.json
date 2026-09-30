@@ -1,0 +1,32 @@
+{
+  "name": "Subtract_TiltSer_Background",
+  "label": "Background Subtraction (Manual)",
+  "description": "Subtract the mean of a background region from each tilt image. Drag the box in the 3D view over an empty area; its X and Y extents set the region, and its Z extent the tilt images to correct.",
+  "externalCompatible": false,
+  "widget": "SelectBackgroundRegionWidget",
+  "parameters": [
+    {
+      "name": "XRANGE",
+      "label": "X Range",
+      "description": "Start (inclusive) and end (exclusive) voxel indices along X.",
+      "type": "int",
+      "default": [0, 0]
+    },
+    {
+      "name": "YRANGE",
+      "label": "Y Range",
+      "description": "Start (inclusive) and end (exclusive) voxel indices along Y.",
+      "type": "int",
+      "default": [0, 0]
+    },
+    {
+      "name": "ZRANGE",
+      "label": "Z Range",
+      "description": "Start (inclusive) and end (exclusive) indices of the tilt images to correct.",
+      "type": "int",
+      "default": [0, 0]
+    }
+  ],
+  "inputType": "ImageData",
+  "outputType": "ImageData"
+}

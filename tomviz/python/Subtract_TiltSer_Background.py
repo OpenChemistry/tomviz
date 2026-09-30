@@ -7,10 +7,14 @@ def transform(dataset, XRANGE=None, YRANGE=None, ZRANGE=None):
 
     data_bs = dataset.active_scalars # Get data as numpy array.
 
-    data_bs = data_bs.astype(np.float32) # Change tilt series type to float.
-
     if data_bs is None: #Check if data exists
         raise RuntimeError("No data array found!")
+    # The declared [0, 0] defaults are empty ranges: nothing selected
+    if not all(r and len(r) == 2 and r[0] < r[1]
+               for r in (XRANGE, YRANGE, ZRANGE)):
+        raise RuntimeError("Select the background region first")
+
+    data_bs = data_bs.astype(np.float32) # Change tilt series type to float.
 
     for i in range(ZRANGE[0], ZRANGE[1]):
         a = data_bs[:, :, i] - \

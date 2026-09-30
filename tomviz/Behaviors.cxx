@@ -139,6 +139,14 @@ void Behaviors::registerCustomOperatorUIs()
     "LabelSelectionWidget", /*needsData=*/true);
   registerCustomNodeWidget<SelectVolumeRangeWidget>(
     "SelectVolumeRangeWidget", /*needsData=*/true);
+  registerCustomNodeWidget(
+    "SelectBackgroundRegionWidget",
+    { /*needsData=*/true,
+      [](const QMap<QString, PortData>& inputs, QWidget* parent)
+        -> CustomPythonNodeWidget* {
+        return new SelectVolumeRangeWidget(
+          inputs, parent, SelectVolumeRangeWidget::Purpose::Background);
+      } });
   registerCustomNodeWidget<SAM2SeedWidget>(
     "SAM2SeedWidget", /*needsData=*/true);
   registerCustomNodeWidget<PyXRFWidget>(

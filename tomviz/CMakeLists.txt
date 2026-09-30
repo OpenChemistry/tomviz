@@ -683,6 +683,8 @@ set(json_files
   FFT_AbsLog.json
   GaussianFilter.json
   GaussianFilterTiltSeries.json
+  RemoveBadPixelsTiltSeries.json
+  Subtract_TiltSer_Background.json
   PeronaMalikAnisotropicDiffusion.json
   MedianFilter.json
   Rotate3D.json

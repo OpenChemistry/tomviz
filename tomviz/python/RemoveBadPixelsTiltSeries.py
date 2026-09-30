@@ -10,10 +10,18 @@ def transform(dataset, threshold=None):
         I = tiltSeries[:, :, i]
         I_pad = np.pad(I, (1, 1), 'edge')
 
-        # calculate standard deviation in a 3 x 3 window
-        averageI2 = scipy.ndimage.uniform_filter(I_pad ** 2)
-        averageI = scipy.ndimage.uniform_filter(I_pad)
+        # Standard deviation of the 8 neighbors in a 3 x 3 window. The
+        # pixel itself is left out, since a bad pixel would otherwise
+        # inflate the deviation it is measured against (a lone spike
+        # could never exceed about 3.2 of them).
+        averageI2 = (9 * scipy.ndimage.uniform_filter(I_pad ** 2) -
+                     I_pad ** 2) / 8
+        averageI = (9 * scipy.ndimage.uniform_filter(I_pad) - I_pad) / 8
         std = np.sqrt(abs(averageI2 - averageI**2))[1:-1, 1:-1]
+        # Neighbors that happen to agree (flat or quantized regions) would
+        # have no deviation, so any difference at all would count as bad.
+        # Measure those against the image's typical deviation instead.
+        std = np.maximum(std, np.median(std))
 
         medianI = scipy.ndimage.median_filter(I_pad, 2)[1:-1, 1:-1]
 

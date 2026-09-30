@@ -11,7 +11,9 @@ def transform(dataset, XRANGE=None, YRANGE=None, ZRANGE=None,
     array = dataset.active_scalars
     if array is None:
         raise RuntimeError('No scalars found!')
-    if not (XRANGE and YRANGE and ZRANGE):
+    # The declared [0, 0] defaults are empty ranges: nothing selected
+    if not all(r and len(r) == 2 and r[0] < r[1]
+               for r in (XRANGE, YRANGE, ZRANGE)):
         raise RuntimeError('Select the region to clear first')
 
     result = np.copy(array)

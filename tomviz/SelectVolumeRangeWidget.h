@@ -22,16 +22,24 @@ class Node;
 }
 class SelectVolumeWidget;
 
-/// Box selection for operators that act on a sub-volume, such as Clear
-/// Subvolume: a draggable box in the 3D view plus start/end spin boxes,
-/// reported as [start, end) index ranges, and a fill value.
+/// Box selection for operators that act on a sub-volume: a draggable box
+/// in the 3D view plus start/end spin boxes, reported as [start, end)
+/// index ranges. Clear Subvolume also takes a fill value; the manual
+/// background subtraction uses the box as its background region.
 class SelectVolumeRangeWidget : public pipeline::CustomPythonNodeWidget
 {
   Q_OBJECT
 
 public:
+  enum class Purpose
+  {
+    Clear,
+    Background
+  };
+
   SelectVolumeRangeWidget(const QMap<QString, pipeline::PortData>& inputs,
-                          QWidget* parent = nullptr);
+                          QWidget* parent = nullptr,
+                          Purpose purpose = Purpose::Clear);
   ~SelectVolumeRangeWidget() override;
 
   void getValues(QMap<QString, QVariant>& map) override;
