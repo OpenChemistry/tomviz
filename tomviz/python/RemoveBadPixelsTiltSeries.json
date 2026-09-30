@@ -1,0 +1,16 @@
+{
+  "name": "RemoveBadPixelsTiltSeries",
+  "label": "Remove Bad Pixels",
+  "description": "Replace the bad pixels of each tilt image with the local median: a pixel is bad when it differs from the local median by more than the threshold times the standard deviation of its eight neighbors.",
+  "parameters": [
+    {
+      "name": "threshold",
+      "label": "Threshold (local standard deviations)",
+      "type": "double",
+      "default": 5.0,
+      "minimum": 0.0
+    }
+  ],
+  "inputType": "ImageData",
+  "outputType": "ImageData"
+}

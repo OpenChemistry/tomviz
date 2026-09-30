@@ -16,12 +16,14 @@
 #include <QFormLayout>
 #include <QVBoxLayout>
 
+#include <algorithm>
 #include <limits>
 
 namespace tomviz {
 
 SelectVolumeRangeWidget::SelectVolumeRangeWidget(
-  const QMap<QString, pipeline::PortData>& inputs, QWidget* parent)
+  const QMap<QString, pipeline::PortData>& inputs, QWidget* parent,
+  Purpose purpose)
   : CustomPythonNodeWidget(parent)
 {
   if (auto it = inputs.constFind(QStringLiteral("volume"));
@@ -39,11 +41,35 @@ SelectVolumeRangeWidget::SelectVolumeRangeWidget(
 
   m_layout = new QVBoxLayout(this);
   m_layout->setContentsMargins(0, 0, 0, 0);
-  buildSelector(m_extent);
+  // Until a region is chosen the box covers the middle half of the
+  // volume: it shows as a box to drag instead of lying on the outline,
+  // and an untouched Apply clears only what it shows. A background
+  // region starts near the corner of the images, across all of them.
+  int selection[6];
+  for (int i = 0; i < 6; i += 2) {
+    int quarter = (m_extent[i + 1] - m_extent[i] + 1) / 4;
+    selection[i] = m_extent[i] + quarter;
+    selection[i + 1] = m_extent[i + 1] - quarter;
+  }
+  if (purpose == Purpose::Background) {
+    // Voxels 10 to 50 on a large image, scaled down so a small one
+    // still gets a corner box rather than a sliver at its far edge
+    for (int i = 0; i < 4; i += 2) {
+      int span = m_extent[i + 1] - m_extent[i] + 1;
+      selection[i] = m_extent[i] + std::min(10, span / 8);
+      selection[i + 1] = m_extent[i] + std::min(50, span / 4);
+    }
+    selection[4] = m_extent[4];
+    selection[5] = m_extent[5];
+  }
+  buildSelector(selection);
 
   connect(&ActiveObjects::instance(), &ActiveObjects::activeNodeChanged, this,
           [this](pipeline::Node*) { updateBoxEnabled(); });
 
+  if (purpose == Purpose::Background) {
+    return;
+  }
   auto* form = new QFormLayout;
   m_fillValue = new QDoubleSpinBox(this);
   m_fillValue->setRange(std::numeric_limits<double>::lowest(),
@@ -111,12 +137,14 @@ void SelectVolumeRangeWidget::getValues(QMap<QString, QVariant>& map)
     map[keys[axis]] = QVariantList{ selected[2 * axis] - base,
                                     selected[2 * axis + 1] + 1 - base };
   }
-  map["fill_value"] = m_fillValue->value();
+  if (m_fillValue) {
+    map["fill_value"] = m_fillValue->value();
+  }
 }
 
 void SelectVolumeRangeWidget::setValues(const QMap<QString, QVariant>& map)
 {
-  if (map.contains("fill_value")) {
+  if (m_fillValue && map.contains("fill_value")) {
     m_fillValue->setValue(map["fill_value"].toDouble());
   }
 
