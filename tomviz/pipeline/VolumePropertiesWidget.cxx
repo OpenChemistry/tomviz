@@ -920,9 +920,17 @@ void VolumePropertiesWidget::saveTiltAngles()
     return;
   }
 
+  // One line per image: the scan ID first, when there are scan IDs, then
+  // the tilt angle
+  QVector<double> tiltAngles = vol->tiltAngles();
+  QVector<int> scanIds = vol->scanIds();
+  bool hasScanIds = scanIds.size() == tiltAngles.size() && !scanIds.isEmpty();
   QTextStream out(&file);
-  for (double angle : vol->tiltAngles()) {
-    out << angle << "\n";
+  for (int i = 0; i < tiltAngles.size(); ++i) {
+    if (hasScanIds) {
+      out << scanIds[i] << " ";
+    }
+    out << tiltAngles[i] << "\n";
   }
 }
 
