@@ -74,15 +74,6 @@
      <string>Vis&amp;ualization</string>
     </property>
    </widget>
-   <widget class="QMenu" name="menuTools">
-    <property name="title">
-     <string>Tools</string>
-    </property>
-    <property name="toolTipsVisible">
-     <bool>true</bool>
-    </property>
-    <addaction name="actionAcquisition"/>
-   </widget>
    <widget class="QMenu" name="menuAnimation">
     <property name="title">
      <string>Animation</string>
@@ -135,7 +126,6 @@
    <addaction name="menuModules"/>
    <addaction name="menuView"/>
    <addaction name="menuAnimation"/>
-   <addaction name="menuTools"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -378,14 +368,6 @@
    </property>
    <property name="toolTip">
     <string>Export data to Web</string>
-   </property>
-  </action>
-  <action name="actionAcquisition">
-   <property name="text">
-    <string>Acquisition</string>
-   </property>
-   <property name="toolTip">
-    <string>Acquisition</string>
    </property>
   </action>
   <action name="actionReadTheDocs">
