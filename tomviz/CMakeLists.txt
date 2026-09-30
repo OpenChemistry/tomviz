@@ -479,23 +479,6 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang"
     COMPILE_OPTIONS "-Wno-c++20-extensions;-Wno-format-truncation")
 endif()
 
-# acquisition/
-list(APPEND SOURCES
-  acquisition/AcquisitionWidget.cxx
-  acquisition/AcquisitionWidget.h
-  acquisition/AcquisitionClient.cxx
-  acquisition/AcquisitionClient.h
-  acquisition/Connection.cxx
-  acquisition/Connection.h
-  acquisition/ConnectionsWidget.cxx
-  acquisition/ConnectionsWidget.h
-  acquisition/ConnectionDialog.cxx
-  acquisition/ConnectionDialog.h
-  acquisition/JsonRpcClient.cxx
-  acquisition/JsonRpcClient.h
-)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/acquisition)
-
 list(APPEND SOURCES
   PipelineModuleMenu.cxx
   PipelineModuleMenu.h
