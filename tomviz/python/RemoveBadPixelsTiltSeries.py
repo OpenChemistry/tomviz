@@ -10,10 +10,17 @@ def transform(dataset, threshold=None):
         I = tiltSeries[:, :, i]
         I_pad = np.pad(I, (1, 1), 'edge')
 
-        # calculate standard deviation in a 3 x 3 window
-        averageI2 = scipy.ndimage.uniform_filter(I_pad ** 2)
-        averageI = scipy.ndimage.uniform_filter(I_pad)
+        # Standard deviation of the 8 neighbors in a 3 x 3 window, leaving
+        # out the pixel itself, which would inflate it when bad
+        averageI2 = (9 * scipy.ndimage.uniform_filter(I_pad ** 2) -
+                     I_pad ** 2) / 8
+        averageI = (9 * scipy.ndimage.uniform_filter(I_pad) - I_pad) / 8
         std = np.sqrt(abs(averageI2 - averageI**2))[1:-1, 1:-1]
+        # Neighbors that agree (flat, quantized or sparse regions) have no
+        # deviation, so floor it at the typical nonzero one
+        nonzero = std[std > 0]
+        if nonzero.size:
+            std = np.maximum(std, np.median(nonzero))
 
         medianI = scipy.ndimage.median_filter(I_pad, 2)[1:-1, 1:-1]
 
