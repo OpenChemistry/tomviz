@@ -11,6 +11,8 @@
 #include <pqServerManagerModel.h>
 #include <pqView.h>
 
+#include <QLabel>
+
 #include <vtkActor.h>
 #include <vtkBillboardTextActor3D.h>
 #include <vtkDataArray.h>
@@ -286,6 +288,12 @@ QWidget* RulerSink::createSinkPropertiesWidget(QWidget* parent)
   // volume shader compilation bug on certain GPU drivers.
   for (auto* helper : m_widget->findChildren<pqPointPickingHelper*>()) {
     helper->setView(nullptr);
+  }
+  // The panel's note lists those picking shortcuts; keep only the
+  // constraint keys, which the line widget handles itself
+  if (auto* note = m_widget->findChild<QLabel*>("pickLabel")) {
+    note->setText("Hold 'X', 'Y' or 'Z' while dragging an end to move it "
+                  "only along that axis, or 'L' to move it along the line.");
   }
 
   layout->addStretch();
