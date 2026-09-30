@@ -25,7 +25,6 @@
 #include <QVBoxLayout>
 
 #include "AboutDialog.h"
-#include "AcquisitionWidget.h"
 #include "ActiveObjects.h"
 #include "AddAlignReaction.h"
 #include "AddPythonTransformReaction.h"
@@ -38,7 +37,6 @@
 #include "Behaviors.h"
 #include "CameraReaction.h"
 #include "ColorMap.h"
-#include "Connection.h"
 #include "DataBroker.h"
 #include "DataBrokerLoadReaction.h"
 #include "DataBrokerSaveReaction.h"
@@ -165,7 +163,6 @@ void addSaveDataAction(QMenu& menu, Target* target, QWidget* parent,
      !SaveDataDialog::releasedPorts(target, scope).isEmpty()));
 }
 } // namespace
-class Connection;
 
 namespace tomviz {
 
@@ -1037,12 +1034,6 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
 
   ResetReaction::reset();
 
-  // Add the acquisition client experimentally.
-  m_ui->actionAcquisition->setEnabled(false);
-
-  connect(m_ui->actionAcquisition, &QAction::triggered, this,
-          [this]() { openDialog<AcquisitionWidget>(&m_acquisitionWidget); });
-
   connect(m_ui->actionAnimationHelper, &QAction::triggered, this, [this]() {
     openDialog<AnimationHelperDialog>(&m_animationHelperDialog);
   });
@@ -1062,7 +1053,6 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   // Initialize python synchronously (splash screen stays up until done)
   auto operators = initPython();
 
-  m_ui->actionAcquisition->setEnabled(true);
   registerCustomOperators(operators);
 
   auto dataBroker = new DataBroker(this);
@@ -1111,7 +1101,6 @@ MainWindow::~MainWindow()
 std::vector<OperatorDescription> MainWindow::initPython()
 {
   Python::initialize();
-  Connection::registerType();
   auto operators = findCustomOperators();
   FileFormatManager::instance().registerPythonReaders();
   FileFormatManager::instance().registerPythonWriters();
