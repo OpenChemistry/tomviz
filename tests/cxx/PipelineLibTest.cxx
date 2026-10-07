@@ -3595,6 +3595,43 @@ TEST_F(PipelineLibTest, EffectiveTypePropagationChain)
   EXPECT_EQ(t2->outputPort("out")->type(), PortType::TiltSeries);
 }
 
+TEST_F(PipelineLibTest, EffectiveTypeFollowsUpstreamTypeChange)
+{
+  // A reader only learns its type when it runs, after the links exist.
+  // source -> merge.b, and source -> t1 -> t2 -> merge.a, so merge takes
+  // its type from the longer branch.
+  auto* source = new SourceNode();
+  source->addOutput("out", PortType::ImageData);
+  pipeline->addNode(source);
+  auto* t1 = new DoubleTransform();
+  pipeline->addNode(t1);
+  auto* t2 = new DoubleTransform();
+  pipeline->addNode(t2);
+  auto* merge = new AddTransform();
+  pipeline->addNode(merge);
+
+  pipeline->createLink(source->outputPort("out"), merge->inputPort("b"));
+  pipeline->createLink(source->outputPort("out"), t1->inputPort("in"));
+  pipeline->createLink(t1->outputPort("out"), t2->inputPort("in"));
+  pipeline->createLink(t2->outputPort("out"), merge->inputPort("a"));
+
+  source->outputPort("out")->setDeclaredType(PortType::Volume);
+  EXPECT_EQ(t2->outputPort("out")->type(), PortType::Volume);
+  EXPECT_EQ(merge->outputPort("out")->type(), PortType::Volume);
+
+  // The reader's own links are rechecked too
+  auto* volumeOnly =
+    new PassthroughTransform(PortType::Volume, PortType::Volume);
+  pipeline->addNode(volumeOnly);
+  auto* link = pipeline->createLink(source->outputPort("out"),
+                                    volumeOnly->inputPort("in"));
+  ASSERT_TRUE(link && link->isValid());
+
+  source->outputPort("out")->setDeclaredType(PortType::TiltSeries);
+  EXPECT_EQ(merge->outputPort("out")->type(), PortType::TiltSeries);
+  EXPECT_FALSE(link->isValid());
+}
+
 TEST_F(PipelineLibTest, EffectiveTypeRevertsOnDisconnect)
 {
   auto* source = new SourceNode();

@@ -206,6 +206,17 @@ Link* Pipeline::createLink(OutputPort* from, InputPort* to)
   m_links.append(link);
   emit linkCreated(link);
 
+  // An output can change type after it is linked, as a reader does when
+  // it first runs, so follow it: recheck this link, which propagation
+  // from downstream never revisits, then the nodes below. The link is the
+  // context object, so the connection goes away with the link.
+  connect(from, &OutputPort::effectiveTypeChanged, link, [this, link]() {
+    link->recheck();
+    if (link->to()) {
+      propagateEffectiveTypes(link->to()->node());
+    }
+  });
+
   // Propagate effective types and recheck link validity downstream
   propagateEffectiveTypes(to->node());
 
