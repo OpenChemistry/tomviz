@@ -3595,6 +3595,76 @@ TEST_F(PipelineLibTest, EffectiveTypePropagationChain)
   EXPECT_EQ(t2->outputPort("out")->type(), PortType::TiltSeries);
 }
 
+TEST_F(PipelineLibTest, EffectiveTypeFollowsUpstreamTypeChange)
+{
+  // A reader only learns its type when it runs, after the links exist
+  auto* source = new SourceNode();
+  source->addOutput("out", PortType::ImageData);
+  pipeline->addNode(source);
+
+  auto* t1 = new DoubleTransform();
+  pipeline->addNode(t1);
+  auto* t2 = new DoubleTransform();
+  pipeline->addNode(t2);
+
+  pipeline->createLink(source->outputPort("out"), t1->inputPort("in"));
+  pipeline->createLink(t1->outputPort("out"), t2->inputPort("in"));
+  EXPECT_EQ(t2->outputPort("out")->type(), PortType::ImageData);
+
+  source->outputPort("out")->setDeclaredType(PortType::Volume);
+  EXPECT_EQ(t1->outputPort("out")->type(), PortType::Volume);
+  EXPECT_EQ(t2->outputPort("out")->type(), PortType::Volume);
+
+  source->outputPort("out")->setDeclaredType(PortType::TiltSeries);
+  EXPECT_EQ(t2->outputPort("out")->type(), PortType::TiltSeries);
+}
+
+TEST_F(PipelineLibTest, EffectiveTypeFollowsUpstreamTypeChangeDiamond)
+{
+  // source -> a -> merge.a and source -> b1 -> b2 -> merge.b, with merge
+  // typed by its "b" input, the longer branch
+  class MergeTransform : public TransformNode
+  {
+  public:
+    MergeTransform()
+    {
+      addInput("a", PortType::ImageData);
+      addInput("b", PortType::ImageData);
+      addOutput("out", PortType::ImageData);
+      setTypeInferenceSource("out", "b");
+    }
+
+  protected:
+    QMap<QString, PortData> transform(
+      const QMap<QString, PortData>& inputs) override
+    {
+      return { { "out", inputs["a"] } };
+    }
+  };
+
+  auto* source = new SourceNode();
+  source->addOutput("out", PortType::ImageData);
+  pipeline->addNode(source);
+  auto* a = new DoubleTransform();
+  pipeline->addNode(a);
+  auto* b1 = new DoubleTransform();
+  pipeline->addNode(b1);
+  auto* b2 = new DoubleTransform();
+  pipeline->addNode(b2);
+  auto* merge = new MergeTransform();
+  pipeline->addNode(merge);
+
+  pipeline->createLink(source->outputPort("out"), a->inputPort("in"));
+  pipeline->createLink(source->outputPort("out"), b1->inputPort("in"));
+  pipeline->createLink(b1->outputPort("out"), b2->inputPort("in"));
+  pipeline->createLink(a->outputPort("out"), merge->inputPort("a"));
+  pipeline->createLink(b2->outputPort("out"), merge->inputPort("b"));
+
+  source->outputPort("out")->setDeclaredType(PortType::Volume);
+  EXPECT_EQ(b2->outputPort("out")->type(), PortType::Volume);
+  EXPECT_EQ(merge->outputPort("out")->type(), PortType::Volume);
+}
+
 TEST_F(PipelineLibTest, EffectiveTypeRevertsOnDisconnect)
 {
   auto* source = new SourceNode();
