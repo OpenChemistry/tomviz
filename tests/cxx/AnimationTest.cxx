@@ -18,6 +18,7 @@
 #include "sinks/ThresholdSink.h"
 
 #include <vtkCamera.h>
+#include <vtkMath.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkNew.h>
 
@@ -304,7 +305,9 @@ TEST_F(AnimationTest, AnOrbitHoldsTheLegAndTheAnchorsStill)
 
   expectNear(positionAt(0.125), { 10, 0, 0 }, "quarter turn");
   expectNear(positionAt(0.5), { 0, 0, 10 }, "back at the start");
-  expectNear(positionAt(0.75), { 0, 0, 0 }, "halfway along the leg");
+  // The leg swings round the data at the same distance, rather than
+  // flying through the focal point
+  expectNear(positionAt(0.75), { -10, 0, 0 }, "halfway along the leg");
   expectNear(positionAt(1.0), { 0, 0, -10 }, "arrived");
 
   // The leg's own progress and the anchor spans skip the spin
@@ -376,8 +379,8 @@ TEST_F(AnimationTest, OrbitsAtTheEndAndInTheMiddleOfAPath)
 {
   viewpoints().append(lookingAtOrigin({ 0, 0, 10 }, 0));
   viewpoints().append(lookingAtOrigin({ 0, 0, -10 }, 1));
-  // Leg 0 to 0.5, orbit at the end 0.5 to 1
-  expectNear(positionAt(0.25), { 0, 0, 0 }, "halfway along the leg");
+  // Leg 0 to 0.5, orbit at the end 0.5 to 1. The leg swings round.
+  expectNear(positionAt(0.25), { -10, 0, 0 }, "halfway along the leg");
   expectNear(positionAt(0.5), { 0, 0, -10 }, "arrived");
   // At the far side the camera's own e1 points to -z, so a quarter turn
   // counterclockwise takes it to -x
@@ -390,10 +393,16 @@ TEST_F(AnimationTest, OrbitsAtTheEndAndInTheMiddleOfAPath)
   ASSERT_EQ(stops.size(), 3);
   EXPECT_NEAR(stops[1], 1.0 / 3.0, 1e-12);
   EXPECT_NEAR(viewpoints().departures()[1], 2.0 / 3.0, 1e-12);
-  expectNear(positionAt(1.0 / 6.0), { 0, 0, 0 }, "first leg midpoint");
+  expectNear(positionAt(1.0 / 6.0), { -10, 0, 0 }, "first leg midpoint");
   expectNear(positionAt(0.5), { 0, 0, 10 }, "half turn in the middle");
   expectNear(positionAt(2.0 / 3.0), { 0, 0, -10 }, "spin over");
-  expectNear(positionAt(5.0 / 6.0), { 10, 0, -10 }, "second leg midpoint");
+  // Halfway in angle and in distance between the far side and the
+  // camera out at (20, 0, -10)
+  const double angle = (vtkMath::Pi() + std::atan2(20.0, -10.0)) / 2;
+  const double radius = (10 + std::sqrt(500.0)) / 2;
+  expectNear(positionAt(5.0 / 6.0),
+             { radius * std::sin(angle), 0, radius * std::cos(angle) },
+             "second leg midpoint");
 }
 
 // A camera looking straight down its own up axis has no radius to
@@ -406,6 +415,72 @@ TEST_F(AnimationTest, AnOrbitOnTheAxisHoldsStill)
     EXPECT_FALSE(std::isnan(p[k]));
   }
   expectNear(p, { 0, 10, 0 }, "stays put");
+}
+
+namespace {
+
+// A viewpoint as Add Current View saves one of a ~1.3 m crate: 4 m out,
+// @a degrees round from the front, view-up along -z, default eased leg
+Viewpoint aroundCrate(double degrees, double raised = 0)
+{
+  const double a = vtkMath::RadiansFromDegrees(degrees);
+  Viewpoint viewpoint;
+  viewpoint.focalPoint = { 645, 645, 760 };
+  viewpoint.position = { 645 + 4000 * std::sin(a), 645 - 4000 * std::cos(a),
+                         760 - raised };
+  viewpoint.viewUp = { 0, 0, -1 };
+  return viewpoint;
+}
+
+} // namespace
+
+// Swinging round the data keeps the camera's distance. A spline through
+// the positions cut inside the arc, zooming in and back out.
+TEST_F(AnimationTest, ASwingKeepsItsDistance)
+{
+  viewpoints().append(aroundCrate(0));
+  viewpoints().append(aroundCrate(60));
+  viewpoints().append(aroundCrate(150));
+  for (double t = 0.05; t < 1; t += 0.1) {
+    auto p = positionAt(t);
+    EXPECT_NEAR(std::hypot(p[0] - 645, p[1] - 645), 4000, 1e-6) << t;
+  }
+}
+
+// Repeating the last viewpoint holds the camera still there, and does
+// not change the way it flies in.
+TEST_F(AnimationTest, AHoldLeavesTheWayInAlone)
+{
+  viewpoints().append(aroundCrate(0));
+  viewpoints().append(aroundCrate(60));
+  viewpoints().append(aroundCrate(150, 1500));
+  auto halfwayIn = [this]() {
+    auto stops = viewpoints().stops();
+    return positionAt((stops[1] + stops[2]) / 2);
+  };
+  auto before = halfwayIn();
+  viewpoints().append(aroundCrate(150, 1500));
+  expectNear(halfwayIn(), before, "the way in moved");
+  expectNear(positionAt(0.9), positionAt(1.0), "the hold drifted");
+}
+
+// A top view is reached by tilting up over the data, not by cutting
+// through it or swinging round it, and arrives with its own view-up.
+TEST_F(AnimationTest, ATopViewIsReachedByTiltingUp)
+{
+  viewpoints().append(aroundCrate(0));
+  Viewpoint top = aroundCrate(0);
+  top.position = { 645, 645, 760 - 4000 };
+  top.viewUp = { 0, 1, 0 };
+  viewpoints().append(top);
+  for (double t : { 0.25, 0.5, 0.75 }) {
+    auto p = positionAt(t);
+    EXPECT_NEAR(p[0], 645, 1e-6) << "swung sideways at " << t;
+    EXPECT_NEAR(std::hypot(p[1] - 645, p[2] - 760), 4000, 1e-6) << t;
+  }
+  vtkNew<vtkCamera> camera;
+  viewpoints().interpolate(1.0, camera);
+  EXPECT_NEAR(camera->GetViewUp()[1], 1, 1e-9);
 }
 
 // Legs of no length are cuts. The path still has a start and an end to

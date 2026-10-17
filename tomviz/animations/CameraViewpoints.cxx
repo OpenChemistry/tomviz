@@ -5,14 +5,13 @@
 
 #include "ActiveObjects.h"
 #include "CameraAnimation.h"
+#include "CameraPath.h"
 
 #include <QJsonArray>
 #include <QRegularExpression>
 
 #include <vtkCamera.h>
-#include <vtkCameraInterpolator.h>
 #include <vtkMath.h>
-#include <vtkTupleInterpolator.h>
 
 #include <algorithm>
 #include <cmath>
@@ -34,6 +33,19 @@ std::array<double, 3> toVector(const QJsonValue& value,
     return fallback;
   }
   return { array[0].toDouble(), array[1].toDouble(), array[2].toDouble() };
+}
+
+// Whether the camera stays put from @a a to @a b, so the leg is a hold
+bool sameCamera(const Viewpoint& a, const Viewpoint& b)
+{
+  for (int k = 0; k < 3; ++k) {
+    if (std::abs(a.position[k] - b.position[k]) > 1e-6 ||
+        std::abs(a.focalPoint[k] - b.focalPoint[k]) > 1e-6 ||
+        std::abs(a.viewUp[k] - b.viewUp[k]) > 1e-9) {
+      return false;
+    }
+  }
+  return a.viewAngle == b.viewAngle && a.parallelScale == b.parallelScale;
 }
 
 } // anonymous namespace
@@ -464,7 +476,7 @@ void CameraViewpoints::interpolate(double t, vtkCamera* camera)
 
   for (const auto& run : m_runs) {
     if (current >= run.first && current < run.last) {
-      run.interpolator->InterpolateCamera(t, camera);
+      run.path->apply(t, camera);
       return;
     }
   }
@@ -481,74 +493,38 @@ void CameraViewpoints::rebuildInterpolator()
   }
   const auto timeline = timelineOf(m_viewpoints);
 
-  // A spline needs three points to curve through; with two it would
-  // ease in and out of the straight line on its own, on top of the
-  // segment's easing, so two viewpoints get a plain linear blend.
-  //
-  // The interpolators are supplied ready-made rather than through
-  // vtkCameraInterpolator's Linear/Spline modes: in the VTK we build
-  // against, changing a vtkTupleInterpolator's type wipes its component
-  // count, and the camera interpolator sets the count first and the type
-  // second, so its linear mode stores nothing and hands back
-  // uninitialized memory, which parked the camera at the origin on every
-  // two-viewpoint path. In manual mode it leaves the types alone.
-  //
   // A run's first camera is added at its departure (the orbit there, if
   // any, is over) and the others at their arrival. A leg of no length
   // puts two cameras at the same time, where the later one replaces the
-  // earlier (the path has arrived), so it is the distinct times that
-  // decide whether there is anything for a spline to curve through.
+  // earlier: the path has arrived.
   auto makeRun = [this, &timeline](int first, int last) {
+    std::vector<double> times;
+    for (int i = first; i <= last; ++i) {
+      times.push_back(i == first ? timeline.departures[i]
+                                 : timeline.arrivals[i]);
+    }
     Run run;
     run.first = first;
     run.last = last;
-    int distinct = 0;
-    double previous = -1.0;
-    for (int i = first; i <= last; ++i) {
-      const double t =
-        i == first ? timeline.departures[i] : timeline.arrivals[i];
-      if (t != previous) {
-        ++distinct;
-      }
-      previous = t;
-    }
-    const bool linear = distinct < 3;
-    auto tuple = [linear]() {
-      auto interpolator = vtkSmartPointer<vtkTupleInterpolator>::New();
-      if (linear) {
-        interpolator->SetInterpolationTypeToLinear();
-      } else {
-        interpolator->SetInterpolationTypeToSpline();
-      }
-      return interpolator;
-    };
-    run.interpolator = vtkSmartPointer<vtkCameraInterpolator>::New();
-    run.interpolator->SetInterpolationTypeToManual();
-    run.interpolator->SetPositionInterpolator(tuple());
-    run.interpolator->SetFocalPointInterpolator(tuple());
-    run.interpolator->SetViewUpInterpolator(tuple());
-    run.interpolator->SetViewAngleInterpolator(tuple());
-    run.interpolator->SetParallelScaleInterpolator(tuple());
-    run.interpolator->SetClippingRangeInterpolator(tuple());
-    for (int i = first; i <= last; ++i) {
-      vtkNew<vtkCamera> camera;
-      m_viewpoints[i].applyTo(camera);
-      run.interpolator->AddCamera(
-        i == first ? timeline.departures[i] : timeline.arrivals[i], camera);
-    }
+    run.path = std::make_shared<CameraPath>(m_viewpoints, first, last, times);
     return run;
   };
 
-  // A spline cannot hold still, so a viewpoint that orbits ends the run
-  // arriving at it and starts the next one leaving it.
+  // An orbit is flown by orbitAt, not by the path, so a viewpoint that
+  // orbits ends the run arriving at it and starts the next one leaving it.
+  // A viewpoint repeated to hold the camera ends the run too, and the
+  // next one starts from the repeat: inside one run the hold would flatten
+  // the curve at the viewpoint and change the way the camera flies in to
+  // it. The hold between the two is drawn as a camera standing still.
   int first = 0;
   for (int i = 0; i < m_viewpoints.size(); ++i) {
     const bool last = i + 1 == m_viewpoints.size();
-    if (last || m_viewpoints[i].orbitTurns != 0) {
+    const bool held = !last && sameCamera(m_viewpoints[i], m_viewpoints[i + 1]);
+    if (last || held || m_viewpoints[i].orbitTurns != 0) {
       if (i > first) {
         m_runs.push_back(makeRun(first, i));
       }
-      first = i;
+      first = held ? i + 1 : i;
     }
   }
 }
