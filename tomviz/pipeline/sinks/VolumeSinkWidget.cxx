@@ -156,6 +156,8 @@ VolumeSinkWidget::VolumeSinkWidget(QWidget* parent_)
 
   connect(m_ui->cbJittering, &QCheckBox::toggled, this,
           &VolumeSinkWidget::jitteringToggled);
+  connect(m_ui->cbFineSampling, &QCheckBox::toggled, this,
+          &VolumeSinkWidget::fineSamplingToggled);
   connect(m_ui->cbBlending, QOverload<int>::of(&QComboBox::currentIndexChanged),
           this, &VolumeSinkWidget::onBlendingChanged);
   connect(m_ui->cbInterpolation,
@@ -218,6 +220,11 @@ VolumeSinkWidget::~VolumeSinkWidget() = default;
 void VolumeSinkWidget::setJittering(const bool enable)
 {
   m_ui->cbJittering->setChecked(enable);
+}
+
+void VolumeSinkWidget::setFineSampling(const bool enable)
+{
+  m_ui->cbFineSampling->setChecked(enable);
 }
 
 void VolumeSinkWidget::setBlendingMode(const int mode)

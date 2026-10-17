@@ -162,6 +162,13 @@ public:
   bool jittering() const;
   void setJittering(bool enabled);
 
+  /// Step rays at half a voxel instead of VTK's heuristic (a voxel or
+  /// more). Slower, but needed for label maps, whose shading normal
+  /// exists only in a one-voxel shell, and it removes banding on steep
+  /// opacity ramps.
+  bool fineSampling() const;
+  void setFineSampling(bool enabled);
+
   /// Solidity (1 / ScalarOpacityUnitDistance).
   double solidity() const;
   void setSolidity(double value);
@@ -273,16 +280,6 @@ protected:
   /// surface representation) returns false to keep the volume off screen
   /// without touching the sink's own visibility flag.
   virtual bool volumeRenderingEnabled() const { return true; }
-
-  /// Step rays at half a voxel instead of VTK's heuristic (a voxel or
-  /// more). Costs render time; meant for label maps, whose shading
-  /// normal exists only in a one-voxel shell that coarser steps skip.
-  void setFineSampling(bool enabled);
-
-public:
-  bool fineSampling() const;
-
-protected:
 
 private:
   void applyActiveScalars();
