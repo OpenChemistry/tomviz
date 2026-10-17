@@ -12,16 +12,16 @@
 #include <QObject>
 #include <QPointer>
 
-#include <vtkSmartPointer.h>
-
 #include <array>
+#include <memory>
 #include <vector>
 
 class pqRenderView;
 class vtkCamera;
-class vtkCameraInterpolator;
 
 namespace tomviz {
+
+class CameraPath;
 
 /// A saved camera position, plus how an animation leaves it for the next
 /// one.
@@ -217,16 +217,15 @@ private:
   std::array<double, 2> m_captionPosition = { 0.5, 0.05 };
   QPointer<QObject> m_flight;
   /// A stretch of consecutive viewpoints joined by ordinary legs, and
-  /// the interpolator that flies them. Orbit legs split the path into
-  /// these, so the spline through one stretch never bends towards a
-  /// viewpoint an orbit reaches by other means. Held by pointer rather
-  /// than by value so the header does not have to pull in the
-  /// interpolator to destroy it.
+  /// the path that flies them. Orbits and holds (a viewpoint repeated)
+  /// split the path into these, so the curve through one stretch never
+  /// bends towards a viewpoint reached by other means. Held by pointer so
+  /// the header does not have to pull in the path to destroy it.
   struct Run
   {
     int first = 0;
     int last = 0;
-    vtkSmartPointer<vtkCameraInterpolator> interpolator;
+    std::shared_ptr<const CameraPath> path;
   };
   std::vector<Run> m_runs;
   bool m_interpolatorStale = true;

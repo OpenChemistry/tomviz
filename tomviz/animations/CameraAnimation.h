@@ -106,8 +106,8 @@ private:
     viewpoints.interpolate(t, camera);
     updateCaption(t);
 
-    // The interpolated clipping range is blended from the saved
-    // viewpoints, which can clip the data at positions in between.
+    // The path does not carry a clipping range, so fit one to the data
+    // at each position.
     if (auto* renderer = proxy->GetRenderer()) {
       renderer->ResetCameraClippingRange();
     }
