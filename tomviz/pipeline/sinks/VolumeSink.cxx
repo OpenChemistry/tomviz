@@ -468,9 +468,8 @@ private:
 
 } // namespace
 
-// Subclass vtkSmartVolumeMapper so we can forward jittering to the GPU mapper,
-// matching the legacy ModuleVolume behavior, and so that Render() can bound
-// the cost of a scattering-heavy frame (see the GPU watchdog guard above).
+// Subclass vtkSmartVolumeMapper so that Render() can bound the cost of a
+// scattering-heavy frame (see the GPU watchdog guard above).
 class SmartVolumeMapper : public vtkSmartVolumeMapper
 {
 public:
@@ -478,13 +477,17 @@ public:
 
   static SmartVolumeMapper* New();
 
-  void UseJitteringOn() { GetGPUMapper()->UseJitteringOn(); }
-  void UseJitteringOff() { GetGPUMapper()->UseJitteringOff(); }
-  vtkTypeBool GetUseJittering() { return GetGPUMapper()->GetUseJittering(); }
-  void SetUseJittering(vtkTypeBool b) { GetGPUMapper()->SetUseJittering(b); }
+  // vtkSmartVolumeMapper keeps a jittering flag of its own and hands it to
+  // the GPU mapper when it renders, so setting only the GPU mapper's was
+  // overridden and jittering never took effect. Set both.
+  void SetUseJittering(vtkTypeBool b) override
+  {
+    vtkSmartVolumeMapper::SetUseJittering(b);
+    GetGPUMapper()->SetUseJittering(b);
+  }
 
   // Cropping is honoured by whichever mapper actually draws, so set it on
-  // the GPU mapper as well as on ourselves (same reason as jittering).
+  // the GPU mapper as well as on ourselves.
   void SetCroppingState(vtkTypeBool on, const double planes[6], int flags)
   {
     for (vtkVolumeMapper* m : { static_cast<vtkVolumeMapper*>(this),
@@ -2858,6 +2861,7 @@ QWidget* VolumeSink::createSinkPropertiesWidget(QWidget* parent)
   {
     QSignalBlocker blocker(widget);
     widget->setJittering(jittering());
+    widget->setFineSampling(fineSampling());
     widget->setBlendingMode(blendingMode());
     widget->setInterpolationType(interpolationType());
     widget->setSolidity(solidity());
@@ -2868,6 +2872,8 @@ QWidget* VolumeSink::createSinkPropertiesWidget(QWidget* parent)
   // Connect widget signals to VolumeSink setters
   connect(widget, &VolumeSinkWidget::jitteringToggled, this,
           &VolumeSink::setJittering);
+  connect(widget, &VolumeSinkWidget::fineSamplingToggled, this,
+          &VolumeSink::setFineSampling);
   connect(widget, &VolumeSinkWidget::lightingToggled, this,
           &VolumeSink::setLighting);
   connect(widget, &VolumeSinkWidget::blendingChanged, this,
@@ -3025,6 +3031,7 @@ QJsonObject VolumeSink::serialize() const
   json["interpolation"] = interpolationType();
   json["blendingMode"] = blendingMode();
   json["rayJittering"] = jittering();
+  json["fineSampling"] = fineSampling();
   json["solidity"] = solidity();
   json["activeScalars"] = activeScalarsToName(m_activeScalars);
   json["labelMapDefaultsApplied"] = m_labelMapDefaultsApplied;
@@ -3107,6 +3114,9 @@ bool VolumeSink::deserialize(const QJsonObject& json)
   }
   if (json.contains("rayJittering")) {
     setJittering(json["rayJittering"].toBool());
+  }
+  if (json.contains("fineSampling")) {
+    setFineSampling(json["fineSampling"].toBool());
   }
   if (json.contains("solidity")) {
     setSolidity(json["solidity"].toDouble());

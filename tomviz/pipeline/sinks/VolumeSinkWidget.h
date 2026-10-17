@@ -43,6 +43,7 @@ public:
    */
   void setActiveScalars(const QString& scalars);
   void setJittering(const bool enable);
+  void setFineSampling(const bool enable);
   void setBlendingMode(const int mode);
   void setInterpolationType(const int type);
   void setLighting(const bool enable);
@@ -100,6 +101,7 @@ signals:
    * Forwarded signals.
    */
   void jitteringToggled(const bool state);
+  void fineSamplingToggled(const bool state);
   void blendingChanged(const int state);
   void interpolationChanged(const int state);
   void lightingToggled(const bool state);
