@@ -86,3 +86,29 @@ def test_tomopy_reconstruction_different_algorithms():
         )
         assert images.shape[0] == 3, f"Failed for algorithm {algorithm}"
         assert not np.allclose(images, 0), f"All zeros for algorithm {algorithm}"
+
+
+@pytest.mark.skipif(not HAS_TOMOPY, reason="tomopy not installed")
+def test_tomopy_gpu_without_accel_library(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    """Use GPU must raise, not abort, without TomoPy's CUDA library."""
+    from tomopy.util.extern import accel
+    module = load_operator_module('Recon_tomopy')
+    monkeypatch.setattr(accel, 'LIB_TOMOPY_ACCEL', None)
+
+    with pytest.raises(RuntimeError, match='CUDA library'):
+        module._check_gpu_available()
+
+
+@pytest.mark.skipif(not HAS_TOMOPY, reason="tomopy not installed")
+def test_tomopy_gpu_without_cuda_device(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    """Use GPU must raise, not abort, when no CUDA device is found."""
+    from types import SimpleNamespace
+    from tomopy.util.extern import accel
+    module = load_operator_module('Recon_tomopy')
+    fake_lib = SimpleNamespace(cuda_device_count=lambda: 0)
+    monkeypatch.setattr(accel, 'LIB_TOMOPY_ACCEL', fake_lib)
+
+    with pytest.raises(RuntimeError, match='NVIDIA GPU'):
+        module._check_gpu_available()
