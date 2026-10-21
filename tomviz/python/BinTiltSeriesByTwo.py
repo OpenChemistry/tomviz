@@ -23,3 +23,8 @@ def transform(dataset):
 
     # Set the result as the new scalars.
     dataset.active_scalars = result
+
+    # Half as many pixels cover the same area, so each is twice as big.
+    if dataset.spacing is not None:
+        sx, sy, sz = dataset.spacing
+        dataset.spacing = [sx * 2, sy * 2, sz]
