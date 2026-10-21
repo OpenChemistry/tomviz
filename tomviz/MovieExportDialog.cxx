@@ -424,10 +424,8 @@ public:
     if (pld) {
       if (auto* png = pld->FindProxy("animation_writers", "PNG")) {
         // A fixed-width counter the ffmpeg input pattern can match. The
-        // suffix is a printf format (the writer's own default is ".%04d");
-        // a brace-style one is not expanded, it is written literally, so
-        // every frame would land on the same file.
-        vtkSMPropertyHelper(png, "SuffixFormat", true).Set(".%06d");
+        // suffix is a std::format string; ParaView warns on a printf one.
+        vtkSMPropertyHelper(png, "SuffixFormat", true).Set(".{:06d}");
         png->UpdateVTKObjects();
       }
       if (fmt == "ogv") {
