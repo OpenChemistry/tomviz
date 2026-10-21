@@ -20,6 +20,10 @@ def transform(dataset):
     # Set the result as the new scalars.
     dataset.active_scalars = result
 
+    # Half as many voxels cover the same volume, so each is twice as big.
+    if dataset.spacing is not None:
+        dataset.spacing = [s * 2 for s in dataset.spacing]
+
     # Update tilt angles if dataset is a tilt series.
     try:
         tilt_angles = dataset.tilt_angles
