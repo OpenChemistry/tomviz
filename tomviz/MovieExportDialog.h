@@ -10,7 +10,7 @@
 namespace tomviz {
 
 /// Export the current animation to a movie file or image sequence.
-/// MP4 (H.264) output renders PNG frames offscreen and encodes them
+/// MP4 (H.264) and GIF output render PNG frames offscreen and encode them
 /// with the ffmpeg executable, so it does not depend on which movie
 /// writers ParaView was built with. Ogg Theora and PNG sequences go
 /// through ParaView's writers directly.
