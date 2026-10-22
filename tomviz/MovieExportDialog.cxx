@@ -124,6 +124,7 @@ public:
     format = new QComboBox(p);
     if (!ffmpegPath.isEmpty()) {
       format->addItem("MP4 video (H.264)", QString("mp4"));
+      format->addItem("Animated GIF", QString("gif"));
     }
     if (writerPrototype("OggTheora")) {
       format->addItem("Ogg Theora video", QString("ogv"));
@@ -179,7 +180,9 @@ public:
 
     if (ffmpegPath.isEmpty()) {
       auto* hint = new QLabel(
-        "MP4 export requires the ffmpeg executable, which was not found.", p);
+        "MP4 and GIF export require the ffmpeg executable, which was not "
+        "found.",
+        p);
       hint->setWordWrap(true);
       layout->addWidget(hint);
     }
@@ -239,8 +242,11 @@ public:
 
     // An image sequence has no encoder settings.
     bool isVideo = currentFormat() != "png";
-    quality->setEnabled(isVideo);
+    quality->setEnabled(isVideo && currentFormat() != "gif");
     frameRate->setEnabled(isVideo);
+    // GIF delays are in hundredths of a second, and browsers slow down
+    // anything shorter than two.
+    frameRate->setMaximum(currentFormat() == "gif" ? 50 : 120);
   }
 
   void browseForFile()
@@ -251,6 +257,8 @@ public:
       filter = "MP4 video (*.mp4)";
     } else if (fmt == "ogv") {
       filter = "Ogg Theora video (*.ogv)";
+    } else if (fmt == "gif") {
+      filter = "Animated GIF (*.gif)";
     } else {
       filter = "PNG images (*.png)";
     }
@@ -377,11 +385,12 @@ public:
       return Result::Error;
     }
 
-    // MP4 renders PNG frames into a temporary directory first; the
-    // other formats write the target file directly.
+    // MP4 and GIF render PNG frames into a temporary directory first
+    // for ffmpeg; the other formats write the target file directly.
+    bool useFFmpeg = fmt == "mp4" || fmt == "gif";
     QTemporaryDir tempDir;
     QString writeTarget = target;
-    if (fmt == "mp4") {
+    if (useFFmpeg) {
       if (!tempDir.isValid()) {
         error = "Failed to create a temporary directory for frames.";
         return Result::Error;
@@ -440,7 +449,7 @@ public:
     bool canceled = false;
     {
       pqAnimationProgressDialog progress(
-        fmt == "mp4" ? "Rendering frames..." : "Saving animation...", "Abort",
+        useFFmpeg ? "Rendering frames..." : "Saving animation...", "Abort",
         0, 100, parent);
       progress.setWindowTitle("Export Movie");
       progress.setAnimationScene(scenePq);
@@ -471,7 +480,7 @@ public:
       return Result::Canceled;
     }
 
-    if (fmt != "mp4") {
+    if (!useFFmpeg) {
       return Result::Success;
     }
 
@@ -486,22 +495,33 @@ public:
       return Result::Error;
     }
 
-    return encodeMp4(tempDir.path(), numFrames, target, error);
+    return encodeWithFFmpeg(tempDir.path(), numFrames, target, error);
   }
 
-  Result encodeMp4(const QString& framesDir, int numFrames,
-                   const QString& target, QString& error)
+  Result encodeWithFFmpeg(const QString& framesDir, int numFrames,
+                          const QString& target, QString& error)
   {
+    QStringList input;
+    input << "-framerate" << QString::number(frameRate->value())
+          << "-start_number" << "0"
+          << "-i" << framesDir + "/frame.%06d.png";
     QStringList args;
-    args << "-y" << "-framerate" << QString::number(frameRate->value())
-         << "-start_number" << "0"
-         << "-i" << framesDir + "/frame.%06d.png"
-         << "-c:v" << "libx264"
-         << "-preset" << "medium"
-         << "-crf" << QString::number(crf())
-         << "-pix_fmt" << "yuv420p"
-         << "-movflags" << "+faststart"
-         << "-nostats"
+    args << "-y" << input;
+    if (currentFormat() == "gif") {
+      // Build one 256-color palette from all frames, then map them to it.
+      // The frames are read a second time for the mapping; splitting one
+      // input would hold every frame in memory until the palette is done.
+      args << input
+           << "-filter_complex" << "[0:v]palettegen[p];[1:v][p]paletteuse"
+           << "-loop" << "0";
+    } else {
+      args << "-c:v" << "libx264"
+           << "-preset" << "medium"
+           << "-crf" << QString::number(crf())
+           << "-pix_fmt" << "yuv420p"
+           << "-movflags" << "+faststart";
+    }
+    args << "-nostats"
          << "-progress" << "pipe:1"
          << target;
 
