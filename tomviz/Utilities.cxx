@@ -1422,7 +1422,7 @@ QString userTemplatesPath()
   return base.isEmpty() ? QString() : base + "/templates";
 }
 
-QStringList customOperatorSearchPaths()
+QStringList customOperatorSearchPaths(QStringList* skipped)
 {
   QStringList paths;
   auto addIfDir = [&paths](const QString& path) {
@@ -1437,7 +1437,12 @@ QStringList customOperatorSearchPaths()
                                   .split(QDir::listSeparator(),
                                          Qt::SkipEmptyParts);
     for (const QString& path : entries) {
-      addIfDir(path);
+      const QFileInfo info(path);
+      if (info.isDir() && info.isReadable()) {
+        paths.append(QDir::cleanPath(path));
+      } else if (skipped) {
+        skipped->append(QDir::cleanPath(path));
+      }
     }
     return paths;
   }

@@ -205,8 +205,9 @@ QString userTemplatesPath();
 // MainWindow::findCustomOperators). With TOMVIZ_CUSTOM_TRANSFORMS_PATH set,
 // these are its existing entries; otherwise ~/.tomviz (the pre-3.1
 // location) and the platform app-data directories. Paths are cleaned, in
-// scan order.
-QStringList customOperatorSearchPaths();
+// scan order. Entries of TOMVIZ_CUSTOM_TRANSFORMS_PATH that are not
+// readable directories are left out, and listed in @a skipped if given.
+QStringList customOperatorSearchPaths(QStringList* skipped = nullptr);
 
 // Write @a text to @a path as UTF-8, telling the user about any failure in
 // a message box parented to @a parent. False when the file may be

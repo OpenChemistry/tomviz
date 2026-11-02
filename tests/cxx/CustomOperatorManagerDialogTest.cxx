@@ -320,3 +320,27 @@ TEST_F(CustomOperatorManagerDialogTest, refresh_requeries_the_provider)
   EXPECT_TRUE(
     dialog->findChild<QPushButton*>("createCustomOperator")->isEnabled());
 }
+
+TEST_F(CustomOperatorManagerDialogTest, shows_where_transforms_come_from)
+{
+  auto* line = dialog->findChild<QLabel*>("customOperatorDirectories");
+  EXPECT_FALSE(line->isVisible());
+
+  // Asked again on refresh, like the operators: a directory created in
+  // the meantime stops being reported as missing.
+  QStringList skipped{ "/shared/typo" };
+  dialog->setDirectoriesProvider([&skipped]() {
+    return CustomOperatorManagerDialog::Directories{ "/user", { "/elsewhere" },
+                                                     skipped };
+  });
+  settle();
+  EXPECT_TRUE(line->isVisible());
+  const QString text = line->text();
+  EXPECT_TRUE(text.contains(QDir::toNativeSeparators("/user")));
+  EXPECT_TRUE(text.contains(QDir::toNativeSeparators("/elsewhere")));
+  EXPECT_TRUE(text.contains(QDir::toNativeSeparators("/shared/typo")));
+
+  skipped.clear();
+  dialog->refresh();
+  EXPECT_FALSE(line->text().contains(QDir::toNativeSeparators("/shared/typo")));
+}

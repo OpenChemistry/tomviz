@@ -1686,6 +1686,21 @@ void MainWindow::manageCustomOperators()
             &MainWindow::deleteCustomOperator);
     connect(dialog, &CustomOperatorManagerDialog::openDirectoryRequested,
             this, &MainWindow::openCustomOperatorDirectory);
+    // The same directories findCustomOperators() scans, so the user can
+    // see where new transforms go and which ones are read-only.
+    dialog->setDirectoriesProvider([]() {
+      CustomOperatorManagerDialog::Directories dirs;
+      dirs.user = userDataPath();
+      QSet<QString> listed{ QFileInfo(dirs.user).canonicalFilePath() };
+      for (const QString& path : customOperatorSearchPaths(&dirs.skipped)) {
+        const QString canonical = QFileInfo(path).canonicalFilePath();
+        if (!listed.contains(canonical)) {
+          listed.insert(canonical);
+          dirs.readOnly.append(path);
+        }
+      }
+      return dirs;
+    });
     m_customOperatorManager = dialog;
   } else {
     m_customOperatorManager->refresh();
