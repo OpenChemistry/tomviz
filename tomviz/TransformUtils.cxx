@@ -310,13 +310,9 @@ bool insertTransformIntoPipeline(pipeline::TransformNode* transform)
   if (transform->inputPorts().size() > 1) {
     appendTransformAtPort(pip, transform, tipPort);
   } else if (transform->hasPropertiesWidget()) {
-    qDebug("insertTransformIntoPipeline: showing insertion dialog for '%s'",
-           qPrintable(transform->label()));
     auto deferred = appendTransformAtPortDeferred(pip, transform, tipPort);
     showInsertionDialog(transform, pip, deferred, mainWindow);
   } else {
-    qDebug("insertTransformIntoPipeline: appending '%s' at tip and executing",
-           qPrintable(transform->label()));
     appendTransformAtPort(pip, transform, tipPort);
     pip->execute();
   }
