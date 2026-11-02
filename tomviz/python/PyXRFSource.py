@@ -3,9 +3,13 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import queue
 import re
+import signal
 import subprocess
 import tempfile
+import threading
+import time
 from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -114,18 +118,60 @@ def _grown_scan_range(scan_range: str,
     return ', '.join(segments)
 
 
-def _run_command(args: list[str]) -> None:
+def _signal_group(proc: subprocess.Popen, sig: int) -> None:
+    try:
+        os.killpg(proc.pid, sig)
+    except ProcessLookupError:
+        pass  # Everything in it has already exited
+
+
+def _run_command(args: list[str], canceled: Callable[[], bool]) -> None:
     env = os.environ.copy()
     env['PYTHONUNBUFFERED'] = '1'
     print(f'Running: {" ".join(str(a) for a in args)}', flush=True)
+    # A session of its own lets cancel signal the whole process group:
+    # run-pyxrf-utils is a bash script running pixi running python, and
+    # stopping only bash would leave the download or fit going.
     proc = subprocess.Popen(
         args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-        text=True, bufsize=1, env=env,
+        text=True, bufsize=1, env=env, start_new_session=True,
     )
-    assert proc.stdout is not None
-    for line in proc.stdout:
-        print(line, end='', flush=True)
-    proc.wait()
+    stdout = proc.stdout
+    assert stdout is not None
+
+    # Read on a thread so cancel is noticed while the command is quiet
+    # (a single scan can download for minutes); print here.
+    lines: queue.Queue[str | None] = queue.Queue()
+
+    def read() -> None:
+        for line in stdout:
+            lines.put(line)
+        lines.put(None)
+
+    threading.Thread(target=read, daemon=True).start()
+
+    # Interrupt first so pyxrf-utils can clean up (and h5py close its
+    # files), then kill whatever is still running 10 s later.
+    kill_at = None
+    output_open = True
+    while output_open or proc.poll() is None:
+        if kill_at is None and canceled():
+            print('Canceling pyxrf-utils...', flush=True)
+            _signal_group(proc, signal.SIGINT)
+            kill_at = time.monotonic() + 10
+        elif kill_at is not None and time.monotonic() > kill_at:
+            _signal_group(proc, signal.SIGKILL)
+        try:
+            line = lines.get(timeout=0.1)
+        except queue.Empty:
+            continue
+        if line is None:
+            output_open = False
+        else:
+            print(line, end='', flush=True)
+
+    if kill_at is not None:
+        return  # Canceled; produce() checks before going on
     if proc.returncode != 0:
         raise RuntimeError(
             f'Command failed with exit code {proc.returncode}: '
@@ -135,7 +181,7 @@ def _run_command(args: list[str]) -> None:
 
 def _run_make_hdf5(command: str, working_directory: Path,
                    scan_range: str, skip_scan_ids: list[int],
-                   force: bool) -> None:
+                   force: bool, canceled: Callable[[], bool]) -> None:
     args = [
         command, 'make-hdf5', str(working_directory),
         '--range', scan_range,
@@ -144,7 +190,7 @@ def _run_make_hdf5(command: str, working_directory: Path,
         args += ['--skip', json.dumps(skip_scan_ids)]
     if force:
         args.append('--force')
-    _run_command(args)
+    _run_command(args, canceled)
 
 
 def _run_process_projections(command: str, working_directory: Path,
@@ -152,7 +198,8 @@ def _run_process_projections(command: str, working_directory: Path,
                              parameters_file: str, ic_name: str,
                              output_directory: Path,
                              skip_processed: bool,
-                             csv_output: str) -> None:
+                             csv_output: str,
+                             canceled: Callable[[], bool]) -> None:
     args = [
         command, 'process-projections', str(working_directory),
         '--range', scan_range,
@@ -166,7 +213,7 @@ def _run_process_projections(command: str, working_directory: Path,
         args.append('-s')
     if csv_output:
         args += ['--csv-output', csv_output]
-    _run_command(args)
+    _run_command(args, canceled)
 
 
 def _read_hdf5_metadata(
@@ -284,7 +331,7 @@ class PyXRFSource(tomviz.nodes.SourceNode):
                 skip_processed: bool = True,
                 rotate_datasets: bool = True,
                 csv_output: str = '',
-                ui_state: str = '{}') -> dict[str, Dataset]:
+                ui_state: str = '{}') -> dict[str, Dataset] | None:
         working_dir = Path(working_directory)
         skip_ids: list[int] = json.loads(skip_scan_ids) if skip_scan_ids else []
 
@@ -292,7 +339,10 @@ class PyXRFSource(tomviz.nodes.SourceNode):
             _run_make_hdf5(
                 pyxrf_utils_command, working_dir,
                 scan_range, skip_ids, redownload_successful,
+                lambda: self.canceled,
             )
+            if self.canceled:
+                return None
 
         if scan_range:
             with tempfile.TemporaryDirectory() as tmp_dir:
@@ -302,7 +352,10 @@ class PyXRFSource(tomviz.nodes.SourceNode):
                     scan_range, skip_ids,
                     parameters_file, ic_name,
                     output_dir, skip_processed, csv_output,
+                    lambda: self.canceled,
                 )
+                if self.canceled:
+                    return None
                 return self._read_results(
                     output_dir, working_dir, scan_range,
                     skip_ids, rotate_datasets,
