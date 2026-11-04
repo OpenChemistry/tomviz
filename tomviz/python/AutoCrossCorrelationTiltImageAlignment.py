@@ -92,33 +92,20 @@ class CrossCorrelationAlignmentOperator(tomviz.operators.CancelableOperator):
             step += 1
             self.progress.value = step
 
-        dataset.active_scalars = tiltSeries
         if apply_to_all_arrays:
-            names = [name for name in dataset.scalars_names
-                     if name != dataset.active_name]
-            self.apply_offsets_to_scalar_names(dataset, offsets, names)
+            names = dataset.scalars_names
+        else:
+            names = [dataset.active_name]
+        pad_and_shift(dataset, offsets, names)
 
         if transforms_save_file:
             np.savez(
                 transforms_save_file,
                 offsets=offsets,
                 spacing=dataset.spacing,
+                signed=True,
             )
             print('Saved transforms to:', transforms_save_file)
-
-    def apply_offsets_to_scalar_names(self, dataset, offsets, names):
-        # Now apply the same offsets to all other arrays
-        for name in names:
-            print(f'Applying shifts to {name}...')
-            array = dataset.scalars(name)
-            for i in range(len(offsets)):
-                shifts = offsets[i]
-                array[:, :, i] = ndimage.shift(array[:, :, i],
-                                               shift=shifts,
-                                               order=1,
-                                               mode='wrap')
-
-            dataset.set_scalars(name, array)
 
     def transform_from_file(self, dataset, apply_to_all_arrays,
                             transform_file):
@@ -130,13 +117,19 @@ class CrossCorrelationAlignmentOperator(tomviz.operators.CancelableOperator):
         with np.load(transform_file) as f:
             transform_offsets = f['offsets']
             transform_spacing = f['spacing']
+            signed = 'signed' in f
 
         # The true shift will depend on the voxel size ratio, along
         # the shift direction, which is Y.
         offsets = transform_offsets.astype(float)
         offsets[:, 0] *= transform_spacing[0] / dataset.spacing[0]
         offsets[:, 1] *= transform_spacing[1] / dataset.spacing[1]
-        return self.apply_offsets_to_scalar_names(dataset, offsets, names)
+        if not signed:
+            # Files from earlier versions hold shifts as 0 to N - 1, which
+            # only a wrap-around shift could apply
+            size = np.array(dataset.active_scalars.shape[:2])
+            offsets = (offsets + size / 2) % size - size / 2
+        pad_and_shift(dataset, offsets, names)
 
 
 def crossCorrelationAlign(image, reference, rFilter, kFilter):
@@ -146,10 +139,36 @@ def crossCorrelationAlign(image, reference, rFilter, kFilter):
     reference_f = np.fft.fft2((reference - np.mean(reference)) * rFilter)
 
     xcor = abs(np.fft.ifft2(np.conj(image_f) * reference_f * kFilter))
-    shifts = np.unravel_index(xcor.argmax(), xcor.shape)
+    peak = np.unravel_index(xcor.argmax(), xcor.shape)
+    # The peak is at 0 to N - 1; past the middle it is a negative shift
+    shifts = [int(p) - n if p > n // 2 else int(p)
+              for p, n in zip(peak, xcor.shape)]
 
     # shift image
     output = np.roll(image, shifts[0], axis=0)
     output = np.roll(output, shifts[1], axis=1)
 
     return shifts, output
+
+
+def pad_and_shift(dataset, offsets: np.ndarray, names: list[str]) -> None:
+    """Shift each image of the named arrays by its row of offsets.
+
+    Every array is padded with zeros by the largest shift on both sides
+    first, so nothing is shifted out of view or wraps around to the
+    other side, and the image center stays put.
+    """
+    pad = np.ceil(np.abs(offsets).max(axis=0)).astype(int)
+    for name in dataset.scalars_names:
+        array = dataset.scalars(name)
+        # Multi-component arrays have a fourth axis, left as it is
+        rest = array.ndim - 3
+        array = np.pad(array, ((pad[0], pad[0]), (pad[1], pad[1]), (0, 0)) +
+                       ((0, 0),) * rest)
+        if name in names:
+            print(f'Applying shifts to {name}...')
+            for i, shift in enumerate(offsets):
+                array[:, :, i] = ndimage.shift(array[:, :, i],
+                                               tuple(shift) + (0,) * rest,
+                                               order=1, mode='constant')
+        dataset.set_scalars(name, array)
