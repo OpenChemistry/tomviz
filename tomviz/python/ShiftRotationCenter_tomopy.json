@@ -50,5 +50,5 @@
     }
   ],
   "inputType": "TiltSeries",
-  "outputType": "Volume"
+  "outputType": "TiltSeries"
 }
