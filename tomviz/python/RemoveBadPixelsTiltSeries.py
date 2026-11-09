@@ -8,7 +8,9 @@ def transform(dataset, threshold=None):
 
     for i in range(tiltSeries.shape[2]):
         I = tiltSeries[:, :, i]
-        I_pad = np.pad(I, (1, 1), 'edge')
+        # Mirror the edge, so a pixel there doesn't count itself as its
+        # own neighbor
+        I_pad = np.pad(I, (1, 1), 'reflect')
 
         # Standard deviation of the 8 neighbors in a 3 x 3 window, leaving
         # out the pixel itself, which would inflate it when bad. The
@@ -39,8 +41,13 @@ def transform(dataset, threshold=None):
         # Median of the 3 x 3 window centered on the pixel
         medianI = scipy.ndimage.median_filter(I_pad, 3)[1:-1, 1:-1]
 
-        #identify bad pixels
+        # Identify bad pixels. When the neighbor left out stands out too,
+        # it is either a second bad pixel, caught as well, or the rest of
+        # a thin line, which is kept
         badPixelsMask = abs(I - medianI) > std * threshold
+        alone = abs(farthest[1:-1, 1:-1] - medianI) <= std * threshold
+        badPixelsMask &= alone | scipy.ndimage.binary_dilation(
+            badPixelsMask, ring)
 
         I[badPixelsMask] = medianI[badPixelsMask]
         tiltSeries[:, :, i] = I

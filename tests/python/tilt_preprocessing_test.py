@@ -30,10 +30,14 @@ def test_remove_bad_pixels_replaces_only_the_spike() -> None:
         # A weak XRF map: mostly zeros with lone small counts
         rng.poisson(0.05, (64, 64)).astype(float),
     ):
-        image[20, 20] = 1000.0
+        # One inside and one on the edge
+        spikes = [(20, 20), (0, 20)]
+        for p in spikes:
+            image[p] = 1000.0
         out = _run('RemoveBadPixelsTiltSeries', image[:, :, None])[:, :, 0]
-        assert out[20, 20] < 200.0
-        image[20, 20] = out[20, 20]
+        for p in spikes:
+            assert out[p] < 200.0
+            image[p] = out[p]
         assert np.count_nonzero(out != image) <= 5
 
 
@@ -49,11 +53,14 @@ def test_remove_bad_pixels_replaces_touching_spikes() -> None:
         clean = image.copy()
         for p in spikes:
             image[p] = 1000.0
+        # A thin bright line, whose end pixels look like one of a pair
+        image[5, 20:26] += 1000.0
         out = _run('RemoveBadPixelsTiltSeries', image[:, :, None])[:, :, 0]
         for p in spikes:
             assert abs(out[p] - np.median(clean[p[0] - 1:p[0] + 2,
                                                 p[1] - 1:p[1] + 2])) < 3.0
             image[p] = out[p]
+        assert np.array_equal(out[5, 20:26], image[5, 20:26])
         assert np.count_nonzero(out != image) <= 5
 
 
