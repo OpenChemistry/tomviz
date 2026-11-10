@@ -158,7 +158,8 @@ def _run_command(args: list[str], canceled: Callable[[], bool]) -> None:
     # stopping only bash would leave the download or fit going.
     proc = subprocess.Popen(
         args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-        text=True, bufsize=1, env=env, start_new_session=True,
+        text=True, errors='replace', bufsize=1, env=env,
+        start_new_session=True,
     )
     stdout = proc.stdout
     assert stdout is not None
