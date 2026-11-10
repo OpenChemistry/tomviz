@@ -2183,15 +2183,9 @@ void MainWindow::onActiveNodeChanged(pipeline::Node* node)
         m_ui->propertiesPanelStackedWidget);
     }
     // React to detached colormap toggling while this sink is selected
-    m_sinkColorMapChangedConn = connect(
-      sink, &pipeline::LegacyModuleSink::colorMapChanged,
-      this, [this, sink]() {
-        if (sink->useDetachedColorMap()) {
-          m_ui->centralWidget->setActiveSinkNode(sink);
-        } else {
-          updateColorMapDisplay();
-        }
-      });
+    m_sinkColorMapChangedConn =
+      connect(sink, &pipeline::LegacyModuleSink::colorMapChanged, this,
+              &MainWindow::updateColorMapDisplay);
   } else if (node && node->hasPropertiesWidget() && !node->isEditing()) {
     propsWidget = new pipeline::NodePropertiesPanel(
       node, pipeline(), m_ui->propertiesPanelStackedWidget);
@@ -2201,14 +2195,6 @@ void MainWindow::onActiveNodeChanged(pipeline::Node* node)
   // editable properties (title-only panel).
   showPropertiesPanel(propsWidget, title);
 
-  // Sink with detached colormap: display it; otherwise the tip port
-  // drives the colormap via updateColorMapDisplay().
-  if (auto* sink = dynamic_cast<pipeline::LegacyModuleSink*>(node)) {
-    if (sink->useDetachedColorMap()) {
-      m_ui->centralWidget->setActiveSinkNode(sink);
-      return;
-    }
-  }
   updateColorMapDisplay();
 }
 
@@ -2378,6 +2364,15 @@ void MainWindow::scheduleColorMapDisplayUpdate()
 
 void MainWindow::updateColorMapDisplay()
 {
+  // A selected visualization shows its own color map. Its input may come
+  // from earlier in the branch than the tip, so the tip's would be wrong.
+  auto* sink = dynamic_cast<pipeline::LegacyModuleSink*>(
+    ActiveObjects::instance().activeNode());
+  if (sink && sink->colorMap()) {
+    m_ui->centralWidget->setActiveSinkNode(sink);
+    return;
+  }
+
   auto* tipPort = ActiveObjects::instance().activeTipOutputPort();
   if (!tipPort || !pipeline::isVolumeType(tipPort->type()) ||
       !tipPort->hasData()) {
