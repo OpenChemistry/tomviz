@@ -9,22 +9,22 @@ from tomviz_pipeline.dataset import LegacyDataset as Dataset
 class CountUpdates:
     """Stands in for an operator's progress and counts the live updates."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.updates = 0
         self.maximum = 0
         self.value = 0
         self.message = ''
 
     @property
-    def data(self):
+    def data(self) -> None:
         return None
 
     @data.setter
-    def data(self, value):
+    def data(self, value: Dataset) -> None:
         self.updates += 1
 
 
-def tilt_series(Nslice):
+def tilt_series(Nslice: int) -> Dataset:
     rng = np.random.default_rng(0)
     angles = np.arange(-60, 61, 10.0)
     ds = Dataset({'scalars': np.asfortranarray(
@@ -34,7 +34,7 @@ def tilt_series(Nslice):
     return ds
 
 
-def run(name, Nslice, **kwargs):
+def run(name: str, Nslice: int, **kwargs: int | None) -> int:
     operator = load_operator_class(load_operator_module(name))
     operator.progress = CountUpdates()
     out = operator.transform(tilt_series(Nslice), **kwargs)
@@ -50,14 +50,15 @@ def run(name, Nslice, **kwargs):
     # The default in transform(), for calls from scripts.
     (None, 1),
 ])
-def test_wbp_live_updates(Nupdates, updates):
+def test_wbp_live_updates(Nupdates: int | None, updates: int) -> None:
     assert run('Recon_WBP', 3, Nrecon=16, filter=1, interp=0,
                Nupdates=Nupdates) == updates
 
 
 @pytest.mark.parametrize('name', ['Recon_ART', 'Recon_SIRT'])
 @pytest.mark.parametrize('Nupdates,updates', [(0, 1), (50, 6), (100, 6)])
-def test_art_and_sirt_live_updates_with_few_slices(name, Nupdates, updates):
+def test_art_and_sirt_live_updates_with_few_slices(
+        name: str, Nupdates: int, updates: int) -> None:
     # 3 slices: the first iteration updated every Nslice // 4 slices,
     # which divided by zero with fewer than 4 slices. Now one update per
     # slice in the first iteration, one per iteration, and the final one.
@@ -67,7 +68,8 @@ def test_art_and_sirt_live_updates_with_few_slices(name, Nupdates, updates):
 @pytest.mark.parametrize('name',
                          ['Recon_ART', 'Recon_SIRT', 'Recon_TV_minimization'])
 @pytest.mark.parametrize('Niter,Nupdates', [(10, 90), (10, 96), (1, 50)])
-def test_high_update_frequency_updates_every_iteration(name, Niter, Nupdates):
+def test_high_update_frequency_updates_every_iteration(
+        name: str, Niter: int, Nupdates: int) -> None:
     # The update interval Niter * (1 - Nupdates / 100) rounded to 0 for
     # 96 % of 10 iterations, or 50 % of 1, which meant no live updates
     # at all: asking for more updates gave fewer.

@@ -1,13 +1,15 @@
 import numpy as np
 from scipy.interpolate import interp1d
 import tomviz.operators
+from tomviz.dataset import Dataset
 import time
 
 
 class ReconWBPOperator(tomviz.operators.CancelableOperator):
 
-    def transform(self, dataset, Nrecon=None, filter=None, interp=None,
-                  Nupdates=None):
+    def transform(self, dataset: Dataset, Nrecon: int | None = None,
+                  filter: int | None = None, interp: int | None = None,
+                  Nupdates: int | None = None) -> dict[str, Dataset] | None:
         """
         3D Reconstruct from a tilt series using Weighted Back-projection Method
         """

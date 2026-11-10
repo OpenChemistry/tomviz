@@ -1,13 +1,15 @@
 import numpy as np
 import scipy.sparse as ss
 import tomviz.operators
+from tomviz.dataset import Dataset
 import time
 
 
 class ReconSirtOperator(tomviz.operators.CompletableOperator):
 
-    def transform(self, dataset, Niter=10, stepSize=0.0001,
-                  updateMethodIndex=0, Nupdates=0):
+    def transform(self, dataset: Dataset, Niter: int = 10,
+                  stepSize: float = 0.0001, updateMethodIndex: int = 0,
+                  Nupdates: int = 0) -> dict[str, Dataset] | None:
         """
         3D Reconstruct from a tilt series using Simultaneous Iterative
         Reconstruction Techniques (SIRT)"""
@@ -301,7 +303,7 @@ def rmepsilon(input):
     return input
 
 
-def calc_Nupdates(Nupdates, Niter):
+def calc_Nupdates(Nupdates: int, Niter: int) -> int:
     if Nupdates == 0:
         Nupdates = 0
     #If the user selects 100%, update for every slice.

@@ -297,7 +297,7 @@ def rmepsilon(input):
     return input
 
 
-def calc_Nupdates(Nupdates, Niter):
+def calc_Nupdates(Nupdates: int, Niter: int) -> int:
     if Nupdates == 0:
         Nupdates = 0
     #If the user selects 100%, update for every slice.

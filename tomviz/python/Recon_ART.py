@@ -1,12 +1,14 @@
 import numpy as np
 import scipy.sparse as ss
 import tomviz.operators
+from tomviz.dataset import Dataset
 import time
 
 
 class ReconARTOperator(tomviz.operators.CompletableOperator):
 
-    def transform(self, dataset, Niter=1, Nupdates=0, beta=1.0):
+    def transform(self, dataset: Dataset, Niter: int = 1, Nupdates: int = 0,
+                  beta: float = 1.0) -> dict[str, Dataset] | None:
         """
         3D Reconstruction using Algebraic Reconstruction Technique (ART)
         """
@@ -235,7 +237,7 @@ def rmepsilon(input):
     return input
 
 
-def calc_Nupdates(Nupdates, Niter):
+def calc_Nupdates(Nupdates: int, Niter: int) -> int:
     if Nupdates == 0:
         Nupdates = 0
     #If the user selects 100%, update for every slice.
