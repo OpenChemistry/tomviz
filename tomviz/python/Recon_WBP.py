@@ -54,7 +54,8 @@ class ReconWBPOperator(tomviz.operators.CancelableOperator):
                 timeLeftHour, timeLeftMin, timeLeftSec)
 
             # Update only once every so many steps
-            if Nupdates != 0 and (i + 1) % (Nslice//Nupdates) == 0:
+            # More updates than slices means an update after every slice.
+            if Nupdates and (i + 1) % max(1, Nslice // Nupdates) == 0:
                 child.active_scalars = recon #add recon to child
                 # This copies data to the main thread
                 self.progress.data = child

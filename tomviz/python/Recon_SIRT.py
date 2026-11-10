@@ -92,8 +92,10 @@ class ReconSirtOperator(tomviz.operators.CompletableOperator):
                 etcMessage = 'Estimated time to complete: %02d:%02d:%02d' % (
                     timeLeftHour, timeLeftMin, timeLeftSec)
 
-                # Give 4 updates for first iteration.
-                if Nupdates != 0 and i == 0 and (s + 1) % (Nslice//4) == 0:
+                # Give 4 updates for first iteration (one per slice
+                # with fewer than 4 slices).
+                if (Nupdates != 0 and i == 0 and
+                        (s + 1) % max(1, Nslice // 4) == 0):
                     child.active_scalars = recon
                     self.progress.data = child
 
@@ -306,5 +308,6 @@ def calc_Nupdates(Nupdates, Niter):
     elif Nupdates == 100:
         Nupdates = 1
     else:
-        Nupdates = int(round((Niter*(1 - Nupdates/100))))
+        # Round to at least 1: 0 would mean no live updates at all.
+        Nupdates = max(1, int(round(Niter*(1 - Nupdates/100))))
     return Nupdates
