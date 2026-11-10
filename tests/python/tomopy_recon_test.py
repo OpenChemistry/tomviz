@@ -1,7 +1,9 @@
 import numpy as np
 import pytest
 
-from utils import load_operator_module
+from utils import load_operator_class, load_operator_module
+
+from tomviz_pipeline.dataset import LegacyDataset as Dataset
 
 try:
     import tomopy
@@ -103,3 +105,39 @@ def test_tomopy_gpu_check_raises_instead_of_aborting(
     monkeypatch.setattr(accel, 'LIB_TOMOPY_ACCEL', no_devices)
     with pytest.raises(RuntimeError, match='NVIDIA GPU'):
         module._check_gpu_available()
+
+
+def _tilt_series() -> Dataset:
+    # A bar in each of 12 slices, seen from 30 angles
+    angles = np.linspace(-70, 70, 30)
+    data = np.zeros((12, 32, len(angles)), dtype=np.float32)
+    data[:, 12:20, :] = 1.0
+    dataset = Dataset({'intensity': data})
+    dataset.tilt_angles = angles
+    dataset.tilt_axis = 2
+    return dataset
+
+
+@pytest.mark.skipif(not HAS_TOMOPY, reason="tomopy not installed")
+def test_tomopy_recon_in_chunks_matches_one_call(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    operator = load_operator_class(load_operator_module('Recon_tomopy'))
+    # Two slices per chunk
+    monkeypatch.setattr('os.cpu_count', lambda: 2)
+    rec = operator.transform(_tilt_series(), algorithm='mlem',
+                             num_iter=3)['reconstruction'].active_scalars
+
+    data = np.transpose(_tilt_series().active_scalars, (2, 0, 1))
+    data = (data - data.min()) / (data.max() - data.min())
+    expected = tomopy.recon(np.ascontiguousarray(data),
+                            np.deg2rad(np.linspace(-70, 70, 30)),
+                            center=16, algorithm='mlem', num_iter=3)
+    expected = tomopy.circ_mask(expected, axis=0, ratio=0.95, val=0.0)
+    assert np.allclose(rec, expected)
+
+
+@pytest.mark.skipif(not HAS_TOMOPY, reason="tomopy not installed")
+def test_tomopy_recon_cancel() -> None:
+    operator = load_operator_class(load_operator_module('Recon_tomopy'))
+    operator._operator_wrapper._canceled = True
+    assert operator.transform(_tilt_series(), algorithm='mlem') is None
