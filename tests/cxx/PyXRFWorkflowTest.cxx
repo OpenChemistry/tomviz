@@ -15,6 +15,7 @@
 #include "Utilities.h"
 
 #include "pipeline/OutputPort.h"
+#include "pipeline/data/VolumeData.h"
 #include "pipeline/sources/PythonSource.h"
 
 #include "TomvizTest.h"
@@ -29,13 +30,15 @@ class PyXRFWorkflowTest : public QObject
 private:
   QTemporaryDir m_tempDir;
 
+  static QString python()
+  {
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+    return env.value("TOMVIZ_TEST_PYTHON_EXECUTABLE", "python");
+  }
+
   bool createSyntheticTomoH5(const QString& outputPath)
   {
-    QString python = "python";
-    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-    if (env.contains("TOMVIZ_TEST_PYTHON_EXECUTABLE")) {
-      python = env.value("TOMVIZ_TEST_PYTHON_EXECUTABLE");
-    }
+    QString python = PyXRFWorkflowTest::python();
 
     auto scriptFile =
       QFileInfo(QString(SOURCE_DIR) + "/fixtures/create_synthetic_tomo.py");
@@ -103,6 +106,61 @@ private slots:
     auto* elementsPort = source->outputPort("elements");
     QVERIFY(elementsPort);
     QVERIFY2(elementsPort->hasData(), "elements output port has no data");
+  }
+
+  // A separate batch writes the scan files, and the scan range is left
+  // empty. The fake pyxrf-utils fits by writing into the scan files.
+  void liveScansFromABatch()
+  {
+#ifdef Q_OS_WIN
+    QSKIP("pyxrf-utils runs on Linux only");
+#endif
+    QString dir = m_tempDir.path() + "/live";
+    QVERIFY(QDir().mkpath(dir));
+    QString fake = QString(SOURCE_DIR) + "/fixtures/fake_pyxrf_utils.py";
+    auto addScan = [&](int sid, double theta) {
+      return QProcess::execute(python(),
+                               { fake, "raw-scan", dir, QString::number(sid),
+                                 QString::number(theta) }) == 0;
+    };
+
+    QString command = m_tempDir.path() + "/pyxrf-utils";
+    QFile script(command);
+    QVERIFY(script.open(QIODevice::WriteOnly));
+    script.write(QString("#!/bin/sh\nexec \"%1\" \"%2\" \"$@\"\n")
+                   .arg(python(), fake)
+                   .toUtf8());
+    script.close();
+    script.setPermissions(script.permissions() | QFileDevice::ExeOwner);
+
+    auto* source = new PythonSource(this);
+    source->setJSONDescription(readInJSONDescription("PyXRFSource"));
+    source->setScript(readInPythonScript("PyXRFSource"));
+    source->setParameter("pyxrf_utils_command", command);
+    source->setParameter("working_directory", dir);
+    source->setParameter("scan_range", QString(""));
+    source->setParameter("skip_downloads", true);
+    source->setParameter("parameters_file", QString("params.json"));
+    auto scanIds = [source]() {
+      auto port = source->outputPort("elements");
+      return port->data().value<VolumeDataPtr>()->scanIds();
+    };
+
+    // Collected from high angles to low
+    QVERIFY(addScan(100, 30));
+    QVERIFY(addScan(101, 10));
+    QVERIFY(!source->queryShouldAutoExecute());
+    QVERIFY(source->execute());
+    QCOMPARE(scanIds(), QVector<int>({ 101, 100 }));
+
+    // Fitting wrote to the scan files, which is not new data
+    QVERIFY(!source->queryShouldAutoExecute());
+
+    QVERIFY(addScan(102, -10));
+    QVERIFY(source->queryShouldAutoExecute());
+    QVERIFY(source->execute());
+    QCOMPARE(scanIds(), QVector<int>({ 102, 101, 100 }));
+    QVERIFY(!source->queryShouldAutoExecute());
   }
 };
 

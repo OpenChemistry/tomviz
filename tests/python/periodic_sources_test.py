@@ -2,9 +2,12 @@
 own parameters (self.set_parameter) during the auto-execute check."""
 import importlib.util
 import json
+import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
+import pytest
 
 from utils import OPERATOR_PATH
 
@@ -198,28 +201,69 @@ def _touch_scans(root, sids):
         (root / f'scan2D_{sid}.h5').write_bytes(b'')
 
 
-def test_grown_scan_range_grammar(tmp_path):
+def test_grown_scan_range_grammar(tmp_path: Path) -> None:
     mod, _ = _load_source('PyXRFSource')
     grow = mod._grown_scan_range
 
-    _touch_scans(tmp_path, [100, 101, 102, 103, 105])
+    _touch_scans(tmp_path, [100, 101, 102, 103, 104, 105])
     assert grow('100:102', tmp_path) == '100:105'
     assert grow('100:102:2', tmp_path) == '100:105:2'
     assert grow('100', tmp_path) == '100, 101:105'
+    # 105 is off the stride, so there is nothing to grow
+    assert grow('100:105:2', tmp_path) is None
     # Nothing beyond the range, or no usable range: no growth
     assert grow('100:200', tmp_path) is None
     assert grow('', tmp_path) is None
     assert grow('junk', tmp_path) is None
 
 
-def test_pyxrf_grows_range_on_new_scans(tmp_path):
+def test_pyxrf_grows_range_on_new_scans(tmp_path: Path) -> None:
     mod, spec = _load_source('PyXRFSource')
-    _touch_scans(tmp_path, [100, 101])
+    # Scan 102 arrived after the range was typed in
+    _touch_scans(tmp_path, [100, 101, 102])
 
     kernel = _make_kernel(mod.PyXRFSource, spec)
     params = {'working_directory': str(tmp_path), 'scan_range': '100:101'}
-    assert kernel.should_auto_execute(**params) is False
-
-    _touch_scans(tmp_path, [102])
     assert kernel.should_auto_execute(**params) is True
     assert kernel._parameter_updates == {'scan_range': '100:102'}
+
+
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason='pyxrf-utils runs on Linux only')
+def test_pyxrf_live_scans_from_a_batch(tmp_path: Path) -> None:
+    # A separate batch writes the scan files, and the scan range is left
+    # empty. The fake pyxrf-utils fits by writing into the scan files.
+    fake_path = Path(__file__).parents[1] / 'cxx/fixtures/fake_pyxrf_utils.py'
+    fake = _load_module(fake_path, 'fake_pyxrf_utils')
+    command = tmp_path / 'pyxrf-utils'
+    command.write_text(
+        f'#!/bin/sh\nexec "{sys.executable}" "{fake_path}" "$@"\n')
+    command.chmod(0o755)
+
+    mod, spec = _load_source('PyXRFSource')
+    kernel = _make_kernel(mod.PyXRFSource, spec)
+    kernel._operator_wrapper = SimpleNamespace(canceled=False)
+    params = {
+        'pyxrf_utils_command': str(command),
+        'working_directory': str(tmp_path),
+        'scan_range': '',
+        'skip_downloads': True,
+        'parameters_file': 'params.json',
+    }
+
+    # Collected from high angles to low
+    fake.raw_scan(tmp_path, 100, 30.0)
+    fake.raw_scan(tmp_path, 101, 10.0)
+    assert kernel.should_auto_execute(**params) is False
+    ds = kernel.produce(**params)['elements']
+    assert ds.scan_ids.tolist() == [101, 100]
+    assert np.allclose(ds.tilt_angles, [10.0, 30.0])
+
+    # Fitting wrote to the scan files, which is not new data
+    assert kernel.should_auto_execute(**params) is False
+
+    fake.raw_scan(tmp_path, 102, -10.0)
+    assert kernel.should_auto_execute(**params) is True
+    ds = kernel.produce(**params)['elements']
+    assert ds.scan_ids.tolist() == [102, 101, 100]
+    assert kernel.should_auto_execute(**params) is False
