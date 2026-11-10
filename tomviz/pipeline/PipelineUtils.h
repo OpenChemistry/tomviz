@@ -40,6 +40,10 @@ OutputPort* feedingSourcePort(Node* node);
 OutputPort* sinkAttachPort(Pipeline* pipeline, OutputPort* targetPort,
                            InputPort* input);
 
+/// From now on, when a view is closed, remove the sinks shown in it and
+/// the groups that leaves empty, since they have nowhere else to show.
+void removeSinksWithTheirView(Pipeline* pipeline);
+
 } // namespace pipeline
 } // namespace tomviz
 

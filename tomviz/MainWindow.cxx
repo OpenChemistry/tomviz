@@ -61,6 +61,7 @@
 #include "pipeline/Link.h"
 #include "pipeline/PortData.h"
 #include "pipeline/PortDataMetadata.h"
+#include "pipeline/PipelineUtils.h"
 #include "pipeline/SinkGroupNode.h"
 #include "pipeline/sinks/LegacyModuleSink.h"
 #include "pipeline/data/VolumeData.h"
@@ -1837,6 +1838,7 @@ void MainWindow::initPipeline()
   m_pipeline = p;
   m_pipelineStrip->setPipeline(p);
   m_pipelineControls->setPipeline(p);
+  pipeline::removeSinksWithTheirView(p);
   ActiveObjects::instance().setPipeline(p);
   // The animations recorded with the camera viewpoints follow the
   // viewpoints and the authored animations from here on
