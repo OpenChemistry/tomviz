@@ -80,8 +80,10 @@ class ReconARTOperator(tomviz.operators.CompletableOperator):
 
                 recon[s, :, :] = f.reshape((Nray, Nray))
 
-                # Give 4 updates for first iteration.
-                if Nupdates != 0 and i == 0 and (s + 1) % (Nslice//4) == 0:
+                # Give 4 updates for first iteration (one per slice
+                # with fewer than 4 slices).
+                if (Nupdates != 0 and i == 0 and
+                        (s + 1) % max(1, Nslice // 4) == 0):
                     child.active_scalars = recon
                     self.progress.data = child
 

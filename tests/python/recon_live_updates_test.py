@@ -53,3 +53,12 @@ def run(name, Nslice, **kwargs):
 def test_wbp_live_updates(Nupdates, updates):
     assert run('Recon_WBP', 3, Nrecon=16, filter=1, interp=0,
                Nupdates=Nupdates) == updates
+
+
+@pytest.mark.parametrize('name', ['Recon_ART', 'Recon_SIRT'])
+@pytest.mark.parametrize('Nupdates,updates', [(0, 1), (50, 6), (100, 6)])
+def test_art_and_sirt_live_updates_with_few_slices(name, Nupdates, updates):
+    # 3 slices: the first iteration updated every Nslice // 4 slices,
+    # which divided by zero with fewer than 4 slices. Now one update per
+    # slice in the first iteration, one per iteration, and the final one.
+    assert run(name, 3, Niter=2, Nupdates=Nupdates) == updates
