@@ -19,6 +19,8 @@
 #include <QSet>
 #include <QStack>
 
+#include <utility>
+
 namespace tomviz {
 namespace pipeline {
 
@@ -688,18 +690,30 @@ ExecutionFuture* Pipeline::execute(Node* target)
   return runPlan(executionOrder(target));
 }
 
-void Pipeline::executeWhenIdle()
+void Pipeline::executeWhenIdle(Node* target)
 {
   if (!isExecuting()) {
-    execute();
+    target ? execute(target) : execute();
     return;
   }
+  // A null target stands for the whole pipeline
+  m_idleTargets.append(target);
   if (!m_idleExecuteQueued) {
     m_idleExecuteQueued = true;
     connect(this, &Pipeline::executionFinished, this,
             [this]() {
               m_idleExecuteQueued = false;
-              execute();
+              auto targets = std::exchange(m_idleTargets, {});
+              if (targets.contains(nullptr)) {
+                execute();
+                return;
+              }
+              for (auto* node : targets) {
+                // Skip nodes removed while waiting
+                if (m_nodes.contains(node)) {
+                  executeWhenIdle(node);
+                }
+              }
             },
             static_cast<Qt::ConnectionType>(Qt::SingleShotConnection));
   }

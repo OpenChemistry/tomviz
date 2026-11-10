@@ -518,7 +518,7 @@ void HistogramWidget::histogramClicked(vtkObject*)
 
   contour->setIsoValue(isoValue);
   ao.setActiveNode(contour);
-  pip->execute();
+  pip->executeWhenIdle(contour);
 
   tomviz::convert<pqView*>(view)->render();
 }

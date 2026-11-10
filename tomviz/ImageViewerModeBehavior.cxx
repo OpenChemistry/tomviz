@@ -115,7 +115,7 @@ SliceSink* createSlice(pipeline::Pipeline* pip, vtkSMRenderViewProxy* proxy,
   }
   pip->addNode(slice);
   pip->createLink(pipeline::sinkAttachPort(pip, tipPort, input), input);
-  pip->executeWhenIdle();
+  pip->executeWhenIdle(slice);
   return slice;
 }
 

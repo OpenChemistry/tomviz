@@ -2624,6 +2624,40 @@ TEST_F(PipelineLibTest, ThreadedExecutorCancellation)
   EXPECT_NE(t3->state(), NodeState::Current);
 }
 
+// Adding a visualization runs only what it needs, even when queued
+// behind a running branch, so another stale branch is left alone.
+TEST_F(PipelineLibTest, NewSinkRunsOnlyItsInputs)
+{
+  pipeline->setExecutor(new ThreadedExecutor(pipeline));
+
+  auto* source = new SourceNode();
+  source->addOutput("out", PortType::ImageData);
+  pipeline->addNode(source);
+  auto* running = new SlowTransform();
+  auto* idle = new SlowTransform();
+  pipeline->addNode(running);
+  pipeline->addNode(idle);
+  pipeline->createLink(source->outputPort("out"), running->inputPort("in"));
+  pipeline->createLink(source->outputPort("out"), idle->inputPort("in"));
+  source->setOutputData("out", PortData(std::any(5), PortType::ImageData));
+
+  QSignalSpy finished(pipeline, &Pipeline::executionFinished);
+  pipeline->execute(running);
+  ASSERT_TRUE(pipeline->isExecuting());
+
+  auto* sink = new CollectorSink();
+  pipeline->addNode(sink);
+  pipeline->createLink(source->outputPort("out"), sink->inputPort("in"));
+  pipeline->executeWhenIdle(sink);
+  while (finished.count() < 2 && finished.wait(5000)) {
+  }
+
+  EXPECT_TRUE(sink->consumed);
+  EXPECT_EQ(sink->lastValue, 5);
+  EXPECT_EQ(running->state(), NodeState::Current);
+  EXPECT_NE(idle->state(), NodeState::Current);
+}
+
 TEST_F(PipelineLibTest, ThreadedExecutorHeldNode)
 {
   pipeline->setExecutor(new ThreadedExecutor(pipeline));
