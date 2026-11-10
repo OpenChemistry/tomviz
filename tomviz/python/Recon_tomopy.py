@@ -82,23 +82,30 @@ class TomoPyReconOperator(tomviz.operators.CancelableOperator):
         # slice is independent, and TomoPy splits them across cores anyway.
         # The GPU is only efficient with many slices per call.
         num_slices, width = data.shape[1], data.shape[2]
-        if recon_kwargs.get('accelerated'):
-            min_step = 128
-        else:
-            min_step = os.cpu_count() or 1
-        step = max(min_step, num_slices // 50)
+        gpu = recon_kwargs.get('accelerated', False)
+        step = max(128 if gpu else (os.cpu_count() or 1), num_slices // 50)
         self.progress.maximum = num_slices
         rec = np.empty((num_slices, width, width), dtype=np.float32)
-        for start in range(0, num_slices, step):
+        start = 0
+        while start < num_slices:
             if self.canceled:
                 return
             stop = min(start + step, num_slices)
             self.progress.message = (
                 f'Reconstructing slices {start + 1}-{stop} of {num_slices}')
-            rec[start:stop] = tomopy.recon(data[:, start:stop], angles_rad,
-                                           center=center, algorithm=algorithm,
-                                           **recon_kwargs)
+            chunk = tomopy.recon(data[:, start:stop], angles_rad,
+                                 center=center, algorithm=algorithm,
+                                 **recon_kwargs)
+            # Out of GPU memory, TomoPy prints an error and returns its
+            # starting guess (1e-6 everywhere), so retry with fewer slices
+            if gpu and np.all(chunk == np.float32(1e-6)):
+                if stop - start == 1:
+                    raise RuntimeError('Not enough GPU memory for one slice')
+                step = (stop - start) // 2
+                continue
+            rec[start:stop] = chunk
             self.progress.value = stop
+            start = stop
 
         # Apply circular mask
         rec = tomopy.circ_mask(rec, axis=0, ratio=0.95, val=0.0)

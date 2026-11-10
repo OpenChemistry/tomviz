@@ -141,3 +141,23 @@ def test_tomopy_recon_cancel() -> None:
     operator = load_operator_class(load_operator_module('Recon_tomopy'))
     operator._operator_wrapper._canceled = True
     assert operator.transform(_tilt_series(), algorithm='mlem') is None
+
+
+@pytest.mark.skipif(not HAS_TOMOPY, reason="tomopy not installed")
+def test_tomopy_gpu_out_of_memory(monkeypatch: pytest.MonkeyPatch) -> None:
+    module = load_operator_module('Recon_tomopy')
+    monkeypatch.setattr(module, '_check_gpu_available', lambda: None)
+    sizes = []
+
+    def recon(data: np.ndarray, *args, **kwargs) -> np.ndarray:
+        # Like TomoPy's GPU path with room for only 4 slices
+        sizes.append(data.shape[1])
+        value = 1.0 if data.shape[1] <= 4 else 1e-6
+        return np.full((data.shape[1], 32, 32), value, dtype=np.float32)
+
+    monkeypatch.setattr(module.tomopy, 'recon', recon)
+    operator = load_operator_class(module)
+    rec = operator.transform(_tilt_series(), algorithm='mlem',
+                             use_gpu=True)['reconstruction'].active_scalars
+    assert sizes == [12, 6, 3, 3, 3, 3]
+    assert np.all(rec[:, 16, 16] == 1.0)
