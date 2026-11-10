@@ -62,3 +62,14 @@ def test_art_and_sirt_live_updates_with_few_slices(name, Nupdates, updates):
     # which divided by zero with fewer than 4 slices. Now one update per
     # slice in the first iteration, one per iteration, and the final one.
     assert run(name, 3, Niter=2, Nupdates=Nupdates) == updates
+
+
+@pytest.mark.parametrize('name',
+                         ['Recon_ART', 'Recon_SIRT', 'Recon_TV_minimization'])
+@pytest.mark.parametrize('Niter,Nupdates', [(10, 90), (10, 96), (1, 50)])
+def test_high_update_frequency_updates_every_iteration(name, Niter, Nupdates):
+    # The update interval Niter * (1 - Nupdates / 100) rounded to 0 for
+    # 96 % of 10 iterations, or 50 % of 1, which meant no live updates
+    # at all: asking for more updates gave fewer.
+    assert (run(name, 4, Niter=Niter, Nupdates=Nupdates) ==
+            run(name, 4, Niter=Niter, Nupdates=100))

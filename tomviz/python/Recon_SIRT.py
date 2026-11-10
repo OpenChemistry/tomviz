@@ -308,5 +308,6 @@ def calc_Nupdates(Nupdates, Niter):
     elif Nupdates == 100:
         Nupdates = 1
     else:
-        Nupdates = int(round((Niter*(1 - Nupdates/100))))
+        # Round to at least 1: 0 would mean no live updates at all.
+        Nupdates = max(1, int(round(Niter*(1 - Nupdates/100))))
     return Nupdates
