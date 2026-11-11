@@ -2,7 +2,7 @@
 # This source file is part of the Tomviz project, https://tomviz.org/.
 # It is released under the 3-Clause BSD License, see "LICENSE".
 ###############################################################################
-"""Tests for DICOM and MRC I/O format implementations."""
+"""Tests for DICOM, MRC and ZEISS I/O format implementations."""
 
 from __future__ import annotations
 
@@ -291,3 +291,157 @@ class TestDicom:
         result = DicomReader().read(path)
         result_angles = _vtk_get_tilt_angles(result)
         assert result_angles is None
+
+
+# ---------------------------------------------------------------------------
+# ZEISS Xradia reader
+# ---------------------------------------------------------------------------
+
+try:
+    import olefile
+    _HAS_OLEFILE = True
+except ImportError:
+    _HAS_OLEFILE = False
+
+
+class _FakeStream:
+
+    def __init__(self, data: bytes) -> None:
+        self._data = data
+
+    def read(self) -> bytes:
+        return self._data
+
+
+class _FakeOleFile:
+    """Stands in for olefile.OleFileIO, which cannot write OLE files."""
+
+    streams: dict[str, bytes] = {}
+
+    def __init__(self, path: str) -> None:
+        pass
+
+    def __enter__(self) -> _FakeOleFile:
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        pass
+
+    def exists(self, name: str) -> bool:
+        return name in self.streams
+
+    def openstream(self, name: str) -> _FakeStream:
+        return _FakeStream(self.streams[name])
+
+
+def _zeiss_streams(
+    frames: npt.NDArray[np.generic],
+    data_type: int,
+    mode: int,
+    angles: npt.NDArray[np.float32] | None = None,
+    pixel_size: float | None = 2.5,
+) -> dict[str, bytes]:
+    n, height, width = frames.shape
+    streams = {
+        'ImageInfo/NoOfImages': np.uint32(n).tobytes(),
+        'ImageInfo/ImageWidth': np.uint32(width).tobytes(),
+        'ImageInfo/ImageHeight': np.uint32(height).tobytes(),
+        'ImageInfo/DataType': np.uint32(data_type).tobytes(),
+        'ImageInfo/AcquisitionMode': np.uint32(mode).tobytes(),
+    }
+    if pixel_size is not None:
+        streams['ImageInfo/PixelSize'] = np.float32(pixel_size).tobytes()
+    if angles is not None:
+        streams['ImageInfo/Angles'] = angles.astype('<f4').tobytes()
+    for i, frame in enumerate(frames):
+        streams[f'ImageData{i // 100 + 1}/Image{i + 1}'] = frame.tobytes()
+    return streams
+
+
+def _read_zeiss(streams: dict[str, bytes], name: str) -> vtkImageData:
+    from tomviz.io.formats.zeiss import ZeissReader
+
+    with mock.patch.object(_FakeOleFile, 'streams', streams), \
+            mock.patch('olefile.OleFileIO', _FakeOleFile):
+        return ZeissReader().read(name)
+
+
+def _units(image_data: vtkImageData) -> list[str]:
+    units = image_data.GetFieldData().GetAbstractArray('units')
+    return [units.GetValue(i) for i in range(units.GetNumberOfValues())]
+
+
+@pytest.mark.skipif(not _HAS_OLEFILE, reason='olefile not available')
+class TestZeiss:
+
+    def test_zeiss_txrm_reads_tilt_series(self) -> None:
+        # 101 projections, so the last one is in the second storage
+        # (ImageData2/Image101).
+        frames = np.arange(101 * 3 * 4, dtype=np.uint16).reshape((101, 3, 4))
+        angles = np.linspace(-90.0, 90.0, 101, dtype=np.float32)
+        result = _read_zeiss(_zeiss_streams(frames, 5, 0, angles), 'a.txrm')
+
+        # x is the image row, y the image column, z the projection.
+        result_arr = _vtk_get_array(result)
+        assert result_arr.dtype == np.uint16
+        np.testing.assert_array_equal(result_arr,
+                                      np.transpose(frames, (1, 2, 0)))
+
+        result_angles = _vtk_get_tilt_angles(result)
+        assert result_angles is not None
+        np.testing.assert_allclose(result_angles, angles)
+
+        assert result.GetSpacing() == pytest.approx((2.5, 2.5, 2.5))
+        assert _units(result) == ['um', 'um', 'um']
+
+    def test_zeiss_txm_reads_volume(self) -> None:
+        frames = np.random.default_rng(9).random((5, 3, 4)).astype(np.float32)
+        angles = np.zeros(5, dtype=np.float32)
+        result = _read_zeiss(_zeiss_streams(frames, 10, 10, angles), 'a.txm')
+
+        # x is the image column, y the image row reversed (as VTK reads
+        # ZEISS's TIFF export), z the slice.
+        result_arr = _vtk_get_array(result)
+        assert result_arr.dtype == np.float32
+        np.testing.assert_array_equal(
+            result_arr, np.transpose(frames[:, ::-1, :], (2, 1, 0)))
+
+        assert _vtk_get_tilt_angles(result) is None
+        assert _units(result) == ['um', 'um', 'um']
+
+    def test_zeiss_single_image_is_not_a_tilt_series(self) -> None:
+        frames = np.arange(12, dtype=np.uint16).reshape((1, 3, 4))
+        angles = np.zeros(1, dtype=np.float32)
+        result = _read_zeiss(_zeiss_streams(frames, 5, 0, angles), 'a.xrm')
+
+        assert result.GetDimensions() == (4, 3, 1)
+        assert _vtk_get_tilt_angles(result) is None
+
+    def test_zeiss_projections_without_all_angles_read_as_volume(
+        self, capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        frames = np.arange(3 * 3 * 4, dtype=np.uint16).reshape((3, 3, 4))
+        angles = np.array([0.0, 1.0], dtype=np.float32)
+        result = _read_zeiss(_zeiss_streams(frames, 5, 0, angles), 'a.txrm')
+
+        assert result.GetDimensions() == (4, 3, 3)
+        assert _vtk_get_tilt_angles(result) is None
+        assert '3 projections but 2 angles' in capsys.readouterr().out
+
+    @pytest.mark.parametrize('pixel_size', [None, 0.0, float('nan')])
+    def test_zeiss_without_pixel_size_has_no_units(
+        self, pixel_size: float | None,
+    ) -> None:
+        frames = np.zeros((1, 3, 4), dtype=np.uint16)
+        streams = _zeiss_streams(frames, 5, 2, pixel_size=pixel_size)
+        result = _read_zeiss(streams, 'a.xrm')
+
+        assert result.GetSpacing() == (1.0, 1.0, 1.0)
+        assert result.GetFieldData().GetAbstractArray('units') is None
+
+    def test_zeiss_unsupported_data_type_reads_nothing(self) -> None:
+        frames = np.zeros((2, 3, 4), dtype=np.uint8)
+        angles = np.zeros(2, dtype=np.float32)
+        result = _read_zeiss(_zeiss_streams(frames, 3, 0, angles), 'a.txrm')
+
+        assert result.GetNumberOfPoints() == 0
