@@ -394,6 +394,29 @@ class TestZeiss:
         assert result.GetSpacing() == pytest.approx((2.5, 2.5, 2.5))
         assert _units(result) == ['um', 'um', 'um']
 
+    def test_zeiss_txrm_keeps_alignment_shifts(self) -> None:
+        frames = np.arange(3 * 2 * 4, dtype=np.uint16).reshape((3, 2, 4))
+        angles = np.array([-1.0, 0.0, 1.0], dtype=np.float32)
+        streams = _zeiss_streams(frames, 5, 0, angles)
+        streams['Alignment/X-Shifts'] = np.array(
+            [0.5, 1.5, -2.0], dtype='<f4').tobytes()
+        streams['Alignment/Y-Shifts'] = np.array(
+            [3.0, 0.0, 0.25], dtype='<f4').tobytes()
+        result = _read_zeiss(streams, 'a.txrm')
+
+        # (x, y) in the tilt series' axes: x runs down the image rows, so
+        # it takes the y-shift.
+        shifts = np_s.vtk_to_numpy(
+            result.GetFieldData().GetArray('alignment_shifts'))
+        np.testing.assert_allclose(
+            shifts, [[3.0, 0.5], [0.0, 1.5], [0.25, -2.0]])
+        # They are pixels of the 2 x 4 images (x runs down the 2 rows).
+        size = result.GetFieldData().GetArray('alignment_shifts_image_size')
+        assert [size.GetValue(0), size.GetValue(1)] == [2, 4]
+        # Kept, not applied.
+        np.testing.assert_array_equal(_vtk_get_array(result),
+                                      np.transpose(frames, (1, 2, 0)))
+
     def test_zeiss_txm_reads_volume(self) -> None:
         frames = np.random.default_rng(9).random((5, 3, 4)).astype(np.float32)
         angles = np.zeros(5, dtype=np.float32)
