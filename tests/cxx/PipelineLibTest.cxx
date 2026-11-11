@@ -4218,6 +4218,34 @@ TEST_F(PipelineLibTest, ClipSinkLinkingPropagatesToLinkedPeers)
   EXPECT_EQ(b->direction(), ClipSink::XZ);
 }
 
+// A hidden Clip never adds its plane to its siblings, so removing it
+// made VTK print "Cannot remove clipping plane: mapper has none".
+TEST_F(PipelineLibTest, HiddenClipSinkRaisesNoVtkError)
+{
+  auto* source = new SphereSource();
+  pipeline->addNode(source);
+  auto* volume = new VolumeSink();
+  auto* slice = new SliceSink();
+  auto* clip = new ClipSink();
+  clip->setVisibility(false);
+  for (SinkNode* sink :
+       std::initializer_list<SinkNode*>{ volume, slice, clip }) {
+    pipeline->addNode(sink);
+    pipeline->createLink(source->outputPort("volume"),
+                         sink->inputPort("volume"));
+  }
+
+  vtkNew<vtkStringOutputWindow> capture;
+  auto* previous = vtkOutputWindow::GetInstance();
+  previous->Register(nullptr);
+  vtkOutputWindow::SetInstance(capture);
+  clip->setVisibility(false);
+  pipeline->removeNode(clip);
+  vtkOutputWindow::SetInstance(previous);
+  previous->Delete();
+  EXPECT_EQ(capture->GetOutput(), std::string()) << capture->GetOutput();
+}
+
 TEST_F(PipelineLibTest, SinkLinkFlagSurvivesSerialization)
 {
   SliceSink slice;

@@ -128,12 +128,15 @@ void ClipSink::setVisibility(bool visible)
     }
   }
 
-  // Apply or remove clipping plane on siblings based on visibility
-  for (auto* sink : m_clippedSinks) {
-    if (visible) {
-      sink->addClippingPlane(m_clippingPlane);
-    } else {
-      sink->removeClippingPlane(m_clippingPlane);
+  // Apply or remove clipping plane on siblings only when visibility
+  // changes. Removing a plane a sibling never got makes VTK print an error.
+  if (visible != visibility()) {
+    for (auto* sink : m_clippedSinks) {
+      if (visible) {
+        sink->addClippingPlane(m_clippingPlane);
+      } else {
+        sink->removeClippingPlane(m_clippingPlane);
+      }
     }
   }
 
@@ -1143,8 +1146,11 @@ void ClipSink::connectToSiblings()
 
 void ClipSink::disconnectFromSiblings()
 {
-  for (auto* sink : m_clippedSinks) {
-    sink->removeClippingPlane(m_clippingPlane);
+  // Only a visible clip added its plane to its siblings
+  if (visibility()) {
+    for (auto* sink : m_clippedSinks) {
+      sink->removeClippingPlane(m_clippingPlane);
+    }
   }
   m_clippedSinks.clear();
   m_upstreamPort = nullptr;
@@ -1179,7 +1185,9 @@ void ClipSink::onPipelineLinkRemoved(Link* link)
   }
   auto* sink = qobject_cast<LegacyModuleSink*>(link->to()->node());
   if (sink && m_clippedSinks.contains(sink)) {
-    sink->removeClippingPlane(m_clippingPlane);
+    if (visibility()) {
+      sink->removeClippingPlane(m_clippingPlane);
+    }
     m_clippedSinks.remove(sink);
   }
 }
