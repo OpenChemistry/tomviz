@@ -8,6 +8,8 @@
 #include "PipelineSettings.h"
 #include "PortDataMetadata.h"
 
+#include <QDebug>
+
 namespace tomviz {
 namespace pipeline {
 
@@ -75,8 +77,24 @@ bool TransformNode::execute()
   resetProgress();
   setExecState(NodeExecState::Running);
 
+  // An operator gets an input port per dataset parameter, and only the
+  // first is connected when it is added, so say which ones are missing.
+  bool connected = true;
   for (auto* port : inputPorts()) {
-    if (!port->link() || !port->hasData()) {
+    if (!port->link()) {
+      qWarning().noquote() << QStringLiteral(
+                                "%1 cannot run: input '%2' is not connected. "
+                                "Drag a dataset's output port onto it.")
+                                .arg(label(), port->name());
+      connected = false;
+    }
+  }
+  if (!connected) {
+    setExecState(NodeExecState::Failed);
+    return false;
+  }
+  for (auto* port : inputPorts()) {
+    if (!port->hasData()) {
       setExecState(NodeExecState::Failed);
       return false;
     }
