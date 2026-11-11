@@ -1,6 +1,7 @@
 import ctypes
 import os
 
+import numexpr
 import numpy as np
 import tomopy
 
@@ -111,8 +112,10 @@ class TomoPyReconOperator(tomviz.operators.CancelableOperator):
             self.progress.value = stop
             start = stop
 
-        # Apply circular mask
-        rec = tomopy.circ_mask(rec, axis=0, ratio=0.95, val=0.0)
+        # Apply circular mask. TomoPy asks numexpr for a thread per core,
+        # which prints errors past numexpr's limit (64), so keep its count.
+        rec = tomopy.circ_mask(rec, axis=0, ratio=0.95, val=0.0,
+                               ncore=numexpr.get_num_threads())
 
         # TomoPy already returns the rotation axis along axis 0 (X), matching
         # the (Nslice, N, N) convention of the other Tomviz recon operators.
