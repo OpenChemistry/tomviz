@@ -477,9 +477,11 @@ AlignWidget::AlignWidget(pipeline::TranslateAlignTransform* op,
   m_modeSelect = new QComboBox;
   m_modeSelect->addItem("Toggle Images");
   m_modeSelect->addItem("Show Difference");
-  m_modeSelect->setCurrentIndex(0);
   connect(m_modeSelect, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
           &AlignWidget::changeMode);
+  // Default to the difference from one static image (set below), which a
+  // class found easier to align against than toggling between neighbors
+  m_modeSelect->setCurrentIndex(1);
   optionsLayout->addWidget(m_modeSelect);
 
   QToolButton* presetSelectorButton = new QToolButton;
@@ -511,7 +513,8 @@ AlignWidget::AlignWidget(pipeline::TranslateAlignTransform* op,
   keyGuide->setWordWrap(true);
   keyGuide->setTextFormat(Qt::RichText);
   keyGuide->setText(
-    "1. Pick an object, use the arrow keys to minimize the wobble.<br />"
+    "1. Pick an object, use the arrow keys to line it up with the "
+    "reference image.<br />"
     "2. S moves to the next slice, A returns to the previous slice.<br />"
     "3. Repeat steps 1 and 2.<br />"
     "<i>Note: Must use the same object/point all slices.</i><br /><br />"
@@ -525,8 +528,9 @@ AlignWidget::AlignWidget(pipeline::TranslateAlignTransform* op,
   QLabel* label = new QLabel("Current image:");
   grid->addWidget(label, gridrow, 0, 1, 1, Qt::AlignRight);
   m_currentSlice = new SpinBox;
-  m_currentSlice->setValue(startRef + 1);
+  // Set the range first, or a value past 99 is clamped to the default range
   m_currentSlice->setRange(m_minSliceNum, m_maxSliceNum);
+  m_currentSlice->setValue(startRef + 1);
   m_currentSlice->installEventFilter(this);
   connect(m_currentSlice, &SpinBox::editingFinished, this,
           &AlignWidget::currentSliceEdited);
@@ -545,8 +549,8 @@ AlignWidget::AlignWidget(pipeline::TranslateAlignTransform* op,
   m_nextButton->setCheckable(true);
   m_statButton->setCheckable(true);
   m_refNum = new QSpinBox;
-  m_refNum->setValue(startRef);
   m_refNum->setRange(m_minSliceNum, m_maxSliceNum);
+  m_refNum->setValue(startRef);
   m_refNum->installEventFilter(this);
   connect(m_refNum, QOverload<int>::of(&QSpinBox::valueChanged), this, [this](int) { updateReference(); });
   grid->addWidget(m_refNum, gridrow, 1, 1, 1, Qt::AlignLeft);
@@ -563,7 +567,7 @@ AlignWidget::AlignWidget(pipeline::TranslateAlignTransform* op,
   m_referenceSliceMode->addButton(m_nextButton);
   m_referenceSliceMode->addButton(m_statButton);
   m_referenceSliceMode->setExclusive(true);
-  m_prevButton->setChecked(true);
+  m_statButton->setChecked(true);
   connect(m_referenceSliceMode, &QButtonGroup::idClicked,
           this, [this](int) { updateReference(); });
 
