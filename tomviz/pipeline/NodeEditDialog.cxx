@@ -25,6 +25,7 @@
 #include <QJsonObject>
 #include <QPushButton>
 #include <QScreen>
+#include <QScrollArea>
 #include <QCloseEvent>
 #include <QShowEvent>
 #include <QVBoxLayout>
@@ -106,7 +107,13 @@ void NodeEditDialog::init()
   QPushButton* saveAsButton = nullptr;
   m_editWidget = m_node->createPropertiesWidget(m_pipeline, this);
   if (m_editWidget) {
-    layout->addWidget(m_editWidget, 1);
+    // Scroll rather than grow past a small screen (a 1080p laptop at 150%
+    // scaling), which would push the buttons below out of reach
+    auto* scrollArea = new QScrollArea(this);
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setFrameShape(QFrame::NoFrame);
+    scrollArea->setWidget(m_editWidget);
+    layout->addWidget(scrollArea, 1);
     connect(m_editWidget, &EditNodeWidget::canApplyChanged,
             this, &NodeEditDialog::refreshButtonEnablement);
 
@@ -336,6 +343,10 @@ void NodeEditDialog::showEvent(QShowEvent* event)
   auto* screen = mainWin->screen();
   auto screenGeom = screen ? screen->availableGeometry()
                            : QRect(0, 0, 1920, 1080);
+
+  // The default or remembered size can be larger than a small screen
+  auto frame = frameGeometry().size() - size();
+  resize(size().boundedTo(screenGeom.size() - frame));
 
   auto mainCenter = mainWin->frameGeometry().center();
   auto dlgSize = frameGeometry().size();
