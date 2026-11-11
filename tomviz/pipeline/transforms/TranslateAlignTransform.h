@@ -10,6 +10,8 @@
 
 #include <QVector>
 
+class vtkImageData;
+
 namespace tomviz {
 namespace pipeline {
 
@@ -30,6 +32,14 @@ public:
   {
     return m_draftOffsets;
   }
+
+  /// Offsets from the per-image shifts some readers keep with the data
+  /// (the "alignment_shifts" field array: one (x, y) pair per image, in
+  /// pixels of an image of "alignment_shifts_image_size", as the ZEISS
+  /// reader stores the shifts ZEISS's software applies), rounded to whole
+  /// pixels. Empty unless there is a finite pair for every image and the
+  /// images are still that size.
+  static QVector<vtkVector2i> offsetsFromAlignmentShifts(vtkImageData* image);
 
   bool hasPropertiesWidget() const override;
   EditNodeWidget* createPropertiesWidget(Pipeline* pipeline,
