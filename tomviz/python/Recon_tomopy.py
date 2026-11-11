@@ -77,6 +77,10 @@ class TomoPyReconOperator(tomviz.operators.CancelableOperator):
             # CPU core, each creating its own CUDA context on the same GPU,
             # which makes the GPU path much slower than the CPU one.
             recon_kwargs['ncore'] = 1
+            # TomoPy otherwise starts a GPU thread per CPU core, and with
+            # hundreds of cores the threads starve the GPU. Eight was the
+            # fastest in our tests.
+            recon_kwargs['pool_size'] = 8
 
         # Reconstruct a few slices at a time so it can be canceled. Each
         # slice is independent, and TomoPy splits them across cores anyway.

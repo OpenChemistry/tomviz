@@ -151,6 +151,7 @@ def test_tomopy_gpu_out_of_memory(monkeypatch: pytest.MonkeyPatch) -> None:
 
     def recon(data: np.ndarray, *args, **kwargs) -> np.ndarray:
         # Like TomoPy's GPU path with room for only 4 slices
+        assert kwargs['pool_size'] == 8
         sizes.append(data.shape[1])
         value = 1.0 if data.shape[1] <= 4 else 1e-6
         return np.full((data.shape[1], 32, 32), value, dtype=np.float32)
