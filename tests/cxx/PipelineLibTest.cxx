@@ -90,11 +90,13 @@
 #include <vtkFloatArray.h>
 #include <vtkImageData.h>
 #include <vtkMolecule.h>
+#include <vtkOutputWindow.h>
 #include <vtkPointData.h>
 #include <vtkSmartPointer.h>
 #include <vtkCellData.h>
 #include <vtkPolyData.h>
 #include <vtkStringArray.h>
+#include <vtkStringOutputWindow.h>
 #include <vtkTable.h>
 #include <vtkUnsignedCharArray.h>
 #include <vtkXMLImageDataWriter.h>
@@ -3959,6 +3961,53 @@ TEST_F(PipelineLibTest, ContourSinkPropertySetters)
 
   sink.setActiveScalars(2);
   EXPECT_EQ(sink.activeScalars(), 2);
+}
+
+// Setting properties before any data arrives, as the histogram's Contour
+// button and a state restore do, ran FlyingEdges on the empty producer,
+// and VTK printed "is of type vtkDataObject, but a vtkImageData is
+// required".
+TEST_F(PipelineLibTest, ContourSinkPropertiesWithoutDataRaiseNoVtkError)
+{
+  vtkNew<vtkStringOutputWindow> capture;
+  auto* previous = vtkOutputWindow::GetInstance();
+  previous->Register(nullptr);
+  vtkOutputWindow::SetInstance(capture);
+  {
+    ContourSink sink;
+    sink.setIsoValue(1.0);
+    sink.setColorByArray(true);
+  }
+  vtkOutputWindow::SetInstance(previous);
+  previous->Delete();
+  EXPECT_EQ(capture->GetOutput(), std::string()) << capture->GetOutput();
+}
+
+// Coloring by an array after the data has been released ran the probe
+// filter on an empty source: "is of type vtkDataObject, but a vtkDataSet
+// is required".
+TEST_F(PipelineLibTest, ContourSinkColorByAfterDataReleasedRaisesNoVtkError)
+{
+  auto* source = new SphereSource();
+  source->setDimensions(8, 8, 8);
+  pipeline->addNode(source);
+  auto* contour = new ContourSink();
+  pipeline->addNode(contour);
+  pipeline->createLink(source->outputPort("volume"),
+                       contour->inputPort("volume"));
+  ASSERT_TRUE(source->execute());
+  ASSERT_TRUE(contour->execute());
+  source->outputPort("volume")->clearData();
+  ASSERT_FALSE(contour->volumeData());
+
+  vtkNew<vtkStringOutputWindow> capture;
+  auto* previous = vtkOutputWindow::GetInstance();
+  previous->Register(nullptr);
+  vtkOutputWindow::SetInstance(capture);
+  contour->setColorByArray(true);
+  vtkOutputWindow::SetInstance(previous);
+  previous->Delete();
+  EXPECT_EQ(capture->GetOutput(), std::string()) << capture->GetOutput();
 }
 
 TEST_F(PipelineLibTest, ContourSinkSerializationRoundTrip)
