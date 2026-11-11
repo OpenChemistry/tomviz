@@ -2,7 +2,7 @@
 # This source file is part of the Tomviz project, https://tomviz.org/.
 # It is released under the 3-Clause BSD License, see "LICENSE".
 ###############################################################################
-"""Tests for DICOM, MRC and ZEISS I/O format implementations."""
+"""Tests for DICOM, MRC, ZEISS and Velox I/O format implementations."""
 
 from __future__ import annotations
 
@@ -445,3 +445,164 @@ class TestZeiss:
         result = _read_zeiss(_zeiss_streams(frames, 3, 0, angles), 'a.txrm')
 
         assert result.GetNumberOfPoints() == 0
+
+# ---------------------------------------------------------------------------
+# Thermo Fisher Velox reader
+# ---------------------------------------------------------------------------
+
+def _write_velox(
+    path: Path,
+    images: list[npt.NDArray[np.generic]],
+    frames: list[dict[str, object]],
+    fmt: str = 'Velox',
+) -> Path:
+    """A Velox file: /Version, then /Data/Image/<id>/Data (y, x, frames)
+    and /Data/Image/<id>/Metadata (uint8, one JSON column per frame)."""
+    import json
+
+    import h5py
+
+    with h5py.File(path, 'w') as f:
+        f['Version'] = np.array(
+            [json.dumps({'format': fmt, 'version': '3'}).encode()])
+        f.create_group('Data/Image')
+        for n, data in enumerate(images):
+            group = f.create_group(f'Data/Image/{n:032x}')
+            # Velox stores one frame per chunk.
+            group.create_dataset('Data', data=data,
+                                 chunks=data.shape[:2] + (1,)
+                                 if data.ndim == 3 else None)
+            columns = [json.dumps(frame).encode() for frame in frames]
+            length = max(len(c) for c in columns) + 8
+            metadata = np.zeros((length, len(columns)), dtype=np.uint8)
+            for i, column in enumerate(columns):
+                metadata[:len(column), i] = np.frombuffer(column, np.uint8)
+            group['Metadata'] = metadata
+    return path
+
+
+def _velox_frame(alpha: float = 0.0, width: str = '5.3e-10',
+                 unit: str = 'm') -> dict[str, object]:
+    return {
+        'BinaryResult': {'PixelSize': {'width': width, 'height': width},
+                         'PixelUnitX': unit},
+        # A number as a string, in radians, as Velox writes it.
+        'Stage': {'AlphaTilt': repr(float(alpha))},
+    }
+
+
+def test_velox_image_reads_with_calibration(tmp_path: Path) -> None:
+    from tomviz.io.formats.velox import VeloxReader
+
+    image = np.arange(12, dtype=np.uint16).reshape((3, 4, 1))
+    path = _write_velox(tmp_path / 'a.emd', [image], [_velox_frame()])
+    result = VeloxReader().read(str(path))
+
+    # x is the image column, y the image row (as VTK reads a TIFF).
+    result_arr = _vtk_get_array(result)
+    assert result_arr.dtype == np.uint16
+    np.testing.assert_array_equal(result_arr[:, :, 0], image[:, :, 0].T)
+    assert result.GetSpacing() == pytest.approx((0.53, 0.53, 0.53))
+    assert _units(result) == ['nm', 'nm', 'nm']
+    assert _vtk_get_tilt_angles(result) is None
+
+
+def test_velox_stack_at_different_tilts_is_a_tilt_series(
+        tmp_path: Path) -> None:
+    from tomviz.io.formats.velox import VeloxReader
+
+    stack = np.arange(3 * 4 * 3, dtype=np.float32).reshape((3, 4, 3))
+    radians = np.radians([-20.0, 0.0, 20.0])
+    path = _write_velox(tmp_path / 'a.emd', [stack],
+                        [_velox_frame(a) for a in radians])
+    result = VeloxReader().read(str(path))
+
+    np.testing.assert_array_equal(_vtk_get_array(result),
+                                  np.transpose(stack, (1, 0, 2)))
+    angles = _vtk_get_tilt_angles(result)
+    assert angles is not None
+    np.testing.assert_allclose(angles, [-20.0, 0.0, 20.0])
+
+
+@pytest.mark.parametrize('degrees', [[-12.6, -12.6], [-12.6, -12.4]])
+def test_velox_stack_at_one_tilt_is_not_a_tilt_series(
+        tmp_path: Path, degrees: list[float]) -> None:
+    # The same tilt, or the stage readout of a time series wandering by
+    # less than a degree.
+    from tomviz.io.formats.velox import VeloxReader
+
+    stack = np.zeros((3, 4, 2), dtype=np.uint16)
+    path = _write_velox(tmp_path / 'a.emd', [stack],
+                        [_velox_frame(np.radians(d)) for d in degrees])
+    assert _vtk_get_tilt_angles(VeloxReader().read(str(path))) is None
+
+
+def test_velox_developers_kit_file_is_read(tmp_path: Path) -> None:
+    from tomviz.io.formats.velox import VeloxReader
+
+    image = np.ones((3, 4, 1), dtype=np.uint16)
+    path = _write_velox(tmp_path / 'a.emd', [image], [_velox_frame()],
+                        fmt='DevelopersKit')
+    assert VeloxReader().read(str(path)).GetDimensions() == (4, 3, 1)
+
+
+def test_velox_file_without_images_reads_nothing(
+        tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    # A spectrum, for example: an empty /Data/Image.
+    from tomviz.io.formats.velox import VeloxReader
+
+    path = _write_velox(tmp_path / 'a.emd', [], [_velox_frame()])
+    assert VeloxReader().read(str(path)).GetNumberOfPoints() == 0
+    assert 'has no images' in capsys.readouterr().out
+
+
+def test_velox_file_with_several_images_reads_the_first(
+        tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    from tomviz.io.formats.velox import VeloxReader
+
+    first = np.ones((3, 4, 1), dtype=np.uint16)
+    second = np.zeros((3, 4, 1), dtype=np.uint16)
+    path = _write_velox(tmp_path / 'a.emd', [first, second],
+                        [_velox_frame()])
+    result = VeloxReader().read(str(path))
+
+    np.testing.assert_array_equal(_vtk_get_array(result), 1)
+    assert 'has 2 images; opening the first' in capsys.readouterr().out
+
+
+def test_velox_unknown_unit_has_no_units(tmp_path: Path) -> None:
+    from tomviz.io.formats.velox import VeloxReader
+
+    image = np.zeros((3, 4, 1), dtype=np.uint16)
+    path = _write_velox(tmp_path / 'a.emd', [image],
+                        [_velox_frame(unit='1/m')])
+    result = VeloxReader().read(str(path))
+
+    assert result.GetSpacing() == (1.0, 1.0, 1.0)
+    assert result.GetFieldData().GetAbstractArray('units') is None
+
+
+def test_velox_reader_refuses_other_hdf5_files(
+        tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    import h5py
+
+    from tomviz.io.formats.velox import VeloxReader
+
+    # Velox's layout, but /Version names another format.
+    image = np.zeros((3, 4, 1), dtype=np.uint16)
+    path = _write_velox(tmp_path / 'a.emd', [image], [_velox_frame()])
+    with h5py.File(path, 'r+') as f:
+        del f['Version']
+        f['Version'] = np.array([b'{"format": "Other"}'])
+    result = VeloxReader().read(str(path))
+
+    assert result.GetNumberOfPoints() == 0
+    assert 'neither Berkeley EMD nor Velox' in capsys.readouterr().out
+
+
+def test_velox_complex_data_reads_nothing(tmp_path: Path) -> None:
+    from tomviz.io.formats.velox import VeloxReader
+
+    image = np.zeros((3, 4, 1), dtype=np.complex64)
+    path = _write_velox(tmp_path / 'a.emd', [image], [_velox_frame()])
+    assert VeloxReader().read(str(path)).GetNumberOfPoints() == 0
