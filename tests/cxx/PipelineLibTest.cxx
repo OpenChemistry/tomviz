@@ -483,6 +483,39 @@ TEST_F(PipelineLibTest, BreakpointStopsExecution)
   EXPECT_NE(t2->state(), NodeState::Current);
 }
 
+// An operator gets an input port per dataset parameter, and only the
+// first is connected when it is added. Running it with an input still
+// unconnected fails and names that input.
+TEST_F(PipelineLibTest, ExecutionNamesUnconnectedInput)
+{
+  auto* source = new SourceNode();
+  source->addOutput("out", PortType::ImageData);
+  pipeline->addNode(source);
+  auto* add = new AddTransform();
+  add->setLabel("Merge");
+  pipeline->addNode(add);
+  pipeline->createLink(source->outputPort("out"), add->inputPort("a"));
+  source->setOutputData("out", PortData(std::any(10), PortType::ImageData));
+
+  static QStringList warnings;
+  warnings.clear();
+  auto previous = qInstallMessageHandler(
+    [](QtMsgType type, const QMessageLogContext&, const QString& message) {
+      if (type == QtWarningMsg) {
+        warnings << message;
+      }
+    });
+  auto* future = pipeline->execute();
+  qInstallMessageHandler(previous);
+
+  EXPECT_TRUE(future->isFinished());
+  EXPECT_EQ(add->execState(), NodeExecState::Failed);
+  EXPECT_NE(add->state(), NodeState::Current);
+  EXPECT_EQ(warnings, QStringList{ "Merge cannot run: input 'b' is not "
+                                   "connected. Drag a dataset's output "
+                                   "port onto it." });
+}
+
 TEST_F(PipelineLibTest, HeldNodeWaitsForItsDialog)
 {
   // source -> t1 (held, as a freshly inserted transform whose dialog is
