@@ -832,6 +832,7 @@ set(tomviz_python_io_modules
   _databroker.py
   ser.py
   dm.py
+  mrc_tilts.py
 )
 
 file(MAKE_DIRECTORY "${tomviz_python_binary_dir}/tomviz/io")
