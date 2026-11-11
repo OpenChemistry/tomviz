@@ -2,13 +2,14 @@
 # This source file is part of the Tomviz project, https://tomviz.org/.
 # It is released under the 3-Clause BSD License, see "LICENSE".
 ###############################################################################
-"""Tests for DICOM, MRC and ZEISS I/O format implementations."""
+"""Tests for DICOM, MRC, ZEISS and Amira I/O format implementations."""
 
 from __future__ import annotations
 
 from collections.abc import Generator
 from pathlib import Path
 from unittest import mock
+import zlib
 
 import numpy as np
 import numpy.typing as npt
@@ -445,3 +446,209 @@ class TestZeiss:
         result = _read_zeiss(_zeiss_streams(frames, 3, 0, angles), 'a.txrm')
 
         assert result.GetNumberOfPoints() == 0
+
+# ---------------------------------------------------------------------------
+# Amira / Avizo reader
+# ---------------------------------------------------------------------------
+
+def _rle_encode(data: bytes) -> bytes:
+    """HxByteRLE: a count byte n, then n literal bytes if n > 127 (minus
+    128), else one byte repeated n times."""
+    out = bytearray()
+    literal = bytearray()
+
+    def flush() -> None:
+        if literal:
+            out.extend(bytes([128 + len(literal)]) + literal)
+            literal.clear()
+
+    i = 0
+    while i < len(data):
+        n = 1
+        while i + n < len(data) and data[i + n] == data[i] and n < 127:
+            n += 1
+        if n > 2:
+            flush()
+            out.extend(bytes([n, data[i]]))
+        else:
+            literal.extend(data[i:i + n])
+            if len(literal) >= 120:
+                flush()
+        i += n
+    flush()
+    return bytes(out)
+
+
+def _write_amira(
+    path: Path,
+    data: npt.NDArray[np.generic],
+    kind: str,
+    mode: str = 'BINARY-LITTLE-ENDIAN',
+    encoding: str | None = None,
+    bounding_box: str = '0 3 0 4 0 5',
+    coord_type: str = 'uniform',
+    first_line: str = '# AmiraMesh',
+) -> Path:
+    """An AmiraMesh file of the (x, y, z) array, written x fastest."""
+    nx, ny, nz = data.shape
+    values = np.transpose(data, (2, 1, 0)).ravel()
+    if mode == 'ASCII':
+        body = ' '.join(str(v) for v in values).encode() + b'\n'
+        section = '@1'
+    else:
+        order = '<' if mode == 'BINARY-LITTLE-ENDIAN' else '>'
+        body = values.astype(values.dtype.newbyteorder(order)).tobytes()
+        section = '@1'
+        if encoding == 'HxZip':
+            body = zlib.compress(body)
+        elif encoding == 'HxByteRLE':
+            body = _rle_encode(body)
+        if encoding:
+            section = f'@1({encoding},{len(body)})'
+    header = (f'{first_line} {mode} 2.1\n\n'
+              f'define Lattice {nx} {ny} {nz}\n\n'
+              'Parameters {\n'
+              f'    BoundingBox {bounding_box},\n'
+              f'    CoordType "{coord_type}"\n'
+              '}\n\n'
+              f'Lattice {{ {kind} Data }} {section}\n\n'
+              '# Data section follows\n@1\n')
+    path.write_bytes(header.encode() + body)
+    return path
+
+
+@pytest.mark.parametrize('mode,encoding', [
+    ('BINARY-LITTLE-ENDIAN', None),
+    ('BINARY', None),
+    ('BINARY-LITTLE-ENDIAN', 'HxZip'),
+    ('BINARY-LITTLE-ENDIAN', 'HxByteRLE'),
+    ('ASCII', None),
+])
+def test_amira_reads_uniform_lattice(tmp_path: Path, mode: str,
+                                     encoding: str | None) -> None:
+    from tomviz.io.formats.amira import AmiraReader
+
+    # A few long runs and some noise, so RLE has repeats and literals.
+    arr = np.zeros((4, 5, 6), dtype=np.uint16)
+    arr[1:3, 2:4, :] = np.arange(12, dtype=np.uint16).reshape((2, 2, 3)) \
+        .repeat(2, axis=2) * 300
+    path = _write_amira(tmp_path / 'a.am', arr, 'ushort', mode, encoding)
+    result = AmiraReader().read(str(path))
+
+    result_arr = _vtk_get_array(result)
+    assert result_arr.dtype == np.uint16
+    np.testing.assert_array_equal(result_arr, arr)
+    # The bounding box spans the voxel centres.
+    assert result.GetOrigin() == pytest.approx((0.0, 0.0, 0.0))
+    assert result.GetSpacing() == pytest.approx((1.0, 1.0, 1.0))
+
+
+def test_amira_float_volume_with_offset_box(tmp_path: Path) -> None:
+    from tomviz.io.formats.amira import AmiraReader
+
+    arr = np.random.default_rng(3).random((3, 4, 2)).astype(np.float32)
+    path = _write_amira(tmp_path / 'a.am', arr, 'float',
+                        bounding_box='-1 0 0 1.5 10 12',
+                        first_line='# Avizo')
+    result = AmiraReader().read(str(path))
+
+    np.testing.assert_array_equal(_vtk_get_array(result), arr)
+    assert result.GetOrigin() == pytest.approx((-1.0, 0.0, 10.0))
+    assert result.GetSpacing() == pytest.approx((0.5, 0.5, 2.0))
+
+
+def test_amira_single_slice_takes_box_size_as_spacing(
+        tmp_path: Path) -> None:
+    from tomviz.io.formats.amira import AmiraReader
+
+    arr = np.ones((2, 2, 1), dtype=np.uint8)
+    path = _write_amira(tmp_path / 'a.am', arr, 'byte',
+                        bounding_box='0 0.5 0 0.5 0 2')
+    result = AmiraReader().read(str(path))
+    assert result.GetSpacing() == pytest.approx((0.5, 0.5, 2.0))
+
+
+@pytest.mark.parametrize('kind,coord_type,message', [
+    ('float[3]', 'uniform', 'not a scalar field'),
+    ('float', 'rectilinear', 'not uniform'),
+])
+def test_amira_refuses_what_tomviz_cannot_show(
+        tmp_path: Path, capsys: pytest.CaptureFixture[str], kind: str,
+        coord_type: str, message: str) -> None:
+    from tomviz.io.formats.amira import AmiraReader
+
+    arr = np.zeros((2, 2, 2), dtype=np.float32)
+    path = _write_amira(tmp_path / 'a.am', arr, kind, coord_type=coord_type)
+    assert AmiraReader().read(str(path)).GetNumberOfPoints() == 0
+    assert message in capsys.readouterr().out
+
+
+@pytest.mark.parametrize('encoding', [None, 'HxZip', 'HxByteRLE'])
+def test_amira_refuses_truncated_data(
+        tmp_path: Path, capsys: pytest.CaptureFixture[str],
+        encoding: str | None) -> None:
+    from tomviz.io.formats.amira import AmiraReader
+
+    arr = np.arange(64, dtype=np.uint8).reshape((4, 4, 4))
+    path = _write_amira(tmp_path / 'a.am', arr, 'byte', encoding=encoding)
+    path.write_bytes(path.read_bytes()[:-10])
+    assert AmiraReader().read(str(path)).GetNumberOfPoints() == 0
+    assert 'damaged or shorter' in capsys.readouterr().out
+
+
+def test_amira_header_as_nat_writes_it(tmp_path: Path) -> None:
+    # natverse's writer puts "=" before @1 and no "# Data section follows";
+    # extra spaces are allowed, and a 2D lattice is one slice.
+    from tomviz.io.formats.amira import AmiraReader
+
+    path = tmp_path / 'a.am'
+    path.write_bytes(
+        b'# AmiraMesh BINARY-LITTLE-ENDIAN 2.1\n'
+        b'define Lattice  3   2\n'
+        b'Parameters {\n'
+        b'    Sub {\n        BoundingBox 9 9 9 9 9 9\n    }\n'
+        b'    BoundingBox 0 2 0 1 0 0,\n'
+        b'    CoordType "uniform"\n}\n'
+        b'Lattice { float ScalarField } = @1\n'
+        b'@1\n' + np.arange(6, dtype='<f4').tobytes())
+    result = AmiraReader().read(str(path))
+
+    assert result.GetDimensions() == (3, 2, 1)
+    np.testing.assert_array_equal(_vtk_get_array(result)[:, :, 0],
+                                  [[0, 3], [1, 4], [2, 5]])
+    # The top-level BoundingBox, not the nested one.
+    assert result.GetOrigin() == pytest.approx((0.0, 0.0, 0.0))
+    assert result.GetSpacing() == pytest.approx((1.0, 1.0, 1.0))
+
+
+def test_amira_byte_rle_by_hand(tmp_path: Path) -> None:
+    # Bytes 5 5 5 200 201 202 0 0 as HxByteRLE: 3 x 5, then 3 literal
+    # bytes (0x80 + 3), then 2 x 0. Byte data is unsigned.
+    from tomviz.io.formats.amira import AmiraReader
+
+    rle = bytes([3, 5, 0x83, 200, 201, 202, 2, 0])
+    path = tmp_path / 'a.am'
+    path.write_bytes(
+        b'# AmiraMesh 3D BINARY 2.0\n'
+        b'define Lattice 2 2 2\n'
+        b'Parameters {\n    CoordType "uniform"\n}\n'
+        b'Lattice { byte Labels } @1(HxByteRLE,8)\n'
+        b'# Data section follows\n'
+        b'@1\n' + rle)
+    result_arr = _vtk_get_array(AmiraReader().read(str(path)))
+
+    assert result_arr.dtype == np.uint8
+    np.testing.assert_array_equal(
+        np.transpose(result_arr, (2, 1, 0)).ravel(),
+        [5, 5, 5, 200, 201, 202, 0, 0])
+
+
+def test_amira_long_volume(tmp_path: Path) -> None:
+    from tomviz.io.formats.amira import AmiraReader
+
+    # Big endian 64-bit integers. (This file's VTK helper stores them as
+    # float32, so the values stay below 2**24.)
+    arr = (np.arange(24, dtype=np.int64) * 1000 - 5000).reshape((2, 3, 4))
+    path = _write_amira(tmp_path / 'a.am', arr, 'long', 'BINARY')
+    result_arr = _vtk_get_array(AmiraReader().read(str(path)))
+    np.testing.assert_array_equal(result_arr, arr)
