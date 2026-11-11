@@ -63,12 +63,15 @@
 #include <QCheckBox>
 #include <QFile>
 #include <QFileInfo>
+#include <QHelpEvent>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QPushButton>
 #include <QSignalSpy>
 #include <QTemporaryDir>
 #include <QTemporaryFile>
+#include <QToolTip>
 
 #include <limits>
 #include <QTest>
@@ -5203,6 +5206,70 @@ TEST_F(PipelineLibTest, VisibleIfHidesLabelsOfEveryParameterType)
   autoCheck->setChecked(false);
   EXPECT_FALSE(centers->isHidden());
   EXPECT_FALSE(centersFile->isHidden());
+}
+
+// A parameter's "description" is the tooltip of its label and its field,
+// also over the controls inside a field; without one there is none.
+TEST_F(PipelineLibTest, ParameterDescriptionsAreToolTips)
+{
+  ParameterInterfaceBuilder builder;
+  builder.setJSONDescription(QString(R"({"parameters": [
+    {"name": "passes", "label": "Passes", "type": "int", "default": 2,
+     "description": "Number of passes, 0 for automatic"},
+    {"name": "mode", "label": "Mode", "type": "enumeration", "default": 0,
+     "options": [{"Fast": 0}, {"Exact": 1}],
+     "description": "Exact when a < b & c"},
+    {"name": "center", "label": "Center", "type": "double",
+     "default": [1.0, 2.0, 3.0], "description": "Center in voxels"},
+    {"name": "table", "label": "Table", "type": "file", "default": "",
+     "description": "A CSV file"},
+    {"name": "smooth", "label": "Smooth", "type": "bool", "default": true}
+  ]})"));
+  QWidget parent;
+  ASSERT_NE(builder.buildWidget(&parent), nullptr);
+  parent.show();
+
+  // The tooltip Qt shows when hovering over a widget, empty if none
+  auto hoverText = [](QWidget* widget) {
+    QHelpEvent event(QEvent::ToolTip, QPoint(1, 1),
+                     widget->mapToGlobal(QPoint(1, 1)));
+    QApplication::sendEvent(widget, &event);
+    return event.isAccepted() ? QToolTip::text() : QString();
+  };
+  auto labelFor = [&parent](const QString& text) -> QWidget* {
+    for (auto* label : parent.findChildren<QLabel*>()) {
+      if (label->text() == text) {
+        return label;
+      }
+    }
+    return nullptr;
+  };
+  auto* passes = parent.findChild<QWidget*>("passes");
+  auto* mode = parent.findChild<QWidget*>("mode");
+  auto* smooth = parent.findChild<QWidget*>("smooth");
+  auto* centerY = parent.findChild<QWidget*>("center#001");
+  auto* table = parent.findChild<QWidget*>("table");
+  ASSERT_NE(passes, nullptr);
+  ASSERT_NE(mode, nullptr);
+  ASSERT_NE(centerY, nullptr);
+  ASSERT_NE(table, nullptr);
+  auto* browse = table->parentWidget()->findChild<QPushButton*>();
+  ASSERT_NE(browse, nullptr);
+  ASSERT_NE(smooth, nullptr);
+  ASSERT_NE(labelFor("Passes"), nullptr);
+  ASSERT_NE(labelFor("Smooth"), nullptr);
+
+  const QString passesTip("<p>Number of passes, 0 for automatic</p>");
+  EXPECT_EQ(hoverText(passes), passesTip);
+  EXPECT_EQ(hoverText(labelFor("Passes")), passesTip);
+  // Shown as text, not read as markup
+  EXPECT_EQ(hoverText(mode), "<p>Exact when a &lt; b &amp; c</p>");
+  EXPECT_EQ(hoverText(centerY), "<p>Center in voxels</p>");
+  EXPECT_EQ(hoverText(table), "<p>A CSV file</p>");
+  EXPECT_EQ(hoverText(browse), "<p>A CSV file</p>");
+  EXPECT_TRUE(hoverText(smooth).isEmpty());
+  EXPECT_TRUE(hoverText(labelFor("Smooth")).isEmpty());
+  QToolTip::hideText();
 }
 
 // Clone Data copies the source feeding the selected branch, which is
