@@ -129,6 +129,9 @@ Examples:
     args = parser.parse_args()
     try:
         args.func(args)
+    except KeyboardInterrupt:
+        print('Canceled', file=sys.stderr)
+        sys.exit(130)
     except Exception as e:
         print(f'Error: {e}', file=sys.stderr)
         sys.exit(1)

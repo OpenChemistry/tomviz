@@ -19,6 +19,8 @@
 #include <QSet>
 #include <QStack>
 
+#include <utility>
+
 namespace tomviz {
 namespace pipeline {
 
@@ -205,6 +207,17 @@ Link* Pipeline::createLink(OutputPort* from, InputPort* to)
   auto* link = new Link(from, to, this);
   m_links.append(link);
   emit linkCreated(link);
+
+  // An output can change type after it is linked, as a reader does when
+  // it first runs, so follow it: recheck this link, which propagation
+  // from downstream never revisits, then the nodes below. The link is the
+  // context object, so the connection goes away with the link.
+  connect(from, &OutputPort::effectiveTypeChanged, link, [this, link]() {
+    link->recheck();
+    if (link->to()) {
+      propagateEffectiveTypes(link->to()->node());
+    }
+  });
 
   // Propagate effective types and recheck link validity downstream
   propagateEffectiveTypes(to->node());
@@ -677,18 +690,30 @@ ExecutionFuture* Pipeline::execute(Node* target)
   return runPlan(executionOrder(target));
 }
 
-void Pipeline::executeWhenIdle()
+void Pipeline::executeWhenIdle(Node* target)
 {
   if (!isExecuting()) {
-    execute();
+    target ? execute(target) : execute();
     return;
   }
+  // A null target stands for the whole pipeline
+  m_idleTargets.append(target);
   if (!m_idleExecuteQueued) {
     m_idleExecuteQueued = true;
     connect(this, &Pipeline::executionFinished, this,
             [this]() {
               m_idleExecuteQueued = false;
-              execute();
+              auto targets = std::exchange(m_idleTargets, {});
+              if (targets.contains(nullptr)) {
+                execute();
+                return;
+              }
+              for (auto* node : targets) {
+                // Skip nodes removed while waiting
+                if (m_nodes.contains(node)) {
+                  executeWhenIdle(node);
+                }
+              }
             },
             static_cast<Qt::ConnectionType>(Qt::SingleShotConnection));
   }

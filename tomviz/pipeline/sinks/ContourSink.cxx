@@ -360,8 +360,12 @@ void ContourSink::updateColorArrayProducer()
 // for the color-by array when one is chosen
 void ContourSink::updateMapperInput()
 {
-  if (!m_contourArrayProducer->GetOutputDataObject(0)) {
-    return; // no data yet (a state restore sets properties first)
+  // No data yet (a state restore sets properties first), or it has been
+  // released. Filtering would then read an empty producer, which prints
+  // a VTK error.
+  auto vol = volumeData();
+  if (!vol || !vol->isValid()) {
+    return;
   }
   m_flyingEdges->Update();
   if (m_colorByArray) {

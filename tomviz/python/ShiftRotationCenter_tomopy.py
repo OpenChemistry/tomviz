@@ -92,6 +92,7 @@ def test_rotations(dataset, start=None, stop=None, steps=None, sli=0,
 def rotcen_test(f, start=None, stop=None, steps=None, sli=0,
                 algorithm='gridrec', num_iter=15, circ_mask_ratio=0.8):
 
+    import numexpr
     import tomopy
 
     tmp = np.array(f['img_tomo'][0])
@@ -126,7 +127,10 @@ def rotcen_test(f, start=None, stop=None, steps=None, sli=0,
         print(f'{i + 1}: rotcen {cen[i]}')
         img[i] = tomopy.recon(img_tomo, theta, center=cen[i],
                               algorithm=algorithm, **recon_kwargs)
-    img = tomopy.circ_mask(img, axis=0, ratio=circ_mask_ratio)
+    # Keep numexpr's thread count; TomoPy's one per core prints errors
+    # past numexpr's limit (64)
+    img = tomopy.circ_mask(img, axis=0, ratio=circ_mask_ratio,
+                           ncore=numexpr.get_num_threads())
 
     # Convert back to relative to the center
     cen -= s[2] / 2

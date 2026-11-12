@@ -12,6 +12,14 @@ if pyxrf.model.load_data_from_db.db is None:
     pyxrf.model.load_data_from_db.db = db
 
 
+def _modified(path: Path) -> int | None:
+    """Modification time of *path* in ns, or None if it doesn't exist."""
+    try:
+        return path.stat().st_mtime_ns
+    except FileNotFoundError:
+        return None
+
+
 def make_hdf5(
     scan_ids: list[int],
     working_directory: Path,
@@ -34,12 +42,20 @@ def make_hdf5(
             continue
 
         print(f'Downloading scan {sid} ...', flush=True)
+        before = _modified(target)
         try:
             make_hdf(
                 sid, sid,
                 wd=str(wd),
                 file_overwrite_existing=force,
             )
+        except KeyboardInterrupt:
+            # Canceled mid-download. A partial file would be skipped as
+            # already downloaded on the next run. An earlier complete one
+            # that pyxrf hadn't started rewriting yet is kept.
+            if _modified(target) != before:
+                target.unlink(missing_ok=True)
+            raise
         except Exception as exc:
             print(f'Warning: scan {sid} failed to download: {exc}',
                   flush=True)

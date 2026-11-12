@@ -1,13 +1,15 @@
 import numpy as np
 from scipy.interpolate import interp1d
 import tomviz.operators
+from tomviz.dataset import Dataset
 import time
 
 
 class ReconWBPOperator(tomviz.operators.CancelableOperator):
 
-    def transform(self, dataset, Nrecon=None, filter=None, interp=None,
-                  Nupdates=None):
+    def transform(self, dataset: Dataset, Nrecon: int | None = None,
+                  filter: int | None = None, interp: int | None = None,
+                  Nupdates: int | None = None) -> dict[str, Dataset] | None:
         """
         3D Reconstruct from a tilt series using Weighted Back-projection Method
         """
@@ -54,7 +56,8 @@ class ReconWBPOperator(tomviz.operators.CancelableOperator):
                 timeLeftHour, timeLeftMin, timeLeftSec)
 
             # Update only once every so many steps
-            if Nupdates != 0 and (i + 1) % (Nslice//Nupdates) == 0:
+            # More updates than slices means an update after every slice.
+            if Nupdates and (i + 1) % max(1, Nslice // Nupdates) == 0:
                 child.active_scalars = recon #add recon to child
                 # This copies data to the main thread
                 self.progress.data = child

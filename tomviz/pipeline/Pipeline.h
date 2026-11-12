@@ -95,7 +95,8 @@ public:
 
   /// Schedule execution after the current run finishes, without cancelling
   /// it. Used when adding sinks to avoid re-running upstream operators.
-  void executeWhenIdle();
+  /// With @a target, run only what it needs, not every stale node.
+  void executeWhenIdle(Node* target = nullptr);
 
   /// Run the smallest subset of the pipeline needed to make every input
   /// port of @a target carry current data — without re-running target
@@ -135,6 +136,7 @@ private:
   PipelineExecutor* m_executor = nullptr;
   bool m_paused = false;
   bool m_idleExecuteQueued = false;
+  QList<Node*> m_idleTargets;
 };
 
 } // namespace pipeline

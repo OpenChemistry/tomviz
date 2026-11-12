@@ -26,10 +26,12 @@ bool QVTKGLWidget::event(QEvent* e)
     RenderWindowAdapter->handleEvent(e);
   }
   // If they are mouse events then we should take them. This affects KDE on
-  // Linux where not accepting them causes the window to be moved.
+  // Linux where not accepting them causes the window to be moved, and a
+  // wheel that zooms the view would also scroll a parent scroll area.
   const QEvent::Type t = e->type();
   if (t == QEvent::MouseButtonPress || t == QEvent::MouseButtonRelease ||
-      t == QEvent::MouseButtonDblClick || t == QEvent::MouseMove) {
+      t == QEvent::MouseButtonDblClick || t == QEvent::MouseMove ||
+      t == QEvent::Wheel) {
     return true;
   } else {
     return QOpenGLWidget::event(e);

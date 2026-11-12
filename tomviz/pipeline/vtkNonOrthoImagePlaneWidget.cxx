@@ -689,6 +689,13 @@ void vtkNonOrthoImagePlaneWidget::UpdateArrowSize()
     scaledRadius = factor * (sqrt(radius) / 2.0);
   } // scope this so nobody uses radius
 
+  // A camera not yet fit to the data (as in a new view) can have the handle
+  // behind it, giving a huge radius that the first camera reset would then
+  // fit. Size the handle from the plane instead.
+  if (!(z >= 0.0 && z <= 1.0)) {
+    scaledRadius = 0.01 * this->PlaneOutlinePolyData->GetLength();
+  }
+
   this->ConeSource->SetHeight(2.0 * scaledRadius);
   this->ConeSource->SetRadius(scaledRadius);
   this->ConeSource2->SetHeight(2.0 * scaledRadius);

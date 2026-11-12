@@ -13,9 +13,40 @@
 #include "SinkNode.h"
 #include "SourceNode.h"
 #include "TransformNode.h"
+#include "sinks/LegacyModuleSink.h"
+
+#include <pqApplicationCore.h>
+#include <pqServerManagerModel.h>
+#include <pqView.h>
+
+#include <QPointer>
 
 namespace tomviz {
 namespace pipeline {
+
+namespace {
+
+// Remove nodes once nothing is running, skipping any already gone and
+// any group that still has sinks
+void removeWhenIdle(Pipeline* pipeline, const QList<QPointer<Node>>& nodes)
+{
+  if (pipeline->isExecuting()) {
+    QObject::connect(
+      pipeline, &Pipeline::executionFinished, pipeline,
+      [pipeline, nodes]() { removeWhenIdle(pipeline, nodes); },
+      static_cast<Qt::ConnectionType>(Qt::SingleShotConnection));
+    return;
+  }
+  for (const auto& node : nodes) {
+    auto* group = qobject_cast<SinkGroupNode*>(node.data());
+    bool groupInUse = group && !group->sinks().isEmpty();
+    if (node && !groupInUse) {
+      pipeline->removeNode(node);
+    }
+  }
+}
+
+} // namespace
 
 OutputPort* findBranchTip(Node* node)
 {
@@ -151,6 +182,30 @@ OutputPort* sinkAttachPort(Pipeline* pipeline, OutputPort* targetPort,
   pipeline->addNode(group);
   pipeline->createLink(targetPort, group->inputPorts()[0]);
   return group->outputPorts()[0];
+}
+
+void removeSinksWithTheirView(Pipeline* pipeline)
+{
+  auto* model = pqApplicationCore::instance()->getServerManagerModel();
+  QObject::connect(
+    model, &pqServerManagerModel::preViewRemoved, pipeline,
+    [pipeline](pqView* view) {
+      // The sinks first, then the groups they hang off
+      QList<QPointer<Node>> sinks, groups;
+      for (auto* node : pipeline->nodes()) {
+        auto* sink = dynamic_cast<LegacyModuleSink*>(node);
+        if (!sink || sink->view() != view->getViewProxy()) {
+          continue;
+        }
+        sinks.append(sink);
+        for (auto* upstream : sink->upstreamNodes()) {
+          if (qobject_cast<SinkGroupNode*>(upstream)) {
+            groups.append(upstream);
+          }
+        }
+      }
+      removeWhenIdle(pipeline, sinks + groups);
+    });
 }
 
 } // namespace pipeline

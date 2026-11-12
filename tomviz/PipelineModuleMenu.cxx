@@ -358,7 +358,7 @@ void PipelineModuleMenu::triggered(QAction* maction)
     pip->createLink(pipeline::sinkAttachPort(pip, targetPort, input),
                     input);
   }
-  pip->executeWhenIdle();
+  pip->executeWhenIdle(sink);
 }
 
 } // namespace tomviz

@@ -84,5 +84,6 @@
       "type": "string",
       "default": "{}"
     }
-  ]
+  ],
+  "supportsCancel": true
 }

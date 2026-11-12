@@ -25,7 +25,6 @@
 #include <QVBoxLayout>
 
 #include "AboutDialog.h"
-#include "AcquisitionWidget.h"
 #include "ActiveObjects.h"
 #include "AddAlignReaction.h"
 #include "AddPythonTransformReaction.h"
@@ -38,7 +37,6 @@
 #include "Behaviors.h"
 #include "CameraReaction.h"
 #include "ColorMap.h"
-#include "Connection.h"
 #include "DataBroker.h"
 #include "DataBrokerLoadReaction.h"
 #include "DataBrokerSaveReaction.h"
@@ -63,6 +61,7 @@
 #include "pipeline/Link.h"
 #include "pipeline/PortData.h"
 #include "pipeline/PortDataMetadata.h"
+#include "pipeline/PipelineUtils.h"
 #include "pipeline/SinkGroupNode.h"
 #include "pipeline/sinks/LegacyModuleSink.h"
 #include "pipeline/data/VolumeData.h"
@@ -165,7 +164,6 @@ void addSaveDataAction(QMenu& menu, Target* target, QWidget* parent,
      !SaveDataDialog::releasedPorts(target, scope).isEmpty()));
 }
 } // namespace
-class Connection;
 
 namespace tomviz {
 
@@ -805,7 +803,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
                                  readInPythonScript("BinTiltSeriesByTwo"));
   new AddPythonTransformReaction(
     removeBadPixelsAction, "Remove Bad Pixels",
-    readInPythonScript("RemoveBadPixelsTiltSeries"));
+    readInPythonScript("RemoveBadPixelsTiltSeries"),
+    readInJSONDescription("RemoveBadPixelsTiltSeries"));
   new AddPythonTransformReaction(
     gaussianFilterAction, "Gaussian Filter Tilt Series",
     readInPythonScript("GaussianFilterTiltSeries"),
@@ -815,7 +814,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     readInPythonScript("Subtract_TiltSer_Background_Auto"));
   new AddPythonTransformReaction(
     subtractBackgroundAction, "Background Subtraction (Manual)",
-    readInPythonScript("Subtract_TiltSer_Background"));
+    readInPythonScript("Subtract_TiltSer_Background"),
+    readInJSONDescription("Subtract_TiltSer_Background"));
   new AddPythonTransformReaction(normalizationAction, "Normalize Tilt Series",
                                  readInPythonScript("NormalizeTiltSeries"));
   new AddPythonTransformReaction(
@@ -1035,21 +1035,9 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
 
   ResetReaction::reset();
 
-  // Add the acquisition client experimentally.
-  m_ui->actionAcquisition->setEnabled(false);
-
-  connect(m_ui->actionAcquisition, &QAction::triggered, this,
-          [this]() { openDialog<AcquisitionWidget>(&m_acquisitionWidget); });
-
   connect(m_ui->actionAnimationHelper, &QAction::triggered, this, [this]() {
     openDialog<AnimationHelperDialog>(&m_animationHelperDialog);
   });
-  // The Animation menu gathers what the .ui spreads over File, View and
-  // a dock: the helper, the panel with the timeline, and the export.
-  auto* animationPanel = m_ui->dockWidgetAnimation->toggleViewAction();
-  animationPanel->setText(tr("Animation Panel"));
-  m_ui->menuAnimation->insertAction(m_ui->actionSaveMovie, animationPanel);
-  m_ui->menuAnimation->insertSeparator(m_ui->actionSaveMovie);
 
   // Prepopulate the previously seen python readers/writers
   // This operation is fast since it fetches the readers description
@@ -1060,7 +1048,6 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   // Initialize python synchronously (splash screen stays up until done)
   auto operators = initPython();
 
-  m_ui->actionAcquisition->setEnabled(true);
   registerCustomOperators(operators);
 
   auto dataBroker = new DataBroker(this);
@@ -1109,7 +1096,6 @@ MainWindow::~MainWindow()
 std::vector<OperatorDescription> MainWindow::initPython()
 {
   Python::initialize();
-  Connection::registerType();
   auto operators = findCustomOperators();
   FileFormatManager::instance().registerPythonReaders();
   FileFormatManager::instance().registerPythonWriters();
@@ -1701,6 +1687,21 @@ void MainWindow::manageCustomOperators()
             &MainWindow::deleteCustomOperator);
     connect(dialog, &CustomOperatorManagerDialog::openDirectoryRequested,
             this, &MainWindow::openCustomOperatorDirectory);
+    // The same directories findCustomOperators() scans, so the user can
+    // see where new transforms go and which ones are read-only.
+    dialog->setDirectoriesProvider([]() {
+      CustomOperatorManagerDialog::Directories dirs;
+      dirs.user = userDataPath();
+      QSet<QString> listed{ QFileInfo(dirs.user).canonicalFilePath() };
+      for (const QString& path : customOperatorSearchPaths(&dirs.skipped)) {
+        const QString canonical = QFileInfo(path).canonicalFilePath();
+        if (!listed.contains(canonical)) {
+          listed.insert(canonical);
+          dirs.readOnly.append(path);
+        }
+      }
+      return dirs;
+    });
     m_customOperatorManager = dialog;
   } else {
     m_customOperatorManager->refresh();
@@ -1837,6 +1838,7 @@ void MainWindow::initPipeline()
   m_pipeline = p;
   m_pipelineStrip->setPipeline(p);
   m_pipelineControls->setPipeline(p);
+  pipeline::removeSinksWithTheirView(p);
   ActiveObjects::instance().setPipeline(p);
   // The animations recorded with the camera viewpoints follow the
   // viewpoints and the authored animations from here on
@@ -2183,15 +2185,9 @@ void MainWindow::onActiveNodeChanged(pipeline::Node* node)
         m_ui->propertiesPanelStackedWidget);
     }
     // React to detached colormap toggling while this sink is selected
-    m_sinkColorMapChangedConn = connect(
-      sink, &pipeline::LegacyModuleSink::colorMapChanged,
-      this, [this, sink]() {
-        if (sink->useDetachedColorMap()) {
-          m_ui->centralWidget->setActiveSinkNode(sink);
-        } else {
-          updateColorMapDisplay();
-        }
-      });
+    m_sinkColorMapChangedConn =
+      connect(sink, &pipeline::LegacyModuleSink::colorMapChanged, this,
+              &MainWindow::updateColorMapDisplay);
   } else if (node && node->hasPropertiesWidget() && !node->isEditing()) {
     propsWidget = new pipeline::NodePropertiesPanel(
       node, pipeline(), m_ui->propertiesPanelStackedWidget);
@@ -2201,14 +2197,6 @@ void MainWindow::onActiveNodeChanged(pipeline::Node* node)
   // editable properties (title-only panel).
   showPropertiesPanel(propsWidget, title);
 
-  // Sink with detached colormap: display it; otherwise the tip port
-  // drives the colormap via updateColorMapDisplay().
-  if (auto* sink = dynamic_cast<pipeline::LegacyModuleSink*>(node)) {
-    if (sink->useDetachedColorMap()) {
-      m_ui->centralWidget->setActiveSinkNode(sink);
-      return;
-    }
-  }
   updateColorMapDisplay();
 }
 
@@ -2378,6 +2366,15 @@ void MainWindow::scheduleColorMapDisplayUpdate()
 
 void MainWindow::updateColorMapDisplay()
 {
+  // A selected visualization shows its own color map. Its input may come
+  // from earlier in the branch than the tip, so the tip's would be wrong.
+  auto* sink = dynamic_cast<pipeline::LegacyModuleSink*>(
+    ActiveObjects::instance().activeNode());
+  if (sink && sink->colorMap()) {
+    m_ui->centralWidget->setActiveSinkNode(sink);
+    return;
+  }
+
   auto* tipPort = ActiveObjects::instance().activeTipOutputPort();
   if (!tipPort || !pipeline::isVolumeType(tipPort->type()) ||
       !tipPort->hasData()) {

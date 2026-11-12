@@ -17,6 +17,7 @@
 #include <vtkSMRenderViewProxy.h>
 
 #include <QAction>
+#include <QCheckBox>
 #include <QColor>
 #include <QColorDialog>
 #include <QEvent>
@@ -35,7 +36,17 @@ namespace {
 class LinkViewWidget : public pqLinkViewWidget
 {
 public:
-  using pqLinkViewWidget::pqLinkViewWidget;
+  explicit LinkViewWidget(pqRenderView* view) : pqLinkViewWidget(view)
+  {
+    // An interactive view link draws one view inside the other as a box,
+    // which in slice views looks like a rendering bug. Offer only the
+    // plain camera link; the checkbox is private, so find it by its text.
+    for (auto* box : findChildren<QCheckBox*>()) {
+      if (box->text() == pqLinkViewWidget::tr("Interactive View Link")) {
+        box->hide();
+      }
+    }
+  }
 
 protected:
   bool event(QEvent* e) override

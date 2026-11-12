@@ -90,11 +90,13 @@
 #include <vtkFloatArray.h>
 #include <vtkImageData.h>
 #include <vtkMolecule.h>
+#include <vtkOutputWindow.h>
 #include <vtkPointData.h>
 #include <vtkSmartPointer.h>
 #include <vtkCellData.h>
 #include <vtkPolyData.h>
 #include <vtkStringArray.h>
+#include <vtkStringOutputWindow.h>
 #include <vtkTable.h>
 #include <vtkUnsignedCharArray.h>
 #include <vtkXMLImageDataWriter.h>
@@ -481,6 +483,39 @@ TEST_F(PipelineLibTest, BreakpointStopsExecution)
   // t1 should not have been executed
   EXPECT_NE(t1->state(), NodeState::Current);
   EXPECT_NE(t2->state(), NodeState::Current);
+}
+
+// An operator gets an input port per dataset parameter, and only the
+// first is connected when it is added. Running it with an input still
+// unconnected fails and names that input.
+TEST_F(PipelineLibTest, ExecutionNamesUnconnectedInput)
+{
+  auto* source = new SourceNode();
+  source->addOutput("out", PortType::ImageData);
+  pipeline->addNode(source);
+  auto* add = new AddTransform();
+  add->setLabel("Merge");
+  pipeline->addNode(add);
+  pipeline->createLink(source->outputPort("out"), add->inputPort("a"));
+  source->setOutputData("out", PortData(std::any(10), PortType::ImageData));
+
+  static QStringList warnings;
+  warnings.clear();
+  auto previous = qInstallMessageHandler(
+    [](QtMsgType type, const QMessageLogContext&, const QString& message) {
+      if (type == QtWarningMsg) {
+        warnings << message;
+      }
+    });
+  auto* future = pipeline->execute();
+  qInstallMessageHandler(previous);
+
+  EXPECT_TRUE(future->isFinished());
+  EXPECT_EQ(add->execState(), NodeExecState::Failed);
+  EXPECT_NE(add->state(), NodeState::Current);
+  EXPECT_EQ(warnings, QStringList{ "Merge cannot run: input 'b' is not "
+                                   "connected. Drag a dataset's output "
+                                   "port onto it." });
 }
 
 TEST_F(PipelineLibTest, HeldNodeWaitsForItsDialog)
@@ -2624,6 +2659,40 @@ TEST_F(PipelineLibTest, ThreadedExecutorCancellation)
   EXPECT_NE(t3->state(), NodeState::Current);
 }
 
+// Adding a visualization runs only what it needs, even when queued
+// behind a running branch, so another stale branch is left alone.
+TEST_F(PipelineLibTest, NewSinkRunsOnlyItsInputs)
+{
+  pipeline->setExecutor(new ThreadedExecutor(pipeline));
+
+  auto* source = new SourceNode();
+  source->addOutput("out", PortType::ImageData);
+  pipeline->addNode(source);
+  auto* running = new SlowTransform();
+  auto* idle = new SlowTransform();
+  pipeline->addNode(running);
+  pipeline->addNode(idle);
+  pipeline->createLink(source->outputPort("out"), running->inputPort("in"));
+  pipeline->createLink(source->outputPort("out"), idle->inputPort("in"));
+  source->setOutputData("out", PortData(std::any(5), PortType::ImageData));
+
+  QSignalSpy finished(pipeline, &Pipeline::executionFinished);
+  pipeline->execute(running);
+  ASSERT_TRUE(pipeline->isExecuting());
+
+  auto* sink = new CollectorSink();
+  pipeline->addNode(sink);
+  pipeline->createLink(source->outputPort("out"), sink->inputPort("in"));
+  pipeline->executeWhenIdle(sink);
+  while (finished.count() < 2 && finished.wait(5000)) {
+  }
+
+  EXPECT_TRUE(sink->consumed);
+  EXPECT_EQ(sink->lastValue, 5);
+  EXPECT_EQ(running->state(), NodeState::Current);
+  EXPECT_NE(idle->state(), NodeState::Current);
+}
+
 TEST_F(PipelineLibTest, ThreadedExecutorHeldNode)
 {
   pipeline->setExecutor(new ThreadedExecutor(pipeline));
@@ -3595,6 +3664,43 @@ TEST_F(PipelineLibTest, EffectiveTypePropagationChain)
   EXPECT_EQ(t2->outputPort("out")->type(), PortType::TiltSeries);
 }
 
+TEST_F(PipelineLibTest, EffectiveTypeFollowsUpstreamTypeChange)
+{
+  // A reader only learns its type when it runs, after the links exist.
+  // source -> merge.b, and source -> t1 -> t2 -> merge.a, so merge takes
+  // its type from the longer branch.
+  auto* source = new SourceNode();
+  source->addOutput("out", PortType::ImageData);
+  pipeline->addNode(source);
+  auto* t1 = new DoubleTransform();
+  pipeline->addNode(t1);
+  auto* t2 = new DoubleTransform();
+  pipeline->addNode(t2);
+  auto* merge = new AddTransform();
+  pipeline->addNode(merge);
+
+  pipeline->createLink(source->outputPort("out"), merge->inputPort("b"));
+  pipeline->createLink(source->outputPort("out"), t1->inputPort("in"));
+  pipeline->createLink(t1->outputPort("out"), t2->inputPort("in"));
+  pipeline->createLink(t2->outputPort("out"), merge->inputPort("a"));
+
+  source->outputPort("out")->setDeclaredType(PortType::Volume);
+  EXPECT_EQ(t2->outputPort("out")->type(), PortType::Volume);
+  EXPECT_EQ(merge->outputPort("out")->type(), PortType::Volume);
+
+  // The reader's own links are rechecked too
+  auto* volumeOnly =
+    new PassthroughTransform(PortType::Volume, PortType::Volume);
+  pipeline->addNode(volumeOnly);
+  auto* link = pipeline->createLink(source->outputPort("out"),
+                                    volumeOnly->inputPort("in"));
+  ASSERT_TRUE(link && link->isValid());
+
+  source->outputPort("out")->setDeclaredType(PortType::TiltSeries);
+  EXPECT_EQ(merge->outputPort("out")->type(), PortType::TiltSeries);
+  EXPECT_FALSE(link->isValid());
+}
+
 TEST_F(PipelineLibTest, EffectiveTypeRevertsOnDisconnect)
 {
   auto* source = new SourceNode();
@@ -3890,6 +3996,53 @@ TEST_F(PipelineLibTest, ContourSinkPropertySetters)
   EXPECT_EQ(sink.activeScalars(), 2);
 }
 
+// Setting properties before any data arrives, as the histogram's Contour
+// button and a state restore do, ran FlyingEdges on the empty producer,
+// and VTK printed "is of type vtkDataObject, but a vtkImageData is
+// required".
+TEST_F(PipelineLibTest, ContourSinkPropertiesWithoutDataRaiseNoVtkError)
+{
+  vtkNew<vtkStringOutputWindow> capture;
+  auto* previous = vtkOutputWindow::GetInstance();
+  previous->Register(nullptr);
+  vtkOutputWindow::SetInstance(capture);
+  {
+    ContourSink sink;
+    sink.setIsoValue(1.0);
+    sink.setColorByArray(true);
+  }
+  vtkOutputWindow::SetInstance(previous);
+  previous->Delete();
+  EXPECT_EQ(capture->GetOutput(), std::string()) << capture->GetOutput();
+}
+
+// Coloring by an array after the data has been released ran the probe
+// filter on an empty source: "is of type vtkDataObject, but a vtkDataSet
+// is required".
+TEST_F(PipelineLibTest, ContourSinkColorByAfterDataReleasedRaisesNoVtkError)
+{
+  auto* source = new SphereSource();
+  source->setDimensions(8, 8, 8);
+  pipeline->addNode(source);
+  auto* contour = new ContourSink();
+  pipeline->addNode(contour);
+  pipeline->createLink(source->outputPort("volume"),
+                       contour->inputPort("volume"));
+  ASSERT_TRUE(source->execute());
+  ASSERT_TRUE(contour->execute());
+  source->outputPort("volume")->clearData();
+  ASSERT_FALSE(contour->volumeData());
+
+  vtkNew<vtkStringOutputWindow> capture;
+  auto* previous = vtkOutputWindow::GetInstance();
+  previous->Register(nullptr);
+  vtkOutputWindow::SetInstance(capture);
+  contour->setColorByArray(true);
+  vtkOutputWindow::SetInstance(previous);
+  previous->Delete();
+  EXPECT_EQ(capture->GetOutput(), std::string()) << capture->GetOutput();
+}
+
 TEST_F(PipelineLibTest, ContourSinkSerializationRoundTrip)
 {
   ContourSink sink;
@@ -4063,6 +4216,34 @@ TEST_F(PipelineLibTest, ClipSinkLinkingPropagatesToLinkedPeers)
 
   a->setDirection(ClipSink::XZ);
   EXPECT_EQ(b->direction(), ClipSink::XZ);
+}
+
+// A hidden Clip never adds its plane to its siblings, so removing it
+// made VTK print "Cannot remove clipping plane: mapper has none".
+TEST_F(PipelineLibTest, HiddenClipSinkRaisesNoVtkError)
+{
+  auto* source = new SphereSource();
+  pipeline->addNode(source);
+  auto* volume = new VolumeSink();
+  auto* slice = new SliceSink();
+  auto* clip = new ClipSink();
+  clip->setVisibility(false);
+  for (SinkNode* sink :
+       std::initializer_list<SinkNode*>{ volume, slice, clip }) {
+    pipeline->addNode(sink);
+    pipeline->createLink(source->outputPort("volume"),
+                         sink->inputPort("volume"));
+  }
+
+  vtkNew<vtkStringOutputWindow> capture;
+  auto* previous = vtkOutputWindow::GetInstance();
+  previous->Register(nullptr);
+  vtkOutputWindow::SetInstance(capture);
+  clip->setVisibility(false);
+  pipeline->removeNode(clip);
+  vtkOutputWindow::SetInstance(previous);
+  previous->Delete();
+  EXPECT_EQ(capture->GetOutput(), std::string()) << capture->GetOutput();
 }
 
 TEST_F(PipelineLibTest, SinkLinkFlagSurvivesSerialization)

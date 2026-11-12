@@ -13,8 +13,6 @@ class CenterOfMassAlignmentOperator(tomviz.operators.CancelableOperator):
 
         tiltSeries = dataset.active_scalars.astype(float)
 
-        apply_to_all_arrays = True
-
         self.progress.maximum = tiltSeries.shape[2]
         step = 1
 
@@ -26,18 +24,12 @@ class CenterOfMassAlignmentOperator(tomviz.operators.CancelableOperator):
             self.progress.message = 'Processing tilt image No.%d/%d' % (
                 i + 1, tiltSeries.shape[2])
 
-            offsets[i, :], tiltSeries[:, :, i] = centerOfMassAlign(
-                tiltSeries[:, :, i]
-            )
+            offsets[i, :] = centerOfMassAlign(tiltSeries[:, :, i])
 
             step += 1
             self.progress.value = step
 
-        dataset.active_scalars = tiltSeries
-        if apply_to_all_arrays:
-            names = [name for name in dataset.scalars_names
-                     if name != dataset.active_name]
-            self.apply_offsets_to_scalar_names(dataset, offsets, names)
+        pad_and_shift(dataset, offsets, dataset.scalars_names)
 
         # Create a spreadsheet data set from table data
         column_names = ["X Offset", "Y Offset"]
@@ -47,23 +39,9 @@ class CenterOfMassAlignmentOperator(tomviz.operators.CancelableOperator):
         returnValues["alignments"] = offsetsTable
         return returnValues
 
-    def apply_offsets_to_scalar_names(self, dataset, offsets, names):
-        # Now apply the same offsets to all other arrays
-        for name in names:
-            print(f'Applying shifts to {name}...')
-            array = dataset.scalars(name)
-            for i in range(len(offsets)):
-                shifts = offsets[i]
-                array[:, :, i] = ndimage.shift(array[:, :, i],
-                                               shift=shifts,
-                                               order=1,
-                                               mode='wrap')
-
-            dataset.set_scalars(name, array)
-
 
 def centerOfMassAlign(image):
-    """Shift image so that the center of mass of is at origin"""
+    """The shift that moves the image's center of mass to its middle"""
     (Nx, Ny) = image.shape
     # set up coordinate
     y = np.linspace(0, Ny - 1, Ny)
@@ -76,7 +54,27 @@ def centerOfMassAlign(image):
     sx = -(imageCOM_x - Nx // 2)
     sy = -(imageCOM_y - Ny // 2)
 
-    output = np.roll(image, sx, axis=0)
-    output = np.roll(output, sy, axis=1)
+    return sx, sy
 
-    return (sx, sy), output
+
+def pad_and_shift(dataset, offsets: np.ndarray, names: list[str]) -> None:
+    """Shift each image of the named arrays by its row of offsets.
+
+    Every array is padded with zeros by the largest shift on both sides
+    first, so nothing is shifted out of view or wraps around to the
+    other side, and the image center stays put.
+    """
+    pad = np.ceil(np.abs(offsets).max(axis=0)).astype(int)
+    for name in dataset.scalars_names:
+        array = dataset.scalars(name)
+        # Multi-component arrays have a fourth axis, left as it is
+        rest = array.ndim - 3
+        array = np.pad(array, ((pad[0], pad[0]), (pad[1], pad[1]), (0, 0)) +
+                       ((0, 0),) * rest)
+        if name in names:
+            print(f'Applying shifts to {name}...')
+            for i, shift in enumerate(offsets):
+                array[:, :, i] = ndimage.shift(array[:, :, i],
+                                               tuple(shift) + (0,) * rest,
+                                               order=1, mode='constant')
+        dataset.set_scalars(name, array)

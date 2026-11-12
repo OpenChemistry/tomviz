@@ -6,6 +6,7 @@
 #include "PythonUtilities.h"
 
 #include <QDialog>
+#include <QStringList>
 
 #include <functional>
 #include <vector>
@@ -37,6 +38,20 @@ public:
   explicit CustomOperatorManagerDialog(Provider provider,
                                        QWidget* parent = nullptr);
 
+  /// Where the operators come from, shown under the list: the user's own
+  /// directory (where new and cloned ones are saved), the read-only
+  /// ones, and requested directories that could not be read.
+  struct Directories
+  {
+    QString user;
+    QStringList readOnly;
+    QStringList skipped;
+  };
+  using DirectoriesProvider = std::function<Directories()>;
+
+  /// Show the directories, asking @a provider again on every refresh().
+  void setDirectoriesProvider(DirectoriesProvider provider);
+
   /// Re-query the provider and rebuild the list.
   void refresh();
 
@@ -53,12 +68,15 @@ private:
 
   void addSection(QGridLayout* grid, int& row, const QString& title);
   void addOperator(QGridLayout* grid, int& row, const OperatorDescription& op);
+  void updateDirectories();
 
   Provider m_provider;
+  DirectoriesProvider m_directoriesProvider;
   std::vector<OperatorDescription> m_operators;
 
   QScrollArea* m_scroll = nullptr;
   QLabel* m_emptyHint = nullptr;
+  QLabel* m_directories = nullptr;
 };
 
 } // namespace tomviz

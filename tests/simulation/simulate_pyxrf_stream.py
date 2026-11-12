@@ -5,8 +5,9 @@ Every ``--interval`` seconds a new ``scan2D_<sid>.h5`` appears in the
 output directory with the ``xrfmap`` layout the PyXRF tooling reads, and
 ``tomo.h5`` in the same directory is reassembled to include the new
 projection. Point a tomviz PyXRF source's working directory here (leave
-the scan range empty so it reads tomo.h5 directly), enable Periodic
-Execution on the node, and the volume should grow as scans "arrive".
+the scan range and parameters file empty so it reads tomo.h5 directly),
+enable Periodic Execution on the node, and the volume should grow as scans
+"arrive".
 
 Some scans are emitted with a slightly different pixel shape to exercise
 the auto-padding path.

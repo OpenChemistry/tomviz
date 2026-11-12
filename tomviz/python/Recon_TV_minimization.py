@@ -297,12 +297,13 @@ def rmepsilon(input):
     return input
 
 
-def calc_Nupdates(Nupdates, Niter):
+def calc_Nupdates(Nupdates: int, Niter: int) -> int:
     if Nupdates == 0:
         Nupdates = 0
     #If the user selects 100%, update for every slice.
     elif Nupdates == 100:
         Nupdates = 1
     else:
-        Nupdates = int(round((Niter*(1 - Nupdates/100))))
+        # Round to at least 1: 0 would mean no live updates at all.
+        Nupdates = max(1, int(round(Niter*(1 - Nupdates/100))))
     return Nupdates

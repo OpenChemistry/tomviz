@@ -2,6 +2,7 @@
    It is released under the 3-Clause BSD License, see "LICENSE". */
 
 #include <QApplication>
+#include <QPointer>
 #include <QTest>
 
 #include <pqActiveObjects.h>
@@ -25,6 +26,7 @@
 #include "pipeline/Link.h"
 #include "pipeline/OutputPort.h"
 #include "pipeline/Pipeline.h"
+#include "pipeline/PipelineUtils.h"
 #include "pipeline/SinkGroupNode.h"
 #include "pipeline/SourceNode.h"
 #include "pipeline/data/VolumeData.h"
@@ -395,6 +397,30 @@ private slots:
     QVERIFY(!m_behavior->isActive(doomed));
   }
 
+  // Closing a view removes the visualizations it showed and a group
+  // left empty, but not a group still shown in another view.
+  void closedViewRemovesItsVisualizations()
+  {
+    auto* doomed = createRenderView();
+    QVERIFY(doomed);
+    auto kept = addDataset(m_pip, 10, 10, 10);
+    auto gone = addDataset(m_pip, 10, 10, 10);
+    QPointer<pipeline::Node> keptSlice =
+      addSink<pipeline::SliceSink>(m_pip, kept, m_view);
+    QPointer<pipeline::Node> goneVolume =
+      addSink<pipeline::VolumeSink>(m_pip, kept, doomed);
+    QPointer<pipeline::Node> goneSlice =
+      addSink<pipeline::SliceSink>(m_pip, gone, doomed);
+    QPointer<pipeline::Node> goneGroup = gone.group;
+
+    pqApplicationCore::instance()->getObjectBuilder()->destroy(doomed);
+    QVERIFY(keptSlice);
+    QVERIFY(m_pip->nodes().contains(kept.group));
+    QVERIFY(!goneVolume);
+    QVERIFY(!goneSlice);
+    QVERIFY(!goneGroup);
+  }
+
 private:
   ImageViewerModeBehavior* m_behavior;
   pipeline::Pipeline* m_pip;
@@ -411,6 +437,7 @@ int main(int argc, char** argv)
     pqServerResource("builtin:"));
   pipeline::Pipeline pipeline;
   ActiveObjects::instance().setPipeline(&pipeline);
+  pipeline::removeSinksWithTheirView(&pipeline);
   ImageViewerModeBehavior behavior;
   ImageViewerModeTest tc(&behavior, &pipeline);
   return QTest::qExec(&tc, argc, argv);

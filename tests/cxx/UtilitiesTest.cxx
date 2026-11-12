@@ -188,10 +188,12 @@ TEST_F(UtilitiesTest, custom_operator_search_paths_follow_env_override)
                           .join(QDir::listSeparator());
   qputenv(kCustomTransformsPath, value.toLocal8Bit());
 
-  const QStringList paths = customOperatorSearchPaths();
+  QStringList skipped;
+  const QStringList paths = customOperatorSearchPaths(&skipped);
   const QStringList expected{ QDir::cleanPath(first.path()),
                               QDir::cleanPath(second.path()) };
   EXPECT_EQ(paths, expected);
+  EXPECT_EQ(skipped, QStringList{ QDir::cleanPath(missing) });
 }
 
 TEST_F(UtilitiesTest, custom_operator_search_paths_default_to_existing_dirs)

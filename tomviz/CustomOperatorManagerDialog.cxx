@@ -87,6 +87,13 @@ CustomOperatorManagerDialog::CustomOperatorManagerDialog(Provider provider,
   m_emptyHint->setStyleSheet("QLabel { color: palette(mid); }");
   layout->addWidget(m_emptyHint);
 
+  m_directories = new QLabel(this);
+  m_directories->setObjectName(QStringLiteral("customOperatorDirectories"));
+  m_directories->setWordWrap(true);
+  m_directories->setTextInteractionFlags(Qt::TextSelectableByMouse);
+  m_directories->hide();
+  layout->addWidget(m_directories);
+
   auto* bottom = new QHBoxLayout;
   layout->addLayout(bottom);
   auto* createButton = new QPushButton(tr("Create New..."), this);
@@ -142,6 +149,44 @@ void CustomOperatorManagerDialog::refresh()
   m_scroll->setWidget(content);
 
   m_emptyHint->setVisible(m_operators.empty());
+  updateDirectories();
+}
+
+void CustomOperatorManagerDialog::setDirectoriesProvider(
+  DirectoriesProvider provider)
+{
+  m_directoriesProvider = std::move(provider);
+  updateDirectories();
+}
+
+void CustomOperatorManagerDialog::updateDirectories()
+{
+  if (!m_directoriesProvider) {
+    return;
+  }
+  const Directories dirs = m_directoriesProvider();
+  auto native = [](QStringList paths) {
+    for (QString& path : paths) {
+      path = QDir::toNativeSeparators(path);
+    }
+    return paths.join(QStringLiteral(", "));
+  };
+
+  QStringList lines;
+  if (!dirs.user.isEmpty()) {
+    lines << tr("New and cloned transforms are saved in %1.")
+               .arg(QDir::toNativeSeparators(dirs.user));
+  }
+  if (!dirs.readOnly.isEmpty()) {
+    lines << tr("Also read from (read-only): %1.").arg(native(dirs.readOnly));
+  }
+  if (!dirs.skipped.isEmpty()) {
+    lines << tr("Not found or not readable, from "
+                "TOMVIZ_CUSTOM_TRANSFORMS_PATH: %1.")
+               .arg(native(dirs.skipped));
+  }
+  m_directories->setText(lines.join(QLatin1Char('\n')));
+  m_directories->setVisible(!lines.isEmpty());
 }
 
 void CustomOperatorManagerDialog::addSection(QGridLayout* grid, int& row,

@@ -1,13 +1,15 @@
 import numpy as np
 import scipy.sparse as ss
 import tomviz.operators
+from tomviz.dataset import Dataset
 import time
 
 
 class ReconSirtOperator(tomviz.operators.CompletableOperator):
 
-    def transform(self, dataset, Niter=10, stepSize=0.0001,
-                  updateMethodIndex=0, Nupdates=0):
+    def transform(self, dataset: Dataset, Niter: int = 10,
+                  stepSize: float = 0.0001, updateMethodIndex: int = 0,
+                  Nupdates: int = 0) -> dict[str, Dataset] | None:
         """
         3D Reconstruct from a tilt series using Simultaneous Iterative
         Reconstruction Techniques (SIRT)"""
@@ -92,8 +94,10 @@ class ReconSirtOperator(tomviz.operators.CompletableOperator):
                 etcMessage = 'Estimated time to complete: %02d:%02d:%02d' % (
                     timeLeftHour, timeLeftMin, timeLeftSec)
 
-                # Give 4 updates for first iteration.
-                if Nupdates != 0 and i == 0 and (s + 1) % (Nslice//4) == 0:
+                # Give 4 updates for first iteration (one per slice
+                # with fewer than 4 slices).
+                if (Nupdates != 0 and i == 0 and
+                        (s + 1) % max(1, Nslice // 4) == 0):
                     child.active_scalars = recon
                     self.progress.data = child
 
@@ -299,12 +303,13 @@ def rmepsilon(input):
     return input
 
 
-def calc_Nupdates(Nupdates, Niter):
+def calc_Nupdates(Nupdates: int, Niter: int) -> int:
     if Nupdates == 0:
         Nupdates = 0
     #If the user selects 100%, update for every slice.
     elif Nupdates == 100:
         Nupdates = 1
     else:
-        Nupdates = int(round((Niter*(1 - Nupdates/100))))
+        # Round to at least 1: 0 would mean no live updates at all.
+        Nupdates = max(1, int(round(Niter*(1 - Nupdates/100))))
     return Nupdates
