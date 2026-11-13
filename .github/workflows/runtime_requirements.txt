@@ -11,3 +11,4 @@ h5py
 click
 tqdm
 scikit-image
+olefile

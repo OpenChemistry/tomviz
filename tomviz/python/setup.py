@@ -35,6 +35,7 @@ setup(
                       'numpy', 'scipy'],
     extras_require={
         'itk': ['itk'],
+        'olefile': ['olefile'],
         'pyfftw': ['pyfftw']
     },
 )
