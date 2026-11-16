@@ -632,13 +632,13 @@ QJsonObject LoadDataReaction::readerProperties(vtkSMProxy* reader)
   }
   prop = reader->GetProperty("FileNames");
   if (prop != nullptr) {
-    auto fileNames = toJson(prop).toArray();
-    if (fileNames.size() > 1) {
+    // toJson() gives a list for several file names, but the name itself
+    // for just one; store one as fileName
+    auto fileNames = toJson(prop);
+    if (fileNames.isString()) {
+      props["fileName"] = fileNames;
+    } else if (fileNames.toArray().size() > 1) {
       props["fileNames"] = fileNames;
-    }
-    // Normalize to fileNames for single value.
-    else if (fileNames.size() == 1) {
-      props["fileName"] = fileNames[0];
     }
   }
   prop = reader->GetProperty("FilePrefix");
