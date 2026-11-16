@@ -8,11 +8,15 @@ import time
 class ReconSirtOperator(tomviz.operators.CompletableOperator):
 
     def transform(self, dataset: Dataset, Niter: int = 10,
-                  stepSize: float = 0.0001, updateMethodIndex: int = 0,
+                  stepSize: float = 0.0, updateMethodIndex: int = 0,
                   Nupdates: int = 0) -> dict[str, Dataset] | None:
         """
         3D Reconstruct from a tilt series using Simultaneous Iterative
-        Reconstruction Techniques (SIRT)"""
+        Reconstruction Techniques (SIRT)
+
+        A stepSize of 0 (the default) chooses the step from the projection
+        geometry (the tilt angles and the slice size): half the largest
+        step for which the chosen update method converges."""
         self.progress.maximum = 1
 
         update_methods = ('landweber', 'cimmino', 'component averaging')
@@ -55,6 +59,10 @@ class ReconSirtOperator(tomviz.operators.CompletableOperator):
         #create a reconstruction object
         r = SIRT(A, update_methods[updateMethodIndex], Nslice)
         r.initialize()
+        if stepSize <= 0:
+            self.progress.message = 'Choosing the step size'
+            stepSize = r.automatic_step()
+            print('SIRT: step size %.4g' % stepSize)
         step += 1
         self.progress.value = step
 
@@ -161,6 +169,32 @@ class SIRT:
             self.M = ss.diags(1/weightedRowProduct)
         else:
             print("Invalid update method!")
+
+    def update_operator(self, v):
+        # The matrix B in recon2's update f + stepSize * (AT M b - B f)
+        if self.method == 'landweber':
+            return self.AT.dot(self.A.dot(v))
+        elif self.method == 'cimmino':
+            return self.AT.dot(self.M.dot(self.A.dot(v))) / self.Nrow
+        else:
+            return self.AT.dot(self.M.dot(self.A.dot(v)))
+
+    def automatic_step(self, iterations=30):
+        # The iteration converges for steps below 2 / rho, rho the largest
+        # eigenvalue of the update operator; return 1 / rho, with rho
+        # estimated by power iteration. For Landweber rho is ||A||^2,
+        # which grows with the slice size and the number of projections,
+        # so no fixed step suits every dataset.
+        v = np.random.default_rng(0).random(self.Ncol, dtype=np.float32)
+        rho = 0.0
+        for _ in range(iterations):
+            w = self.update_operator(v)
+            norm = np.linalg.norm(w)
+            if norm == 0:
+                return 1.0
+            rho = norm / np.linalg.norm(v)
+            v = w / norm
+        return 1.0 / rho
 
     def recon2(self, b, x, stepSize, index):
         self.f[:] = x
