@@ -183,7 +183,8 @@ bool writeVolumePayload(h5::H5ReadWrite& writer, const std::string& portGroup,
   if (!volume || !volume->isValid()) {
     return false;
   }
-  return EmdFormat::writeNode(writer, portGroup, volume->imageData());
+  return EmdFormat::writeNode(writer, portGroup, volume->imageData(),
+                              volume->units().toStdString());
 }
 
 /// Serialize @a molecule under @a portGroup.  Atom positions are
