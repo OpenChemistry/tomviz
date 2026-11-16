@@ -5606,6 +5606,85 @@ TEST_F(PipelineLibTest, SaveDataWritesEveryArrayIntoOneEmd)
   EXPECT_NE(readBack->GetPointData()->GetArray("B"), nullptr);
 }
 
+// Save Data writes a volume's length units into the EMD file and reading
+// the file gives them back. A volume without units keeps Tomviz's default
+// label "[n_m]", which reads back as no units, as before.
+TEST_F(PipelineLibTest, SaveDataEmdKeepsLengthUnits)
+{
+  QTemporaryDir dir;
+  ASSERT_TRUE(dir.isValid());
+
+  auto makeVolume = [](const QString& units, bool tiltSeries) {
+    vtkNew<vtkImageData> image;
+    image->SetDimensions(4, 3, 2);
+    image->SetSpacing(0.5, 0.5, 0.5);
+    vtkNew<vtkFloatArray> array;
+    array->SetName("scalars");
+    array->SetNumberOfTuples(4 * 3 * 2);
+    array->FillValue(1.0f);
+    image->GetPointData()->SetScalars(array);
+    auto volume = std::make_shared<VolumeData>(image.Get());
+    volume->setUnits(units);
+    if (tiltSeries) {
+      volume->setTiltAngles({ -30.0, 30.0 });
+    }
+    return volume;
+  };
+  auto save = [&](const VolumeDataPtr& volume, const QString& name) {
+    QString path = dir.filePath(name);
+    EXPECT_TRUE(tomviz::PortDataWriter::write(
+      PortData(std::any(volume), PortType::ImageData), {}, path));
+    return path;
+  };
+  auto attribute = [](const QString& path, const std::string& dim) {
+    h5::H5ReadWrite reader(path.toStdString(),
+                           h5::H5ReadWrite::OpenMode::ReadOnly);
+    return reader.attribute<std::string>("/data/tomography/" + dim,
+                                         "units");
+  };
+  auto readUnits = [](const QString& path) {
+    vtkNew<vtkImageData> image;
+    EXPECT_TRUE(tomviz::EmdFormat::read(path.toStdString(), image));
+    return VolumeData(image.Get()).units();
+  };
+
+  // A volume in millimetres: every axis says so, and it reads back.
+  auto mm = save(makeVolume("mm", false), "mm.emd");
+  EXPECT_EQ(attribute(mm, "dim1"), "mm");
+  EXPECT_EQ(attribute(mm, "dim2"), "mm");
+  EXPECT_EQ(attribute(mm, "dim3"), "mm");
+  EXPECT_EQ(readUnits(mm), QString("mm"));
+
+  // A tilt series: angles stay in degrees, the image axes get the units
+  // (micrometres, as UTF-8).
+  const QString micrometres = QString::fromUtf8("\xc2\xb5m");
+  auto tilts = save(makeVolume(micrometres, true), "tilts.emd");
+  EXPECT_EQ(attribute(tilts, "dim1"), "[deg]");
+  EXPECT_EQ(attribute(tilts, "dim2"), micrometres.toStdString());
+  EXPECT_EQ(attribute(tilts, "dim3"), micrometres.toStdString());
+  EXPECT_EQ(readUnits(tilts), micrometres);
+
+  // Units cleared after reading a file in mm: the file says no units,
+  // not the stale mm the reader left on the image.
+  {
+    vtkNew<vtkImageData> image;
+    ASSERT_TRUE(tomviz::EmdFormat::read(mm.toStdString(), image));
+    auto cleared = std::make_shared<VolumeData>(image.Get());
+    ASSERT_EQ(cleared->units(), QString("mm"));
+    cleared->setUnits(QString());
+    auto path = save(cleared, "cleared.emd");
+    EXPECT_EQ(attribute(path, "dim2"), "[n_m]");
+    EXPECT_TRUE(readUnits(path).isEmpty());
+  }
+
+  // No units: the default label as before, and no units when read back.
+  auto none = save(makeVolume(QString(), false), "none.emd");
+  EXPECT_EQ(attribute(none, "dim1"), "[n_m]");
+  EXPECT_EQ(attribute(none, "dim2"), "[n_m]");
+  EXPECT_EQ(attribute(none, "dim3"), "[n_m]");
+  EXPECT_TRUE(readUnits(none).isEmpty());
+}
+
 TEST_F(PipelineLibTest, SaveDataSplitsArraysForSingleArrayFormats)
 {
   QTemporaryDir dir;

@@ -132,7 +132,8 @@ bool writeVolume(const VolumeDataPtr& volume, const QStringList& arrayNames,
   QString ext = QFileInfo(path).suffix().toLower();
 
   if (isEmdExtension(ext)) {
-    return EmdFormat::write(path.toStdString(), image);
+    return EmdFormat::write(path.toStdString(), image,
+                            volume->units().toStdString());
   }
 
   if (auto* factory = FileFormatManager::instance().pythonWriterFactory(ext)) {
