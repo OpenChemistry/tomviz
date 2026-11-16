@@ -74,18 +74,23 @@ class MrcReloadTest : public QObject
 private slots:
   // IMOD's .st, .rec and .ali open through ParaView's MRC reader. A state
   // file reopens them through readImageData with the reader descriptor
-  // saved at first load, which must name the file.
+  // saved at first load, which must name the file; for a state saved
+  // before it did, the node's own file names stand in.
   void stateReloadReadsTheFile_data()
   {
     QTest::addColumn<QString>("suffix");
-    QTest::newRow("st") << "st";
-    QTest::newRow("rec") << "rec";
-    QTest::newRow("ali") << "ali";
+    // A state saved before the fix has no file name in the descriptor
+    QTest::addColumn<bool>("oldState");
+    for (const QString suffix : { "st", "rec", "ali" }) {
+      QTest::newRow(qPrintable(suffix)) << suffix << false;
+      QTest::newRow(qPrintable(suffix + " (old state)")) << suffix << true;
+    }
   }
 
   void stateReloadReadsTheFile()
   {
     QFETCH(QString, suffix);
+    QFETCH(bool, oldState);
     QTemporaryDir dir;
     QVERIFY(dir.isValid());
     const QString path = dir.filePath("tilts." + suffix);
@@ -107,12 +112,15 @@ private slots:
     QVERIFY(first && first->isValid());
 
     // Save and reload the state: a new node from the saved JSON, executed
-    const QJsonObject state = source->serialize();
-    QCOMPARE(state["readerOptions"]
-               .toObject()["reader"]
-               .toObject()["fileName"]
-               .toString(),
-             path);
+    QJsonObject state = source->serialize();
+    auto readerOptions = state["readerOptions"].toObject();
+    auto descriptor = readerOptions["reader"].toObject();
+    QCOMPARE(descriptor["fileName"].toString(), path);
+    if (oldState) {
+      descriptor.remove("fileName");
+      readerOptions["reader"] = descriptor;
+      state["readerOptions"] = readerOptions;
+    }
     pipeline::ReaderSourceNode reloaded;
     QVERIFY(reloaded.deserialize(state));
     QVERIFY(reloaded.execute());
