@@ -51,6 +51,7 @@
 #include "sources/SphereSource.h"
 #include "sources/ReaderSourceNode.h"
 #include "transforms/ThresholdTransform.h"
+#include "transforms/TranslateAlignTransform.h"
 #include "transforms/LegacyPythonTransform.h"
 #include "AutoExecuteController.h"
 #include "ExternalNodeExecutor.h"
@@ -1268,6 +1269,90 @@ TEST_F(PipelineLibTest, VolumeStatsSinkComputesStats)
 }
 
 // --- End-to-end: SphereSource → ThresholdTransform → VolumeStatsSink ---
+
+// --- TranslateAlignTransform tests ---
+
+// Offsets come from the alignment widget or a state file, and need not
+// match the data: the data upstream may have gained or lost slices since.
+// Each slice with an offset is moved by it, a slice without one is left
+// in place, and offsets beyond the last slice are ignored.
+TEST_F(PipelineLibTest, TranslateAlignOffsetCountDiffersFromSlices)
+{
+  struct OpenTranslateAlign : TranslateAlignTransform
+  {
+    using TranslateAlignTransform::transform;
+  };
+  const int nx = 4, ny = 3, nz = 3;
+  auto image = vtkSmartPointer<vtkImageData>::New();
+  image->SetDimensions(nx, ny, nz);
+  vtkNew<vtkFloatArray> array;
+  array->SetName("scalars");
+  array->SetNumberOfTuples(nx * ny * nz);
+  for (vtkIdType i = 0; i < nx * ny * nz; ++i) {
+    array->SetValue(i, static_cast<float>(i + 1));
+  }
+  image->GetPointData()->SetScalars(array);
+  auto* in = static_cast<float*>(image->GetScalarPointer());
+  auto at = [&](const float* p, int x, int y, int z) {
+    return p[x + nx * (y + ny * z)];
+  };
+
+  auto run = [&](const QVector<vtkVector2i>& offsets) {
+    OpenTranslateAlign align;
+    align.setAlignOffsets(offsets);
+    QMap<QString, PortData> inputs;
+    inputs["volume"] = PortData(
+      std::any(std::make_shared<VolumeData>(image)), PortType::ImageData);
+    auto out = align.transform(inputs)["output"].value<VolumeDataPtr>();
+    EXPECT_TRUE(out && out->isValid());
+    return out;
+  };
+  // Slice 0 moved one pixel up in x, slice 1 one pixel up in y
+  auto expectFirstTwoMoved = [&](const float* res) {
+    for (int y = 0; y < ny; ++y) {
+      EXPECT_EQ(at(res, 0, y, 0), 0.0f);
+      for (int x = 1; x < nx; ++x) {
+        EXPECT_EQ(at(res, x, y, 0), at(in, x - 1, y, 0));
+      }
+    }
+    for (int x = 0; x < nx; ++x) {
+      EXPECT_EQ(at(res, x, 0, 1), 0.0f);
+      for (int y = 1; y < ny; ++y) {
+        EXPECT_EQ(at(res, x, y, 1), at(in, x, y - 1, 1));
+      }
+    }
+  };
+  auto expectSliceUnchanged = [&](const float* res, int z) {
+    for (int y = 0; y < ny; ++y) {
+      for (int x = 0; x < nx; ++x) {
+        EXPECT_EQ(at(res, x, y, z), at(in, x, y, z));
+      }
+    }
+  };
+
+  // Fewer offsets than slices: the last slice has none
+  auto fewer = run({ vtkVector2i(1, 0), vtkVector2i(0, 1) });
+  ASSERT_TRUE(fewer);
+  auto* res = static_cast<float*>(fewer->imageData()->GetScalarPointer());
+  expectFirstTwoMoved(res);
+  expectSliceUnchanged(res, 2);
+
+  // More offsets than slices: the extra ones are ignored
+  auto more = run({ vtkVector2i(1, 0), vtkVector2i(0, 1), vtkVector2i(0, 0),
+                    vtkVector2i(2, 2) });
+  ASSERT_TRUE(more);
+  res = static_cast<float*>(more->imageData()->GetScalarPointer());
+  expectFirstTwoMoved(res);
+  expectSliceUnchanged(res, 2);
+
+  // No offsets at all: nothing moves
+  auto none = run({});
+  ASSERT_TRUE(none);
+  res = static_cast<float*>(none->imageData()->GetScalarPointer());
+  for (int z = 0; z < nz; ++z) {
+    expectSliceUnchanged(res, z);
+  }
+}
 
 TEST_F(PipelineLibTest, EndToEndSphereThresholdStats)
 {

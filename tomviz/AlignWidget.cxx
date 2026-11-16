@@ -45,6 +45,8 @@
 #include <vtkTrivialProducer.h>
 #include <vtkVector.h>
 
+#include <algorithm>
+
 #include <QButtonGroup>
 #include <QComboBox>
 #include <QDebug>
@@ -631,7 +633,8 @@ AlignWidget::AlignWidget(pipeline::TranslateAlignTransform* op,
     item->setText("Tilt angle");
     m_offsetTable->setHorizontalHeaderItem(3, item);
   }
-  for (int i = 0; i < oldOffsets.size(); ++i) {
+  // The data may have fewer slices than when the offsets were set
+  for (int i = 0; i < std::min(oldOffsets.size(), m_offsets.size()); ++i) {
     m_offsets[i] = oldOffsets[i];
   }
 
@@ -654,7 +657,7 @@ AlignWidget::AlignWidget(pipeline::TranslateAlignTransform* op,
     m_offsetTable->setItem(i, 2, item);
 
     // If we have a FIB datasource, there might not be tiltAngles data
-    if (showAngles) {
+    if (showAngles && i < tiltAngles.size()) {
       item = new QTableWidgetItem();
       item->setData(Qt::DisplayRole, QString::number(tiltAngles[i]));
       item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);

@@ -38,9 +38,9 @@ void applyImageOffsets(T* in, T* out, vtkImageData* image,
     *ptr++ = 0;
   }
 
-  // Apply per-slice offsets
+  // Apply per-slice offsets; a slice without one is not moved
   for (int i = 0; i < extent[2]; ++i) {
-    vtkVector2i offset = offsets[i];
+    vtkVector2i offset = i < offsets.size() ? offsets[i] : vtkVector2i(0, 0);
     int idx = imageIndex(incs, vtkVector3i(0, 0, i));
     T* inPtr = in + idx;
     T* outPtr = out + idx;
@@ -180,6 +180,16 @@ QMap<QString, PortData> TranslateAlignTransform::transform(
   }
 
   auto* inImage = inputVolume->imageData();
+
+  int dims[3];
+  inImage->GetDimensions(dims);
+  if (!m_offsets.isEmpty() && m_offsets.size() != dims[2]) {
+    qWarning("Translation Align has %d offsets for %d slices, so they may "
+             "no longer match their slices; reopen Image Alignment "
+             "(Manual) to check them. Slices without an offset are left "
+             "in place.",
+             static_cast<int>(m_offsets.size()), dims[2]);
+  }
 
   vtkNew<vtkImageData> outImage;
   outImage->DeepCopy(inImage);
