@@ -140,7 +140,9 @@ ReadResult readImageData(const QStringList& fileNames,
   }
 
   // .emd — simple EMD reader.
-  if (suffix == "emd") {
+  // Thermo Fisher Velox files are .emd too: a file without an EMD node
+  // goes on to the Python readers registered for .emd.
+  if (suffix == "emd" && EmdFormat::isEmd(fileName.toLatin1().data())) {
     QVariantMap emdOptions = hdf5OptionsFromJson(options);
     vtkNew<vtkImageData> imageData;
     if (EmdFormat::read(fileName.toLatin1().data(), imageData, emdOptions)) {

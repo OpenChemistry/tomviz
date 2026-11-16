@@ -55,6 +55,13 @@ std::string firstEmdNode(h5::H5ReadWrite& reader)
   return "";
 }
 
+bool EmdFormat::isEmd(const std::string& fileName)
+{
+  using h5::H5ReadWrite;
+  H5ReadWrite reader(fileName.c_str(), H5ReadWrite::OpenMode::ReadOnly);
+  return !firstEmdNode(reader).empty();
+}
+
 bool EmdFormat::read(const std::string& fileName, vtkImageData* image,
                      const QVariantMap& options)
 {

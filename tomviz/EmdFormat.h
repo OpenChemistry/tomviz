@@ -21,6 +21,9 @@ class EmdFormat
 public:
   static bool read(const std::string& fileName, vtkImageData* data,
                    const QVariantMap& options = QVariantMap());
+  // Whether the HDF5 file has an EMD node to read (other formats, such as
+  // Thermo Fisher Velox, also use the extension .emd)
+  static bool isEmd(const std::string& fileName);
   static bool write(const std::string& fileName, vtkImageData* image);
 
   // Read EMD data from a specified node in the HDF5 file
