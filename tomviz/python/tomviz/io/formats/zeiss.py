@@ -16,7 +16,7 @@ from tomviz.io import FileType, IOBase, Reader
 
 import tomviz.internal_utils
 
-from vtk import vtkImageData, vtkStringArray
+from vtk import vtkDoubleArray, vtkImageData, vtkIntArray, vtkStringArray
 
 try:
     import olefile
@@ -106,8 +106,40 @@ def _read(ole):
     if tilt_series:
         tomviz.internal_utils.set_tilt_angles(
             image_data, angles[:n].astype(np.float64))
+        _add_alignment_shifts(ole, image_data, n)
 
     return image_data
+
+
+def _add_alignment_shifts(ole, image_data, n):
+    # The per-projection shifts ZEISS's software applies (stage drift and
+    # the like), in pixels; ZEISS's projection export is each image moved
+    # by them, to the nearest pixel. They are kept, not applied: as
+    # "alignment_shifts" (x, y) in the tilt series' axes, the distance to
+    # move each projection's content, with "alignment_shifts_image_size"
+    # (the image size they are in pixels of). The mapping and sign were
+    # checked on a Versa scan: moving 100 * image / reference by the
+    # rounded shifts gives ZEISS's export to within its rounding.
+    x_shifts = _read_values(ole, 'Alignment/X-Shifts', '<f4')
+    y_shifts = _read_values(ole, 'Alignment/Y-Shifts', '<f4')
+    if x_shifts is None or y_shifts is None or min(
+            len(x_shifts), len(y_shifts)) < n:
+        return
+    shifts = vtkDoubleArray()
+    shifts.SetName('alignment_shifts')
+    shifts.SetNumberOfComponents(2)
+    shifts.SetNumberOfTuples(n)
+    for i in range(n):
+        # x runs down the image rows, y across the columns.
+        shifts.SetTuple2(i, float(y_shifts[i]), float(x_shifts[i]))
+    image_data.GetFieldData().AddArray(shifts)
+    size = vtkIntArray()
+    size.SetName('alignment_shifts_image_size')
+    size.SetNumberOfValues(2)
+    x, y, _ = image_data.GetDimensions()
+    size.SetValue(0, x)
+    size.SetValue(1, y)
+    image_data.GetFieldData().AddArray(size)
 
 
 if _HAS_OLEFILE:

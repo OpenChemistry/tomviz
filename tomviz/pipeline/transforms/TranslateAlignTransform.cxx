@@ -9,11 +9,14 @@
 #include "data/VolumeData.h"
 
 #include <vtkDataArray.h>
+#include <vtkFieldData.h>
 #include <vtkImageData.h>
 #include <vtkNew.h>
 #include <vtkPointData.h>
 
 #include <QJsonArray>
+
+#include <cmath>
 
 namespace {
 
@@ -102,6 +105,38 @@ EditNodeWidget* TranslateAlignTransform::createPropertiesWidget(
       return new AlignWidget(this, imageData, p);
     },
     parent);
+}
+
+QVector<vtkVector2i> TranslateAlignTransform::offsetsFromAlignmentShifts(
+  vtkImageData* image)
+{
+  QVector<vtkVector2i> offsets;
+  if (!image) {
+    return offsets;
+  }
+  auto* fd = image->GetFieldData();
+  auto* shifts = fd->GetArray("alignment_shifts");
+  auto* size = fd->GetArray("alignment_shifts_image_size");
+  int* dims = image->GetDimensions();
+  // Binning or cropping changes what a pixel is, so the shifts no longer
+  // apply.
+  if (!shifts || shifts->GetNumberOfComponents() != 2 ||
+      shifts->GetNumberOfTuples() != dims[2] || !size ||
+      size->GetNumberOfValues() != 2 || size->GetComponent(0, 0) != dims[0] ||
+      size->GetComponent(1, 0) != dims[1]) {
+    return offsets;
+  }
+  for (vtkIdType i = 0; i < shifts->GetNumberOfTuples(); ++i) {
+    double x = shifts->GetComponent(i, 0);
+    double y = shifts->GetComponent(i, 1);
+    if (!std::isfinite(x) || !std::isfinite(y) || std::abs(x) > dims[0] ||
+        std::abs(y) > dims[1]) {
+      return QVector<vtkVector2i>();
+    }
+    offsets.append(vtkVector2i(static_cast<int>(std::lround(x)),
+                               static_cast<int>(std::lround(y))));
+  }
+  return offsets;
 }
 
 void TranslateAlignTransform::setAlignOffsets(
@@ -200,6 +235,11 @@ QMap<QString, PortData> TranslateAlignTransform::transform(
         inImage, m_offsets));
     }
   }
+
+  // The aligned images no longer have the shifts stored with them; a
+  // further alignment must not start from them again.
+  outImage->GetFieldData()->RemoveArray("alignment_shifts");
+  outImage->GetFieldData()->RemoveArray("alignment_shifts_image_size");
 
   auto volume = std::make_shared<VolumeData>(outImage.Get());
   volume->setLabel(inputVolume->label());
