@@ -477,6 +477,7 @@ pipeline::SourceNode* LoadDataReaction::createFromParaViewReader(
           spacing[i] *= 0.1;
         }
         image->SetSpacing(spacing);
+        addMrcTiltAngles(image, readerFileName);
       }
     }
 

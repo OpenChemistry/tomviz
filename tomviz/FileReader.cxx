@@ -3,6 +3,11 @@
 
 #include "FileReader.h"
 
+#pragma push_macro("slots")
+#undef slots
+#include "vtkPython.h" // must be first
+#pragma pop_macro("slots")
+
 #include "ActiveObjects.h"
 #include "DataExchangeFormat.h"
 #include "EmdFormat.h"
@@ -11,7 +16,9 @@
 #include "GenericHDF5Format.h"
 #include "LoadDataReaction.h"
 #include "PythonReader.h"
+#include "PythonUtilities.h"
 #include "Utilities.h"
+#include "pipeline/data/VolumeData.h"
 #include "vtkOMETiffReader.h"
 
 #include <vtkImageData.h>
@@ -108,7 +115,58 @@ QVariantMap hdf5OptionsFromJson(const QJsonObject& options)
   return hdf5Options;
 }
 
+QVector<double> mrcTiltAngles(const QString& fileName, int count)
+{
+  QVector<double> angles;
+  if (!Py_IsInitialized()) {
+    return angles;
+  }
+  Python python;
+  auto module = python.import("tomviz.io.mrc_tilts");
+  if (!module.isValid()) {
+    qCritical() << "Failed to import tomviz.io.mrc_tilts.";
+    return angles;
+  }
+  auto function = module.findFunction("tilt_angles");
+  if (!function.isValid()) {
+    qCritical() << "Failed to find tomviz.io.mrc_tilts.tilt_angles.";
+    return angles;
+  }
+  Python::Tuple args(2);
+  Python::Object file(fileName);
+  args.set(0, file);
+  args.set(1, Variant(count));
+  auto res = function.call(args);
+  if (!res.isValid()) {
+    Python::checkForPythonError();
+    return angles;
+  }
+  if (res.isList()) {
+    auto list = res.toList();
+    for (int i = 0; i < list.length(); ++i) {
+      angles.append(list[i].toDouble());
+    }
+  }
+  return angles;
+}
+
 } // namespace
+
+bool addMrcTiltAngles(vtkImageData* image, const QString& fileName)
+{
+  static const QStringList stacks = { "mrc", "st", "ali" };
+  if (!image || !stacks.contains(QFileInfo(fileName).suffix().toLower()) ||
+      image->GetDimensions()[2] < 2 ||
+      pipeline::VolumeData::hasTiltAngles(image)) {
+    return false;
+  }
+  auto angles = mrcTiltAngles(fileName, image->GetDimensions()[2]);
+  if (angles.isEmpty()) {
+    return false;
+  }
+  pipeline::VolumeData::setTiltAngles(image, angles);
+  return true;
+}
 
 ReadResult readImageData(const QStringList& fileNames,
                          const QJsonObject& options)
@@ -202,6 +260,7 @@ ReadResult readImageData(const QStringList& fileNames,
       suffix == "jpg" || suffix == "jpeg" || suffix == "vti" ||
       suffix == "mrc") {
     result.imageData = readWithVTK(fileNames);
+    addMrcTiltAngles(result.imageData, fileName);
     return result;
   }
 
@@ -244,6 +303,7 @@ ReadResult readImageData(const QStringList& fileNames,
         if (image) {
           result.imageData = image;
           result.readerProperties = props;
+          addMrcTiltAngles(image, fileName);
         }
       }
     }
