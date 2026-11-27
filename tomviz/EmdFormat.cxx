@@ -10,9 +10,12 @@
 #include <h5cpp/h5readwrite.h>
 
 #include <vtkDataArray.h>
+#include <vtkFieldData.h>
 #include <vtkImageData.h>
 #include <vtkMath.h>
+#include <vtkNew.h>
 #include <vtkPointData.h>
+#include <vtkStringArray.h>
 
 #include <string>
 #include <vector>
@@ -31,6 +34,19 @@ static bool writeExtraScalars(h5::H5ReadWrite& writer,
                               vtkImageData* image);
 static void readExtraScalars(h5::H5ReadWrite& reader,
                              const std::string& emdNode, vtkImageData* image);
+
+// Tomviz has always labelled the length axes "[n_m]", also when it did
+// not know the units, so that label is written, and read, as "no units".
+static const char* const unknownLengthUnits = "[n_m]";
+
+static void setImageUnits(vtkImageData* image, const std::string& units)
+{
+  vtkNew<vtkStringArray> array;
+  array->SetName("units");
+  array->InsertNextValue(units);
+  image->GetFieldData()->RemoveArray("units");
+  image->GetFieldData()->AddArray(array);
+}
 
 std::string firstEmdNode(h5::H5ReadWrite& reader)
 {
@@ -186,10 +202,20 @@ bool EmdFormat::readNode(h5::H5ReadWrite& reader, const std::string& emdNode,
     }
   }
 
+  // The length units; dim2 is a length axis in volumes and tilt series
+  if (reader.hasAttribute(emdNode + "/dim2", "units")) {
+    auto lengthUnits =
+      reader.attribute<std::string>(emdNode + "/dim2", "units", &ok);
+    if (ok && !lengthUnits.empty() && lengthUnits != unknownLengthUnits) {
+      setImageUnits(image, lengthUnits);
+    }
+  }
+
   return true;
 }
 
-bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
+bool EmdFormat::write(const std::string& fileName, vtkImageData* image,
+                      const std::string& units)
 {
   using h5::H5ReadWrite;
   H5ReadWrite::OpenMode mode = H5ReadWrite::OpenMode::WriteOnly;
@@ -203,12 +229,17 @@ bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
   writer.createGroup("/data");
   writer.createGroup("/data/tomography");
 
-  return writeNode(writer, "/data/tomography", image);
+  return writeNode(writer, "/data/tomography", image, units);
 }
 
 bool EmdFormat::writeNode(h5::H5ReadWrite& writer, const std::string& path,
-                          vtkImageData* image)
+                          vtkImageData* image, const std::string& units)
 {
+  // The units come from the caller (the volume's), not from a "units"
+  // field array a reader may have left on the image: that one is not
+  // updated when the user changes or clears the units
+  const std::string lengthUnits = units.empty() ? unknownLengthUnits : units;
+
   // Create the emd_group_type attribute.
   writer.setAttribute(path, "emd_group_type", 1u);
 
@@ -271,22 +302,22 @@ bool EmdFormat::writeNode(h5::H5ReadWrite& writer, const std::string& path,
     writer.setAttribute(path + "/dim1", "units", "[deg]");
   } else {
     writer.setAttribute(path + "/dim1", "name", "x");
-    writer.setAttribute(path + "/dim1", "units", "[n_m]");
+    writer.setAttribute(path + "/dim1", "units", lengthUnits.c_str());
   }
 
   side[0] = static_cast<int>(imageDimDataY.size());
   writer.writeData(path, "dim2", side, imageDimDataY);
   writer.setAttribute(path + "/dim2", "name", "y");
-  writer.setAttribute(path + "/dim2", "units", "[n_m]");
+  writer.setAttribute(path + "/dim2", "units", lengthUnits.c_str());
 
   side[0] = static_cast<int>(imageDimDataZ.size());
   writer.writeData(path, "dim3", side, imageDimDataZ);
   if (hasTiltAngles) {
     writer.setAttribute(path + "/dim3", "name", "x");
-    writer.setAttribute(path + "/dim3", "units", "[n_m]");
+    writer.setAttribute(path + "/dim3", "units", lengthUnits.c_str());
   } else {
     writer.setAttribute(path + "/dim3", "name", "z");
-    writer.setAttribute(path + "/dim3", "units", "[n_m]");
+    writer.setAttribute(path + "/dim3", "units", lengthUnits.c_str());
   }
 
   // Write any extra scalars we might have
