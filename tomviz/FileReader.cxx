@@ -27,6 +27,7 @@
 #include <vtkXMLImageDataReader.h>
 
 #include <QFileInfo>
+#include <QJsonArray>
 
 namespace tomviz {
 
@@ -230,6 +231,15 @@ ReadResult readImageData(const QStringList& fileNames,
     reader.TakeReference(pxm->NewProxy("sources", name.toLatin1().data()));
     if (!reader) {
       return result;
+    }
+    // State files saved before the descriptor kept a single file name
+    // have none in it; the node's own file names are the same files
+    if (!props.contains("fileName") && !props.contains("fileNames")) {
+      if (fileNames.size() == 1) {
+        props["fileName"] = fileNames.first();
+      } else {
+        props["fileNames"] = QJsonArray::fromStringList(fileNames);
+      }
     }
     tomviz::setProperties(props, reader);
     LoadDataReaction::setFileNameProperties(props, reader);
