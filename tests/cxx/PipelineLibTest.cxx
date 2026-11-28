@@ -19,6 +19,7 @@
 #include "TransformNode.h"
 
 #include "EmdFormat.h"
+#include "FileReader.h"
 #include "PipelineSettings.h"
 #include "PipelineStateIO.h"
 #include "PortDataWriter.h"
@@ -79,6 +80,7 @@
 #include <QTextStream>
 
 #include <atomic>
+#include <cstring>
 
 #include <h5cpp/h5readwrite.h>
 
@@ -1569,6 +1571,88 @@ protected:
 };
 
 bool PipelinePythonTest::s_ownInterpreter = false;
+
+namespace {
+
+// A 2 x 2 x nz float32 MRC file without an extended header.
+void writeMrc(const QString& path, int nz)
+{
+  QByteArray header(1024, '\0');
+  const qint32 ints[4] = { 2, 2, nz, 2 };
+  std::memcpy(header.data(), ints, sizeof(ints));
+  std::memcpy(header.data() + 208, "MAP ", 4);
+  const unsigned char stamp[4] = { 0x44, 0x44, 0, 0 };
+  std::memcpy(header.data() + 212, stamp, 4);
+  QFile file(path);
+  ASSERT_TRUE(file.open(QIODevice::WriteOnly));
+  file.write(header);
+  file.write(QByteArray(4 * 2 * 2 * nz, '\0'));
+}
+
+void writeText(const QString& path, const QString& text)
+{
+  QFile file(path);
+  ASSERT_TRUE(file.open(QIODevice::WriteOnly | QIODevice::Text));
+  file.write(text.toUtf8());
+}
+
+} // namespace
+
+// An MRC stack with IMOD's .rawtlt next to it opens as a tilt series with
+// those angles, also when a state file re-reads it.
+TEST_F(PipelinePythonTest, MrcStackReadsTiltAngles)
+{
+  QTemporaryDir dir;
+  ASSERT_TRUE(dir.isValid());
+  QString path = dir.filePath("series.mrc");
+  writeMrc(path, 3);
+  writeText(dir.filePath("series.rawtlt"), "-30\n0\n30\n");
+
+  auto result = tomviz::readImageData({ path });
+  ASSERT_TRUE(result.imageData);
+  auto angles = VolumeData::getTiltAngles(result.imageData);
+  ASSERT_EQ(angles.size(), 3);
+  EXPECT_DOUBLE_EQ(angles[0], -30.0);
+  EXPECT_DOUBLE_EQ(angles[2], 30.0);
+
+  auto* readerNode = new ReaderSourceNode();
+  pipeline->addNode(readerNode);
+  readerNode->setFileNames({ path });
+  ASSERT_TRUE(readerNode->execute());
+  auto portData = readerNode->outputPort("volume")->data();
+  EXPECT_EQ(portData.type(), PortType::TiltSeries);
+  EXPECT_EQ(portData.value<VolumeDataPtr>()->tiltAngles(), angles);
+}
+
+// A single image, IMOD's reconstructed .rec, or angles for a different
+// number of images give no tilt angles.
+TEST_F(PipelinePythonTest, MrcTiltAnglesOnlyForMatchingStacks)
+{
+  QTemporaryDir dir;
+  ASSERT_TRUE(dir.isValid());
+  writeText(dir.filePath("series.rawtlt"), "-30\n0\n30\n");
+
+  QString single = dir.filePath("series.mrc");
+  writeMrc(single, 1);
+  auto result = tomviz::readImageData({ single });
+  ASSERT_TRUE(result.imageData);
+  EXPECT_FALSE(VolumeData::hasTiltAngles(result.imageData));
+
+  QString other = dir.filePath("other.mrc");
+  writeMrc(other, 4);
+  writeText(dir.filePath("other.rawtlt"), "-30\n0\n30\n");
+  result = tomviz::readImageData({ other });
+  ASSERT_TRUE(result.imageData);
+  EXPECT_FALSE(VolumeData::hasTiltAngles(result.imageData));
+
+  // A .rec goes through ParaView's reader; check the rule itself.
+  vtkNew<vtkImageData> volume;
+  volume->SetDimensions(2, 2, 3);
+  EXPECT_FALSE(tomviz::addMrcTiltAngles(volume, dir.filePath("series.rec")));
+  EXPECT_FALSE(VolumeData::hasTiltAngles(volume));
+  EXPECT_TRUE(tomviz::addMrcTiltAngles(volume, dir.filePath("series.st")));
+  EXPECT_EQ(VolumeData::getTiltAngles(volume).size(), 3);
+}
 
 TEST_F(PipelinePythonTest, AddConstantOperator)
 {

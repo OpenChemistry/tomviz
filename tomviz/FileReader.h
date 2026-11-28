@@ -58,6 +58,13 @@ struct ReadResult
 ReadResult readImageData(const QStringList& fileNames,
                          const QJsonObject& options = QJsonObject());
 
+/// If @a image is an MRC stack read from @a fileName (.mrc, .st or .ali;
+/// not IMOD's reconstructed .rec, which often sits next to the .rawtlt of
+/// its tilt series), give it the tilt angles found in its extended header
+/// or the IMOD and SerialEM files next to it (tomviz.io.mrc_tilts).
+/// Returns whether it now has angles from there.
+bool addMrcTiltAngles(vtkImageData* image, const QString& fileName);
+
 } // namespace tomviz
 
 #endif
