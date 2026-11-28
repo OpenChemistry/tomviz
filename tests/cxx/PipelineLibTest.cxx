@@ -79,6 +79,7 @@
 #include <QTextStream>
 
 #include <atomic>
+#include <cmath>
 
 #include <h5cpp/h5readwrite.h>
 
@@ -91,8 +92,10 @@
 #include <vector>
 
 #include <vtkDoubleArray.h>
+#include <vtkFieldData.h>
 #include <vtkFloatArray.h>
 #include <vtkImageData.h>
+#include <vtkIntArray.h>
 #include <vtkMolecule.h>
 #include <vtkOutputWindow.h>
 #include <vtkPointData.h>
@@ -1241,6 +1244,144 @@ TEST_F(PipelineLibTest, ThresholdTransformBinaryMask)
   auto range = maskData->scalarRange();
   EXPECT_EQ(range[0], 0.0);
   EXPECT_EQ(range[1], 1.0);
+}
+
+// --- TranslateAlignTransform tests ---
+
+namespace {
+
+// A tilt series of nz images, nx by ny, holding its voxel index, with
+// per-image "alignment_shifts" in pixels of nx by ny images (as the ZEISS
+// reader stores them).
+vtkSmartPointer<vtkImageData> makeShiftedSeries(
+  int nx, int ny, int nz, const QVector<vtkVector2d>& shifts,
+  int components = 2)
+{
+  auto image = vtkSmartPointer<vtkImageData>::New();
+  image->SetDimensions(nx, ny, nz);
+  vtkNew<vtkFloatArray> array;
+  array->SetName("scalars");
+  array->SetNumberOfTuples(nx * ny * nz);
+  for (vtkIdType i = 0; i < nx * ny * nz; ++i) {
+    array->SetValue(i, static_cast<float>(i + 1));
+  }
+  image->GetPointData()->SetScalars(array);
+  vtkNew<vtkDoubleArray> shiftArray;
+  shiftArray->SetName("alignment_shifts");
+  shiftArray->SetNumberOfComponents(components);
+  shiftArray->SetNumberOfTuples(shifts.size());
+  for (int i = 0; i < shifts.size(); ++i) {
+    for (int c = 0; c < components; ++c) {
+      shiftArray->SetComponent(i, c, shifts[i][c % 2]);
+    }
+  }
+  image->GetFieldData()->AddArray(shiftArray);
+  vtkNew<vtkIntArray> size;
+  size->SetName("alignment_shifts_image_size");
+  size->SetNumberOfValues(2);
+  size->SetValue(0, nx);
+  size->SetValue(1, ny);
+  image->GetFieldData()->AddArray(size);
+  return image;
+}
+
+} // namespace
+
+// Stored alignment shifts become whole-pixel offsets, one per image; with
+// a pair missing, or none stored, there are no offsets.
+TEST_F(PipelineLibTest, TranslateAlignOffsetsFromAlignmentShifts)
+{
+  auto image = makeShiftedSeries(
+    4, 3, 3,
+    { vtkVector2d(2.6, -1.6), vtkVector2d(0.0, 0.0), vtkVector2d(-3.2, 1.0) });
+  auto offsets = TranslateAlignTransform::offsetsFromAlignmentShifts(image);
+  ASSERT_EQ(offsets.size(), 3);
+  EXPECT_EQ(offsets[0], vtkVector2i(3, -2));
+  EXPECT_EQ(offsets[1], vtkVector2i(0, 0));
+  EXPECT_EQ(offsets[2], vtkVector2i(-3, 1));
+
+  auto tooFew =
+    makeShiftedSeries(4, 3, 3, { vtkVector2d(1, 1), vtkVector2d(1, 1) });
+  EXPECT_TRUE(
+    TranslateAlignTransform::offsetsFromAlignmentShifts(tooFew).isEmpty());
+  auto tooMany = makeShiftedSeries(
+    4, 3, 2, { vtkVector2d(1, 1), vtkVector2d(1, 1), vtkVector2d(1, 1) });
+  EXPECT_TRUE(
+    TranslateAlignTransform::offsetsFromAlignmentShifts(tooMany).isEmpty());
+  auto threeComponents =
+    makeShiftedSeries(4, 3, 2, { vtkVector2d(1, 1), vtkVector2d(1, 1) }, 3);
+  EXPECT_TRUE(
+    TranslateAlignTransform::offsetsFromAlignmentShifts(threeComponents)
+      .isEmpty());
+  auto notFinite = makeShiftedSeries(
+    4, 3, 2, { vtkVector2d(1, 1), vtkVector2d(std::nan(""), 1) });
+  EXPECT_TRUE(
+    TranslateAlignTransform::offsetsFromAlignmentShifts(notFinite).isEmpty());
+
+  // Binned (or cropped) images are no longer the size the shifts are in
+  // pixels of.
+  auto binned =
+    makeShiftedSeries(4, 3, 2, { vtkVector2d(2, 2), vtkVector2d(2, 2) });
+  binned->SetDimensions(2, 3, 2);
+  EXPECT_TRUE(
+    TranslateAlignTransform::offsetsFromAlignmentShifts(binned).isEmpty());
+
+  image->GetFieldData()->RemoveArray("alignment_shifts");
+  EXPECT_TRUE(
+    TranslateAlignTransform::offsetsFromAlignmentShifts(image).isEmpty());
+  EXPECT_TRUE(
+    TranslateAlignTransform::offsetsFromAlignmentShifts(nullptr).isEmpty());
+}
+
+// Applied by the transform, a shift of (+1, 0) moves an image's content
+// one pixel up in x and a shift of (0, +1) one pixel up in y, the
+// direction the ZEISS reader stores them in.
+TEST_F(PipelineLibTest, TranslateAlignAppliesAlignmentShifts)
+{
+  struct OpenTranslateAlign : TranslateAlignTransform
+  {
+    using TranslateAlignTransform::transform;
+  };
+  const int nx = 4, ny = 3;
+  auto image = makeShiftedSeries(
+    nx, ny, 2, { vtkVector2d(1.0, 0.0), vtkVector2d(0.0, 1.0) });
+  OpenTranslateAlign align;
+  align.setAlignOffsets(
+    TranslateAlignTransform::offsetsFromAlignmentShifts(image));
+
+  QMap<QString, PortData> inputs;
+  inputs["volume"] = PortData(std::any(std::make_shared<VolumeData>(image)),
+                              PortType::ImageData);
+  auto outputs = align.transform(inputs);
+  auto out = outputs["output"].value<VolumeDataPtr>();
+  ASSERT_TRUE(out && out->isValid());
+  auto* in = static_cast<float*>(image->GetScalarPointer());
+  auto* res = static_cast<float*>(out->imageData()->GetScalarPointer());
+  auto at = [&](float* p, int x, int y, int z) {
+    return p[x + nx * (y + ny * z)];
+  };
+
+  for (int y = 0; y < ny; ++y) {
+    EXPECT_EQ(at(res, 0, y, 0), 0.0f);
+    for (int x = 1; x < nx; ++x) {
+      EXPECT_EQ(at(res, x, y, 0), at(in, x - 1, y, 0));
+    }
+  }
+  for (int x = 0; x < nx; ++x) {
+    EXPECT_EQ(at(res, x, 0, 1), 0.0f);
+    for (int y = 1; y < ny; ++y) {
+      EXPECT_EQ(at(res, x, y, 1), at(in, x, y - 1, 1));
+    }
+  }
+
+  // The aligned output no longer carries the shifts, so a further
+  // alignment does not apply them again.
+  auto* outFields = out->imageData()->GetFieldData();
+  EXPECT_FALSE(outFields->HasArray("alignment_shifts"));
+  EXPECT_FALSE(outFields->HasArray("alignment_shifts_image_size"));
+  EXPECT_TRUE(
+    TranslateAlignTransform::offsetsFromAlignmentShifts(out->imageData())
+      .isEmpty());
 }
 
 // --- VolumeStatsSink tests ---

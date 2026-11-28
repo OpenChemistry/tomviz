@@ -616,6 +616,18 @@ AlignWidget::AlignWidget(pipeline::TranslateAlignTransform* op,
   } else {
     oldOffsets = m_operator->getAlignOffsets();
   }
+  // A new alignment starts from the shifts stored with the data, if any.
+  if (oldOffsets.isEmpty()) {
+    oldOffsets =
+      pipeline::TranslateAlignTransform::offsetsFromAlignmentShifts(imageData);
+    if (!oldOffsets.isEmpty()) {
+      auto* note = new QLabel("The offsets start from the alignment shifts "
+                              "stored with the data, rounded to whole "
+                              "pixels.");
+      note->setWordWrap(true);
+      v->insertWidget(v->indexOf(m_offsetTable), note);
+    }
+  }
 
   m_offsetTable->setRowCount(m_offsets.size());
   m_offsetTable->setColumnCount(showAngles ? 4 : 3);
