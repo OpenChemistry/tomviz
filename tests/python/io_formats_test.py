@@ -2,7 +2,8 @@
 # This source file is part of the Tomviz project, https://tomviz.org/.
 # It is released under the 3-Clause BSD License, see "LICENSE".
 ###############################################################################
-"""Tests for DICOM, MRC and ZEISS I/O format implementations."""
+"""Tests for DICOM, MRC, ZEISS and DigitalMicrograph I/O format
+implementations."""
 
 from __future__ import annotations
 
@@ -445,3 +446,149 @@ class TestZeiss:
         result = _read_zeiss(_zeiss_streams(frames, 3, 0, angles), 'a.txrm')
 
         assert result.GetNumberOfPoints() == 0
+
+# ---------------------------------------------------------------------------
+# Gatan DigitalMicrograph reader
+# ---------------------------------------------------------------------------
+
+class _FakeFileDM:
+    """Stands in for tomviz.io.dm.FileDM, returning a dataset as its
+    getDataset() does: the data in C order with one calibration per
+    axis."""
+
+    dataset: dict[str, object] | Exception = {}
+    numObjects = 2
+    thumbnail = True
+
+    def __init__(self, path: str, on_memory: bool = True) -> None:
+        pass
+
+    def __enter__(self) -> _FakeFileDM:
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        pass
+
+    def getDataset(self, index: int) -> dict[str, object]:
+        if isinstance(self.dataset, Exception):
+            raise self.dataset
+        return self.dataset
+
+
+def _read_dm(dataset: dict[str, object] | Exception,
+             num_objects: int = 2) -> vtkImageData:
+    from tomviz.io.formats.digitalmicrograph import DigitalMicrographReader
+
+    with mock.patch.object(_FakeFileDM, 'dataset', dataset), \
+            mock.patch.object(_FakeFileDM, 'numObjects', num_objects), \
+            mock.patch('tomviz.io.dm.FileDM', _FakeFileDM):
+        return DigitalMicrographReader().read('a.dm4')
+
+
+def test_dm_image_reads_with_calibration() -> None:
+    image = np.arange(12, dtype=np.uint16).reshape((3, 4))
+    result = _read_dm({
+        'data': image,
+        'pixelSize': [0.5, 0.25],
+        'pixelOrigin': [0.0, 0.0],
+        'pixelUnit': ['nm', 'nm'],
+    })
+
+    # x is the image column, y the image row (as VTK reads a TIFF).
+    result_arr = _vtk_get_array(result)
+    assert result_arr.dtype == np.uint16
+    np.testing.assert_array_equal(result_arr[:, :, 0], image.T)
+
+    assert result.GetSpacing() == pytest.approx((0.25, 0.5, 0.25))
+    assert _units(result) == ['nm', 'nm', 'nm']
+    assert _vtk_get_tilt_angles(result) is None
+
+
+def test_dm_stack_in_degrees_reads_as_tilt_series() -> None:
+    # As Gatan's tomography acquisition writes it: -90 to +90 degrees.
+    stack = np.arange(91 * 3 * 4, dtype=np.float32).reshape((91, 3, 4))
+    result = _read_dm({
+        'data': stack,
+        'pixelSize': [2.0, 0.018, 0.018],
+        'pixelOrigin': [45.0, 0.0, 0.0],
+        'pixelUnit': ['deg', '\u00b5m', '\u00b5m'],
+    })
+
+    np.testing.assert_array_equal(_vtk_get_array(result),
+                                  np.transpose(stack, (2, 1, 0)))
+
+    result_angles = _vtk_get_tilt_angles(result)
+    assert result_angles is not None
+    np.testing.assert_allclose(result_angles, np.arange(-90.0, 91.0, 2.0))
+
+    assert result.GetSpacing() == pytest.approx((0.018, 0.018, 0.018))
+    assert _units(result) == ['um', 'um', 'um']
+
+
+def test_dm_stack_calibrated_in_its_images_only() -> None:
+    # Stacks can carry a calibration for the images and none for the
+    # stack axis.
+    stack = np.zeros((3, 2, 4), dtype=np.uint8)
+    result = _read_dm({
+        'data': stack,
+        'pixelSize': [0.06, 0.06],
+        'pixelOrigin': [0.0, 0.0],
+        'pixelUnit': ['\u00b5m', '\u00b5m'],
+    })
+
+    assert result.GetDimensions() == (4, 2, 3)
+    assert result.GetSpacing() == pytest.approx((0.06, 0.06, 0.06))
+    assert _vtk_get_tilt_angles(result) is None
+
+
+def test_dm_uncalibrated_image_has_no_units() -> None:
+    result = _read_dm({
+        'data': np.zeros((3, 4), dtype=np.int16),
+        'pixelSize': [1.0, 1.0],
+        'pixelOrigin': [0.0, 0.0],
+        'pixelUnit': ['', ''],
+    })
+
+    assert result.GetSpacing() == (1.0, 1.0, 1.0)
+    assert result.GetFieldData().GetAbstractArray('units') is None
+
+
+def test_dm_complex_data_reads_nothing(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    result = _read_dm({
+        'data': np.zeros((3, 4), dtype=np.complex64),
+        'pixelSize': [1.0, 1.0],
+        'pixelOrigin': [0.0, 0.0],
+        'pixelUnit': ['', ''],
+    })
+
+    assert result.GetNumberOfPoints() == 0
+    assert 'complex64' in capsys.readouterr().out
+
+
+def test_dm_rgb_data_reads_nothing(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    # As tomviz.io.dm raises it for DM data type 23.
+    error = OSError('Unsupported binary data type during conversion to '
+                    'numpy dtype. DM dataType == 23')
+    result = _read_dm(error)
+
+    assert result.GetNumberOfPoints() == 0
+    assert 'RGB or binary' in capsys.readouterr().out
+
+
+def test_dm_file_with_several_images_reads_the_first(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    # A thumbnail and three images.
+    result = _read_dm({
+        'data': np.zeros((3, 4), dtype=np.uint8),
+        'pixelSize': [1.0, 1.0],
+        'pixelOrigin': [0.0, 0.0],
+        'pixelUnit': ['', ''],
+    }, num_objects=4)
+
+    assert result.GetDimensions() == (4, 3, 1)
+    assert 'has 3 images; opening the first' in capsys.readouterr().out
